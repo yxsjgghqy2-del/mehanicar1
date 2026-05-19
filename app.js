@@ -1017,8 +1017,7 @@ const hd=new Date();hd.setHours(0,0,0,0);const i7=new Date(hd.getTime()+7*24*360
 const rows=[...(data.termine||[]).filter(t=>{const d=new Date(t.datum+"T12:00");return d>=hd&&d<=i7;}).slice(0,3).map(t=>{const k=(data.kunden||[]).find(x=>x.id===t.kunden_id);const isH=new Date(t.datum+"T12:00").setHours(0,0,0,0)===hd.getTime();return {c:isH?P.blue:"#C7C7CC",b:isH?"Heute":new Date(t.datum+"T12:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}),t:t.titel,s:k?k.vorname+" "+k.nachname:"",fn:()=>setView("kalender")};}),...(data.auftraege||[]).filter(a=>a.fertigstellung_geplant&&new Date(a.fertigstellung_geplant)<=i7&&a.status!=="abgeschlossen").slice(0,2).map(au=>{const k=(data.kunden||[]).find(x=>x.id===au.kunden_id);return {c:P.orange,b:"Faellig",t:au.nr+(k?" "+k.vorname:""),s:"",fn:()=>setView("auftraege")};}),...((data.rechnungen||[]).filter(r=>!r.bezahlt&&!r.storniert).length?[{c:P.red,b:(data.rechnungen||[]).filter(r=>!r.bezahlt&&!r.storniert).length+" offen",t:"Offene Rechnungen",s:"",fn:()=>setView("rechnungen")}]:[]),...((data.lager||[]).filter(l=>(l.bestand||0)<=(l.mindestbestand||0)).length?[{c:P.orange,b:"Lager",t:(data.lager||[]).filter(l=>(l.bestand||0)<=(l.mindestbestand||0)).length+" unter Mindestbestand",s:"",fn:()=>setView("lager")}]:[]),];
 if(!rows.length)return null;
 return React.createElement('div', { style: {marginBottom:0},}, React.createElement(SecH, { title: "Diese Woche" , action: React.createElement('button', { onClick: ()=>setView("kalender"), style: {background:"none",border:"none",color:P.blue,fontSize:13,cursor:"pointer",fontWeight:500},}, "Kalender"),}), React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:6},}, rows.map((row,i)=>React.createElement('div', { key: i, onClick: row.fn, style: {display:"flex",alignItems:"center",gap:10,padding:"10px 13px",background:"#fff",borderRadius:11,border:"1px solid rgba(0,0,0,0.06)",cursor:"pointer"},}, React.createElement('div', { style: {width:3,height:28,background:row.c,borderRadius:2,flexShrink:0},}), React.createElement('div', { style: {flex:1,minWidth:0},}, React.createElement(Bdg, { color: row.c, small: true,}, row.b), React.createElement('div', { style: {color:"#1D1D1F",fontSize:13,fontWeight:500,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"},}, row.t), row.s&&React.createElement('div', { style: {color:"#AEAEB2",fontSize:11},}, row.s)), React.createElement(Ic, { n: "chevronR", s: 13, c: "#C7C7CC",})))));
-})(), "})()}"
-
+})()
 , (huFaellig.length+uebFaellig.length)>0&&React.createElement(React.Fragment, null
 , React.createElement(SecH, { title: `Erinnerungen (${huFaellig.length+uebFaellig.length})`,})
 , React.createElement(Card, { noPad: true,}
@@ -1072,8 +1071,8 @@ return React.createElement(Screen, { title: tab==="kv"?"Kostenvoranschläge":"Au
 , React.createElement(Switcher, { options: [{v:"kv",l:"Kostenvoranschläge"},{v:"auftraege",l:"Aufträge"}], value: tab, onChange: setTab,})
 , tab==="kv"&&React.createElement(React.Fragment, null
 /* Suchfeld */
-, React.createElement('div', { style: {position:"relative",marginBottom:10},}
-, React.createElement('input', { value: filterKV, onChange: e=>setFilterKV(e.target.value), placeholder: "Name, Kennzeichen, Nr. suchen..."   , style: {width:"100%",background:"#FFFFFF",border:"1px solid rgba(60,60,67,0.2)",borderRadius:12,padding:"11px 14px 11px 40px",fontSize:14,color:"#1D1D1F",outline:"none",boxSizing:"border-box",boxShadow:"0 1px 3px rgba(0,0,0,0.06)"},})
+, React.createElement('div', { style: {position:"relative",marginBottom:8},}
+, React.createElement('input', { value: filterKV, onChange: e=>setFilterKV(e.target.value), placeholder: "Name, Kennzeichen, Nummer suchen..."   , style: {width:"100%",background:"#FFFFFF",border:"1px solid rgba(60,60,67,0.2)",borderRadius:12,padding:"11px 14px 11px 40px",fontSize:14,color:"#1D1D1F",outline:"none",boxSizing:"border-box",boxShadow:"0 1px 3px rgba(0,0,0,0.06)"},})
 , React.createElement('div', { style: {position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"},}, React.createElement(Ic, { n: "search", s: 16, c: "#AEAEB2",}))
 , filterKV&&React.createElement('button', { onClick: ()=>setFilterKV(""), style: {position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"rgba(120,120,128,0.2)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",color:"#6E6E73",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",padding:0},}, "x")
 )
@@ -1101,7 +1100,7 @@ return React.createElement(Card, { key: kv.id, style: {padding:"15px"},}
 /* Filter */
 , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:10,marginBottom:14},}
 , React.createElement('div', { style: {position:"relative"},}
-, React.createElement('input', { value: filterQ, onChange: e=>setFilterQ(e.target.value), placeholder: "Auftragsnr., Kundenname, Kennzeichen..."  , style: {width:"100%",background:"#F2F2F7",border:`1.5px solid ${P.border}`,borderRadius:12,padding:"11px 14px 11px 42px",color:"#1D1D1F",fontSize:14,outline:"none",boxSizing:"border-box",minHeight:44},})
+, React.createElement('input', { value: filterQ, onChange: e=>setFilterQ(e.target.value), placeholder: "Nummer, Kundenname, Kennzeichen suchen..."   , style: {width:"100%",background:"#F2F2F7",border:`1.5px solid ${P.border}`,borderRadius:12,padding:"11px 14px 11px 42px",color:"#1D1D1F",fontSize:14,outline:"none",boxSizing:"border-box",minHeight:44},})
 , React.createElement('div', { style: {position:"absolute",left:13,top:"50%",transform:"translateY(-50%)"},}, React.createElement(Ic, { n: "search", s: 16, c: P.textSub,}))
 , filterQ&&React.createElement('button', { onClick: ()=>setFilterQ(""), style: {position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:"#AEAEB2",cursor:"pointer",fontSize:16},}, "x")
 )
@@ -1591,13 +1590,13 @@ const gO=liste.filter(r=>!r.bezahlt&&!r.storniert).reduce((s,r)=>s+(r.brutto||0)
 const gB=liste.filter(r=>r.bezahlt&&!r.storniert).reduce((s,r)=>s+(r.brutto||0),0);
 return React.createElement(Screen, { title: "Rechnungen",}
 , React.createElement('div', { style: {position:"relative",marginBottom:8},}
-, React.createElement('input', { value: filterRe, onChange: e=>setFilterRe(e.target.value), placeholder: "Nr., Kundenname suchen..."  , style: {width:"100%",background:"#fff",border:"1px solid rgba(60,60,67,0.2)",borderRadius:12,padding:"11px 14px 11px 40px",fontSize:14,color:"#1D1D1F",outline:"none",boxSizing:"border-box"},})
+, React.createElement('input', { value: filterRe, onChange: e=>setFilterRe(e.target.value), placeholder: "Nummer, Kundenname suchen..."  , style: {width:"100%",background:"#fff",border:"1px solid rgba(60,60,67,0.2)",borderRadius:12,padding:"11px 14px 11px 40px",fontSize:14,color:"#1D1D1F",outline:"none",boxSizing:"border-box"},})
 , React.createElement('div', { style: {position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"},}, React.createElement(Ic, { n: "search", s: 16, c: "#AEAEB2",}))
 , filterRe&&React.createElement('button', { onClick: ()=>setFilterRe(""), style: {position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"rgba(120,120,128,0.2)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",color:"#6E6E73",fontSize:13},}, "x")
 )
 , React.createElement('div', { style: {display:"flex",gap:7,marginBottom:12,overflowX:"auto",paddingBottom:2},}
 , [["alle","Alle"],["offen","Offen"],["bezahlt","Bezahlt"],["ueberfaellig","Ueberfaellig"]].map(([v,l])=>(
-React.createElement('button', { key: v, onClick: ()=>setFilterStatus(v), style: {padding:"7px 14px",borderRadius:20,border:"none",background:filterStatus===v?P.blue:"rgba(0,0,0,0.06)",color:filterStatus===v?"#fff":"#6E6E73",cursor:"pointer",fontSize:13,fontWeight:filterStatus===v?600:400,whiteSpace:"nowrap",flexShrink:0},}, l)
+React.createElement('button', { key: v, onClick: ()=>setFilterStatus(v), style: {padding:"7px 14px",borderRadius:20,border:"none",background:filterStatus===v?P.blue:"rgba(0,0,0,0.06)",color:filterStatus===v?"#fff":"#6E6E73",cursor:"pointer",fontSize:12,fontWeight:filterStatus===v?600:400,whiteSpace:"nowrap",flexShrink:0},}, l)
 ))
 )
 , React.createElement('div', { style: {padding:"11px 14px",background:"rgba(48,209,88,0.07)",border:`1px solid rgba(48,209,88,0.2)`,borderRadius:12,marginBottom:14,display:"flex",gap:9},}
