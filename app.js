@@ -114,20 +114,20 @@ return calcPakete(offen);
 function printDokument({typ,daten,settings,kunde,fahrzeug}){
 const S=settings||{};
 const titel=typ==="stornorechnung"?"Stornorechnung":typ==="rechnung"?"Rechnung":typ==="kv"?"Kostenvoranschlag":"Auftrag";
-const kn=kunde?`${kunde.vorname||""} ${kunde.nachname||""}`.trim():"";
-const fz=fahrzeug?[fahrzeug.kennzeichen,fahrzeug.marke].filter(Boolean).join(" "):"";
-let pos="";let sumN=0;
-(daten.pakete||[]).forEach((pk,pi)=>{
-const aR=(pk.arbeiten||[]).filter(a=>(a.kennzeichen||"kunde")!=="intern");
-const mR=(pk.material||[]).filter(m=>(m.kennzeichen||"kunde")!=="intern");
-if(!aR.length&&!mR.length)return;
+const kdName=kunde?`${kunde.vorname||""} ${kunde.nachname||""}`.trim():"";
+const fzInfo=fahrzeug?[fahrzeug.kennzeichen,fahrzeug.marke].filter(Boolean).join(" "):"";
+const pakete=daten.pakete||[];let pos="";let sumN=0;
+pakete.forEach((pk,pi)=>{
+const arbR=(pk.arbeiten||[]).filter(a=>(a.kennzeichen||"kunde")!=="intern");
+const matR=(pk.material||[]).filter(m=>(m.kennzeichen||"kunde")!=="intern");
+if(!arbR.length&&!matR.length)return;
 pos+=`<tr style="background:#f5f5f7"><td colspan="4" style="padding:5px 8px;font-weight:700">${pk.beanstandung||"Paket "+(pi+1)}</td></tr>`;
-aR.forEach(a=>{const p=round2((a.aw||0)*(a.aw_preis||0));sumN+=p;pos+=`<tr><td style="padding:4px 8px">${a.beschreibung}</td><td style="text-align:right;padding:4px 8px">${a.aw} AW</td><td style="text-align:right;padding:4px 8px">${eur(a.aw_preis)}</td><td style="text-align:right;padding:4px 8px;font-weight:600">${eur(p)}</td></tr>`;});
-mR.forEach(m=>{const p=round2((m.vk_preis||0)*(m.menge||1));sumN+=p;pos+=`<tr><td style="padding:4px 8px">${m.beschreibung}</td><td style="text-align:right;padding:4px 8px">${m.menge}x</td><td style="text-align:right;padding:4px 8px">${eur(m.vk_preis)}</td><td style="text-align:right;padding:4px 8px;font-weight:600">${eur(p)}</td></tr>`;});
+arbR.forEach(a=>{const p=round2((a.aw||0)*(a.aw_preis||0));sumN+=p;pos+=`<tr><td style="padding:4px 8px">${a.beschreibung}</td><td style="text-align:right;padding:4px 8px">${a.aw} AW</td><td style="text-align:right;padding:4px 8px">${eur(a.aw_preis)}</td><td style="text-align:right;padding:4px 8px;font-weight:600">${eur(p)}</td></tr>`;});
+matR.forEach(m=>{const p=round2((m.vk_preis||0)*(m.menge||1));sumN+=p;pos+=`<tr><td style="padding:4px 8px">${m.beschreibung}</td><td style="text-align:right;padding:4px 8px">${m.menge}x</td><td style="text-align:right;padding:4px 8px">${eur(m.vk_preis)}</td><td style="text-align:right;padding:4px 8px;font-weight:600">${eur(p)}</td></tr>`;});
 });
 const ms=S.mwst||19;const mb=round2(sumN*(ms/100));const br=round2(sumN+mb);
 const fd=d=>d?new Date(d).toLocaleDateString("de-DE"):"";
-const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:-apple-system,sans-serif;padding:18mm;font-size:10pt}table{width:100%;border-collapse:collapse;margin:6mm 0}th{border-bottom:1pt solid #000;padding:3px 8px;font-size:8pt;color:#666;text-align:left}td{border-bottom:.3pt solid #eee;padding:3px 8px}.ftr{margin-top:8mm;padding-top:3mm;border-top:.5pt solid #ccc;font-size:8pt;color:#666;display:flex;justify-content:space-between}@media print{@page{margin:16mm;size:A4}}</style></head><body><div style="display:flex;justify-content:space-between;margin-bottom:8mm;padding-bottom:4mm;border-bottom:.5pt solid #ccc"><div><b style="font-size:15pt">${S.firma||"mehanicar"}</b><div style="color:#666;font-size:8pt;margin-top:2mm">${[S.inhaber,S.telefon].filter(Boolean).join(" | ")}</div></div><div style="text-align:right"><b style="font-size:18pt">${titel}</b><div style="color:#666;font-size:8pt;margin-top:2mm">${daten.nr||""}${daten.datum?"<br>"+fd(daten.datum):""}${daten.faellig?"<br>Faellig: "+fd(daten.faellig):""}</div></div></div>${kn?`<div style="margin-bottom:5mm">${kn}</div>`:""}${fz?`<div style="margin-bottom:3mm;font-size:9pt;color:#666">Fahrzeug: ${fz}</div>`:""}<table><thead><tr><th>Bezeichnung</th><th style="text-align:right">Menge</th><th style="text-align:right">Einzel</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody></table><div style="text-align:right;margin-top:3mm"><div style="display:inline-block;min-width:120px"><div style="display:flex;justify-content:space-between;padding:2px 0;color:#666"><span>Netto</span><span>${eur(sumN)}</span></div><div style="display:flex;justify-content:space-between;padding:2px 0;color:#666"><span>MwSt ${ms}%</span><span>${eur(mb)}</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1pt solid #000;font-weight:700;font-size:12pt"><span>Brutto</span><span>${eur(br)}</span></div></div></div>${S.iban&&typ==="rechnung"?`<div style="margin-top:5mm;padding:4px 9px;background:#f5f5f7;font-size:8.5pt">IBAN: ${S.iban}${daten.faellig?" | Faellig: "+fd(daten.faellig):""}</div>`:""}<div class="ftr"><span>${S.firma||""}${S.inhaber?" | "+S.inhaber:""}</span><span>${[S.steuernummer&&"StNr: "+S.steuernummer,S.ust_id].filter(Boolean).join(" | ")}</span></div></body></html>`;
+const html=`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>${titel}</title><style>body{font-family:-apple-system,sans-serif;padding:18mm;font-size:10pt;color:#1D1D1F}table{width:100%;border-collapse:collapse;margin:6mm 0}th{border-bottom:1pt solid #000;padding:3px 8px;font-size:8.5pt;color:#666;text-align:left}td{border-bottom:.3pt solid #eee;padding:4px 8px}.hdr{display:flex;justify-content:space-between;margin-bottom:8mm;padding-bottom:4mm;border-bottom:.5pt solid #ccc}.ttl{font-size:20pt;font-weight:700;text-align:right}.ftr{margin-top:8mm;padding-top:3mm;border-top:.5pt solid #ccc;font-size:8pt;color:#666;display:flex;justify-content:space-between}@media print{@page{margin:18mm;size:A4}}</style></head><body><div class="hdr"><div><b style="font-size:15pt">${S.firma||"mehanicar"}</b><div style="color:#666;font-size:8.5pt;margin-top:2mm">${[S.inhaber,S.telefon].filter(Boolean).join(" | ")}</div></div><div><div class="ttl">${titel}</div><div style="color:#666;font-size:8.5pt;text-align:right;margin-top:2mm">${daten.nr||""}${daten.datum?"<br>"+fd(daten.datum):""}${daten.faellig?"<br>Faellig: "+fd(daten.faellig):""}</div></div></div>${kdName?`<div style="margin-bottom:5mm"><div style="font-size:7.5pt;color:#999;text-transform:uppercase;margin-bottom:1mm">Empfaenger</div>${kdName}</div>`:""}${fzInfo?`<div style="margin-bottom:4mm;font-size:9pt;color:#666">Fahrzeug: ${fzInfo}</div>`:""}<table><thead><tr><th>Bezeichnung</th><th style="text-align:right">Menge</th><th style="text-align:right">Einzel</th><th style="text-align:right">Gesamt</th></tr></thead><tbody>${pos}</tbody></table><div style="text-align:right;margin-top:4mm"><div style="display:inline-block;min-width:130px"><div style="display:flex;justify-content:space-between;padding:3px 0;color:#666"><span>Netto</span><span>${eur(sumN)}</span></div><div style="display:flex;justify-content:space-between;padding:3px 0;color:#666"><span>MwSt ${ms}%</span><span>${eur(mb)}</span></div><div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1pt solid #000;font-weight:700;font-size:12pt"><span>Brutto</span><span>${eur(br)}</span></div></div></div>${S.iban&&typ==="rechnung"?`<div style="margin-top:5mm;padding:5px 9px;background:#f5f5f7;font-size:8.5pt">IBAN: ${S.iban} | Faellig: ${fd(daten.faellig)}</div>`:""}<div class="ftr"><span>${S.firma||""}${S.inhaber?" | "+S.inhaber:""}</span><span>${[S.steuernummer&&"StNr: "+S.steuernummer,S.ust_id].filter(Boolean).join(" | ")}</span></div></body></html>`;
 const w=window.open("","_blank");if(!w){alert("Popup-Blocker aktiv");return;}
 w.document.write(html);w.document.close();setTimeout(()=>w.print(),400);
 }
@@ -170,15 +170,18 @@ klaerung:      {label:"Klärung",          c:"#BF5AF2", bg:"rgba(191,90,242,0.14
 wartet_teile:  {label:"Wartet auf Teile", c:"#FF6B35", bg:"rgba(255,107,53,0.14)"},
 abgeschlossen: {label:"Abgeschlossen",    c:"#30D158", bg:"rgba(48,209,88,0.14)"},
 storniert:     {label:"Storniert",        c:"#FF453A", bg:"rgba(255,69,58,0.14)"},
-photo:      `<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>`,
-whatsapp:   `<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>`,
 };
 const ICONS = {
+dashboard:    `<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>`,
 auftraege:    `<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>`,
 rechnungen:   `<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>`,
+kalender:     `<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`,
 kunden:       `<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>`,
 lager:        `<path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>`,
 finanzen:     `<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>`,
+statistik:    `<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>`,
+bewertungen:  `<polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"/>`,
+einstellungen:`<circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>`,
 fahrzeuge:    `<path d="M5 17H3a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v9a2 2 0 0 1-2 2h-2"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/>`,
 chevronL:     `<polyline points="15,18 9,12 15,6"/>`,
 chevronR:     `<polyline points="9,18 15,12 9,6"/>`,
@@ -204,6 +207,8 @@ unlock:       `<rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V
 storno:       `<circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>`,
 filter:       `<polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"/>`,
 send:         `<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/>`,
+tag:          `<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>`,
+sun:          `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>`,
 };
 function Ic({n,s=18,c="currentColor"}) {
 const d=ICONS[n];
@@ -899,26 +904,34 @@ function FahrzeugFormFelder({f,setF,withScan}){
 const [scanning,setScanning]=useState(false);
 const handleScan=async(e)=>{
 const file=_optionalChain([e, 'access', _9 => _9.target, 'access', _10 => _10.files, 'optionalAccess', _11 => _11[0]]);if(!file)return;
-const r=new FileReader();
-r.onload=async(ev)=>{
-const d=ev.target.result;
-setF(p=>({...p,fahrzeugschein:{name:file.name,type:file.type,data:d}}));
+const reader=new FileReader();
+reader.onload=async(ev)=>{
+const imgData=ev.target.result;
+setF(p=>({...p,fahrzeugschein:{name:file.name,type:file.type,data:imgData}}));
 if(!file.type.startsWith("image/"))return;
 setScanning(true);
 try{
-const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:300,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:file.type,data:d.split(",")[1]}},{type:"text",text:"Fahrzeugschein. JSON: kennzeichen,vin,marke,modell,baujahr,erstzulassung,hu_datum,kraftstoff,hubraum,kw,farbe,farb_code"}]}]})});
+const b64=imgData.split(",")[1];
+const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:file.type,data:b64}},{type:"text",text:"Fahrzeugdokument. Reines JSON: kennzeichen,vin,marke,modell,baujahr,erstzulassung(YYYY-MM-DD),hu_datum(YYYY-MM-DD),kraftstoff,hubraum,kw,farbe,farb_code. Nicht lesbare weglassen."}]}]})});
 const json=await res.json();
-const p=JSON.parse(_optionalChain([((json.content||[]).find(c=>c.type==="text")||{}), 'access', _12 => _12.text, 'optionalAccess', _13 => _13.replace, 'call', _14 => _14(/```json|```/g,""), 'access', _15 => _15.trim, 'call', _16 => _16()])||"{}");
-setF(prev=>{const u={...prev};Object.keys(p).forEach(k=>{if(p[k]&&!u[k])u[k]=String(p[k]);});return u;});
-}catch(e){console.error(e);}finally{setScanning(false);}
-};r.readAsDataURL(file);
+const parsed=JSON.parse(_optionalChain([((json.content||[]).find(c=>c.type==="text")||{}), 'access', _12 => _12.text, 'optionalAccess', _13 => _13.replace, 'call', _14 => _14(/```json|```/g,""), 'access', _15 => _15.trim, 'call', _16 => _16()])||"{}");
+setF(p=>{const u={...p};["kennzeichen","vin","marke","modell","baujahr","erstzulassung","hu_datum","kraftstoff","hubraum","kw","farbe","farb_code"].forEach(k=>{if(parsed[k]!=null&&!u[k])u[k]=String(parsed[k]);});return u;});
+}catch(e){console.error("Scan:",e);}finally{setScanning(false);}
 };
+reader.readAsDataURL(file);
+};
+
 return React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:12},}
-, withScan&&React.createElement('label', { style: {display:"flex",alignItems:"center",justifyContent:"center",gap:9,padding:"13px",background:"rgba(0,122,255,0.07)",border:"1.5px dashed rgba(0,122,255,0.3)",borderRadius:14,cursor:"pointer"},}
-, scanning?React.createElement(React.Fragment, null, React.createElement('div', { style: {width:15,height:15,borderRadius:"50%",border:"2px solid rgba(0,122,255,0.25)",borderTopColor:P.blue,animation:"spin .7s linear infinite"},}), React.createElement('span', { style: {color:P.blue,fontSize:14,fontWeight:600},}, "Felder werden ausgefüllt..."  )):React.createElement(React.Fragment, null, React.createElement(Ic, { n: "scan", s: 15, c: P.blue,}), React.createElement('span', { style: {color:P.blue,fontSize:14,fontWeight:600},}, f.fahrzeugschein?"Ersetzen":"Fahrzeugschein scannen"))
+, withScan&&React.createElement('div', null
+, React.createElement('label', { style: {display:"flex",alignItems:"center",justifyContent:"center",gap:9,padding:"14px",background:"rgba(0,122,255,0.07)",border:"1.5px dashed rgba(0,122,255,0.3)",borderRadius:14,cursor:"pointer",marginBottom:f.fahrzeugschein?"8px":"0"},}
+, scanning
+?React.createElement(React.Fragment, null, React.createElement('div', { style: {width:15,height:15,borderRadius:"50%",border:"2px solid rgba(0,122,255,0.25)",borderTopColor:P.blue,animation:"spin .7s linear infinite",flexShrink:0},}), React.createElement('span', { style: {color:P.blue,fontSize:14,fontWeight:600,fontFamily:FA},}, "Felder werden ausgefullt..."  ))
+:React.createElement(React.Fragment, null, React.createElement(Ic, { n: "scan", s: 15, c: P.blue,}), React.createElement('span', { style: {color:P.blue,fontSize:14,fontWeight:600,fontFamily:FA},}, f.fahrzeugschein?"Fahrzeugschein ersetzen":"Fahrzeugschein scannen - Felder werden ausgefullt"))
+
 , React.createElement('input', { type: "file", accept: "image/*,.pdf", onChange: handleScan, style: {display:"none"},})
 )
-, _optionalChain([f, 'access', _17 => _17.fahrzeugschein, 'optionalAccess', _18 => _18.type, 'optionalAccess', _19 => _19.startsWith, 'call', _20 => _20("image/")])&&React.createElement('img', { src: f.fahrzeugschein.data, alt: "Scan", style: {width:"100%",borderRadius:10,maxHeight:100,objectFit:"cover"},})
+, _optionalChain([f, 'access', _17 => _17.fahrzeugschein, 'optionalAccess', _18 => _18.type, 'optionalAccess', _19 => _19.startsWith, 'call', _20 => _20("image/")])&&React.createElement('img', { src: f.fahrzeugschein.data, alt: "Scan", style: {width:"100%",borderRadius:10,maxHeight:110,objectFit:"cover"},})
+)
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}
 , React.createElement(Inp, { label: "Kennzeichen *" , value: f.kennzeichen||"", onChange: v=>setF(p=>({...p,kennzeichen:v.toUpperCase()})),})
 , React.createElement(Inp, { label: "Marke *" , value: f.marke||"", onChange: v=>setF(p=>({...p,marke:v})),})
@@ -933,15 +946,19 @@ return React.createElement('div', { style: {display:"flex",flexDirection:"column
 )
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}
 , React.createElement(Sel, { label: "Kraftstoff", value: f.kraftstoff||"Benzin", onChange: v=>setF(p=>({...p,kraftstoff:v})), options: ["Benzin","Diesel","Elektro","Hybrid","Gas"].map(v=>({value:v,label:v})),})
-, React.createElement(Sel, { label: "Getriebe", value: f.getriebe||"Schaltung", onChange: v=>setF(p=>({...p,getriebe:v})), options: ["Schaltung","Automatik","DSG","CVT"].map(v=>({value:v,label:v})),})
+, React.createElement(Sel, { label: "Getriebe", value: f.getriebe||"Schaltung", onChange: v=>setF(p=>({...p,getriebe:v})), options: ["Schaltung","Automatik","DSG","CVT","Halbautomatik"].map(v=>({value:v,label:v})),})
 )
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}
 , React.createElement(Inp, { label: "kW", value: f.kw||"", onChange: v=>setF(p=>({...p,kw:v})), type: "number",})
+, React.createElement(Inp, { label: "PS", value: f.ps||"", onChange: v=>setF(p=>({...p,ps:v})), type: "number",})
+)
+, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}
 , React.createElement(Inp, { label: "Hubraum ccm" , value: f.hubraum||"", onChange: v=>setF(p=>({...p,hubraum:v})), type: "number",})
+, React.createElement(Inp, { label: "Farbe", value: f.farbe||"", onChange: v=>setF(p=>({...p,farbe:v})),})
 )
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}
 , React.createElement(Inp, { label: "Farbcode", value: f.farb_code||"", onChange: v=>setF(p=>({...p,farb_code:v})), placeholder: "z.B. 040" ,})
-, React.createElement(Inp, { label: "Reifengrösse", value: f.reifengroesse||"", onChange: v=>setF(p=>({...p,reifengroesse:v})), placeholder: "225/45 R17" ,})
+, React.createElement(Inp, { label: "Reifengrosse", value: f.reifengroesse||"", onChange: v=>setF(p=>({...p,reifengroesse:v})), placeholder: "225/45 R17" ,})
 )
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}
 , React.createElement(Inp, { label: "Erstzulassung", value: f.erstzulassung||"", onChange: v=>setF(p=>({...p,erstzulassung:v})), type: "date",})
@@ -949,7 +966,7 @@ return React.createElement('div', { style: {display:"flex",flexDirection:"column
 )
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}
 , React.createElement(Inp, { label: "AU-Datum", value: f.au_datum||"", onChange: v=>setF(p=>({...p,au_datum:v})), type: "date",})
-, React.createElement(Inp, { label: "Nächste Inspektion" , value: f.naechste_inspektion||"", onChange: v=>setF(p=>({...p,naechste_inspektion:v})), type: "date",})
+, React.createElement(Inp, { label: "Nachste Inspektion" , value: f.naechste_inspektion||"", onChange: v=>setF(p=>({...p,naechste_inspektion:v})), type: "date",})
 )
 , React.createElement(Inp, { label: "Vorbesitzer", value: f.anzahl_vorbesitzer||"", onChange: v=>setF(p=>({...p,anzahl_vorbesitzer:v})), type: "number",})
 );
@@ -987,10 +1004,7 @@ const monatU=React.useMemo(()=>(data.rechnungen||[]).filter(r=>_optionalChain([r
 const offeneP=React.useMemo(()=>(data.rechnungen||[]).filter(r=>!r.bezahlt&&!r.storniert).reduce((s,r)=>s+round2(r.brutto||0),0),[data.rechnungen]);
 const huFaellig=React.useMemo(()=>(data.fahrzeuge||[]).filter(f=>f.hu_datum&&new Date(f.hu_datum)<=new Date(Date.now()+60*24*3600000)),[data.fahrzeuge]);
 const uebFaellig=React.useMemo(()=>(data.rechnungen||[]).filter(r=>!r.bezahlt&&!r.storniert&&r.faellig&&new Date(r.faellig)<new Date()),[data.rechnungen]);
-return React.createElement(Screen, { title: "Dashboard", action: React.createElement('div', { style: {display:"flex",gap:8},}
-, React.createElement(Btn, { v: "primary", size: "sm", onClick: ()=>{setView("auftraege");},}, "+ Schnell" )
-, React.createElement(Btn, { v: "secondary", size: "sm", onClick: ()=>setSearchOpen(true),}, React.createElement(Ic, { n: "search", s: 14,}))
-),}
+return React.createElement(Screen, { title: "Dashboard", action: React.createElement(Btn, { v: "secondary", size: "sm", onClick: ()=>setSearchOpen(true),}, React.createElement(Ic, { n: "search", s: 14,})),}
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10},}
 , React.createElement(Stat, { label: "Umsatz Monat" , value: eur(monatU), color: P.green, icon: "finanzen",})
 , React.createElement(Stat, { label: "Offene Aufträge" , value: offene.length, sub: `${offene.filter(a=>a.status==="in_arbeit").length} in Arbeit`, color: P.blue, icon: "auftraege",})
@@ -1003,7 +1017,8 @@ const hd=new Date();hd.setHours(0,0,0,0);const i7=new Date(hd.getTime()+7*24*360
 const rows=[...(data.termine||[]).filter(t=>{const d=new Date(t.datum+"T12:00");return d>=hd&&d<=i7;}).slice(0,3).map(t=>{const k=(data.kunden||[]).find(x=>x.id===t.kunden_id);const isH=new Date(t.datum+"T12:00").setHours(0,0,0,0)===hd.getTime();return {c:isH?P.blue:"#C7C7CC",b:isH?"Heute":new Date(t.datum+"T12:00").toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"}),t:t.titel,s:k?k.vorname+" "+k.nachname:"",fn:()=>setView("kalender")};}),...(data.auftraege||[]).filter(a=>a.fertigstellung_geplant&&new Date(a.fertigstellung_geplant)<=i7&&a.status!=="abgeschlossen").slice(0,2).map(au=>{const k=(data.kunden||[]).find(x=>x.id===au.kunden_id);return {c:P.orange,b:"Faellig",t:au.nr+(k?" "+k.vorname:""),s:"",fn:()=>setView("auftraege")};}),...((data.rechnungen||[]).filter(r=>!r.bezahlt&&!r.storniert).length?[{c:P.red,b:(data.rechnungen||[]).filter(r=>!r.bezahlt&&!r.storniert).length+" offen",t:"Offene Rechnungen",s:"",fn:()=>setView("rechnungen")}]:[]),...((data.lager||[]).filter(l=>(l.bestand||0)<=(l.mindestbestand||0)).length?[{c:P.orange,b:"Lager",t:(data.lager||[]).filter(l=>(l.bestand||0)<=(l.mindestbestand||0)).length+" unter Mindestbestand",s:"",fn:()=>setView("lager")}]:[]),];
 if(!rows.length)return null;
 return React.createElement('div', { style: {marginBottom:0},}, React.createElement(SecH, { title: "Diese Woche" , action: React.createElement('button', { onClick: ()=>setView("kalender"), style: {background:"none",border:"none",color:P.blue,fontSize:13,cursor:"pointer",fontWeight:500},}, "Kalender"),}), React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:6},}, rows.map((row,i)=>React.createElement('div', { key: i, onClick: row.fn, style: {display:"flex",alignItems:"center",gap:10,padding:"10px 13px",background:"#fff",borderRadius:11,border:"1px solid rgba(0,0,0,0.06)",cursor:"pointer"},}, React.createElement('div', { style: {width:3,height:28,background:row.c,borderRadius:2,flexShrink:0},}), React.createElement('div', { style: {flex:1,minWidth:0},}, React.createElement(Bdg, { color: row.c, small: true,}, row.b), React.createElement('div', { style: {color:"#1D1D1F",fontSize:13,fontWeight:500,marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"},}, row.t), row.s&&React.createElement('div', { style: {color:"#AEAEB2",fontSize:11},}, row.s)), React.createElement(Ic, { n: "chevronR", s: 13, c: "#C7C7CC",})))));
-})()
+})(), "})()}"
+
 , (huFaellig.length+uebFaellig.length)>0&&React.createElement(React.Fragment, null
 , React.createElement(SecH, { title: `Erinnerungen (${huFaellig.length+uebFaellig.length})`,})
 , React.createElement(Card, { noPad: true,}
@@ -1051,8 +1066,8 @@ return `${au.nr} ${_optionalChain([k, 'optionalAccess', _34 => _34.vorname])||""
 return true;
 });
 return React.createElement(Screen, { title: tab==="kv"?"Kostenvoranschläge":"Aufträge", action: React.createElement('div', { style: {display:"flex",gap:8},}
-, tab==="kv"&&React.createElement(Btn, { size: "sm", onClick: ()=>setShowKVForm(true),}, React.createElement(Ic, { n: "plus", s: 14,}), " Neu" )
-, React.createElement(Btn, { v: "secondary", size: "sm", onClick: ()=>setShowSchnell(true),}, React.createElement(Ic, { n: "plus", s: 13,}), " Schnell" )
+, tab==="kv"&&React.createElement(Btn, { size: "sm", onClick: ()=>setShowKVForm(true),}, React.createElement(Ic, { n: "plus", s: 14,}), " Neuer KV"  )
+, tab==="auftraege"&&React.createElement(Btn, { size: "sm", onClick: ()=>setShowSchnell(true),}, React.createElement(Ic, { n: "plus", s: 14,}), " Neuer Auftrag"  )
 ),}
 , React.createElement(Switcher, { options: [{v:"kv",l:"Kostenvoranschläge"},{v:"auftraege",l:"Aufträge"}], value: tab, onChange: setTab,})
 , tab==="kv"&&React.createElement(React.Fragment, null
@@ -1318,20 +1333,53 @@ React.createElement('div', { key: l, style: {display:"flex",justifyContent:"spac
 );
 }
 function AnnahmeTab({au,onSave}){
-const [p,setP]=React.useState(au.annahme_protokoll||{km:"",tankstand:"voll",schaden:[],notizen:"",fotos:[],zeitpunkt:null});
+const proto=au.annahme_protokoll||{km:"",tankstand:"voll",schaden:[],notizen:"",fotos:[],zeitpunkt:null};
+const [p,setP]=React.useState(proto);
 const upd=v=>{const u={...p,...v};setP(u);onSave(u);};
-const B=["Frontscheibe","Heckscheibe","Motorhaube","Kofferraum","Tür VL","Tür VR","Tür HL","Tür HR","Stoßstange v","Stoßstange h","Dach","Sonstiges"];
-const [nS,setNS]=React.useState("");const [bS,setBS]=React.useState(B[0]);
-return React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:10},}
-, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}, React.createElement(Inp, { label: "KM bei Annahme"  , value: p.km||"", onChange: v=>upd({km:v}), type: "number", suffix: "km",}), React.createElement(Sel, { label: "Tankstand", value: p.tankstand||"voll", onChange: v=>upd({tankstand:v}), options: ["voll","3/4","1/2","1/4","Reserve","Leer"].map(v=>({value:v,label:v})),}))
-, React.createElement(Inp, { value: p.notizen||"", onChange: v=>upd({notizen:v}), rows: 2, placeholder: "Kundenwunsch / Hinweise..."  ,})
-, React.createElement(Card, { style: {padding:"12px 14px"},}, React.createElement('div', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,textTransform:"uppercase",marginBottom:8},}, "Schäden")
-, React.createElement('div', { style: {display:"flex",gap:7,marginBottom:7},}, React.createElement('div', { style: {flex:2},}, React.createElement(Sel, { value: bS, onChange: setBS, options: B.map(v=>({value:v,label:v})),})), React.createElement('div', { style: {flex:3},}, React.createElement(Inp, { value: nS, onChange: setNS, placeholder: "Beschreibung",})), React.createElement(Btn, { size: "md", onClick: ()=>{if(nS.trim()){upd({schaden:[...(p.schaden||[]),{id:uid(),bereich:bS,beschreibung:nS}]});setNS("");}},}, "+"))
-, (p.schaden||[]).map((s,i)=>React.createElement('div', { key: s.id, style: {display:"flex",alignItems:"center",gap:7,padding:"5px 9px",background:"#F5F5F7",borderRadius:8,marginBottom:4},}, React.createElement(Bdg, { color: P.orange, small: true,}, s.bereich), React.createElement('span', { style: {flex:1,fontSize:12},}, s.beschreibung), React.createElement('button', { onClick: ()=>upd({schaden:(p.schaden||[]).filter((_,j)=>j!==i)}), style: {background:"none",border:"none",color:"#AEAEB2",cursor:"pointer"},}, "x")))
+const BEREICHE=["Frontscheibe","Heckscheibe","Motorhaube","Kofferraum","Tuer VL","Tuer VR","Tuer HL","Tuer HR","Kotfluegel VL","Kotfluegel VR","Stossstange vorn","Stossstange hinten","Dach","Felgen","Sonstiges"];
+const [nS,setNS]=React.useState("");
+const [bSel,setBSel]=React.useState(BEREICHE[0]);
+return React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:14},}
+, React.createElement(Card, null
+, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:12},}
+, React.createElement(Inp, { label: "KM-Stand bei Annahme"  , value: p.km||"", onChange: v=>upd({km:v}), type: "number", suffix: "km",})
+, React.createElement(Sel, { label: "Tankstand", value: p.tankstand||"voll", onChange: v=>upd({tankstand:v}), options: ["voll","3/4","1/2","1/4","Reserve","Leer"].map(v=>({value:v,label:v})),})
 )
-, React.createElement('label', { style: {display:"flex",alignItems:"center",gap:8,padding:"9px",background:"rgba(0,122,255,0.06)",border:"1.5px dashed rgba(0,122,255,0.25)",borderRadius:10,cursor:"pointer"},}, React.createElement(Ic, { n: "photo", s: 13, c: P.blue,}), React.createElement('span', { style: {color:P.blue,fontSize:13,fontWeight:600},}, "Fotos"), React.createElement('input', { type: "file", accept: "image/*", multiple: true, capture: "environment", onChange: e=>{Array.from(e.target.files||[]).forEach(f=>{const r=new FileReader();r.onload=ev=>{upd({fotos:[...(p.fotos||[]),{id:uid(),data:ev.target.result}]});};r.readAsDataURL(f);});}, style: {display:"none"},}))
-, (p.fotos||[]).length>0&&React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:4},}, (p.fotos||[]).map((f,i)=>React.createElement('div', { key: f.id, style: {position:"relative",borderRadius:6,overflow:"hidden",aspectRatio:"1"},}, React.createElement('img', { src: f.data, style: {width:"100%",height:"100%",objectFit:"cover"},}), React.createElement('button', { onClick: ()=>upd({fotos:(p.fotos||[]).filter((_,j)=>j!==i)}), style: {position:"absolute",top:2,right:2,background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:17,height:17,color:"#fff",cursor:"pointer",fontSize:9},}, "x"))))
-, !p.zeitpunkt?React.createElement(Btn, { full: true, v: "primary", onClick: ()=>upd({zeitpunkt:new Date().toISOString()}),}, "Annahme abschliessen" ):React.createElement('div', { style: {padding:"8px",background:"rgba(52,199,89,0.08)",borderRadius:9,border:"1px solid rgba(52,199,89,0.2)",textAlign:"center",color:P.green,fontSize:12,fontWeight:600},}, "Annahme: " , new Date(p.zeitpunkt).toLocaleString("de-DE"))
+, React.createElement(Inp, { value: p.notizen||"", onChange: v=>upd({notizen:v}), rows: 2, placeholder: "Kundenwunsch / Besondere Hinweise..."   ,})
+)
+, React.createElement(Card, null
+, React.createElement('div', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",marginBottom:10},}, "Schaeden dokumentieren" )
+, React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:8,marginBottom:10},}
+, React.createElement(Sel, { value: bSel, onChange: setBSel, options: BEREICHE.map(v=>({value:v,label:v})),})
+, React.createElement('div', { style: {display:"flex",gap:8},}
+, React.createElement('div', { style: {flex:1},}, React.createElement(Inp, { value: nS, onChange: setNS, placeholder: "z.B. Kratzer 10cm"  ,}))
+, React.createElement(Btn, { size: "md", onClick: ()=>{if(!nS.trim())return;upd({schaden:[...(p.schaden||[]),{id:uid(),bereich:bSel,beschreibung:nS}]});setNS("");},}, "+ Hinzufuegen" )
+)
+)
+, (p.schaden||[]).length===0&&React.createElement('div', { style: {color:"#AEAEB2",fontSize:13,textAlign:"center",padding:"6px 0"},}, "Keine Schaeden dokumentiert"  )
+, (p.schaden||[]).map((s,i)=>React.createElement('div', { key: s.id, style: {display:"flex",alignItems:"center",gap:8,padding:"8px 11px",background:"#F5F5F7",borderRadius:9,marginBottom:5},}
+, React.createElement(Bdg, { color: P.orange, small: true,}, s.bereich)
+, React.createElement('span', { style: {flex:1,color:"#1D1D1F",fontSize:13},}, s.beschreibung)
+, React.createElement('button', { onClick: ()=>upd({schaden:(p.schaden||[]).filter((_,j)=>j!==i)}), style: {background:"none",border:"none",color:"#AEAEB2",cursor:"pointer",fontSize:15},}, "x")
+))
+)
+, React.createElement(Card, null
+, React.createElement('div', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",marginBottom:10},}, "Annahme-Fotos")
+, React.createElement('label', { style: {display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"10px",background:"rgba(0,122,255,0.06)",border:"1.5px dashed rgba(0,122,255,0.25)",borderRadius:10,cursor:"pointer",marginBottom:8},}
+, React.createElement(Ic, { n: "photo", s: 14, c: P.blue,}), React.createElement('span', { style: {color:P.blue,fontSize:13,fontWeight:600},}, "Fotos hinzufuegen" )
+, React.createElement('input', { type: "file", accept: "image/*", multiple: true, capture: "environment", onChange: e=>{Array.from(e.target.files||[]).forEach(f=>{const r=new FileReader();r.onload=ev=>{upd({fotos:[...(p.fotos||[]),{id:uid(),data:ev.target.result}]});};r.readAsDataURL(f);});}, style: {display:"none"},})
+)
+, (p.fotos||[]).length>0&&React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6},}
+, (p.fotos||[]).map((f,i)=>React.createElement('div', { key: f.id, style: {position:"relative",borderRadius:7,overflow:"hidden",aspectRatio:"1"},}
+, React.createElement('img', { src: f.data, alt: "", style: {width:"100%",height:"100%",objectFit:"cover"},})
+, React.createElement('button', { onClick: ()=>upd({fotos:(p.fotos||[]).filter((_,j)=>j!==i)}), style: {position:"absolute",top:3,right:3,background:"rgba(0,0,0,0.5)",border:"none",borderRadius:"50%",width:20,height:20,color:"#fff",cursor:"pointer",fontSize:11,lineHeight:1},}, "x")
+))
+)
+)
+, !p.zeitpunkt
+?React.createElement(Btn, { full: true, v: "primary", size: "lg", onClick: ()=>upd({zeitpunkt:new Date().toISOString()}),}, "Annahme abschliessen" )
+:React.createElement('div', { style: {padding:"10px",background:"rgba(52,199,89,0.08)",borderRadius:10,border:"1px solid rgba(52,199,89,0.2)",textAlign:"center",color:P.green,fontSize:13,fontWeight:600},}, "Annahme: " , new Date(p.zeitpunkt).toLocaleString("de-DE"))
+
 );
 }
 function ChecklisteTab({au,onSave}){
@@ -1461,53 +1509,97 @@ return React.createElement(Modal, { title: "Neuer Kostenvoranschlag" , onClose: 
 );
 }
 function SchnellauftragModal({onClose}){
-const {data,schnellauftragErstellen,notify,setView}=useApp();
-const [kunden_id,setKId]=useState("");
-const [fahrzeug_id,setFId]=useState("");
-const [laufkunde,setLK]=useState(false);
-const [betrag,setBetrag]=useState("");
+const {data,schnellauftragErstellen,setView}=useApp();
+const [modus,setModus]=useState("pakete");
+const [kunden_id,setKunden_id]=useState("");
+const [fahrzeug_id,setFahrzeug_id]=useState("");
+const [laufkunde,setLaufkunde]=useState(false);
 const [beschreibung,setBeschreibung]=useState("");
-const [km,setKm]=useState("");
+const [schnell_betrag,setSchnell_betrag]=useState("");
+const [pakete,setPakete]=useState([]);
+const [annahme_km,setAnnahme_km]=useState("");
 const [kmWarn,setKmWarn]=useState(false);
 const [loading2,setLoading2]=useState(false);
 const kFz=(data.fahrzeuge||[]).filter(f=>f.kunden_id===kunden_id);
 const submit=async()=>{
-if(!laufkunde&&!kunden_id){notify("Kunde waehlen","error");return;}
-if(!betrag){notify("Betrag erforderlich","error");return;}
-if(!km&&!kmWarn){setKmWarn(true);return;}
-if(parseFloat(betrag)>=250&&laufkunde&&!beschreibung){notify("Ab 250€: Name/Beschreibung Pflicht (SS33 UStDV)","error");return;}
+if(!laufkunde&&!kunden_id){useApp().notify("Kunde waehlen","error");return;}
+if(modus==="schnell"&&!schnell_betrag){useApp().notify("Betrag erforderlich","error");return;}
+if(!annahme_km&&!kmWarn){setKmWarn(true);return;}
 setLoading2(true);
-const r=await schnellauftragErstellen({kunden_id:laufkunde?"laufkunde":kunden_id,fahrzeug_id:fahrzeug_id||null,beschreibung,pakete:[],schnellmodus:true,schnell_betrag:betrag,schnell_beschreibung:beschreibung,annahme_km:km||null});
+const r=await schnellauftragErstellen({kunden_id:laufkunde?"laufkunde":kunden_id,fahrzeug_id:fahrzeug_id||null,beschreibung,pakete,schnellmodus:modus==="schnell",schnell_betrag,schnell_beschreibung:beschreibung,annahme_km:annahme_km||null});
 setLoading2(false);
 if(r){onClose();setView("auftraege");}
 };
-return React.createElement(Modal, { title: "Schnellauftrag", onClose: onClose,}
+return React.createElement(Modal, { title: "Schnellauftrag", onClose: onClose, wide: true,}
 , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:12},}
+, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10},}
+, [["pakete","Positionen"],["schnell","Direkt-Betrag"]].map(([v,l])=>(
+React.createElement('button', { key: v, onClick: ()=>setModus(v), style: {padding:"12px 8px",borderRadius:12,border:`2px solid ${modus===v?P.blue:"rgba(0,0,0,0.1)"}`,background:modus===v?"rgba(0,122,255,0.06)":"#fff",color:modus===v?P.blue:"#3C3C43",cursor:"pointer",fontSize:13,fontWeight:modus===v?700:400},}
+, l
+)
+))
+)
 , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center"},}
 , React.createElement('span', { style: {color:"#6E6E73",fontSize:12,fontWeight:600,letterSpacing:0.4,textTransform:"uppercase"},}, "Kunde")
-, React.createElement('button', { onClick: ()=>{setLK(v=>!v);setKId("");}, style: {background:"none",border:"none",color:laufkunde?P.orange:P.blue,fontSize:13,cursor:"pointer",fontWeight:600},}, laufkunde?"Kundenliste":"Laufkunde (anonym)")
+, React.createElement('button', { onClick: ()=>{setLaufkunde(v=>!v);setKunden_id("");}, style: {background:"none",border:"none",color:laufkunde?P.orange:P.blue,fontSize:13,cursor:"pointer",fontWeight:600},}, laufkunde?"Kundenliste":"Laufkunde (anonym)")
 )
-, laufkunde?React.createElement('div', { style: {padding:"9px 12px",background:"rgba(255,149,0,0.07)",border:"1px solid rgba(255,149,0,0.2)",borderRadius:10},}, React.createElement('div', { style: {color:P.orange,fontSize:12,fontWeight:600},}, "Laufkunde / Bar - ab 250€ Beschreibung Pflicht"       ))
-:React.createElement(KundenSuche, { kunden: data.kunden||[], value: kunden_id, onChange: v=>{setKId(v);setFId("");},})
-, kunden_id&&!laufkunde&&React.createElement(Sel, { label: "Fahrzeug (optional)" , value: fahrzeug_id, onChange: setFId, options: [{value:"",label:"Kein Fahrzeug"},...kFz.map(f=>({value:f.id,label:f.kennzeichen+" "+( f.marke||"")}))],})
-, kmWarn?React.createElement('div', { style: {padding:"10px 12px",background:"rgba(255,149,0,0.07)",border:"1.5px solid rgba(255,149,0,0.3)",borderRadius:10},}
+, laufkunde
+?React.createElement('div', { style: {padding:"10px 12px",background:"rgba(255,149,0,0.07)",border:"1px solid rgba(255,149,0,0.2)",borderRadius:11},}, React.createElement('div', { style: {color:P.orange,fontSize:13,fontWeight:600,marginBottom:4},}, "Laufkunde / Barzahlung"  ), React.createElement('div', { style: {color:"#6E6E73",fontSize:12},}, "Ab 250\\u20AC Pflicht: Name eintragen"    ))
+:React.createElement(KundenSuche, { kunden: data.kunden||[], value: kunden_id, onChange: v=>{setKunden_id(v);setFahrzeug_id("");},})
+
+, kunden_id&&!laufkunde&&React.createElement(Sel, { label: "Fahrzeug (optional)" , value: fahrzeug_id, onChange: setFahrzeug_id, options: [{value:"",label:"Kein Fahrzeug"},...kFz.map(f=>({value:f.id,label:`${f.kennzeichen} ${f.marke||""}`}))],})
+, kmWarn
+?React.createElement('div', { style: {padding:"11px 12px",background:"rgba(255,149,0,0.07)",border:"1.5px solid rgba(255,149,0,0.3)",borderRadius:11},}
 , React.createElement('div', { style: {color:P.orange,fontSize:13,fontWeight:600,marginBottom:8},}, "KM-Stand nicht eingetragen"  )
-, React.createElement('div', { style: {display:"flex",gap:9,alignItems:"flex-end"},}, React.createElement('div', { style: {flex:1},}, React.createElement(Inp, { label: "KM-Stand", value: km, onChange: setKm, type: "number", suffix: "km",})), React.createElement(Btn, { v: "ghost", size: "md", onClick: ()=>{setKmWarn(false);submit();},}, "Überspringen"))
-):React.createElement(Inp, { label: "KM-Stand (optional)" , value: km, onChange: setKm, type: "number", suffix: "km",})
-, React.createElement(Inp, { label: "Beschreibung *" , value: beschreibung, onChange: setBeschreibung, placeholder: "z.B. Ölwechsel + Filter"   ,})
-, React.createElement(Inp, { label: "Brutto-Betrag *" , value: betrag, onChange: setBetrag, type: "number", suffix: "€", note: "Direktbetrag - wird als Rechnungsbetrag verwendet"     ,})
+, React.createElement('div', { style: {display:"flex",gap:9,alignItems:"flex-end"},}
+, React.createElement('div', { style: {flex:1},}, React.createElement(Inp, { label: "KM-Stand", value: annahme_km, onChange: setAnnahme_km, type: "number", suffix: "km",}))
+, React.createElement(Btn, { v: "ghost", size: "md", onClick: ()=>{setKmWarn(false);submit();},}, "Ueberspringen")
+)
+)
+:React.createElement(Inp, { label: "KM-Stand (optional)" , value: annahme_km, onChange: setAnnahme_km, type: "number", suffix: "km",})
+
+, modus==="schnell"
+?React.createElement(React.Fragment, null, React.createElement(Inp, { label: "Beschreibung *" , value: beschreibung, onChange: setBeschreibung, placeholder: "z.B. Oelwechsel + Filter"   ,})
+, React.createElement(Inp, { label: "Brutto-Betrag *" , value: schnell_betrag, onChange: setSchnell_betrag, type: "number", suffix: "EUR",}))
+:React.createElement(React.Fragment, null, React.createElement(Inp, { label: "Beschreibung", value: beschreibung, onChange: setBeschreibung,})
+, React.createElement(PaketeEditor, { pakete: pakete, onChange: setPakete, settings: data.settings,}))
+
 , React.createElement(Btn, { full: true, size: "lg", onClick: submit,}, loading2?"Erstelle...":"Auftrag erstellen")
-));
+)
+);
 }
 function Rechnungen(){
 const {data,rechnungBezahlen,stornoRechnung,notify}=useApp();
 const [selId,setSelId]=useState(null);
+const [filterRe,setFilterRe]=useState("");
+const [filterStatus,setFilterStatus]=useState("alle");
 const sel=selId?(data.rechnungen||[]).find(r=>r.id===selId):null;
 if(sel) return React.createElement(RechnungDetail, { re: sel, onBack: ()=>setSelId(null),});
-const liste=(data.rechnungen||[]).filter(r=>!r.storno_von); // Stornorechnungen separat
+const liste=(data.rechnungen||[]).filter(r=>{
+  if(r.storno_von) return false;
+  if(filterStatus==="offen"&&(r.bezahlt||r.storniert)) return false;
+  if(filterStatus==="bezahlt"&&!r.bezahlt) return false;
+  if(filterStatus==="ueberfaellig"&&!(getMahnStufe(r))) return false;
+  if(filterRe){
+    const k=(data.kunden||[]).find(x=>x.id===r.kunden_id);
+    const ql=filterRe.toLowerCase();
+    return `${r.nr} ${_optionalChain([k, 'optionalAccess', _50 => _50.vorname])||""} ${_optionalChain([k, 'optionalAccess', _51 => _51.nachname])||""} ${r.beschreibung||""}`.toLowerCase().includes(ql);
+  }
+  return true;
+}); // Stornorechnungen separat
 const gO=liste.filter(r=>!r.bezahlt&&!r.storniert).reduce((s,r)=>s+(r.brutto||0),0);
 const gB=liste.filter(r=>r.bezahlt&&!r.storniert).reduce((s,r)=>s+(r.brutto||0),0);
 return React.createElement(Screen, { title: "Rechnungen",}
+, React.createElement('div', { style: {position:"relative",marginBottom:8},}
+, React.createElement('input', { value: filterRe, onChange: e=>setFilterRe(e.target.value), placeholder: "Nr., Kundenname suchen..."  , style: {width:"100%",background:"#fff",border:"1px solid rgba(60,60,67,0.2)",borderRadius:12,padding:"11px 14px 11px 40px",fontSize:14,color:"#1D1D1F",outline:"none",boxSizing:"border-box"},})
+, React.createElement('div', { style: {position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"},}, React.createElement(Ic, { n: "search", s: 16, c: "#AEAEB2",}))
+, filterRe&&React.createElement('button', { onClick: ()=>setFilterRe(""), style: {position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"rgba(120,120,128,0.2)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",color:"#6E6E73",fontSize:13},}, "x")
+)
+, React.createElement('div', { style: {display:"flex",gap:7,marginBottom:12,overflowX:"auto",paddingBottom:2},}
+, [["alle","Alle"],["offen","Offen"],["bezahlt","Bezahlt"],["ueberfaellig","Ueberfaellig"]].map(([v,l])=>(
+React.createElement('button', { key: v, onClick: ()=>setFilterStatus(v), style: {padding:"7px 14px",borderRadius:20,border:"none",background:filterStatus===v?P.blue:"rgba(0,0,0,0.06)",color:filterStatus===v?"#fff":"#6E6E73",cursor:"pointer",fontSize:13,fontWeight:filterStatus===v?600:400,whiteSpace:"nowrap",flexShrink:0},}, l)
+))
+)
 , React.createElement('div', { style: {padding:"11px 14px",background:"rgba(48,209,88,0.07)",border:`1px solid rgba(48,209,88,0.2)`,borderRadius:12,marginBottom:14,display:"flex",gap:9},}
 , React.createElement(Ic, { n: "rechnungen", s: 15, c: P.green,})
 , React.createElement('span', { style: {color:"#6E6E73",fontSize:13,lineHeight:1.4},}, "Rechnungen entstehen automatisch wenn du Pakete eines Auftrags abrechnest. Bezahlte Pakete sind gesperrt - Änderungen nur per Stornorechnung."                 )
@@ -1530,7 +1622,7 @@ return React.createElement(Card, { key: r.id, style: {padding:"15px",opacity:r.s
 , r.storniert&&React.createElement(Bdg, { color: P.red, small: true,}, "Storniert")
 )
 , React.createElement('div', { style: {color:"#1D1D1F",fontSize:16,fontWeight:700},}, eur(r.brutto||0))
-, React.createElement('div', { style: {color:"#6E6E73",fontSize:12,marginTop:3},}, _optionalChain([k, 'optionalAccess', _50 => _50.vorname])||"", " " , _optionalChain([k, 'optionalAccess', _51 => _51.nachname])||"")
+, React.createElement('div', { style: {color:"#6E6E73",fontSize:12,marginTop:3},}, _optionalChain([k, 'optionalAccess', _52 => _52.vorname])||"", " " , _optionalChain([k, 'optionalAccess', _53 => _53.nachname])||"")
 )
 , React.createElement('div', { style: {textAlign:"right",flexShrink:0},}
 , (()=>{const ms=getMahnStufe(r);if(r.storniert)return React.createElement(Bdg, { color: P.red,}, "Storniert");if(r.bezahlt)return React.createElement(Bdg, { color: P.green,}, "Bezahlt");if(ms)return React.createElement(Bdg, { color: ms.color,}, ms.label);return React.createElement(Bdg, { color: P.orange,}, "Offen");})()
@@ -1559,13 +1651,13 @@ const k=(data.kunden||[]).find(x=>x.id===re.kunden_id);
 const au=(data.auftraege||[]).find(x=>x.id===re.auftrags_id);
 const save=async()=>{await updateRow("rechnungen",re.id,form);setEditing(false);notify("Rechnung aktualisiert ");};
 const sendMail=()=>{
-if(!_optionalChain([k, 'optionalAccess', _52 => _52.email])){notify("Keine E-Mail beim Kunden","error");return;}
+if(!_optionalChain([k, 'optionalAccess', _54 => _54.email])){notify("Keine E-Mail beim Kunden","error");return;}
 const sub=encodeURIComponent(`Rechnung ${re.nr}`);
-const body=encodeURIComponent(`Guten Tag ${k.vorname} ${k.nachname},\n\nbitte überweisen Sie ${eur(re.brutto)} bis zum ${dat(re.faellig)}.\n\nRechnung: ${re.nr}\n\nMit freundlichen Grüßen\n${_optionalChain([data, 'access', _53 => _53.settings, 'optionalAccess', _54 => _54.inhaber])||"mehanicar"}`);
+const body=encodeURIComponent(`Guten Tag ${k.vorname} ${k.nachname},\n\nbitte überweisen Sie ${eur(re.brutto)} bis zum ${dat(re.faellig)}.\n\nRechnung: ${re.nr}\n\nMit freundlichen Grüßen\n${_optionalChain([data, 'access', _55 => _55.settings, 'optionalAccess', _56 => _56.inhaber])||"mehanicar"}`);
 window.open(`mailto:${k.email}?subject=${sub}&body=${body}`);
 };
 return React.createElement(Screen, { title: re.nr, onBack: onBack, action: React.createElement('div', { style: {display:"flex",gap:8},}
-, _optionalChain([k, 'optionalAccess', _55 => _55.email])&&React.createElement(Btn, { v: "blue_out", size: "sm", onClick: sendMail,}, React.createElement(Ic, { n: "send", s: 13, c: P.blue,}))
+, _optionalChain([k, 'optionalAccess', _57 => _57.email])&&React.createElement(Btn, { v: "blue_out", size: "sm", onClick: sendMail,}, React.createElement(Ic, { n: "send", s: 13, c: P.blue,}))
 , React.createElement(Btn, { v: "ghost", size: "sm", onClick: ()=>shareRechnung({re,kunde:k,settings:data.settings}),}, React.createElement(Ic, { n: "whatsapp", s: 14, c: "#25D366",}))
 , React.createElement(Btn, { v: "ghost", size: "sm", onClick: ()=>printDokument({typ:re.storniert?"stornorechnung":"rechnung",daten:re,settings:data.settings,kunde:k,fahrzeug:(()=>{const au2=(data.auftraege||[]).find(a=>a.id===re.auftrags_id);return au2?(data.fahrzeuge||[]).find(f=>f.id===au2.fahrzeug_id):null;})()}),}, React.createElement(Ic, { n: "download", s: 14,}))
 , !re.bezahlt&&!re.storniert&&React.createElement(Btn, { v: "ghost", size: "sm", onClick: ()=>setEditing(v=>!v),}, React.createElement(Ic, { n: "edit", s: 14,}))
@@ -1609,7 +1701,7 @@ const {data,addRow,deleteRow,notify}=useApp();
 const [showForm,setShowForm]=useState(false);
 const [nT,setNT]=useState({titel:"",kunden_id:"",datum:tod(),uhrzeit_von:"08:00",uhrzeit_bis:"09:00",typ:"inspektion",notiz:""});
 const sorted=[...(data.termine||[])].sort((a,b)=>a.datum>b.datum?1:-1);
-const grouped=sorted.reduce((acc,t)=>{const m=_optionalChain([t, 'access', _56 => _56.datum, 'optionalAccess', _57 => _57.slice, 'call', _58 => _58(0,7)])||"";(acc[m]=acc[m]||[]).push(t);return acc;},{});
+const grouped=sorted.reduce((acc,t)=>{const m=_optionalChain([t, 'access', _58 => _58.datum, 'optionalAccess', _59 => _59.slice, 'call', _60 => _60(0,7)])||"";(acc[m]=acc[m]||[]).push(t);return acc;},{});
 const tcol={inspektion:P.blue,reifenwechsel:P.green,reparatur:P.orange,abholung:P.purple};
 const kFz=(data.fahrzeuge||[]).filter(f=>f.kunden_id===nT.kunden_id);
 const addT=async()=>{if(!nT.titel||!nT.datum){notify("Titel + Datum erforderlich","error");return;}await addRow("termine",{id:uid(),...nT});setShowForm(false);notify("Termin gespeichert ");};
@@ -1623,7 +1715,7 @@ React.createElement('div', { key: m,}
 const k=(data.kunden||[]).find(x=>x.id===t.kunden_id),tc=tcol[t.typ]||P.blue;
 return React.createElement('div', { key: t.id, style: {display:"flex",gap:13,padding:"13px 15px",borderBottom:i<arr.length-1?`1px solid ${P.border}`:"none",alignItems:"flex-start"},}
 , React.createElement('div', { style: {width:44,flexShrink:0,textAlign:"center",paddingTop:2},}
-, React.createElement('div', { style: {color:tc,fontSize:18,fontWeight:700,lineHeight:1},}, _optionalChain([t, 'access', _59 => _59.datum, 'optionalAccess', _60 => _60.slice, 'call', _61 => _61(8)])||"-")
+, React.createElement('div', { style: {color:tc,fontSize:18,fontWeight:700,lineHeight:1},}, _optionalChain([t, 'access', _61 => _61.datum, 'optionalAccess', _62 => _62.slice, 'call', _63 => _63(8)])||"-")
 , React.createElement('div', { style: {color:"#AEAEB2",fontSize:10,marginTop:2},}, new Date(t.datum+"T12:00:00").toLocaleDateString("de-DE",{weekday:"short"}))
 )
 , React.createElement('div', { style: {flex:1,minWidth:0},}
@@ -1784,7 +1876,7 @@ return React.createElement('div', { style: {display:"flex",flexDirection:"column
 }
 function FahrzeugNeuForm({onClose}){
 const {data,addRow,notify}=useApp();
-const [f,setF]=useState({kunden_id:_optionalChain([(data.kunden||[]), 'access', _62 => _62[0], 'optionalAccess', _63 => _63.id])||"",kennzeichen:"",vin:"",marke:"",modell:"",baujahr:String(new Date().getFullYear()),kraftstoff:"Benzin",km:"",hu_datum:"",au_datum:"",hubraum:"",kw:"",ps:"",getriebe:"Schaltung",farbe:"",farb_code:"",reifengroesse:"",erstzulassung:"",naechste_inspektion:"",anzahl_vorbesitzer:"",fahrzeugschein:null});
+const [f,setF]=useState({kunden_id:_optionalChain([(data.kunden||[]), 'access', _64 => _64[0], 'optionalAccess', _65 => _65.id])||"",kennzeichen:"",vin:"",marke:"",modell:"",baujahr:String(new Date().getFullYear()),kraftstoff:"Benzin",km:"",hu_datum:"",au_datum:"",hubraum:"",kw:"",ps:"",getriebe:"Schaltung",farbe:"",farb_code:"",reifengroesse:"",erstzulassung:"",naechste_inspektion:"",anzahl_vorbesitzer:"",fahrzeugschein:null});
 const save=async()=>{
 if(!f.kennzeichen||!f.marke){notify("Kennzeichen + Marke erforderlich","error");return;}
 await addRow("fahrzeuge",{id:uid(),...f,km:parseInt(f.km)||0,baujahr:parseInt(f.baujahr)||new Date().getFullYear(),letzte_inspektion:null,notizen:""});
@@ -1846,7 +1938,7 @@ useEffect(()=>{setEf({...fz});},[fz.id]);
 const k=(data.kunden||[]).find(x=>x.id===fz.kunden_id);
 const fzA=(data.auftraege||[]).filter(a=>a.fahrzeug_id===fz.id);
 const handleScan=async(e)=>{
-const file=_optionalChain([e, 'access', _64 => _64.target, 'access', _65 => _65.files, 'optionalAccess', _66 => _66[0]]);if(!file)return;
+const file=_optionalChain([e, 'access', _66 => _66.target, 'access', _67 => _67.files, 'optionalAccess', _68 => _68[0]]);if(!file)return;
 const reader=new FileReader();
 reader.onload=async(ev)=>{
 const imgData=ev.target.result;
@@ -1857,7 +1949,7 @@ try{
 const b64=imgData.split(",")[1];
 const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:file.type,data:b64}},{type:"text",text:"Fahrzeugdokument. JSON: kennzeichen,vin,marke,modell,baujahr,erstzulassung(YYYY-MM-DD),hu_datum(YYYY-MM-DD),kraftstoff,hubraum,kw,farbe,farb_code."}]}]})});
 const json=await res.json();
-const parsed=JSON.parse(_optionalChain([((json.content||[]).find(c=>c.type==="text")||{}), 'access', _67 => _67.text, 'optionalAccess', _68 => _68.replace, 'call', _69 => _69(/```json|```/g,""), 'access', _70 => _70.trim, 'call', _71 => _71()])||"{}");
+const parsed=JSON.parse(_optionalChain([((json.content||[]).find(c=>c.type==="text")||{}), 'access', _69 => _69.text, 'optionalAccess', _70 => _70.replace, 'call', _71 => _71(/```json|```/g,""), 'access', _72 => _72.trim, 'call', _73 => _73()])||"{}");
 const upd={fahrzeugschein:{name:file.name,type:file.type,data:imgData}};
 ["kennzeichen","vin","marke","modell","baujahr","erstzulassung","hu_datum","kraftstoff","hubraum","kw","farbe","farb_code"].forEach(k=>{if(parsed[k]!=null&&!fz[k])upd[k]=String(parsed[k]);});
 updateRow("fahrzeuge",fz.id,upd);notify("Felder ausgefuellt");
@@ -1880,8 +1972,8 @@ return React.createElement(Screen, { title: fz.kennzeichen, onBack: onBack, acti
 , React.createElement('input', { type: "file", accept: "image/*,.pdf", onChange: handleScan, style: {display:"none"},})
 )
 )
-, _optionalChain([fz, 'access', _72 => _72.fahrzeugschein, 'optionalAccess', _73 => _73.type, 'optionalAccess', _74 => _74.startsWith, 'call', _75 => _75("image/")])&&React.createElement('img', { src: fz.fahrzeugschein.data, alt: "FS", style: {width:"100%",borderRadius:10,maxHeight:200,objectFit:"cover"},})
-, fz.fahrzeugschein&&!_optionalChain([fz, 'access', _76 => _76.fahrzeugschein, 'access', _77 => _77.type, 'optionalAccess', _78 => _78.startsWith, 'call', _79 => _79("image/")])&&React.createElement('a', { href: fz.fahrzeugschein.data, download: fz.fahrzeugschein.name, style: {display:"flex",alignItems:"center",gap:8,color:P.blue,textDecoration:"none",fontSize:13},}, React.createElement(Ic, { n: "download", s: 16, c: P.blue,}), " " , fz.fahrzeugschein.name)
+, _optionalChain([fz, 'access', _74 => _74.fahrzeugschein, 'optionalAccess', _75 => _75.type, 'optionalAccess', _76 => _76.startsWith, 'call', _77 => _77("image/")])&&React.createElement('img', { src: fz.fahrzeugschein.data, alt: "FS", style: {width:"100%",borderRadius:10,maxHeight:200,objectFit:"cover"},})
+, fz.fahrzeugschein&&!_optionalChain([fz, 'access', _78 => _78.fahrzeugschein, 'access', _79 => _79.type, 'optionalAccess', _80 => _80.startsWith, 'call', _81 => _81("image/")])&&React.createElement('a', { href: fz.fahrzeugschein.data, download: fz.fahrzeugschein.name, style: {display:"flex",alignItems:"center",gap:8,color:P.blue,textDecoration:"none",fontSize:13},}, React.createElement(Ic, { n: "download", s: 16, c: P.blue,}), " " , fz.fahrzeugschein.name)
 , !fz.fahrzeugschein&&React.createElement('div', { style: {color:"#AEAEB2",fontSize:13,marginTop:6},}, "Noch nicht hinterlegt"  )
 )
 , editing?(
@@ -1952,12 +2044,12 @@ const [nE,setNE]=useState({beschreibung:"",betrag:"",typ:"einnahme",kategorie:"R
 const kassen=data.kassenbuch||[];
 const saldo=kassen.reduce((s,k)=>s+(k.typ==="einnahme"?1:-1)*(k.betrag||0),0);
 const monat=new Date().toISOString().slice(0,7);
-const monatE=kassen.filter(k=>_optionalChain([k, 'access', _80 => _80.datum, 'optionalAccess', _81 => _81.startsWith, 'call', _82 => _82(monat)])&&k.typ==="einnahme").reduce((s,k)=>s+(k.betrag||0),0);
-const monatA=kassen.filter(k=>_optionalChain([k, 'access', _83 => _83.datum, 'optionalAccess', _84 => _84.startsWith, 'call', _85 => _85(monat)])&&k.typ==="ausgabe").reduce((s,k)=>s+(k.betrag||0),0);
+const monatE=kassen.filter(k=>_optionalChain([k, 'access', _82 => _82.datum, 'optionalAccess', _83 => _83.startsWith, 'call', _84 => _84(monat)])&&k.typ==="einnahme").reduce((s,k)=>s+(k.betrag||0),0);
+const monatA=kassen.filter(k=>_optionalChain([k, 'access', _85 => _85.datum, 'optionalAccess', _86 => _86.startsWith, 'call', _87 => _87(monat)])&&k.typ==="ausgabe").reduce((s,k)=>s+(k.betrag||0),0);
 const addE=async()=>{if(!nE.beschreibung||!nE.betrag){notify("Pflichtfelder fehlen","error");return;}await addRow("kassenbuch",{id:uid(),...nE,betrag:parseFloat(nE.betrag)||0});setNE(p=>({...p,beschreibung:"",betrag:""}));notify("Gebucht ");};
-const jEinn=(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.storniert&&_optionalChain([r, 'access', _86 => _86.bezahlt_am, 'optionalAccess', _87 => _87.startsWith, 'call', _88 => _88(String(yr()))])).reduce((s,r)=>s+(r.netto||0),0);
-const jAusg=kassen.filter(k=>_optionalChain([k, 'access', _89 => _89.datum, 'optionalAccess', _90 => _90.startsWith, 'call', _91 => _91(String(yr()))])&&k.typ==="ausgabe").reduce((s,k)=>s+(k.betrag||0),0);
-const jMwst=(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.storniert&&_optionalChain([r, 'access', _92 => _92.bezahlt_am, 'optionalAccess', _93 => _93.startsWith, 'call', _94 => _94(String(yr()))])).reduce((s,r)=>s+(r.mwst_betrag||0),0);
+const jEinn=(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.storniert&&_optionalChain([r, 'access', _88 => _88.bezahlt_am, 'optionalAccess', _89 => _89.startsWith, 'call', _90 => _90(String(yr()))])).reduce((s,r)=>s+(r.netto||0),0);
+const jAusg=kassen.filter(k=>_optionalChain([k, 'access', _91 => _91.datum, 'optionalAccess', _92 => _92.startsWith, 'call', _93 => _93(String(yr()))])&&k.typ==="ausgabe").reduce((s,k)=>s+(k.betrag||0),0);
+const jMwst=(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.storniert&&_optionalChain([r, 'access', _94 => _94.bezahlt_am, 'optionalAccess', _95 => _95.startsWith, 'call', _96 => _96(String(yr()))])).reduce((s,r)=>s+(r.mwst_betrag||0),0);
 const TABS2=[{v:"kassenbuch",l:"Kassenbuch"},{v:"euer",l:"EÜR"},{v:"backup",l:"Backup"}];
 return React.createElement(Screen, { title: "Finanzen",}
 , React.createElement(Tabs, { tabs: TABS2, active: tab2, onChange: setTab2,})
@@ -1990,11 +2082,11 @@ React.createElement('div', { key: l, style: {display:"flex",justifyContent:"spac
 , tab2==="ust"&&React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:14},}
 , React.createElement('div', { style: {display:"flex",gap:10,alignItems:"center"},}
 , React.createElement(Sel, { label: "Jahr", value: ustJahr, onChange: setUstJahr, options: [String(new Date().getFullYear()),String(new Date().getFullYear()-1),String(new Date().getFullYear()-2)].map(v=>({value:v,label:v})),})
-, React.createElement(Btn, { v: "secondary", size: "sm", onClick: ()=>{const jahr=parseInt(ustJahr);const re=(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.storniert&&_optionalChain([r, 'access', _95 => _95.bezahlt_am, 'optionalAccess', _96 => _96.startsWith, 'call', _97 => _97(String(jahr))]));const rows=[["Quartal","Netto","MwSt","Brutto","Anz"]];for(let q=1;q<=4;q++){const m1=(q-1)*3+1;const m2=m1+2;const qR=re.filter(r=>{const m=parseInt(_optionalChain([r, 'access', _98 => _98.bezahlt_am, 'optionalAccess', _99 => _99.slice, 'call', _100 => _100(5,7)]));return m>=m1&&m<=m2;});rows.push(["Q"+q+"/"+jahr,qR.reduce((s,r)=>s+round2(r.netto||0),0).toFixed(2),qR.reduce((s,r)=>s+round2(r.mwst_betrag||0),0).toFixed(2),qR.reduce((s,r)=>s+round2(r.brutto||0),0).toFixed(2),qR.length]);}const csv=rows.map(r=>r.join(";")).join("\n");const blob=new Blob([""+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="UStVA_"+jahr+".csv";a.click();URL.revokeObjectURL(url);},}, "CSV Export" )
+, React.createElement(Btn, { v: "secondary", size: "sm", onClick: ()=>{const jahr=parseInt(ustJahr);const re=(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.storniert&&_optionalChain([r, 'access', _97 => _97.bezahlt_am, 'optionalAccess', _98 => _98.startsWith, 'call', _99 => _99(String(jahr))]));const rows=[["Quartal","Netto","MwSt","Brutto","Anz"]];for(let q=1;q<=4;q++){const m1=(q-1)*3+1;const m2=m1+2;const qR=re.filter(r=>{const m=parseInt(_optionalChain([r, 'access', _100 => _100.bezahlt_am, 'optionalAccess', _101 => _101.slice, 'call', _102 => _102(5,7)]));return m>=m1&&m<=m2;});rows.push(["Q"+q+"/"+jahr,qR.reduce((s,r)=>s+round2(r.netto||0),0).toFixed(2),qR.reduce((s,r)=>s+round2(r.mwst_betrag||0),0).toFixed(2),qR.reduce((s,r)=>s+round2(r.brutto||0),0).toFixed(2),qR.length]);}const csv=rows.map(r=>r.join(";")).join("\n");const blob=new Blob([""+csv],{type:"text/csv;charset=utf-8"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="UStVA_"+jahr+".csv";a.click();URL.revokeObjectURL(url);},}, "CSV Export" )
 )
 , React.createElement(Card, null
 , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:0},}
-, [1,2,3,4].map(q=>{const m1=(q-1)*3+1;const m2=m1+2;const jr=parseInt(ustJahr);const qR=(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.storniert&&_optionalChain([r, 'access', _101 => _101.bezahlt_am, 'optionalAccess', _102 => _102.startsWith, 'call', _103 => _103(String(jr))])&&parseInt(_optionalChain([r, 'access', _104 => _104.bezahlt_am, 'optionalAccess', _105 => _105.slice, 'call', _106 => _106(5,7)]))>=m1&&parseInt(_optionalChain([r, 'access', _107 => _107.bezahlt_am, 'optionalAccess', _108 => _108.slice, 'call', _109 => _109(5,7)]))<=m2);const n=qR.reduce((s,r)=>s+round2(r.netto||0),0);const mw=qR.reduce((s,r)=>s+round2(r.mwst_betrag||0),0);const br=qR.reduce((s,r)=>s+round2(r.brutto||0),0);
+, [1,2,3,4].map(q=>{const m1=(q-1)*3+1;const m2=m1+2;const jr=parseInt(ustJahr);const qR=(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.storniert&&_optionalChain([r, 'access', _103 => _103.bezahlt_am, 'optionalAccess', _104 => _104.startsWith, 'call', _105 => _105(String(jr))])&&parseInt(_optionalChain([r, 'access', _106 => _106.bezahlt_am, 'optionalAccess', _107 => _107.slice, 'call', _108 => _108(5,7)]))>=m1&&parseInt(_optionalChain([r, 'access', _109 => _109.bezahlt_am, 'optionalAccess', _110 => _110.slice, 'call', _111 => _111(5,7)]))<=m2);const n=qR.reduce((s,r)=>s+round2(r.netto||0),0);const mw=qR.reduce((s,r)=>s+round2(r.mwst_betrag||0),0);const br=qR.reduce((s,r)=>s+round2(r.brutto||0),0);
 return React.createElement('div', { key: q, style: {display:"grid",gridTemplateColumns:"60px 1fr 1fr 1fr 1fr",gap:8,padding:"10px 0",borderBottom:q<4?"1px solid rgba(0,0,0,0.05)":"none",alignItems:"center"},}
 , React.createElement('span', { style: {color:P.blue,fontSize:13,fontWeight:700},}, "Q", q)
 , React.createElement('span', { style: {color:"#6E6E73",fontSize:12},}, qR.length, " RE" )
@@ -2020,27 +2112,36 @@ return React.createElement('div', { key: q, style: {display:"grid",gridTemplateC
 }
 function Statistiken(){
 const {data}=useApp();
-const yr=new Date().getFullYear();
-const months=["J","F","M","A","M","J","J","A","S","O","N","D"];
-const mData=months.map((_,i)=>{const m=String(i+1).padStart(2,"0");return(data.rechnungen||[]).filter(r=>!r.storniert&&_optionalChain([r, 'access', _110 => _110.datum, 'optionalAccess', _111 => _111.startsWith, 'call', _112 => _112(yr+"-"+m)])).reduce((s,r)=>s+round2(r.brutto||0),0);});
-const gesU=mData.reduce((s,v)=>s+v,0);
-const auCnt=(data.auftraege||[]).filter(a=>_optionalChain([a, 'access', _113 => _113.erstellt, 'optionalAccess', _114 => _114.startsWith, 'call', _115 => _115(String(yr))])).length;
-const kvCnt=(data.angebote||[]).filter(a=>_optionalChain([a, 'access', _116 => _116.erstellt, 'optionalAccess', _117 => _117.startsWith, 'call', _118 => _118(String(yr))])).length;
-const maxV=Math.max(...mData,1);
+const monate=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+const monatData=monate.map((_,i)=>{const m=String(i+1).padStart(2,"0");return{u:(data.rechnungen||[]).filter(r=>!r.storniert&&_optionalChain([r, 'access', _112 => _112.datum, 'optionalAccess', _113 => _113.includes, 'call', _114 => _114(`-${m}-`)])).reduce((s,r)=>s+(r.brutto||0),0)};});
+const maxU=Math.max(...monatData.map(d=>d.u),1);
+const gesamtU=(data.rechnungen||[]).filter(r=>!r.storniert).reduce((s,r)=>s+(r.brutto||0),0);
+const gesamtAU=(data.auftraege||[]).length;
+const abg=(data.auftraege||[]).filter(a=>a.status==="abgeschlossen").length;
+const topK=(data.kunden||[]).map(k=>{const u=(data.rechnungen||[]).filter(r=>r.kunden_id===k.id&&!r.storniert).reduce((s,r)=>s+(r.brutto||0),0);return{...k,u};}).sort((a,b)=>b.u-a.u).slice(0,5);
 return React.createElement(Screen, { title: "Statistiken",}
-, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:14},}
-, React.createElement(Stat, { label: "Gesamtumsatz", value: eur(gesU), color: P.green,})
-, React.createElement(Stat, { label: "Aufträge", value: String(auCnt),})
-, React.createElement(Stat, { label: "Abschlussquote", value: kvCnt>0?Math.round(auCnt/kvCnt*100)+"%":"0%",})
-, React.createElement(Stat, { label: "Durchschnitt", value: auCnt>0?eur(round2(gesU/auCnt)):eur(0),})
+, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16},}
+, React.createElement(Stat, { label: "Gesamtumsatz", value: eur(gesamtU), color: P.green, icon: "finanzen",})
+, React.createElement(Stat, { label: "Aufträge", value: gesamtAU, color: P.blue, icon: "auftraege",})
+, React.createElement(Stat, { label: "o Auftragswert" , value: eur(gesamtAU>0?gesamtU/gesamtAU:0), color: P.purple, icon: "statistik",})
+, React.createElement(Stat, { label: "Abschlussquote", value: `${gesamtAU>0?(abg/gesamtAU*100).toFixed(0):0}%`, color: P.orange, icon: "check",})
 )
-, React.createElement(SecH, { title: "Monatsumsatz "+yr,})
-, React.createElement(Card, null, React.createElement('div', { style: {display:"flex",alignItems:"flex-end",gap:3,height:110,padding:"6px 2px"},}
-, mData.map((v,i)=>React.createElement('div', { key: i, style: {flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:2},}
-, React.createElement('div', { style: {width:"100%",background:v>0?P.blue:"rgba(0,0,0,0.06)",borderRadius:"3px 3px 0 0",minHeight:4,height:v>0?Math.max(4,Math.round(v/maxV*90))+"%":"6px"},})
-, React.createElement('div', { style: {color:"#AEAEB2",fontSize:7},}, months[i])
+, React.createElement(SecH, { title: `Monatsumsatz ${yr()}`,})
+, React.createElement(Card, { style: {padding:"16px 12px",marginBottom:14},}
+, React.createElement('div', { style: {display:"flex",alignItems:"flex-end",gap:4,height:100},}
+, monatData.map((d,i)=>(
+React.createElement('div', { key: i, style: {flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:5},}
+, React.createElement('div', { style: {width:"100%",background:d.u>0?P.blue:"rgba(0,0,0,0.06)",borderRadius:"4px 4px 0 0",height:`${(d.u/maxU)*80}px`,minHeight:d.u>0?4:2,transition:"height 0.4s"},})
+, React.createElement('span', { style: {color:"#AEAEB2",fontSize:9},}, monate[i])
+)
 ))
-))
+)
+)
+, React.createElement(SecH, { title: "Top 5 Kunden"  ,})
+, React.createElement(Card, { noPad: true, style: {marginBottom:14},}
+, topK.map((k,i,arr)=>React.createElement(Row, { key: k.id, icon: "kunden", iconColor: P.blue, left: `${k.vorname||""} ${k.nachname||""}`, right: eur(k.u), badge: React.createElement(Bdg, { small: true,}, i+1, "."), last: i===arr.length-1,}))
+, topK.length===0&&React.createElement('div', { style: {padding:"22px",textAlign:"center",color:"#AEAEB2",fontSize:14},}, "Keine Daten" )
+)
 );
 }
 function Bewertungen(){
@@ -2123,5 +2224,4 @@ return React.createElement(AppProvider, null, React.createElement(AppInner, null
 }
 
 
-window.__mehanicarReady = true;
 ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
