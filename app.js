@@ -1089,11 +1089,16 @@ const [showKVForm,setShowKVForm]=useState(false);
 const [filterStatus,setFilterStatus]=useState("alle");
 const [filterQ,setFilterQ]=useState("");
 const [filterKV,setFilterKV]=useState("");
+const [filterKVStatus,setFilterKVStatus]=useState("offen");
 const [showSchnell,setShowSchnell]=useState(false);
 if(selKV) return React.createElement(KVDetail, { kv: selKV, onBack: ()=>setSelKV(null),});
 if(selAU){const au=(data.auftraege||[]).find(a=>a.id===selAU);if(au) return React.createElement(AuftragDetail, { au: au, onBack: ()=>setSelAU(null),});}
+const kvHeute=new Date();kvHeute.setHours(0,0,0,0);
+const kvIstAbgelaufen=a=>a.gueltig_bis&&new Date(a.gueltig_bis)<kvHeute;
 const kvListe=(data.angebote||[]).filter(a=>{
-if(a.status!=="offen") return false;
+if(filterKVStatus==="offen"&&!(a.status==="offen"&&!kvIstAbgelaufen(a))) return false;
+if(filterKVStatus==="angenommen"&&a.status!=="in_auftrag") return false;
+if(filterKVStatus==="abgelaufen"&&!(a.status==="offen"&&kvIstAbgelaufen(a))) return false;
 if(filterKV){
 const ql=filterKV.toLowerCase();
 const k=(data.kunden||[]).find(x=>x.id===a.kunden_id);
@@ -1124,7 +1129,13 @@ return React.createElement(Screen, { title: tab==="kv"?"Kostenvoranschläge":"Au
 , React.createElement('div', { style: {position:"absolute",left:13,top:"50%",transform:"translateY(-50%)",pointerEvents:"none"},}, React.createElement(Ic, { n: "search", s: 16, c: "#AEAEB2",}))
 , filterKV&&React.createElement('button', { onClick: ()=>setFilterKV(""), style: {position:"absolute",right:12,top:"50%",transform:"translateY(-50%)",background:"rgba(120,120,128,0.2)",border:"none",borderRadius:"50%",width:20,height:20,cursor:"pointer",color:"#6E6E73",fontSize:13,display:"flex",alignItems:"center",justifyContent:"center",padding:0},}, "x")
 )
-, kvListe.length===0?React.createElement('div', { style: {textAlign:"center",padding:"48px 20px",color:"#AEAEB2",fontSize:14},}, React.createElement(Ic, { n: "auftraege", s: 40, c: "rgba(0,0,0,0.06)",}), React.createElement('div', { style: {marginTop:14},}, filterKV?"Keine Ergebnisse":"Keine offenen Kostenvoranschläge"), React.createElement('div', { style: {marginTop:8,fontSize:12},}, filterKV?"":"Erstelle einen neuen Kostenvoranschlag"))
+/* KV-Statusfilter */
+, React.createElement('div', { style: {display:"flex",gap:6,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2,marginBottom:12},}
+, [{v:"offen",l:"Offen"},{v:"angenommen",l:"Angenommen"},{v:"abgelaufen",l:"Abgelaufen"}].map(fi=>(
+React.createElement('button', { key: fi.v, onClick: ()=>setFilterKVStatus(fi.v), style: {padding:"8px 14px",borderRadius:22,border:"none",background:filterKVStatus===fi.v?P.purple:"rgba(0,0,0,0.03)",color:filterKVStatus===fi.v?"#fff":"#6E6E73",cursor:"pointer",fontSize:12,fontWeight:500,whiteSpace:"nowrap",flexShrink:0,minHeight:36,transition:"all 0.12s"},}, fi.l)
+))
+)
+, kvListe.length===0?React.createElement('div', { style: {textAlign:"center",padding:"48px 20px",color:"#AEAEB2",fontSize:14},}, React.createElement(Ic, { n: "auftraege", s: 40, c: "rgba(0,0,0,0.06)",}), React.createElement('div', { style: {marginTop:14},}, filterKV?"Keine Ergebnisse":filterKVStatus==="angenommen"?"Keine angenommenen Kostenvoranschläge":filterKVStatus==="abgelaufen"?"Keine abgelaufenen Kostenvoranschläge":"Keine offenen Kostenvoranschläge"), React.createElement('div', { style: {marginTop:8,fontSize:12},}, filterKV?"":"Erstelle einen neuen Kostenvoranschlag"))
 :React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:10},}
 , kvListe.map(kv=>{
 const k=(data.kunden||[]).find(x=>x.id===kv.kunden_id),f=(data.fahrzeuge||[]).find(x=>x.id===kv.fahrzeug_id);
@@ -1841,20 +1852,8 @@ notify(`Kostenvoranschlag ${nr} erstellt `);onClose();
 return React.createElement(Modal, { title: "Neuer Kostenvoranschlag" , onClose: onClose, wide: true,}
 , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:14},}
 , React.createElement(Inp, { label: "Titel / Betreff *"   , value: f.titel, onChange: v=>setF(p=>({...p,titel:v})), placeholder: "z.B. Inspektion + Bremsanlage HV"    ,})
-/* Kunde - mit Live-Suche */
-, React.createElement('div', null
-, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7},}
-, React.createElement('span', { style: {color:"#6E6E73",fontSize:12,fontWeight:600,letterSpacing:0.4,textTransform:"uppercase"},})
-, React.createElement('button', { onClick: ()=>setShowNK(v=>!v), style: {background:"none",border:"none",color:P.blue,fontSize:13,cursor:"pointer",fontWeight:500,display:"flex",alignItems:"center",gap:4,minHeight:36},}, React.createElement(Ic, { n: "plus", s: 13, c: P.blue,}), "+ Neuer Kunde")
-)
-, !showNK
-?React.createElement(KundenSuche, { kunden: lK, value: f.kunden_id, onChange: v=>setF(p=>({...p,kunden_id:v,fahrzeug_id:""})),})
-:React.createElement('div', { style: {background:"rgba(10,132,255,0.07)",border:"1px solid rgba(10,132,255,0.22)",borderRadius:13,padding:"14px"},}
-, React.createElement('div', { style: {color:P.blue,fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",marginBottom:12},}, "Neuer Kunde" )
-, React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:11},}, React.createElement(KundeFormFelder, { f: nK, setF: setNK,}))
-, React.createElement('div', { style: {display:"flex",gap:8,marginTop:14},}, React.createElement(Btn, { v: "primary", size: "sm", onClick: handleK,}, React.createElement(Ic, { n: "check", s: 13,}), " Anlegen & wählen"   ), React.createElement(Btn, { v: "ghost", size: "sm", onClick: ()=>setShowNK(false),}, "Abbrechen"))
-)
-)
+/* Kunde - mit Live-Suche (KundenSuche hat eigenen "Neuer Kunde"-Knopf) */
+, React.createElement(KundenSuche, { kunden: data.kunden||[], value: f.kunden_id, onChange: v=>setF(p=>({...p,kunden_id:v,fahrzeug_id:""})), label: "Kunde *",})
 /* Fahrzeug */
 , f.kunden_id&&React.createElement('div', null
 , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7},}
@@ -1877,64 +1876,90 @@ return React.createElement(Modal, { title: "Neuer Kostenvoranschlag" , onClose: 
 );
 }
 function SchnellauftragModal({onClose}){
-const {data,schnellauftragErstellen,setView}=useApp();
-const [modus,setModus]=useState("pakete");
+const {data,addRow,schnellauftragErstellen,setView,notify}=useApp();
 const [kunden_id,setKunden_id]=useState("");
 const [fahrzeug_id,setFahrzeug_id]=useState("");
 const [laufkunde,setLaufkunde]=useState(false);
 const [beschreibung,setBeschreibung]=useState("");
+const [modus,setModus]=useState("pakete");
 const [schnell_betrag,setSchnell_betrag]=useState("");
 const [pakete,setPakete]=useState([]);
 const [annahme_km,setAnnahme_km]=useState("");
-const [kmWarn,setKmWarn]=useState(false);
 const [loading2,setLoading2]=useState(false);
+const [showNFz,setShowNFz]=useState(false);
+const [nFz,setNFz]=useState({kennzeichen:"",vin:"",marke:"",modell:"",baujahr:String(new Date().getFullYear()),kraftstoff:"Benzin",km:"",hu_datum:"",au_datum:"",hubraum:"",kw:"",ps:"",getriebe:"Schaltung",farbe:"",farb_code:"",reifengroesse:"",erstzulassung:"",naechste_inspektion:"",anzahl_vorbesitzer:"",fahrzeugschein:null});
 const kFz=(data.fahrzeuge||[]).filter(f=>f.kunden_id===kunden_id);
+const handleNeuesFahrzeug=async()=>{
+if(!nFz.kennzeichen||!nFz.marke){notify("Kennzeichen + Marke erforderlich","error");return;}
+const row={id:uid(),...nFz,kunden_id,km:parseInt(nFz.km)||0,baujahr:parseInt(nFz.baujahr)||new Date().getFullYear(),letzte_inspektion:null,notizen:""};
+const s=await addRow("fahrzeuge",row);
+setFahrzeug_id((s&&s.id)||row.id);setShowNFz(false);notify("Fahrzeug angelegt");
+};
 const submit=async()=>{
-if(!laufkunde&&!kunden_id){useApp().notify("Kunde waehlen","error");return;}
-if(modus==="schnell"&&!schnell_betrag){useApp().notify("Betrag erforderlich","error");return;}
-if(!annahme_km&&!kmWarn){setKmWarn(true);return;}
+if(!laufkunde&&!kunden_id){notify("Bitte Kunde wählen oder anlegen","error");return;}
+if(modus==="schnell"&&!schnell_betrag){notify("Bitte Betrag eingeben","error");return;}
+if(modus==="pakete"&&(pakete||[]).length===0){notify("Bitte mindestens eine Position oder Pauschalbetrag","error");return;}
 setLoading2(true);
 const r=await schnellauftragErstellen({kunden_id:laufkunde?"laufkunde":kunden_id,fahrzeug_id:fahrzeug_id||null,beschreibung,pakete,schnellmodus:modus==="schnell",schnell_betrag,schnell_beschreibung:beschreibung,annahme_km:annahme_km||null});
 setLoading2(false);
 if(r){onClose();setView("auftraege");}
 };
-return React.createElement(Modal, { title: "Schnellauftrag", onClose: onClose, wide: true,}
-, React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:12},}
-, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10},}
-, [["pakete","Positionen"],["schnell","Direkt-Betrag"]].map(([v,l])=>(
-React.createElement('button', { key: v, onClick: ()=>setModus(v), style: {padding:"12px 8px",borderRadius:12,border:`2px solid ${modus===v?P.blue:"rgba(0,0,0,0.1)"}`,background:modus===v?"rgba(0,122,255,0.06)":"#fff",color:modus===v?P.blue:"#3C3C43",cursor:"pointer",fontSize:13,fontWeight:modus===v?700:400},}
-, l
-)
-))
-)
-, React.createElement('div', { style: {display:"flex",justifyContent:"flex-end"},}
-, React.createElement('button', { onClick: ()=>{setLaufkunde(v=>!v);setKunden_id("");}, style: {background:"none",border:"none",color:laufkunde?P.orange:P.blue,fontSize:13,cursor:"pointer",fontWeight:600},}, laufkunde?"Kundenliste":"Laufkunde (anonym)")
+return React.createElement(Modal, { title: "Neuer Auftrag", onClose: onClose, wide: true,}
+, React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:14},}
+
+/* 1. KUNDE */
+, React.createElement('div', null
+, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7},}
+, React.createElement('span', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, "1 · Kunde" )
+, React.createElement('button', { onClick: ()=>{setLaufkunde(v=>!v);setKunden_id("");setFahrzeug_id("");setShowNFz(false);}, style: {background:"none",border:"none",color:laufkunde?P.orange:P.blue,fontSize:13,cursor:"pointer",fontWeight:600},}, laufkunde?"Doch Kunde wählen":"Laufkunde (anonym)")
 )
 , laufkunde
-?React.createElement('div', { style: {padding:"10px 12px",background:"rgba(255,149,0,0.07)",border:"1px solid rgba(255,149,0,0.2)",borderRadius:11},}, React.createElement('div', { style: {color:P.orange,fontSize:13,fontWeight:600,marginBottom:4},}, "Laufkunde / Barzahlung"  ), React.createElement('div', { style: {color:"#6E6E73",fontSize:12},}, "Ab 250\\u20AC Pflicht: Name eintragen"    ))
-:React.createElement(KundenSuche, { kunden: data.kunden||[], value: kunden_id, onChange: v=>{setKunden_id(v);setFahrzeug_id("");}, label: "",})
-
-, kunden_id&&!laufkunde&&React.createElement(Sel, { label: "Fahrzeug (optional)" , value: fahrzeug_id, onChange: setFahrzeug_id, options: [{value:"",label:"Kein Fahrzeug"},...kFz.map(f=>({value:f.id,label:`${f.kennzeichen} ${f.marke||""}`}))],})
-, kmWarn
-?React.createElement('div', { style: {padding:"11px 12px",background:"rgba(255,149,0,0.07)",border:"1.5px solid rgba(255,149,0,0.3)",borderRadius:11},}
-, React.createElement('div', { style: {color:P.orange,fontSize:13,fontWeight:600,marginBottom:8},}, "KM-Stand nicht eingetragen"  )
-, React.createElement('div', { style: {display:"flex",gap:9,alignItems:"flex-end"},}
-, React.createElement('div', { style: {flex:1},}, React.createElement(Inp, { label: "KM-Stand", value: annahme_km, onChange: setAnnahme_km, type: "number", suffix: "km",}))
-, React.createElement(Btn, { v: "ghost", size: "md", onClick: ()=>{setKmWarn(false);submit();},}, "Überspringen")
+?React.createElement('div', { style: {padding:"11px 13px",background:"rgba(255,149,0,0.07)",border:"1px solid rgba(255,149,0,0.2)",borderRadius:11},}, React.createElement('div', { style: {color:P.orange,fontSize:13,fontWeight:600,marginBottom:3},}, "Laufkunde / Barzahlung"  ), React.createElement('div', { style: {color:"#6E6E73",fontSize:12,lineHeight:1.4},}, "Anonym, ohne Stammdaten. Ab 250 € brutto ist ein Name gesetzlich Pflicht."))
+:React.createElement(KundenSuche, { kunden: data.kunden||[], value: kunden_id, onChange: v=>{setKunden_id(v);setFahrzeug_id("");setShowNFz(false);}, label: "",})
 )
-)
-:React.createElement(Inp, { label: "KM-Stand (optional)" , value: annahme_km, onChange: setAnnahme_km, type: "number", suffix: "km",})
 
+/* 2. FAHRZEUG */
+, !laufkunde&&kunden_id&&React.createElement('div', null
+, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7},}
+, React.createElement('span', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, "2 · Fahrzeug" )
+, React.createElement('button', { onClick: ()=>setShowNFz(v=>!v), style: {background:"none",border:"none",color:P.green,fontSize:13,cursor:"pointer",fontWeight:600},}, showNFz?"Abbrechen":"+ Neues Fahrzeug")
+)
+, showNFz
+?React.createElement('div', { style: {background:"rgba(48,209,88,0.07)",border:"1px solid rgba(48,209,88,0.22)",borderRadius:13,padding:"14px"},}
+, React.createElement(FahrzeugFormFelder, { f: nFz, setF: setNFz, withScan: true,})
+, React.createElement('div', { style: {display:"flex",gap:8,marginTop:14},}, React.createElement(Btn, { v: "success", size: "sm", onClick: handleNeuesFahrzeug,}, React.createElement(Ic, { n: "check", s: 13,}), " Anlegen & wählen"   ), React.createElement(Btn, { v: "ghost", size: "sm", onClick: ()=>setShowNFz(false),}, "Abbrechen"))
+)
+:React.createElement(Sel, { value: fahrzeug_id, onChange: setFahrzeug_id, options: [{value:"",label:kFz.length?"- Fahrzeug wählen -":"- Noch kein Fahrzeug -"},...kFz.map(f=>({value:f.id,label:`${f.kennzeichen} · ${f.marke||""} ${f.modell||""}`.trim()}))],})
+)
+
+/* 3. KM-STAND */
+, !laufkunde&&kunden_id&&React.createElement(Inp, { label: "3 · KM-Stand (optional)" , value: annahme_km, onChange: setAnnahme_km, type: "number", suffix: "km", note: "Kilometerstand bei Annahme",})
+
+/* 4. LEISTUNGEN */
+, React.createElement('div', null
+, React.createElement('div', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",marginBottom:7},}, "4 · Leistungen" )
+, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:8},}
+, [["pakete","Einzelpositionen"],["schnell","Pauschalbetrag"]].map(([v,l])=>(
+React.createElement('button', { key: v, onClick: ()=>setModus(v), style: {padding:"11px 8px",borderRadius:12,border:`2px solid ${modus===v?P.blue:"rgba(0,0,0,0.1)"}`,background:modus===v?"rgba(0,122,255,0.06)":"#fff",color:modus===v?P.blue:"#3C3C43",cursor:"pointer",fontSize:13,fontWeight:modus===v?700:500},}, l)
+))
+)
+, React.createElement('div', { style: {color:"#AEAEB2",fontSize:12,lineHeight:1.4,marginBottom:10},}, modus==="pakete"?"Arbeiten und Teile einzeln erfassen — mit Preis und Gewinn pro Position.":"Ein Gesamtpreis ohne Aufschlüsselung — z. B. für schnelle Kleinaufträge.")
 , modus==="schnell"
-?React.createElement(React.Fragment, null, React.createElement(Inp, { label: "Beschreibung *" , value: beschreibung, onChange: setBeschreibung, placeholder: "z.B. Oelwechsel + Filter"   ,})
-, React.createElement(Inp, { label: "Brutto-Betrag *" , value: schnell_betrag, onChange: setSchnell_betrag, type: "number", suffix: "EUR",}))
-:React.createElement(React.Fragment, null, React.createElement(Inp, { label: "Beschreibung", value: beschreibung, onChange: setBeschreibung,})
-, React.createElement(PaketeEditor, { pakete: pakete, onChange: setPakete, settings: data.settings,}))
+?React.createElement(React.Fragment, null
+, React.createElement(Inp, { label: "Beschreibung *" , value: beschreibung, onChange: setBeschreibung, placeholder: "z.B. Ölwechsel + Filter"   ,})
+, React.createElement('div', { style: {marginTop:11},}, React.createElement(Inp, { label: "Brutto-Betrag *" , value: schnell_betrag, onChange: setSchnell_betrag, type: "number", suffix: "€",}))
+)
+:React.createElement(React.Fragment, null
+, React.createElement(Inp, { label: "Beschreibung (optional)" , value: beschreibung, onChange: setBeschreibung, placeholder: "Kurznotiz zum Auftrag",})
+, React.createElement('div', { style: {marginTop:11},}, React.createElement(PaketeEditor, { pakete: pakete, onChange: setPakete, settings: data.settings,}))
+)
+)
 
-, React.createElement(Btn, { full: true, size: "lg", onClick: submit,}, loading2?"Erstelle...":"Auftrag erstellen")
+, React.createElement(Btn, { full: true, size: "lg", onClick: submit, disabled: loading2,}, React.createElement(Ic, { n: "check", s: 16,}), loading2?" Erstelle...":" Auftrag erstellen")
 )
 );
 }
+
 function Rechnungen(){
 const {data,rechnungBezahlen,stornoRechnung,notify}=useApp();
 const [selId,setSelId]=useState(null);
