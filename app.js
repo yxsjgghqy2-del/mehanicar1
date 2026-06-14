@@ -169,7 +169,8 @@ offen:         {label:"Offen",           c:"#FF9F0A", bg:"rgba(255,159,10,0.14)"
 in_arbeit:     {label:"In Arbeit",        c:"#0A84FF", bg:"rgba(10,132,255,0.14)"},
 klaerung:      {label:"Klärung",          c:"#BF5AF2", bg:"rgba(191,90,242,0.14)"},
 wartet_teile:  {label:"Wartet auf Teile", c:"#FF6B35", bg:"rgba(255,107,53,0.14)"},
-abgeschlossen: {label:"Abgeschlossen",    c:"#30D158", bg:"rgba(48,209,88,0.14)"},
+abgeschlossen: {label:"Fertig",           c:"#30D158", bg:"rgba(48,209,88,0.14)"},
+abgeholt:      {label:"Abgeholt",         c:"#5E5CE6", bg:"rgba(94,92,230,0.14)"},
 storniert:     {label:"Storniert",        c:"#FF453A", bg:"rgba(255,69,58,0.14)"},
 };
 const ICONS = {
@@ -950,6 +951,7 @@ return React.createElement(Sel, { label: "Marke *" , value: value, onChange: v=>
 }
 function FahrzeugFormFelder({f,setF,withScan}){
 const [scanning,setScanning]=useState(false);
+const [scanMsg,setScanMsg]=useState("");
 const handleScan=async(e)=>{
 const file=_optionalChain([e, 'access', _9 => _9.target, 'access', _10 => _10.files, 'optionalAccess', _11 => _11[0]]);if(!file)return;
 const reader=new FileReader();
@@ -957,14 +959,17 @@ reader.onload=async(ev)=>{
 const imgData=ev.target.result;
 setF(p=>({...p,fahrzeugschein:{name:file.name,type:file.type,data:imgData}}));
 if(!file.type.startsWith("image/"))return;
-setScanning(true);
+setScanning(true);setScanMsg("");
 try{
 const b64=imgData.split(",")[1];
-const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:file.type,data:b64}},{type:"text",text:"Fahrzeugdokument. Reines JSON: kennzeichen,vin,marke,modell,baujahr,erstzulassung(YYYY-MM-DD),hu_datum(YYYY-MM-DD),kraftstoff,hubraum,kw,farbe,farb_code. Nicht lesbare weglassen."}]}]})});
+const res=await fetch("/api/scan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({media_type:file.type,data:b64})});
+if(!res.ok)throw new Error("scan "+res.status);
 const json=await res.json();
-const parsed=JSON.parse(_optionalChain([((json.content||[]).find(c=>c.type==="text")||{}), 'access', _12 => _12.text, 'optionalAccess', _13 => _13.replace, 'call', _14 => _14(/```json|```/g,""), 'access', _15 => _15.trim, 'call', _16 => _16()])||"{}");
-setF(p=>{const u={...p};["kennzeichen","vin","marke","modell","baujahr","erstzulassung","hu_datum","kraftstoff","hubraum","kw","farbe","farb_code"].forEach(k=>{if(parsed[k]!=null&&!u[k])u[k]=String(parsed[k]);});return u;});
-}catch(e){console.error("Scan:",e);}finally{setScanning(false);}
+const parsed=json.fields||{};
+let n=0;
+setF(p=>{const u={...p};["kennzeichen","vin","marke","modell","baujahr","erstzulassung","hu_datum","kraftstoff","hubraum","kw","farbe","farb_code"].forEach(k=>{if(parsed[k]!=null&&!u[k]){u[k]=String(parsed[k]);n++;}});return u;});
+setScanMsg(n>0?"":"Konnte nichts erkennen — bitte von Hand ausfüllen.");
+}catch(e){console.error("Scan:",e);setScanMsg("Auto-Ausfüllen ist noch nicht aktiv — Foto ist gespeichert, bitte Felder von Hand ausfüllen.");}finally{setScanning(false);}
 };
 reader.readAsDataURL(file);
 };
@@ -978,6 +983,7 @@ return React.createElement('div', { style: {display:"flex",flexDirection:"column
 
 , React.createElement('input', { type: "file", accept: "image/*,.pdf", onChange: handleScan, style: {display:"none"},})
 )
+, scanMsg&&React.createElement('div', { style: {color:P.orange,fontSize:12,lineHeight:1.4,marginBottom:8,padding:"8px 11px",background:"rgba(255,149,0,0.08)",borderRadius:9},}, scanMsg)
 , _optionalChain([f, 'access', _17 => _17.fahrzeugschein, 'optionalAccess', _18 => _18.type, 'optionalAccess', _19 => _19.startsWith, 'call', _20 => _20("image/")])&&React.createElement('img', { src: f.fahrzeugschein.data, alt: "Scan", style: {width:"100%",borderRadius:10,maxHeight:110,objectFit:"cover"},})
 )
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}
@@ -990,7 +996,7 @@ return React.createElement('div', { style: {display:"flex",flexDirection:"column
 )
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}
 , React.createElement(Inp, { label: "Baujahr", value: f.baujahr||"", onChange: v=>setF(p=>({...p,baujahr:v})), type: "number",})
-, React.createElement(Inp, { label: "KM-Stand", value: f.km||"", onChange: v=>setF(p=>({...p,km:v})), type: "number",})
+, React.createElement(Inp, { label: "KM-Stand", value: f.km?Number(f.km).toLocaleString("de-DE"):"", onChange: v=>setF(p=>({...p,km:v.replace(/\D/g,"")})), type: "text", suffix: "km",})
 )
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}
 , React.createElement(Sel, { label: "Kraftstoff", value: f.kraftstoff||"Benzin", onChange: v=>setF(p=>({...p,kraftstoff:v})), options: ["Benzin","Diesel","Elektro","Hybrid","Gas"].map(v=>({value:v,label:v})),})
@@ -1154,29 +1160,40 @@ return {k,f,sc,kName,kennz,arbeit,prog,brutto:c.brutto};
 function SwipeRow({au,info,dark,pinned,onOpen,onCall,onDone,onPin}){
 const [open,setOpen]=useState(false);
 const rowRef=useRef();
+const wrapRef=useRef();
 const st=useRef({});
 const W=198;
+const setW=v=>{if(rowRef.current)rowRef.current.style.width=v;};
+React.useEffect(()=>{
+if(!open)return;
+const h=e=>{if(wrapRef.current&&!wrapRef.current.contains(e.target)){setOpen(false);setW("");}};
+document.addEventListener("pointerdown",h,true);
+return()=>document.removeEventListener("pointerdown",h,true);
+},[open]);
 const down=e=>{st.current={x:e.clientX,y:e.clientY,base:open?W:0,dragging:true,moved:false,decided:false,scrolled:false};};
 const moveH=e=>{const s=st.current;if(!s.dragging)return;const dx=s.x-e.clientX,dy=Math.abs(e.clientY-s.y);
-if(!s.decided){if(Math.abs(dx)<5&&dy<5)return;if(dy>Math.abs(dx)){s.dragging=false;s.scrolled=true;return;}s.decided=true;s.moved=true;try{rowRef.current.setPointerCapture(e.pointerId);}catch(err){}}
-const raw=s.base+dx;let shrink=raw<0?0:raw>W?W+Math.pow(raw-W,0.6):raw;shrink=Math.min(shrink,W+44);
-rowRef.current.style.width=`calc(100% - ${shrink}px)`;};
+if(!s.decided){if(Math.abs(dx)<6&&dy<6)return;if(dy>Math.abs(dx)){s.dragging=false;s.scrolled=true;return;}s.decided=true;s.moved=true;rowRef.current.style.transition="none";try{rowRef.current.setPointerCapture(e.pointerId);}catch(err){}}
+const raw=s.base+dx;let shrink=raw<0?0:raw>W?W+Math.pow(raw-W,0.55):raw;shrink=Math.min(shrink,W+40);
+setW(`calc(100% - ${shrink}px)`);};
+const snap=willOpen=>{if(rowRef.current)rowRef.current.style.transition="width .5s cubic-bezier(.22,1,.36,1)";setOpen(willOpen);setW(willOpen?`calc(100% - ${W}px)`:"");};
 const up=e=>{const s=st.current;if(s.scrolled){s.scrolled=false;s.dragging=false;return;}
-if(!s.moved){s.dragging=false;if(open){setOpen(false);rowRef.current.style.width="";}else onOpen();return;}
-s.dragging=false;const dx=s.x-e.clientX,raw=s.base+dx,willOpen=raw>W/2.4;setOpen(willOpen);rowRef.current.style.width=willOpen?`calc(100% - ${W}px)`:"";};
-const act=(fn)=>{setOpen(false);if(rowRef.current)rowRef.current.style.width="";fn&&fn();};
-return React.createElement('div', { style: {position:"relative",borderRadius:13,marginTop:7,animation:"rowIn .35s cubic-bezier(.34,1.2,.64,1) both"},}
+if(!s.moved){s.dragging=false;if(open)snap(false);else onOpen();return;}
+s.dragging=false;const dx=s.x-e.clientX,raw=s.base+dx;snap(raw>W/2.6);};
+const act=fn=>{snap(false);setTimeout(()=>fn&&fn(),120);};
+const aBtn=(bg,ic,label,fn)=>React.createElement('button', { onClick: fn, style: {width:66,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,color:"#fff",fontSize:10,fontWeight:700,border:"none",cursor:"pointer",background:bg,opacity:open?1:0,transform:open?"scale(1)":"scale(.8)",transition:"opacity .22s ease,transform .28s cubic-bezier(.32,1.3,.5,1)"},}, React.createElement(Ic, { n: ic, s: 16, c: "#fff",}), label);
+const fade={opacity:open?0:1,transition:"opacity .16s ease"};
+return React.createElement('div', { ref: wrapRef, style: {position:"relative",borderRadius:13,marginTop:7,animation:"rowIn .35s cubic-bezier(.34,1.2,.64,1) both"},}
 , React.createElement('div', { style: {position:"absolute",top:0,bottom:0,right:0,width:W,display:"flex",borderRadius:13,overflow:"hidden"},}
-, React.createElement('button', { onClick: ()=>act(onCall), style: {width:66,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,color:"#fff",fontSize:10,fontWeight:700,border:"none",cursor:"pointer",background:"#0A5FFF"},}, React.createElement(Ic, { n: "phone", s: 17, c: "#fff",}), "Anrufen")
-, React.createElement('button', { onClick: ()=>act(onDone), style: {width:66,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,color:"#fff",fontSize:10,fontWeight:700,border:"none",cursor:"pointer",background:"#0E8F4E"},}, React.createElement(Ic, { n: "check", s: 17, c: "#fff",}), "Erledigt")
-, React.createElement('button', { onClick: ()=>act(onPin), style: {width:66,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,color:"#fff",fontSize:10,fontWeight:700,border:"none",cursor:"pointer",background:"#C2710A"},}, React.createElement(Ic, { n: "pin", s: 16, c: "#fff",}), "Anpinnen")
+, aBtn("#0A5FFF","phone","Anrufen",()=>act(onCall))
+, aBtn("#0E8F4E","check","Erledigt",()=>act(onDone))
+, aBtn("#C2710A","pin","Anpinnen",()=>act(onPin))
 )
-, React.createElement('div', { ref: rowRef, onPointerDown: down, onPointerMove: moveH, onPointerUp: up, onPointerCancel: up, style: {position:"relative",zIndex:1,display:"flex",alignItems:"center",gap:10,padding:"12px 13px",borderRadius:13,width:"100%",boxSizing:"border-box",overflow:"hidden",whiteSpace:"nowrap",touchAction:"pan-y",userSelect:"none",WebkitUserSelect:"none",cursor:"pointer",transition:"width .42s cubic-bezier(.32,1.3,.5,1),box-shadow .2s",background:dark?"#2C2C2E":"#fff",border:dark?"none":"1px solid rgba(60,60,67,0.09)",boxShadow:dark?"none":"0 1px 3px rgba(0,0,0,0.04)",outline:pinned?"1.5px solid rgba(10,95,255,0.55)":"none"},}
+, React.createElement('div', { ref: rowRef, onPointerDown: down, onPointerMove: moveH, onPointerUp: up, onPointerCancel: up, style: {position:"relative",zIndex:1,display:"flex",alignItems:"center",gap:10,padding:"12px 13px",borderRadius:13,width:"100%",boxSizing:"border-box",overflow:"hidden",whiteSpace:"nowrap",touchAction:"pan-y",userSelect:"none",WebkitUserSelect:"none",cursor:"pointer",willChange:"width",transition:"width .5s cubic-bezier(.22,1,.36,1),box-shadow .2s",background:dark?"#2C2C2E":"#fff",border:dark?"none":"1px solid rgba(60,60,67,0.09)",boxShadow:dark?"none":"0 1px 3px rgba(0,0,0,0.04)",outline:pinned?"1.5px solid rgba(10,95,255,0.55)":"none"},}
 , React.createElement('span', { style: {width:9,height:9,borderRadius:"50%",background:info.sc.c,flexShrink:0},})
 , React.createElement('span', { style: {fontWeight:800,fontSize:13,letterSpacing:0.2,color:dark?"#fff":"#16161A",flexShrink:0},}, info.kennz)
-, React.createElement('span', { style: {flex:1,fontSize:11.5,color:dark?"rgba(255,255,255,0.55)":"#6E6E73",overflow:"hidden",textOverflow:"ellipsis"},}, info.arbeit, info.prog>0&&info.prog<100?" · "+info.prog+"%":"")
-, pinned&&React.createElement(Ic, { n: "pin", s: 12, c: dark?"#fff":"#C2710A",})
-, React.createElement('span', { style: {fontSize:11,fontWeight:700,color:dark?"rgba(255,255,255,0.85)":"#6E6E73",flexShrink:0},}, eur(info.brutto))
+, React.createElement('span', { style: {flex:1,fontSize:11.5,color:dark?"rgba(255,255,255,0.55)":"#6E6E73",overflow:"hidden",textOverflow:"ellipsis",...fade},}, info.arbeit, info.prog>0&&info.prog<100?" · "+info.prog+"%":"")
+, pinned&&React.createElement(Ic, { n: "pin", s: 12, c: dark?"#fff":"#C2710A", style: fade,})
+, React.createElement('span', { style: {fontSize:11,fontWeight:700,color:dark?"rgba(255,255,255,0.85)":"#6E6E73",flexShrink:0,...fade},}, eur(info.brutto))
 )
 );
 }
@@ -1390,6 +1407,19 @@ React.createElement('div', { key: l, style: {display:"flex",justifyContent:"spac
 , confirmModal
 );
 }
+function Sec({isOpen,onTog,title,mini,note,delay,children}){
+return React.createElement('div',{className:'am-sec'+(isOpen?' am-open':''),style:{animationDelay:delay||'0ms'}},
+React.createElement('div',{className:'am-sec-h',onClick:onTog},
+React.createElement('span',{className:'am-sec-t'},title),
+note&&React.createElement('span',{className:'am-dotmark'}),
+mini&&React.createElement('span',{className:'am-mini'},mini),
+React.createElement('span',{className:'am-chev'})
+),
+React.createElement('div',{className:'am-sec-b'},
+React.createElement('div',{className:'am-sec-in'},children)
+)
+);
+}
 function AuftragDetail({au:initAu,onBack}){
 const {data,updateRow,deleteRow,notify,paketeAbrechnen}=useApp();
 const {confirm,modal:confirmModal}=useConfirm();
@@ -1518,7 +1548,7 @@ document.head.appendChild(el);
 },[]);
 
 const tog=k=>setOpen(p=>({...p,[k]:!p[k]}));
-const STATI=[["offen","Offen","#C2710A"],["in_arbeit","In Arbeit","#0A5FFF"],["wartet_teile","Wartet auf Teile","#C2710A"],["abgeschlossen","Fertig","#0E8F4E"],["storniert","Storniert","#E0353B"]];
+const STATUS_OPT=[["offen","Offen"],["in_arbeit","In Arbeit"],["klaerung","Klärung"],["wartet_teile","Wartet auf Teile"],["abgeschlossen","Fertig"],["abgeholt","Abgeholt / Abgerechnet"]];
 const setStatus=async s=>{await updateRow("auftraege",au.id,{status:s});notify(`Status: ${(SC[s]||SC.offen).label}`);};
 const toggleTimer=async()=>{const a=!au.timer_aktiv;await updateRow("auftraege",au.id,{timer_aktiv:a,timer_gesamt_sek:au.timer_gesamt_sek});notify(a?"Timer gestartet":"Timer pausiert");};
 
@@ -1533,19 +1563,6 @@ ctx.scale(2,2);ctx.lineWidth=2;ctx.lineCap='round';ctx.strokeStyle='#16161A';
 },[]);
 const getPos=(e,canvas)=>{const r=canvas.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return[t.clientX-r.left,t.clientY-r.top];};
 
-const Sec=({id,title,mini,note,children,delay})=>{
-const isOpen=open[id];
-return React.createElement('div',{className:'am-sec'+(isOpen?' am-open':''),style:{animationDelay:delay||'0ms'}},
-React.createElement('div',{className:'am-sec-h',onClick:()=>tog(id)},
-React.createElement('span',{className:'am-sec-t'},title),
-note&&React.createElement('span',{className:'am-dotmark'}),
-mini&&React.createElement('span',{className:'am-mini'},mini),
-React.createElement('span',{className:'am-chev'})
-),
-React.createElement('div',{className:'am-sec-b'},
-React.createElement('div',{className:'am-sec-in'},children)
-)
-);};
 
 const kdName=k?`${k.vorname||''} ${k.nachname||''}`.trim():au.beschreibung||'Unbekannter Kunde';
 const fzName=fz?`${fz.kennzeichen||''} · ${fz.marke||''} ${fz.modell||''}`.trim():null;
@@ -1569,13 +1586,14 @@ React.createElement('div',{className:'am-dt'},
 )
 )
 ),
-React.createElement('div',{className:'am-pills'},
-STATI.map(([s,l,col])=>React.createElement('button',{
-key:s,
-className:'am-pill',
-style:au.status===s?{background:col+'18',borderColor:col,color:col}:{},
-onClick:()=>setStatus(s)
-},l))
+React.createElement('div',{style:{display:'flex',alignItems:'center',gap:9}},
+React.createElement('span',{style:{fontSize:10,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:'#A6A6AE',flexShrink:0}},'Status'),
+React.createElement('div',{style:{position:'relative',flex:1,maxWidth:260}},
+React.createElement('select',{value:au.status==='storniert'?'storniert':au.status,onChange:e=>setStatus(e.target.value),style:{appearance:'none',WebkitAppearance:'none',MozAppearance:'none',width:'100%',padding:'9px 32px 9px 13px',borderRadius:10,border:`1.5px solid ${(SC[au.status]||SC.offen).c}`,background:(SC[au.status]||SC.offen).c+'14',color:(SC[au.status]||SC.offen).c,fontSize:13,fontWeight:700,fontFamily:'inherit',cursor:'pointer',outline:'none'}},
+STATUS_OPT.map(([v,l])=>React.createElement('option',{key:v,value:v,style:{color:'#16161A',fontWeight:600}},l))
+),
+React.createElement('span',{style:{position:'absolute',right:13,top:'50%',width:7,height:7,borderRight:`1.5px solid ${(SC[au.status]||SC.offen).c}`,borderBottom:`1.5px solid ${(SC[au.status]||SC.offen).c}`,transform:'translateY(-65%) rotate(45deg)',pointerEvents:'none'}})
+)
 )
 ),
 
@@ -1583,7 +1601,7 @@ onClick:()=>setStatus(s)
 React.createElement('div',{className:'am-scroll'},
 
 // 1 KUNDE
-React.createElement(Sec,{id:'kunde',title:kdName,mini:k&&k.typ==='stamm'?'Stammkunde':null,delay:'20ms'},
+React.createElement(Sec,{isOpen:open.kunde,onTog:()=>tog('kunde'),title:kdName,mini:k&&k.typ==='stamm'?'Stammkunde':null,delay:'20ms'},
 React.createElement('div',{className:'am-kv'},React.createElement('span',{className:'ak'},'Telefon'),React.createElement('span',{className:'av'},k&&k.telefon||'-')),
 React.createElement('div',{className:'am-kv'},React.createElement('span',{className:'ak'},'WhatsApp'),React.createElement('span',{className:'av'},k&&k.whatsapp?React.createElement('span',{className:'am-tag am-t-green'},'verknüpft'):'-')),
 React.createElement('div',{className:'am-kv',style:{borderBottom:'none'}},React.createElement('span',{className:'ak'},'E-Mail'),React.createElement('span',{className:'av'},k&&k.email||'-')),
@@ -1593,22 +1611,11 @@ React.createElement('button',{className:'am-abtn',onClick:()=>{const ph=(k&&(k.w
 'WhatsApp'
 ),
 React.createElement('button',{className:'am-abtn',onClick:()=>k&&k.email&&window.open(`mailto:${k.email}`)},'E-Mail')
-),
-React.createElement('div',{className:'am-lbl'},'Schnellnachricht'),
-React.createElement('div',{className:'am-chips'},
-['Fahrzeug fertig','Angebot liegt bereit','Teile verzögern sich'].map(t=>
-React.createElement('button',{key:t,className:'am-chip',onClick:e=>{
-const btn=e.currentTarget;btn.classList.add('am-sent');btn.textContent='Gesendet';
-const ph=(k&&(k.whatsapp||k.telefon)||'').replace(/[^0-9]/g,'');
-if(ph)window.open(`https://wa.me/${ph}?text=${encodeURIComponent(t)}`);
-setTimeout(()=>{btn.classList.remove('am-sent');btn.textContent=t;},1800);
-}},t)
-)
 )
 ),
 
 // 2 FAHRZEUG
-React.createElement(Sec,{id:'fahrzeug',title:fzName||'Fahrzeug',mini:fz?`${fz.marke||''} · ${fz.baujahr||''}`.trim():null,delay:'40ms'},
+React.createElement(Sec,{isOpen:open.fahrzeug,onTog:()=>tog('fahrzeug'),title:fzName||'Fahrzeug',mini:fz?`${fz.marke||''} · ${fz.baujahr||''}`.trim():null,delay:'40ms'},
 fz&&React.createElement(React.Fragment,null,
 React.createElement('div',{className:'am-kv'},React.createElement('span',{className:'ak'},'VIN'),React.createElement('span',{className:'av',style:{fontFamily:'ui-monospace,monospace',fontSize:11}},fz.vin||'-')),
 React.createElement('div',{className:'am-kv'},React.createElement('span',{className:'ak'},'KM Annahme'),React.createElement('span',{className:'av'},au.annahme_km?`${parseInt(au.annahme_km).toLocaleString('de-DE')} km`:'-')),
@@ -1620,7 +1627,7 @@ React.createElement('div',{className:'am-kv',style:{borderBottom:'none'}},React.
 ),
 
 // 3 PAKETE
-React.createElement(Sec,{id:'pakete',title:'Pakete & Kalkulation',mini:`${(au.pakete||[]).length} Paket${(au.pakete||[]).length!==1?'e':''}`,delay:'60ms'},
+React.createElement(Sec,{isOpen:open.pakete,onTog:()=>tog('pakete'),title:'Pakete & Kalkulation',mini:`${(au.pakete||[]).length} Paket${(au.pakete||[]).length!==1?'e':''}`,delay:'60ms'},
 React.createElement('div',{className:'am-modesw'},
 React.createElement('button',{className:'am-on'===calcMode?'':'',style:{flex:1,padding:'8px',borderRadius:'8px',border:'none',background:calcMode==='over'?'#fff':'transparent',color:calcMode==='over'?'#16161A':'#6B6B73',fontWeight:600,fontSize:12.5,cursor:'pointer',boxShadow:calcMode==='over'?'0 1px 3px rgba(0,0,0,0.08)':'none',transition:'all .2s'},onClick:()=>setCalcMode('over')},'Übersicht'),
 React.createElement('button',{style:{flex:1,padding:'8px',borderRadius:'8px',border:'none',background:calcMode==='calc'?'#fff':'transparent',color:calcMode==='calc'?'#16161A':'#6B6B73',fontWeight:600,fontSize:12.5,cursor:'pointer',boxShadow:calcMode==='calc'?'0 1px 3px rgba(0,0,0,0.08)':'none',transition:'all .2s'},onClick:()=>setCalcMode('calc')},'Kalkulation')
@@ -1672,10 +1679,21 @@ React.createElement('div',{style:{display:'flex',justifyContent:'space-between',
 ),
 
 // 4 KOMMUNIKATION
-React.createElement(Sec,{id:'komm',title:'Kommunikation',mini:null,delay:'80ms'},
+React.createElement(Sec,{isOpen:open.komm,onTog:()=>tog('komm'),title:'Kommunikation',mini:null,delay:'80ms'},
 React.createElement('div',{className:'am-ai-bar'},
 React.createElement('div',{className:'am-ai-dot'}),
 React.createElement('span',null,React.createElement('b',{style:{color:'#16161A'}},'Assistent aktiv. '),'Liest WhatsApp, E-Mail und Telefonate mit und legt Einträge an.')
+),
+React.createElement('div',{className:'am-lbl',style:{marginTop:0}},'Schnellnachricht an Kunde'),
+React.createElement('div',{className:'am-chips',style:{marginBottom:13}},
+['Fahrzeug fertig','Angebot liegt bereit','Teile verzögern sich'].map(t=>
+React.createElement('button',{key:t,className:'am-chip',onClick:e=>{
+const btn=e.currentTarget;btn.classList.add('am-sent');btn.textContent='Gesendet';
+const ph=(k&&(k.whatsapp||k.telefon)||'').replace(/[^0-9]/g,'');
+if(ph)window.open(`https://wa.me/${ph}?text=${encodeURIComponent(t)}`);
+setTimeout(()=>{btn.classList.remove('am-sent');btn.textContent=t;},1800);
+}},t)
+)
 ),
 au.beschreibung&&React.createElement('div',{className:'am-tl'},
 React.createElement('div',{className:'am-te am-diag'},
@@ -1700,7 +1718,7 @@ React.createElement('div',{className:'am-te-txt'},au.interne_notiz)
 ),
 
 // 5 FOTOS
-React.createElement(Sec,{id:'fotos',title:'Foto-Dokumentation',mini:`${((au.fotos||[]).length+(au.annahme_protokoll&&au.annahme_protokoll.fotos||[]).length)} Fotos`,delay:'100ms'},
+React.createElement(Sec,{isOpen:open.fotos,onTog:()=>tog('fotos'),title:'Foto-Dokumentation',mini:`${((au.fotos||[]).length+(au.annahme_protokoll&&au.annahme_protokoll.fotos||[]).length)} Fotos`,delay:'100ms'},
 React.createElement('div',{className:'am-lbl',style:{marginTop:2}},'Annahme / Allgemein'),
 React.createElement('div',{className:'am-fgrid'},
 (au.annahme_protokoll&&au.annahme_protokoll.fotos||[]).map(f=>
@@ -1738,7 +1756,7 @@ React.createElement('span',{className:'am-loc'},f.name||'Foto')
 ),
 
 // 6 STECHUHR
-React.createElement(Sec,{id:'timer',title:'Stechuhr & Dokumente',mini:`${timerFmt(au.timer_gesamt_sek)} · ${au.timer_aktiv?'läuft':'pausiert'}`,delay:'120ms'},
+React.createElement(Sec,{isOpen:open.timer,onTog:()=>tog('timer'),title:'Stechuhr & Dokumente',mini:`${timerFmt(au.timer_gesamt_sek)} · ${au.timer_aktiv?'läuft':'pausiert'}`,delay:'120ms'},
 React.createElement('div',{style:{textAlign:'center',padding:'4px 0 8px'}},
 React.createElement('div',{className:'am-timer-big',style:{color:au.timer_aktiv?'#0E8F4E':'#16161A'}},timerFmt(au.timer_gesamt_sek)),
 React.createElement('div',{className:'am-eff'},
@@ -1777,7 +1795,7 @@ React.createElement('a',{href:pdf.data,target:'_blank',style:{color:'#0A5FFF',fo
 ),
 
 // 7 ORGANISATION
-React.createElement(Sec,{id:'orga',title:'Organisation',note:hatNotiz,mini:hatNotiz?React.createElement(React.Fragment,null,React.createElement('span',{className:'am-dotmark'}),'Notiz'):null,delay:'140ms'},
+React.createElement(Sec,{isOpen:open.orga,onTog:()=>tog('orga'),title:'Organisation',note:hatNotiz,mini:hatNotiz?React.createElement(React.Fragment,null,React.createElement('span',{className:'am-dotmark'}),'Notiz'):null,delay:'140ms'},
 hatNotiz&&React.createElement('div',{className:'am-note-flag'},
 React.createElement('span',{className:'am-note-icon'},'!'),
 'Interne Notiz hinterlegt'
@@ -1806,7 +1824,7 @@ onBlur:e=>{e.target.style.borderColor='rgba(22,22,26,0.1)';e.target.style.backgr
 ),
 
 // 8 UNTERSCHRIFT
-React.createElement(Sec,{id:'sig',title:'Unterschrift Auftragserteilung',delay:'160ms'},
+React.createElement(Sec,{isOpen:open.sig,onTog:()=>tog('sig'),title:'Unterschrift Auftragserteilung',delay:'160ms'},
 React.createElement('canvas',{
 className:'am-sig-canvas',
 ref:sigSetup,
@@ -2090,10 +2108,18 @@ return React.createElement(Modal, { title: "Neuer Auftrag", onClose: onClose, wi
 , React.createElement(KundenSuche, { kunden: data.kunden||[], value: kunden_id, onChange: v=>{setKunden_id(v);setFahrzeug_id("");}, label: "Kunde *", onAdd: ()=>setPage("newKunde"),})
 
 /* 2. FAHRZEUG – genauso wie der Kunde: suchen ODER neu anlegen */
-, kunden_id&&React.createElement(FahrzeugSuche, { fahrzeuge: kFz, value: fahrzeug_id, onChange: setFahrzeug_id, onAdd: ()=>setPage("newFahrzeug"), label: "Fahrzeug",})
+, kunden_id
+?React.createElement(FahrzeugSuche, { fahrzeuge: kFz, value: fahrzeug_id, onChange: setFahrzeug_id, onAdd: ()=>setPage("newFahrzeug"), label: "Fahrzeug",})
+:React.createElement('div', null
+, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5},}
+, React.createElement('span', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, "Fahrzeug" )
+, React.createElement('span', { style: {background:"rgba(120,120,128,0.10)",borderRadius:8,padding:"6px 11px",color:"#AEAEB2",fontSize:12.5,fontWeight:600},}, "+ Neues Fahrzeug" )
+)
+, React.createElement('div', { style: {padding:"12px 13px",background:"#F2F2F7",border:"1px dashed rgba(60,60,67,0.18)",borderRadius:12,color:"#AEAEB2",fontSize:12.5,lineHeight:1.4},}, "Bitte zuerst oben einen Kunden wählen — danach kannst du sein Fahrzeug auswählen oder neu anlegen."     )
+)
 
-/* 3. KM */
-, kunden_id&&React.createElement(Inp, { label: "KM-Stand (optional)" , value: annahme_km, onChange: setAnnahme_km, type: "number", suffix: "km",})
+/* 3. KM (mit Tausender-Trennzeichen) */
+, kunden_id&&React.createElement(Inp, { label: "KM-Stand (optional)" , value: annahme_km?Number(annahme_km).toLocaleString("de-DE"):"", onChange: v=>setAnnahme_km(v.replace(/\D/g,"")), type: "text", suffix: "km",})
 
 /* 4. LEISTUNGEN */
 , React.createElement('div', null
