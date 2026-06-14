@@ -603,9 +603,9 @@ if(showNeu) return React.createElement('div', { style: {display:"flex",flexDirec
   , React.createElement(Btn, { full: true, v: "primary", size: "md", onClick: saveNeu,}, "Kunde speichern" )
 );
 return React.createElement('div', { ref: ref, style: {position:"relative"},}
-  , label&&React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5},}
-    , React.createElement('span', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, label)
-    , React.createElement('button', { onClick: ()=>setShowNeu(true), style: {background:"none",border:"none",color:P.blue,fontSize:12,cursor:"pointer",fontWeight:600},}, "+ Neuer Kunde"  )
+  , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5},}
+    , label?React.createElement('span', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, label):React.createElement('span', null)
+    , React.createElement('button', { onClick: ()=>setShowNeu(true), style: {background:"rgba(0,122,255,0.08)",border:"none",borderRadius:8,padding:"6px 11px",color:P.blue,fontSize:12.5,cursor:"pointer",fontWeight:600},}, "+ Neuer Kunde"  )
   )
   , sel?React.createElement('div', { style: {display:"flex",alignItems:"center",gap:10,padding:"11px 14px",background:"rgba(0,122,255,0.06)",border:"1.5px solid rgba(0,122,255,0.3)",borderRadius:12},}
     , React.createElement('div', { style: {flex:1},}, React.createElement('div', { style: {color:"#1D1D1F",fontSize:14,fontWeight:600},}, sel.vorname, " " , sel.nachname), sel.firma&&React.createElement('div', { style: {color:"#6E6E73",fontSize:12},}, sel.firma))
@@ -1879,7 +1879,6 @@ function SchnellauftragModal({onClose}){
 const {data,addRow,schnellauftragErstellen,setView,notify}=useApp();
 const [kunden_id,setKunden_id]=useState("");
 const [fahrzeug_id,setFahrzeug_id]=useState("");
-const [laufkunde,setLaufkunde]=useState(false);
 const [beschreibung,setBeschreibung]=useState("");
 const [modus,setModus]=useState("pakete");
 const [schnell_betrag,setSchnell_betrag]=useState("");
@@ -1888,6 +1887,7 @@ const [annahme_km,setAnnahme_km]=useState("");
 const [loading2,setLoading2]=useState(false);
 const [showNFz,setShowNFz]=useState(false);
 const [nFz,setNFz]=useState({kennzeichen:"",vin:"",marke:"",modell:"",baujahr:String(new Date().getFullYear()),kraftstoff:"Benzin",km:"",hu_datum:"",au_datum:"",hubraum:"",kw:"",ps:"",getriebe:"Schaltung",farbe:"",farb_code:"",reifengroesse:"",erstzulassung:"",naechste_inspektion:"",anzahl_vorbesitzer:"",fahrzeugschein:null});
+const kunde=(data.kunden||[]).find(x=>x.id===kunden_id);
 const kFz=(data.fahrzeuge||[]).filter(f=>f.kunden_id===kunden_id);
 const handleNeuesFahrzeug=async()=>{
 if(!nFz.kennzeichen||!nFz.marke){notify("Kennzeichen + Marke erforderlich","error");return;}
@@ -1896,48 +1896,40 @@ const s=await addRow("fahrzeuge",row);
 setFahrzeug_id((s&&s.id)||row.id);setShowNFz(false);notify("Fahrzeug angelegt");
 };
 const submit=async()=>{
-if(!laufkunde&&!kunden_id){notify("Bitte Kunde wählen oder anlegen","error");return;}
+if(!kunden_id){notify("Bitte Kunde wählen oder anlegen","error");return;}
 if(modus==="schnell"&&!schnell_betrag){notify("Bitte Betrag eingeben","error");return;}
-if(modus==="pakete"&&(pakete||[]).length===0){notify("Bitte mindestens eine Position oder Pauschalbetrag","error");return;}
+if(modus==="pakete"&&(pakete||[]).length===0){notify("Bitte mindestens eine Position hinzufügen","error");return;}
 setLoading2(true);
-const r=await schnellauftragErstellen({kunden_id:laufkunde?"laufkunde":kunden_id,fahrzeug_id:fahrzeug_id||null,beschreibung,pakete,schnellmodus:modus==="schnell",schnell_betrag,schnell_beschreibung:beschreibung,annahme_km:annahme_km||null});
+const r=await schnellauftragErstellen({kunden_id,fahrzeug_id:fahrzeug_id||null,beschreibung,pakete,schnellmodus:modus==="schnell",schnell_betrag,schnell_beschreibung:beschreibung,annahme_km:annahme_km||null});
 setLoading2(false);
 if(r){onClose();setView("auftraege");}
 };
 return React.createElement(Modal, { title: "Neuer Auftrag", onClose: onClose, wide: true,}
-, React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:14},}
+, React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:16},}
 
-/* 1. KUNDE */
-, React.createElement('div', null
-, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7},}
-, React.createElement('span', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, "1 · Kunde" )
-, React.createElement('button', { onClick: ()=>{setLaufkunde(v=>!v);setKunden_id("");setFahrzeug_id("");setShowNFz(false);}, style: {background:"none",border:"none",color:laufkunde?P.orange:P.blue,fontSize:13,cursor:"pointer",fontWeight:600},}, laufkunde?"Doch Kunde wählen":"Laufkunde (anonym)")
-)
-, laufkunde
-?React.createElement('div', { style: {padding:"11px 13px",background:"rgba(255,149,0,0.07)",border:"1px solid rgba(255,149,0,0.2)",borderRadius:11},}, React.createElement('div', { style: {color:P.orange,fontSize:13,fontWeight:600,marginBottom:3},}, "Laufkunde / Barzahlung"  ), React.createElement('div', { style: {color:"#6E6E73",fontSize:12,lineHeight:1.4},}, "Anonym, ohne Stammdaten. Ab 250 € brutto ist ein Name gesetzlich Pflicht."))
-:React.createElement(KundenSuche, { kunden: data.kunden||[], value: kunden_id, onChange: v=>{setKunden_id(v);setFahrzeug_id("");setShowNFz(false);}, label: "",})
-)
+/* KUNDE */
+, React.createElement(KundenSuche, { kunden: data.kunden||[], value: kunden_id, onChange: v=>{setKunden_id(v);setFahrzeug_id("");setShowNFz(false);}, label: "Kunde *",})
 
-/* 2. FAHRZEUG */
-, !laufkunde&&kunden_id&&React.createElement('div', null
-, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7},}
-, React.createElement('span', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, "2 · Fahrzeug" )
-, React.createElement('button', { onClick: ()=>setShowNFz(v=>!v), style: {background:"none",border:"none",color:P.green,fontSize:13,cursor:"pointer",fontWeight:600},}, showNFz?"Abbrechen":"+ Neues Fahrzeug")
+/* FAHRZEUG - erscheint sobald Kunde gewählt */
+, kunden_id&&React.createElement('div', null
+, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6},}
+, React.createElement('span', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, "Fahrzeug" )
+, React.createElement('button', { onClick: ()=>setShowNFz(v=>!v), style: {background:"rgba(48,209,88,0.10)",border:"none",borderRadius:8,padding:"6px 11px",color:P.green,fontSize:12.5,cursor:"pointer",fontWeight:600},}, showNFz?"Abbrechen":"+ Neues Fahrzeug")
 )
 , showNFz
 ?React.createElement('div', { style: {background:"rgba(48,209,88,0.07)",border:"1px solid rgba(48,209,88,0.22)",borderRadius:13,padding:"14px"},}
 , React.createElement(FahrzeugFormFelder, { f: nFz, setF: setNFz, withScan: true,})
 , React.createElement('div', { style: {display:"flex",gap:8,marginTop:14},}, React.createElement(Btn, { v: "success", size: "sm", onClick: handleNeuesFahrzeug,}, React.createElement(Ic, { n: "check", s: 13,}), " Anlegen & wählen"   ), React.createElement(Btn, { v: "ghost", size: "sm", onClick: ()=>setShowNFz(false),}, "Abbrechen"))
 )
-:React.createElement(Sel, { value: fahrzeug_id, onChange: setFahrzeug_id, options: [{value:"",label:kFz.length?"- Fahrzeug wählen -":"- Noch kein Fahrzeug -"},...kFz.map(f=>({value:f.id,label:`${f.kennzeichen} · ${f.marke||""} ${f.modell||""}`.trim()}))],})
+:React.createElement(Sel, { value: fahrzeug_id, onChange: setFahrzeug_id, options: [{value:"",label:kFz.length?"- Fahrzeug wählen -":"- Noch kein Fahrzeug · neu anlegen -"},...kFz.map(f=>({value:f.id,label:`${f.kennzeichen} · ${f.marke||""} ${f.modell||""}`.trim()}))],})
 )
 
-/* 3. KM-STAND */
-, !laufkunde&&kunden_id&&React.createElement(Inp, { label: "3 · KM-Stand (optional)" , value: annahme_km, onChange: setAnnahme_km, type: "number", suffix: "km", note: "Kilometerstand bei Annahme",})
+/* KM-STAND */
+, kunden_id&&React.createElement(Inp, { label: "KM-Stand (optional)" , value: annahme_km, onChange: setAnnahme_km, type: "number", suffix: "km",})
 
-/* 4. LEISTUNGEN */
+/* LEISTUNGEN */
 , React.createElement('div', null
-, React.createElement('div', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",marginBottom:7},}, "4 · Leistungen" )
+, React.createElement('div', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",marginBottom:7},}, "Was wird gemacht?" )
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:8},}
 , [["pakete","Einzelpositionen"],["schnell","Pauschalbetrag"]].map(([v,l])=>(
 React.createElement('button', { key: v, onClick: ()=>setModus(v), style: {padding:"11px 8px",borderRadius:12,border:`2px solid ${modus===v?P.blue:"rgba(0,0,0,0.1)"}`,background:modus===v?"rgba(0,122,255,0.06)":"#fff",color:modus===v?P.blue:"#3C3C43",cursor:"pointer",fontSize:13,fontWeight:modus===v?700:500},}, l)
