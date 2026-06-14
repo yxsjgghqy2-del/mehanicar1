@@ -1246,139 +1246,458 @@ function AuftragDetail({au:initAu,onBack}){
 const {data,updateRow,deleteRow,notify,paketeAbrechnen}=useApp();
 const {confirm,modal:confirmModal}=useConfirm();
 const au=(data.auftraege||[]).find(a=>a.id===initAu.id)||initAu;
-const [tab,setTab]=useState("info");
-const [editing,setEditing]=useState(false);
-const [ef,setEf]=useState({...au,pakete:au.pakete||[]});
-const [selPakete,setSelPakete]=useState([]);
+const k=(data.kunden||[]).find(x=>x.id===au.kunden_id);
+const fz=(data.fahrzeuge||[]).find(x=>x.id===au.fahrzeug_id);
+const sc=SC[au.status]||SC.offen;
+const c=calcAU(au);
+const [open,setOpen]=useState({kunde:true,fahrzeug:true,pakete:true,komm:false,fotos:false,timer:false,orga:false,sig:false});
+const [calcMode,setCalcMode]=useState('over');
 const [showAbrModal,setShowAbrModal]=useState(false);
-const k=(data.kunden||[]).find(x=>x.id===au.kunden_id),f=(data.fahrzeuge||[]).find(x=>x.id===au.fahrzeug_id),sc=SC[au.status]||SC.offen,c=calcAU(au);
+const [sigDraw,setSigDraw]=useState(false);
+const [sigPos,setSigPos]=useState([0,0]);
+const sigRef=useRef();
 const offenePakete=(au.pakete||[]).filter(p=>p.paket_status==="offen"||!p.paket_status);
-const setStatus=async s=>{
-await updateRow("auftraege",au.id,{status:s});
-notify(`Status: ${_optionalChain([SC, 'access', _37 => _37[s], 'optionalAccess', _38 => _38.label])||s}`);
-};
-const toggleTimer=async()=>{
-const aktiv=!au.timer_aktiv;
-await updateRow("auftraege",au.id,{timer_aktiv:aktiv,timer_gesamt_sek:au.timer_gesamt_sek});
-notify(aktiv?"Timer gestartet >":"Timer pausiert ||");
-};
-const saveEdit=async()=>{
-const c2=calcPakete(ef.pakete||[]);
-await updateRow("auftraege",au.id,{...ef,netto:c2.netto,mwst_betrag:c2.mwst,brutto:c2.brutto});
-setEditing(false);notify("Auftrag aktualisiert ");
-};
-const handleFile=e=>{
-Array.from(e.target.files||[]).forEach(file=>{
-const reader=new FileReader();
-reader.onload=ev=>{
-const item={id:uid(),name:file.name,type:file.type,size:file.size,data:ev.target.result,datum:tod()};
-if(file.type.startsWith("image/")) updateRow("auftraege",au.id,{fotos:[...(au.fotos||[]),item]});
-else updateRow("auftraege",au.id,{pdfs:[...(au.pdfs||[]),item]});
-};
-reader.readAsDataURL(file);
-});
-};
-const TABS=[{v:"info",l:"Info"},{v:"pakete",l:`Pakete${offenePakete.length>0?" ("+offenePakete.length+")":""}`},{v:"annahme",l:"Annahme"},{v:"timer",l:"Stechuhr"},{v:"checkliste",l:"Checkliste"},{v:"dateien",l:"Dateien"}];
-return React.createElement(Screen, { title: au.nr, onBack: onBack, action: React.createElement('div', { style: {display:"flex",gap:8},}
-, React.createElement(Btn, { v: "ghost", size: "sm", onClick: ()=>setEditing(v=>!v),}, React.createElement(Ic, { n: "edit", s: 14,}))
-, React.createElement(Btn, { v: "danger", size: "sm", onClick: async()=>{
-const {ok,grund}=kannAuftragLoeschen(au,data.rechnungen);
-if(!ok){notify(grund,"error");return;}
-const ja=await confirm({title:"Auftrag löschen?",message:`${au.nr} wird unwiderruflich gelöscht.`,confirmLabel:"Löschen",confirmColor:"#FF3B30"});
-if(ja){
-deleteRow("auftraege",au.id);onBack();
+const hatNotiz=!!(au.interne_notiz&&au.interne_notiz.trim());
+
+useEffect(()=>{
+if(document.getElementById('am-css')) return;
+const el=document.createElement('style');
+el.id='am-css';
+el.textContent=`
+@keyframes amSecIn{from{transform:translateY(10px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes amFadeUp{from{transform:translateY(6px);opacity:0}to{transform:translateY(0);opacity:1}}
+@keyframes amPing{0%{transform:scale(.6);opacity:.4}80%,100%{transform:scale(1.8);opacity:0}}
+.am-wrap{position:fixed;inset:0;background:#F5F5F7;z-index:500;display:flex;flex-direction:column;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#16161A;letter-spacing:-0.01em}
+.am-hd{background:rgba(245,245,247,0.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding:12px 15px 10px;border-bottom:1px solid rgba(22,22,26,0.08);flex-shrink:0;padding-top:max(12px,env(safe-area-inset-top))}
+.am-hd-top{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.am-back{width:30px;height:30px;border-radius:9px;background:#fff;border:1px solid rgba(22,22,26,0.08);display:flex;align-items:center;justify-content:center;color:#0A5FFF;cursor:pointer;font-size:17px;line-height:1;flex-shrink:0;font-weight:300}
+.am-eyebrow{font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#A6A6AE}
+.am-nr{font-size:18px;font-weight:700;letter-spacing:-0.02em;line-height:1.1;color:#16161A}
+.am-hd-icons{margin-left:auto;display:flex;align-items:center;gap:8px}
+.am-notiz-badge{display:none;align-items:center;gap:4px;background:rgba(224,53,59,0.09);color:#E0353B;border:1px solid rgba(224,53,59,0.3);border-radius:8px;padding:5px 8px;font-size:10.5px;font-weight:600;cursor:pointer}
+.am-notiz-badge.show{display:flex;animation:amFadeUp .3s ease}
+.am-notiz-icon{width:16px;height:18px;border:1.5px solid #E0353B;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+.am-dt{font-size:11px;color:#A6A6AE;text-align:right;line-height:1.4}
+.am-pills{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.am-pills::-webkit-scrollbar{display:none}
+.am-pill{padding:7px 13px;border-radius:9px;font-size:12px;font-weight:600;border:1px solid rgba(22,22,26,0.08);background:#fff;color:#6B6B73;white-space:nowrap;cursor:pointer;transition:all .18s}
+.am-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:12px 13px 140px}
+.am-sec{background:#fff;border-radius:15px;border:1px solid rgba(22,22,26,0.08);margin-bottom:9px;overflow:hidden;animation:amSecIn .36s cubic-bezier(.3,1.1,.5,1) both}
+.am-sec-h{display:flex;align-items:center;gap:10px;padding:13px 14px;cursor:pointer;user-select:none;-webkit-user-select:none}
+.am-sec-t{font-size:14px;font-weight:650;flex:1;color:#16161A}
+.am-mini{font-size:11px;color:#A6A6AE;font-weight:500;display:flex;align-items:center;gap:5px}
+.am-dotmark{width:7px;height:7px;border-radius:50%;background:#E0353B;display:inline-block;flex-shrink:0}
+.am-chev{width:7px;height:7px;border-right:1.5px solid #A6A6AE;border-bottom:1.5px solid #A6A6AE;transform:rotate(45deg);transition:transform .28s cubic-bezier(.3,1.2,.5,1);margin-top:-3px;flex-shrink:0}
+.am-sec.am-open .am-chev{transform:rotate(-135deg);margin-top:2px}
+.am-sec-b{max-height:0;overflow:hidden;transition:max-height .4s cubic-bezier(.4,0,.2,1)}
+.am-sec.am-open .am-sec-b{max-height:3000px}
+.am-sec-in{padding:0 14px 14px}
+.am-kv{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(22,22,26,0.05);font-size:12.5px}
+.am-kv:last-child{border:none}
+.am-kv .ak{color:#A6A6AE}.am-kv .av{font-weight:550;text-align:right;color:#16161A}
+.am-tag{font-size:10px;font-weight:600;border-radius:5px;padding:3px 7px;white-space:nowrap}
+.am-t-blue{background:rgba(10,95,255,0.09);color:#0A5FFF}
+.am-t-green{background:rgba(14,143,78,0.10);color:#0E8F4E}
+.am-t-amber{background:rgba(194,113,10,0.11);color:#C2710A}
+.am-t-red{background:rgba(224,53,59,0.09);color:#E0353B}
+.am-t-gray{background:rgba(22,22,26,0.06);color:#6B6B73}
+.am-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:11px}
+.am-abtn{display:flex;align-items:center;justify-content:center;padding:11px 4px;border-radius:11px;font-size:12px;font-weight:600;border:1px solid rgba(22,22,26,0.1);background:#fff;color:#16161A;cursor:pointer;transition:all .14s;-webkit-tap-highlight-color:transparent}
+.am-abtn:active{transform:scale(.93);background:#F5F5F7}
+.am-lbl{font-size:10px;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:#A6A6AE;margin:13px 0 7px}
+.am-chips{display:flex;gap:7px;flex-wrap:wrap}
+.am-chip{font-size:11.5px;font-weight:550;border-radius:9px;padding:8px 11px;background:#F5F5F7;color:#16161A;border:1px solid rgba(22,22,26,0.08);cursor:pointer;transition:all .15s}
+.am-chip.am-sent{background:#0E8F4E;color:#fff;border-color:#0E8F4E}
+.am-modesw{display:flex;background:#F5F5F7;border:1px solid rgba(22,22,26,0.08);border-radius:11px;padding:3px;margin-bottom:12px}
+.am-modesw button{flex:1;padding:8px;border-radius:8px;border:none;background:none;font-size:12.5px;font-weight:600;color:#6B6B73;cursor:pointer;transition:all .2s}
+.am-modesw button.am-on{background:#fff;color:#16161A;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.am-bot{position:absolute;left:0;right:0;bottom:0;background:rgba(255,255,255,0.94);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(22,22,26,0.08);padding:10px 14px 18px;z-index:10;padding-bottom:max(18px,env(safe-area-inset-bottom))}
+.am-calc{display:flex;justify-content:space-between;gap:6px;margin-bottom:10px}
+.am-calc div{font-size:10.5px;color:#A6A6AE;font-weight:500}
+.am-calc b{display:block;font-size:14px;color:#16161A;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.am-calc .am-gw b{color:#0E8F4E}
+.am-bbtns{display:flex;gap:8px}
+.am-bb{padding:14px;border-radius:12px;border:none;font-size:13.5px;font-weight:650;cursor:pointer;transition:transform .12s;-webkit-tap-highlight-color:transparent}
+.am-bb:active{transform:scale(.95)}
+.am-bb-2nd{flex:0 0 80px;background:#F5F5F7;color:#16161A;border:1px solid rgba(22,22,26,0.1)}
+.am-bb-main{flex:1;background:#0A5FFF;color:#fff}
+.am-tl{position:relative;padding-left:20px}
+.am-tl::before{content:"";position:absolute;left:4px;top:4px;bottom:4px;width:1.5px;background:rgba(22,22,26,0.08)}
+.am-te{position:relative;margin-bottom:13px}
+.am-te::before{content:"";position:absolute;left:-19px;top:3px;width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid #A6A6AE;box-shadow:0 0 0 3px #fff}
+.am-te.am-wa::before{border-color:#0E8F4E}
+.am-te.am-call::before{border-color:#0A5FFF}
+.am-te.am-diag::before{border-color:#C2710A}
+.am-te-h{display:flex;align-items:center;gap:6px;font-size:11px;color:#A6A6AE;margin-bottom:4px;flex-wrap:wrap}
+.am-te-h .am-ch{font-weight:650;color:#16161A}
+.am-te-txt{font-size:12.5px;line-height:1.5;color:#16161A}
+.am-timer-big{font-size:46px;font-weight:300;font-variant-numeric:tabular-nums;letter-spacing:1px;text-align:center;padding:4px 0 2px}
+.am-eff{display:flex;justify-content:center;gap:18px;margin-top:8px;font-size:11px;color:#6B6B73}
+.am-eff div{text-align:center}
+.am-eff b{display:block;font-size:14px;color:#16161A;font-weight:650;margin-top:2px}
+.am-eff .am-hi{color:#0E8F4E}
+.am-tbtns{display:flex;gap:8px;justify-content:center;margin-top:12px}
+.am-tbtn{padding:10px 22px;border-radius:11px;border:none;font-size:13px;font-weight:600;cursor:pointer;transition:transform .12s;-webkit-tap-highlight-color:transparent}
+.am-tbtn:active{transform:scale(.93)}
+.am-cl{display:flex;align-items:center;gap:11px;padding:10px 2px;cursor:pointer}
+.am-cb{width:23px;height:23px;border-radius:7px;border:1.5px solid rgba(22,22,26,0.12);display:grid;place-items:center;transition:all .2s cubic-bezier(.3,1.4,.5,1);flex-shrink:0}
+.am-cb svg{width:12px;height:12px;stroke:#fff;stroke-width:3;fill:none;stroke-dasharray:20;stroke-dashoffset:20;transition:stroke-dashoffset .22s ease .05s}
+.am-cl.am-done .am-cb{background:#0E8F4E;border-color:#0E8F4E}
+.am-cl.am-done .am-cb svg{stroke-dashoffset:0}
+.am-cl .am-ct{font-size:13px;color:#16161A;transition:color .2s}
+.am-cl.am-done .am-ct{color:#A6A6AE;text-decoration:line-through}
+.am-prog{height:4px;border-radius:2px;background:rgba(22,22,26,0.08);margin-top:9px;overflow:hidden}
+.am-prog i{display:block;height:100%;background:#0E8F4E;border-radius:2px;transition:width .4s cubic-bezier(.25,.8,.3,1)}
+.am-note-flag{display:flex;align-items:center;gap:8px;padding:10px 11px;background:rgba(224,53,59,0.05);border:1px solid rgba(224,53,59,0.22);border-radius:11px;margin-bottom:10px;font-size:11.5px;color:#E0353B;font-weight:600}
+.am-note-icon{width:17px;height:19px;border:1.5px solid #E0353B;border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0}
+.am-mini2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.am-mc{padding:11px;border-radius:12px;border:1px solid rgba(22,22,26,0.08);font-size:11.5px;line-height:1.5;color:#16161A}
+.am-mc .am-mt{font-weight:600;font-size:12px;margin-bottom:3px;color:#16161A}
+.am-mc .am-ma{color:#0A5FFF;font-weight:600;cursor:pointer;font-size:11.5px}
+.am-sig-canvas{width:100%;height:110px;border:1px dashed rgba(22,22,26,0.15);border-radius:12px;background:#F5F5F7;touch-action:none;cursor:crosshair;display:block}
+.am-sig-foot{display:flex;justify-content:space-between;align-items:center;margin-top:7px;font-size:11px;color:#A6A6AE}
+.am-sig-clear{background:none;border:none;color:#0A5FFF;font-size:12px;font-weight:600;cursor:pointer}
+.am-fgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.am-foto{aspect-ratio:1;border-radius:10px;background:#F5F5F7;border:1px solid rgba(22,22,26,0.06);position:relative;overflow:hidden}
+.am-foto .am-loc{position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,0.55);color:#fff;font-size:8px;padding:3px 4px;text-align:center;font-weight:600}
+.am-foto.am-cam{border:1px dashed rgba(10,95,255,0.35);background:rgba(10,95,255,0.04);color:#0A5FFF;cursor:pointer;display:grid;place-items:center;font-size:20px;font-weight:300}
+.am-ai-bar{display:flex;align-items:center;gap:10px;padding:10px 12px;background:#F5F5F7;border:1px solid rgba(22,22,26,0.08);border-radius:12px;margin-bottom:13px;font-size:11.5px;line-height:1.45;color:#6B6B73}
+.am-ai-dot{position:relative;width:7px;height:7px;flex-shrink:0}
+.am-ai-dot::after{content:"";position:absolute;inset:0;border-radius:50%;background:#0A5FFF}
+.am-ai-dot::before{content:"";position:absolute;inset:-4px;border-radius:50%;background:#0A5FFF;opacity:.3;animation:amPing 1.8s cubic-bezier(0,0,.2,1) infinite}
+`;
+document.head.appendChild(el);
+},[]);
+
+const tog=k=>setOpen(p=>({...p,[k]:!p[k]}));
+const STATI=[["offen","Offen","#C2710A"],["in_arbeit","In Arbeit","#0A5FFF"],["wartet_teile","Wartet auf Teile","#C2710A"],["abgeschlossen","Fertig","#0E8F4E"],["storniert","Storniert","#E0353B"]];
+const setStatus=async s=>{await updateRow("auftraege",au.id,{status:s});notify(`Status: ${(SC[s]||SC.offen).label}`);};
+const toggleTimer=async()=>{const a=!au.timer_aktiv;await updateRow("auftraege",au.id,{timer_aktiv:a,timer_gesamt_sek:au.timer_gesamt_sek});notify(a?"Timer gestartet":"Timer pausiert");};
+
+// Signature canvas
+const sigSetup=useCallback(canvas=>{
+if(!canvas) return;
+sigRef.current=canvas;
+const r=canvas.getBoundingClientRect();
+canvas.width=r.width*2;canvas.height=220;
+const ctx=canvas.getContext('2d');
+ctx.scale(2,2);ctx.lineWidth=2;ctx.lineCap='round';ctx.strokeStyle='#16161A';
+},[]);
+const getPos=(e,canvas)=>{const r=canvas.getBoundingClientRect();const t=e.touches?e.touches[0]:e;return[t.clientX-r.left,t.clientY-r.top];};
+
+const Sec=({id,title,mini,note,children,delay})=>{
+const isOpen=open[id];
+return React.createElement('div',{className:'am-sec'+(isOpen?' am-open':''),style:{animationDelay:delay||'0ms'}},
+React.createElement('div',{className:'am-sec-h',onClick:()=>tog(id)},
+React.createElement('span',{className:'am-sec-t'},title),
+note&&React.createElement('span',{className:'am-dotmark'}),
+mini&&React.createElement('span',{className:'am-mini'},mini),
+React.createElement('span',{className:'am-chev'})
+),
+React.createElement('div',{className:'am-sec-b'},
+React.createElement('div',{className:'am-sec-in'},children)
+)
+);};
+
+const kdName=k?`${k.vorname||''} ${k.nachname||''}`.trim():au.beschreibung||'Unbekannter Kunde';
+const fzName=fz?`${fz.kennzeichen||''} · ${fz.marke||''} ${fz.modell||''}`.trim():null;
+
+return React.createElement('div',{className:'am-wrap'},
+// Header
+React.createElement('div',{className:'am-hd'},
+React.createElement('div',{className:'am-hd-top'},
+React.createElement('button',{className:'am-back',onClick:onBack},'‹'),
+React.createElement('div',null,
+React.createElement('div',{className:'am-eyebrow'},'Auftrag'),
+React.createElement('div',{className:'am-nr'},au.nr)
+),
+React.createElement('div',{className:'am-hd-icons'},
+hatNotiz&&React.createElement('button',{className:'am-notiz-badge show',onClick:()=>tog('orga')},
+React.createElement('span',{className:'am-notiz-icon'},'!'),
+'Notiz'
+),
+React.createElement('div',{className:'am-dt'},
+`angelegt\n${au.erstellt?new Date(au.erstellt).toLocaleDateString('de-DE'):'-'}`
+)
+)
+),
+React.createElement('div',{className:'am-pills'},
+STATI.map(([s,l,col])=>React.createElement('button',{
+key:s,
+className:'am-pill',
+style:au.status===s?{background:col+'18',borderColor:col,color:col}:{},
+onClick:()=>setStatus(s)
+},l))
+)
+),
+
+// Scroll
+React.createElement('div',{className:'am-scroll'},
+
+// 1 KUNDE
+React.createElement(Sec,{id:'kunde',title:kdName,mini:k&&k.typ==='stamm'?'Stammkunde':null,delay:'20ms'},
+React.createElement('div',{className:'am-kv'},React.createElement('span',{className:'ak'},'Telefon'),React.createElement('span',{className:'av'},k&&k.telefon||'-')),
+React.createElement('div',{className:'am-kv'},React.createElement('span',{className:'ak'},'WhatsApp'),React.createElement('span',{className:'av'},k&&k.whatsapp?React.createElement('span',{className:'am-tag am-t-green'},'verknüpft'):'-')),
+React.createElement('div',{className:'am-kv',style:{borderBottom:'none'}},React.createElement('span',{className:'ak'},'E-Mail'),React.createElement('span',{className:'av'},k&&k.email||'-')),
+React.createElement('div',{className:'am-row3'},
+React.createElement('button',{className:'am-abtn',onClick:()=>k&&k.telefon&&window.open(`tel:${k.telefon}`)},'Anrufen'),
+React.createElement('button',{className:'am-abtn',onClick:()=>{const ph=(k&&(k.whatsapp||k.telefon)||'').replace(/[^0-9]/g,'');if(ph)window.open(`https://wa.me/${ph}`);}},
+'WhatsApp'
+),
+React.createElement('button',{className:'am-abtn',onClick:()=>k&&k.email&&window.open(`mailto:${k.email}`)},'E-Mail')
+),
+React.createElement('div',{className:'am-lbl'},'Schnellnachricht'),
+React.createElement('div',{className:'am-chips'},
+['Fahrzeug fertig','Angebot liegt bereit','Teile verzögern sich'].map(t=>
+React.createElement('button',{key:t,className:'am-chip',onClick:e=>{
+const btn=e.currentTarget;btn.classList.add('am-sent');btn.textContent='Gesendet';
+const ph=(k&&(k.whatsapp||k.telefon)||'').replace(/[^0-9]/g,'');
+if(ph)window.open(`https://wa.me/${ph}?text=${encodeURIComponent(t)}`);
+setTimeout(()=>{btn.classList.remove('am-sent');btn.textContent=t;},1800);
+}},t)
+)
+)
+),
+
+// 2 FAHRZEUG
+React.createElement(Sec,{id:'fahrzeug',title:fzName||'Fahrzeug',mini:fz?`${fz.marke||''} · ${fz.baujahr||''}`.trim():null,delay:'40ms'},
+fz&&React.createElement(React.Fragment,null,
+React.createElement('div',{className:'am-kv'},React.createElement('span',{className:'ak'},'VIN'),React.createElement('span',{className:'av',style:{fontFamily:'ui-monospace,monospace',fontSize:11}},fz.vin||'-')),
+React.createElement('div',{className:'am-kv'},React.createElement('span',{className:'ak'},'KM Annahme'),React.createElement('span',{className:'av'},au.annahme_km?`${parseInt(au.annahme_km).toLocaleString('de-DE')} km`:'-')),
+React.createElement('div',{className:'am-kv'},React.createElement('span',{className:'ak'},'Tankstand'),React.createElement('span',{className:'av'},au.annahme_protokoll&&au.annahme_protokoll.tankstand||'-')),
+fz.hu_datum&&React.createElement('div',{className:'am-kv'},React.createElement('span',{className:'ak'},'HU fällig'),React.createElement('span',{className:'av'},React.createElement('span',{className:'am-tag am-t-amber'},new Date(fz.hu_datum).toLocaleDateString('de-DE',{month:'2-digit',year:'numeric'})))),
+React.createElement('div',{className:'am-kv',style:{borderBottom:'none'}},React.createElement('span',{className:'ak'},'Garantie'),React.createElement('span',{className:'av'},React.createElement('span',{className:'am-tag am-t-blue'},'12 Monate auf alle Arbeiten')))
+),
+!fz&&React.createElement('div',{style:{color:'#A6A6AE',fontSize:13,textAlign:'center',padding:'8px 0'}},'Kein Fahrzeug zugeordnet')
+),
+
+// 3 PAKETE
+React.createElement(Sec,{id:'pakete',title:'Pakete & Kalkulation',mini:`${(au.pakete||[]).length} Paket${(au.pakete||[]).length!==1?'e':''}`,delay:'60ms'},
+React.createElement('div',{className:'am-modesw'},
+React.createElement('button',{className:'am-on'===calcMode?'':'',style:{flex:1,padding:'8px',borderRadius:'8px',border:'none',background:calcMode==='over'?'#fff':'transparent',color:calcMode==='over'?'#16161A':'#6B6B73',fontWeight:600,fontSize:12.5,cursor:'pointer',boxShadow:calcMode==='over'?'0 1px 3px rgba(0,0,0,0.08)':'none',transition:'all .2s'},onClick:()=>setCalcMode('over')},'Übersicht'),
+React.createElement('button',{style:{flex:1,padding:'8px',borderRadius:'8px',border:'none',background:calcMode==='calc'?'#fff':'transparent',color:calcMode==='calc'?'#16161A':'#6B6B73',fontWeight:600,fontSize:12.5,cursor:'pointer',boxShadow:calcMode==='calc'?'0 1px 3px rgba(0,0,0,0.08)':'none',transition:'all .2s'},onClick:()=>setCalcMode('calc')},'Kalkulation')
+),
+calcMode==='over'&&React.createElement(PaketeEditor,{pakete:au.pakete||[],onChange:paks=>updateRow("auftraege",au.id,{pakete:paks}),settings:data.settings,auKvId:au.kv_id}),
+calcMode==='calc'&&React.createElement('div',{style:{fontSize:13,color:'#6B6B73',textAlign:'center',padding:'16px 0'}},
+React.createElement('div',{style:{display:'flex',flexDirection:'column',gap:8}},
+(au.pakete||[]).map(pk=>{
+const pc=calcPakete([pk]);
+return React.createElement('div',{key:pk.id,style:{border:'1px solid rgba(22,22,26,0.08)',borderRadius:12,overflow:'hidden',marginBottom:4}},
+React.createElement('div',{style:{display:'flex',alignItems:'center',gap:8,padding:'10px 12px',background:'#F5F5F7',fontSize:12.5,fontWeight:650,color:'#16161A'}},
+React.createElement('span',{style:{flex:1}},pk.beanstandung||'Paket'),
+React.createElement('span',{style:{color:'#0E8F4E',fontWeight:700}},eur(pc.netto))
+),
+[...(pk.arbeiten||[]),...(pk.material||[])].map(pos=>{
+const isArb='aw' in pos;
+const preis=isArb?(pos.aw||0)*(pos.aw_preis||0):(pos.vk_preis||0)*(pos.menge||1);
+return React.createElement('div',{key:pos.id,style:{display:'flex',alignItems:'center',gap:8,padding:'8px 12px',borderTop:'1px solid rgba(22,22,26,0.05)',fontSize:12,color:'#16161A'}},
+React.createElement('div',{style:{flex:1,minWidth:0}},
+React.createElement('div',{style:{fontWeight:550,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},pos.beschreibung),
+React.createElement('div',{style:{fontSize:10,color:'#A6A6AE',marginTop:1}},isArb?`${pos.aw} AW`:`${pos.menge||1}x`)
+),
+React.createElement('input',{
+defaultValue:(preis).toFixed(2).replace('.',','),
+style:{width:70,border:'1px solid rgba(22,22,26,0.1)',borderRadius:8,padding:'5px 7px',fontSize:12,fontWeight:600,textAlign:'right',fontFamily:'inherit',color:'#16161A',background:'#fff'},
+onBlur:e=>{
+const v=parseFloat(e.target.value.replace(',','.'))||0;
+if(isArb){
+const neueArb=(pk.arbeiten||[]).map(a=>a.id===pos.id?{...a,aw_preis:pos.aw>0?round2(v/pos.aw):v}:a);
+updateRow('auftraege',au.id,{pakete:(au.pakete||[]).map(p=>p.id===pk.id?{...p,arbeiten:neueArb}:p)});
+} else {
+const neuesMat=(pk.material||[]).map(m=>m.id===pos.id?{...m,vk_preis:pos.menge>0?round2(v/pos.menge):v}:m);
+updateRow('auftraege',au.id,{pakete:(au.pakete||[]).map(p=>p.id===pk.id?{...p,material:neuesMat}:p)});
 }
-},}, React.createElement(Ic, { n: "trash", s: 14, c: "#fff",}))
-),}
-, React.createElement('div', { style: {display:"flex",gap:6,marginBottom:12,flexWrap:"wrap",alignItems:"center"},}
-, React.createElement(Bdg, { color: sc.c, bg: sc.bg,}, sc.label)
-, au.timer_aktiv&&React.createElement('span', { style: {color:P.green,fontSize:12,display:"flex",alignItems:"center",gap:5},}, React.createElement('span', { style: {width:7,height:7,borderRadius:"50%",background:P.green,animation:"pulse 1s infinite",display:"inline-block"},}), timerFmt(au.timer_gesamt_sek))
-)
-/* Status Schnellwahl */
-, React.createElement('div', { style: {display:"flex",gap:6,marginBottom:14,overflowX:"auto",scrollbarWidth:"none",paddingBottom:2},}
-, Object.entries(SC).filter(([k2])=>k2!=="storniert").map(([k2,v])=>(
-React.createElement('button', { key: k2, onClick: ()=>setStatus(k2), style: {padding:"8px 13px",borderRadius:22,border:`1.5px solid ${au.status===k2?v.c:P.border}`,background:au.status===k2?v.bg:"transparent",color:au.status===k2?v.c:P.textSub,cursor:"pointer",fontSize:12,whiteSpace:"nowrap",fontWeight:500,flexShrink:0,minHeight:36,transition:"all 0.12s"},}, v.label)
-))
-)
-/* Offene Pakete abrechnen */
-, !au.annahme_km&&au.status!=="abgeschlossen"&&au.status!=="storniert"&&React.createElement('div', { style: {padding:"11px 14px",background:"rgba(255,149,0,0.07)",border:"1px solid rgba(255,149,0,0.2)",borderRadius:12,marginBottom:10,display:"flex",justifyContent:"space-between",alignItems:"center",gap:10},}
-, React.createElement('span', { style: {color:P.orange,fontSize:13,fontWeight:500,fontFamily:FA},}, "KM-Stand nicht eingetragen"  )
-, React.createElement('div', { style: {display:"flex",gap:7},}, React.createElement(Btn, { v: "ghost", size: "sm", onClick: ()=>setTab("info"),}, "Eintragen"), React.createElement(Btn, { v: "ghost", size: "sm", onClick: ()=>updateRow("auftraege",au.id,{annahme_km:-1}),}, "Uberspringen"))
-)
-, offenePakete.length>0&&React.createElement('div', { style: {padding:"14px",background:"rgba(255,159,10,0.08)",border:`1px solid rgba(255,159,10,0.25)`,borderRadius:14,marginBottom:14},}
-, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",gap:12},}
-, React.createElement('div', null
-, React.createElement('div', { style: {color:P.orange,fontSize:14,fontWeight:700,marginBottom:4},}, offenePakete.length, " Paket" , offenePakete.length>1?"e":"", " noch nicht abgerechnet"   )
-, React.createElement('div', { style: {color:"#6E6E73",fontSize:12},}, eur(calcOffenePakete(au.pakete||[]).brutto), " ausstehend" )
-)
-, React.createElement(Btn, { v: "orange_out", size: "sm", onClick: ()=>setShowAbrModal(true),}, React.createElement(Ic, { n: "rechnungen", s: 14, c: P.orange,}), " Pakete abrechnen"  )
+notify('Preis aktualisiert');
+}
+})
+);
+})
+);
+}),
+React.createElement('div',{style:{borderTop:'1px solid rgba(22,22,26,0.1)',marginTop:8,paddingTop:10,display:'flex',flexDirection:'column',gap:6}},
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between'}},React.createElement('span',null,'Netto'),React.createElement('span',{style:{fontWeight:600,color:'#16161A'}},eur(c.netto))),
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between'}},React.createElement('span',null,'MwSt. 19%'),React.createElement('span',{style:{fontWeight:600,color:'#16161A'}},eur(c.mwst))),
+React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:14,fontWeight:700}},React.createElement('span',null,'Brutto'),React.createElement('span',{style:{color:'#0E8F4E'}},eur(c.brutto)))
 )
 )
-, React.createElement(Tabs, { tabs: TABS, active: tab, onChange: setTab,})
-, tab==="info"&&(editing?(
-React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:13},}
-, React.createElement(Inp, { label: "Beschreibung", value: ef.beschreibung||"", onChange: v=>setEf(p=>({...p,beschreibung:v})), rows: 3,})
-, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:12},}
-, React.createElement(Inp, { label: "Fertigstellung", value: ef.fertigstellung_geplant||"", onChange: v=>setEf(p=>({...p,fertigstellung_geplant:v})), type: "datetime-local",})
 )
-, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}
-, React.createElement(Inp, { label: "KM-Stand bei Annahme"  , value: ef.annahme_km||"", onChange: v=>setEf(p=>({...p,annahme_km:v})), type: "number", suffix: "km",})
-, React.createElement(Inp, { label: "KM-Stand bei Abgabe"  , value: ef.abgabe_km||"", onChange: v=>setEf(p=>({...p,abgabe_km:v})), type: "number", suffix: "km",})
-, React.createElement(Inp, { label: "KM-Stand", value: ef.annahme_km||"", onChange: v=>setEf(p=>({...p,annahme_km:v})), type: "number", suffix: "km",})
+),
+
+// 4 KOMMUNIKATION
+React.createElement(Sec,{id:'komm',title:'Kommunikation',mini:null,delay:'80ms'},
+React.createElement('div',{className:'am-ai-bar'},
+React.createElement('div',{className:'am-ai-dot'}),
+React.createElement('span',null,React.createElement('b',{style:{color:'#16161A'}},'Assistent aktiv. '),'Liest WhatsApp, E-Mail und Telefonate mit und legt Einträge an.')
+),
+au.beschreibung&&React.createElement('div',{className:'am-tl'},
+React.createElement('div',{className:'am-te am-diag'},
+React.createElement('div',{className:'am-te-h'},
+React.createElement('span',{className:'am-ch'},'Auftrag'),
+React.createElement('span',null,'·'),
+React.createElement('span',null,au.erstellt?new Date(au.erstellt).toLocaleDateString('de-DE'):'-'),
+React.createElement('span',{className:'am-tag am-t-gray'},'manuell')
+),
+React.createElement('div',{className:'am-te-txt'},au.beschreibung)
 )
-, React.createElement(Inp, { label: "Interne Notiz" , value: ef.interne_notiz||"", onChange: v=>setEf(p=>({...p,interne_notiz:v})), rows: 2,})
-, React.createElement('div', { style: {display:"flex",gap:8},}, React.createElement(Btn, { v: "primary", onClick: saveEdit,}, React.createElement(Ic, { n: "check", s: 15,}), " Speichern" ), React.createElement(Btn, { v: "ghost", onClick: ()=>setEditing(false),}, "Abbrechen"))
-)
-):(
-React.createElement(React.Fragment, null
-, React.createElement(Card, { style: {marginBottom:12},}
-, [["Auftrag",au.nr],["KV-Bezug",au.kv_id||"-"],["Erstellt",dat(au.erstellt)],["KM-Stand",`${(au.annahme_km||0).toLocaleString("de-DE")} km`],["Fertigstellung",au.fertigstellung_geplant?datTime(au.fertigstellung_geplant):"-"]].map(([l,v],i,arr)=>(
-React.createElement('div', { key: l, style: {display:"flex",justifyContent:"space-between",padding:"10px 0",borderBottom:i<arr.length-1?`1px solid ${P.border}`:"none"},}, React.createElement('span', { style: {color:"#6E6E73",fontSize:13},}, l), React.createElement('span', { style: {color:"#1D1D1F",fontSize:13,textAlign:"right",maxWidth:"60%"},}, v))
-))
-, au.beschreibung&&React.createElement('div', { style: {paddingTop:10},}, React.createElement('div', { style: {color:"#6E6E73",fontSize:13,marginBottom:6},}, "Beschreibung"), React.createElement('div', { style: {color:"#1D1D1F",fontSize:14,lineHeight:1.6},}, au.beschreibung))
-)
-, React.createElement(Card, null
-, [["Arbeit netto",eur(c.aN)],["Material netto",eur(c.mN)],["MwSt. 19%",eur(c.mwst)]].map(([l,v])=>React.createElement('div', { key: l, style: {display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid rgba(60,60,67,0.10)"},}, React.createElement('span', { style: {color:"#6E6E73",fontSize:13},}, l), React.createElement('span', { style: {color:"#1D1D1F",fontSize:13},}, v)))
-, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",paddingTop:11},}, React.createElement('span', { style: {color:"#1D1D1F",fontSize:15,fontWeight:700},}, "Brutto"), React.createElement('span', { style: {color:P.green,fontSize:19,fontWeight:700},}, eur(c.brutto)))
-)
-)
-))
-, tab==="pakete"&&React.createElement(React.Fragment, null
-, React.createElement(PaketeEditor, { pakete: au.pakete||[], onChange: paks=>updateRow("auftraege",au.id,{pakete:paks}), settings: data.settings, auKvId: au.kv_id,})
-, offenePakete.length>0&&React.createElement('div', { style: {marginTop:14},}, React.createElement(Btn, { full: true, v: "orange_out", size: "lg", onClick: ()=>setShowAbrModal(true),}, React.createElement(Ic, { n: "rechnungen", s: 16, c: P.orange,}), " Offene Pakete in Rechnung stellen"     ))
-)
-, tab==="timer"&&React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:13},}
-, React.createElement(Card, { style: {padding:"32px 16px",textAlign:"center"},}
-, React.createElement('div', { style: {fontSize:52,fontFamily:"monospace",fontWeight:300,color:au.timer_aktiv?P.green:"#1D1D1F",letterSpacing:5,marginBottom:8,lineHeight:1},}, timerFmt(au.timer_gesamt_sek))
-, React.createElement('div', { style: {color:"#AEAEB2",fontSize:13,marginBottom:26},}, au.timer_aktiv?"* Timer läuft":"|| Pausiert")
-, React.createElement('div', { style: {display:"flex",justifyContent:"center",gap:10},}
-, React.createElement(Btn, { v: au.timer_aktiv?"secondary":"success", size: "lg", onClick: toggleTimer,}, React.createElement(Ic, { n: au.timer_aktiv?"pause":"play", s: 17,}), au.timer_aktiv?" Pause":" Start")
-, React.createElement(Btn, { v: "ghost", size: "lg", onClick: ()=>updateRow("auftraege",au.id,{timer_aktiv:false,timer_gesamt_sek:0}),}, "Reset")
+),
+au.interne_notiz&&React.createElement('div',{className:'am-tl',style:{marginTop:10}},
+React.createElement('div',{className:'am-te'},
+React.createElement('div',{className:'am-te-h'},
+React.createElement('span',{className:'am-ch'},'Interne Notiz'),
+React.createElement('span',{className:'am-tag am-t-amber'},'intern')
+),
+React.createElement('div',{className:'am-te-txt'},au.interne_notiz)
 )
 )
-, React.createElement(Card, null
-, [["Soll-AW",c.sollAW.toFixed(2)+" AW","#1D1D1F"],["Ist-Zeit",c.istStd.toFixed(2)+" h","#1D1D1F"],["Eff. Stundensatz",c.istStd>0?eur(c.effStd)+" / h":"-","#1D1D1F"],["Deckungsbeitrag",eur(round2(c.netto-c.mEK)),round2(c.netto-c.mEK)>=0?P.green:P.red]].map(([l,v,col])=>React.createElement('div', { key: l, style: {display:"flex",justifyContent:"space-between",padding:"9px 0",borderBottom:"1px solid rgba(60,60,67,0.08)"},}, React.createElement('span', { style: {color:"#6E6E73",fontSize:13},}, l), React.createElement('span', { style: {color:col,fontSize:13,fontWeight:l==="Deckungsbeitrag"?700:500},}, v)))
+),
+
+// 5 FOTOS
+React.createElement(Sec,{id:'fotos',title:'Foto-Dokumentation',mini:`${((au.fotos||[]).length+(au.annahme_protokoll&&au.annahme_protokoll.fotos||[]).length)} Fotos`,delay:'100ms'},
+React.createElement('div',{className:'am-lbl',style:{marginTop:2}},'Annahme / Allgemein'),
+React.createElement('div',{className:'am-fgrid'},
+(au.annahme_protokoll&&au.annahme_protokoll.fotos||[]).map(f=>
+React.createElement('div',{key:f.id,className:'am-foto'},
+React.createElement('img',{src:f.data,alt:'',style:{width:'100%',height:'100%',objectFit:'cover'}}),
+React.createElement('span',{className:'am-loc'},'Annahme')
+)
+),
+React.createElement('label',{className:'am-foto am-cam',style:{cursor:'pointer'}},
+'+',
+React.createElement('input',{type:'file',accept:'image/*',capture:'environment',style:{display:'none'},onChange:e=>{
+Array.from(e.target.files||[]).forEach(file=>{
+const r=new FileReader();
+r.onload=ev=>{
+const item={id:uid(),data:ev.target.result};
+const proto=au.annahme_protokoll||{};
+updateRow('auftraege',au.id,{annahme_protokoll:{...proto,fotos:[...(proto.fotos||[]),item]}});
+};
+r.readAsDataURL(file);
+});
+}})
+)
+),
+(au.fotos||[]).length>0&&React.createElement(React.Fragment,null,
+React.createElement('div',{className:'am-lbl'},'Weitere Fotos'),
+React.createElement('div',{className:'am-fgrid'},
+(au.fotos||[]).map(f=>
+React.createElement('div',{key:f.id,className:'am-foto'},
+React.createElement('img',{src:f.data,alt:'',style:{width:'100%',height:'100%',objectFit:'cover'}}),
+React.createElement('span',{className:'am-loc'},f.name||'Foto')
 )
 )
-, tab==="annahme"&&React.createElement(AnnahmeTab, { au: au, onSave: updated=>updateRow("auftraege",au.id,{annahme_protokoll:updated}),})
-, tab==="checkliste"&&React.createElement(ChecklisteTab, { au: au, onSave: updated=>updateRow("auftraege",au.id,{checkliste:updated}),})
-, tab==="dateien"&&React.createElement('div', null
-, React.createElement('label', { style: {display:"flex",flexDirection:"column",alignItems:"center",gap:10,padding:"24px",background:"#F2F2F7",border:`2px dashed ${P.border}`,borderRadius:14,cursor:"pointer",marginBottom:14,minHeight:100,justifyContent:"center"},}
-, React.createElement(Ic, { n: "scan", s: 28, c: P.textSub,})
-, React.createElement('span', { style: {color:"#6E6E73",fontSize:14,fontWeight:500},}, "Fotos, Scans & PDFs hochladen"    )
-, React.createElement('input', { type: "file", accept: "image/*,.pdf", multiple: true, capture: "environment", onChange: handleFile, style: {display:"none"},})
-)
-, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8},}
-, (au.fotos||[]).map(foto=>React.createElement('div', { key: foto.id, style: {position:"relative",borderRadius:12,overflow:"hidden",aspectRatio:"1",background:"rgba(0,0,0,0.025)"},}
-, React.createElement('img', { src: foto.data, alt: foto.name, style: {width:"100%",height:"100%",objectFit:"cover"},})
-, React.createElement('button', { onClick: ()=>updateRow("auftraege",au.id,{fotos:(au.fotos||[]).filter(x=>x.id!==foto.id)}), style: {position:"absolute",top:5,right:5,width:26,height:26,borderRadius:"50%",background:"rgba(0,0,0,0.7)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"},}, React.createElement(Ic, { n: "trash", s: 12, c: P.red,}))
-))
 )
 )
-, showAbrModal&&React.createElement(PaketeAbrModal, { au: au, onClose: ()=>setShowAbrModal(false), onAbrechnen: paketeAbrechnen,})
-, confirmModal
+),
+
+// 6 STECHUHR
+React.createElement(Sec,{id:'timer',title:'Stechuhr & Dokumente',mini:`${timerFmt(au.timer_gesamt_sek)} · ${au.timer_aktiv?'läuft':'pausiert'}`,delay:'120ms'},
+React.createElement('div',{style:{textAlign:'center',padding:'4px 0 8px'}},
+React.createElement('div',{className:'am-timer-big',style:{color:au.timer_aktiv?'#0E8F4E':'#16161A'}},timerFmt(au.timer_gesamt_sek)),
+React.createElement('div',{className:'am-eff'},
+React.createElement('div',null,'Ist',React.createElement('b',null,c.istStd.toFixed(2).replace('.',','),' h')),
+React.createElement('div',null,'Verkauft',React.createElement('b',null,c.sollAW.toFixed(2),' AW')),
+React.createElement('div',null,'Effizienz',React.createElement('b',{className:c.istStd>0&&c.sollAW/c.istStd>=1?'am-hi':''},c.istStd>0?Math.round(c.sollAW*100/c.istStd)+'%':'-'))
+),
+React.createElement('div',{className:'am-tbtns'},
+React.createElement('button',{className:'am-tbtn',style:{background:au.timer_aktiv?'#C2710A':'#0E8F4E',color:'#fff'},onClick:toggleTimer},au.timer_aktiv?'Pause':'Start'),
+React.createElement('button',{className:'am-tbtn',style:{background:'#F5F5F7',color:'#6B6B73',border:'1px solid rgba(22,22,26,0.1)'},onClick:()=>updateRow('auftraege',au.id,{timer_aktiv:false,timer_gesamt_sek:0})},'Zurücksetzen')
+)
+),
+React.createElement('div',{className:'am-lbl'},'Checkliste · ',React.createElement('span',null,(au.checkliste||[]).filter(x=>x.done).length,' von ',(au.checkliste||[]).length)),
+(au.checkliste||[]).length===0&&React.createElement('div',{style:{color:'#A6A6AE',fontSize:12,marginBottom:8}},'Noch keine Punkte — über "Checkliste" hinzufügen'),
+(au.checkliste||[]).map(item=>
+React.createElement('div',{key:item.id,className:'am-cl'+(item.done?' am-done':''),onClick:()=>updateRow('auftraege',au.id,{checkliste:(au.checkliste||[]).map(c2=>c2.id===item.id?{...c2,done:!c2.done}:c2)})},
+React.createElement('div',{className:'am-cb'},
+React.createElement('svg',{viewBox:'0 0 24 24'},React.createElement('polyline',{points:'20 6 9 17 4 12'}))
+),
+React.createElement('span',{className:'am-ct'},item.text)
+)
+),
+(au.checkliste||[]).length>0&&React.createElement('div',{className:'am-prog'},
+React.createElement('i',{style:{width:((au.checkliste||[]).filter(x=>x.done).length/(au.checkliste||[]).length*100)+'%'}})
+),
+(au.pdfs||[]).length>0&&React.createElement(React.Fragment,null,
+React.createElement('div',{className:'am-lbl'},'Dokumente'),
+(au.pdfs||[]).map(pdf=>
+React.createElement('div',{key:pdf.id,style:{display:'flex',alignItems:'center',gap:10,padding:'9px 0',borderTop:'1px solid rgba(22,22,26,0.05)',fontSize:12.5}},
+React.createElement('div',{style:{width:28,height:28,borderRadius:7,background:'#F5F5F7',border:'1px solid rgba(22,22,26,0.08)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'#6B6B73',flexShrink:0}},'PDF'),
+React.createElement('div',{style:{flex:1}},pdf.name||'Dokument'),
+React.createElement('a',{href:pdf.data,target:'_blank',style:{color:'#0A5FFF',fontWeight:600,fontSize:11,textDecoration:'none'}},'öffnen')
+)
+)
+)
+),
+
+// 7 ORGANISATION
+React.createElement(Sec,{id:'orga',title:'Organisation',note:hatNotiz,mini:hatNotiz?React.createElement(React.Fragment,null,React.createElement('span',{className:'am-dotmark'}),'Notiz'):null,delay:'140ms'},
+hatNotiz&&React.createElement('div',{className:'am-note-flag'},
+React.createElement('span',{className:'am-note-icon'},'!'),
+'Interne Notiz hinterlegt'
+),
+React.createElement('div',{className:'am-mini2'},
+React.createElement('div',{className:'am-mc'},
+React.createElement('div',{className:'am-mt'},'Anzahlung'),
+au.anzahlung?`${eur(au.anzahlung)} erhalten`:'Noch keine Anzahlung',
+React.createElement('div',{className:'am-ma',onClick:()=>notify('Anzahlung-Funktion folgt','info')},'Erfassen')
+),
+React.createElement('div',{className:'am-mc'},
+React.createElement('div',{className:'am-mt'},'Erinnerung'),
+au.fertigstellung_geplant?new Date(au.fertigstellung_geplant).toLocaleDateString('de-DE'):'Kein Termin',
+React.createElement('div',{className:'am-ma',onClick:()=>notify('Kalender-Funktion folgt','info')},'Im Kalender')
+)
+),
+React.createElement('div',{className:'am-lbl'},'Interne Notiz — erscheint nicht auf der Rechnung'),
+React.createElement('textarea',{
+rows:3,
+defaultValue:au.interne_notiz||'',
+style:{width:'100%',border:'1px solid rgba(22,22,26,0.1)',borderRadius:11,padding:'10px 12px',fontSize:13,fontFamily:'inherit',resize:'none',outline:'none',background:'#F5F5F7',color:'#16161A',lineHeight:1.5,boxSizing:'border-box',transition:'border-color .2s,background .2s'},
+placeholder:'Nur für intern sichtbar...',
+onFocus:e=>{e.target.style.borderColor='rgba(10,95,255,0.45)';e.target.style.background='#fff';},
+onBlur:e=>{e.target.style.borderColor='rgba(22,22,26,0.1)';e.target.style.background='#F5F5F7';updateRow('auftraege',au.id,{interne_notiz:e.target.value});}
+})
+),
+
+// 8 UNTERSCHRIFT
+React.createElement(Sec,{id:'sig',title:'Unterschrift Auftragserteilung',delay:'160ms'},
+React.createElement('canvas',{
+className:'am-sig-canvas',
+ref:sigSetup,
+onMouseDown:e=>{setSigDraw(true);const p=getPos(e,e.currentTarget);setSigPos(p);},
+onMouseMove:e=>{if(!sigDraw)return;const canvas=e.currentTarget;const ctx=canvas.getContext('2d');const[x,y]=getPos(e,canvas);ctx.beginPath();ctx.moveTo(sigPos[0],sigPos[1]);ctx.lineTo(x,y);ctx.stroke();setSigPos([x,y]);},
+onMouseUp:()=>setSigDraw(false),
+onTouchStart:e=>{e.preventDefault();setSigDraw(true);const p=getPos(e,e.currentTarget);setSigPos(p);},
+onTouchMove:e=>{e.preventDefault();if(!sigDraw)return;const canvas=e.currentTarget;const ctx=canvas.getContext('2d');const[x,y]=getPos(e,canvas);ctx.beginPath();ctx.moveTo(sigPos[0],sigPos[1]);ctx.lineTo(x,y);ctx.stroke();setSigPos([x,y]);},
+onTouchEnd:()=>setSigDraw(false)
+}),
+React.createElement('div',{className:'am-sig-foot'},
+React.createElement('span',null,'Mit dem Finger unterschreiben'),
+React.createElement('button',{className:'am-sig-clear',onClick:()=>{const c=sigRef.current;if(c)c.getContext('2d').clearRect(0,0,c.width,c.height);}},'Löschen')
+)
+)
+), // end scroll
+
+// Bottom bar
+React.createElement('div',{className:'am-bot'},
+React.createElement('div',{className:'am-calc'},
+React.createElement('div',null,'Netto',React.createElement('b',null,eur(c.netto))),
+React.createElement('div',null,'MwSt 19 %',React.createElement('b',null,eur(c.mwst))),
+React.createElement('div',null,'Brutto',React.createElement('b',null,eur(c.brutto))),
+React.createElement('div',{className:'am-gw'},'Gewinn',React.createElement('b',null,eur(round2(c.netto-c.mEK))))
+),
+React.createElement('div',{className:'am-bbtns'},
+React.createElement('button',{className:'am-bb am-bb-2nd',onClick:()=>printDokument({typ:'rechnung',daten:{...au,nr:au.nr,datum:au.erstellt,pakete:au.pakete||[]},settings:data.settings,kunde:k,fahrzeug:fz})},'PDF'),
+React.createElement('button',{className:'am-bb am-bb-main',onClick:()=>setShowAbrModal(true)},
+offenePakete.length>0?`Rechnung erstellen (${offenePakete.length})`:'Abrechnen'
+)
+)
+),
+
+showAbrModal&&React.createElement(PaketeAbrModal,{au:au,onClose:()=>setShowAbrModal(false),onAbrechnen:paketeAbrechnen}),
+confirmModal
 );
 }
+
+
 function AnnahmeTab({au,onSave}){
 const proto=au.annahme_protokoll||{km:"",tankstand:"voll",schaden:[],notizen:"",fotos:[],zeitpunkt:null};
 const [p,setP]=React.useState(proto);
@@ -1495,6 +1814,9 @@ const [f,setF]=useState({kunden_id:"",fahrzeug_id:"",titel:"",beschreibung:"",gu
 const [nFz,setNFz]=useState({kennzeichen:"",vin:"",marke:"",modell:"",baujahr:String(new Date().getFullYear()),kraftstoff:"Benzin",km:"",hu_datum:"",au_datum:"",hubraum:"",kw:"",ps:"",getriebe:"Schaltung",farbe:"",farb_code:"",reifengroesse:"",erstzulassung:"",naechste_inspektion:"",anzahl_vorbesitzer:"",fahrzeugschein:null});
 const [lK,setLK]=useState(data.kunden||[]);
 const [lFz,setLFz]=useState(data.fahrzeuge||[]);
+const [showNK,setShowNK]=useState(false);
+const [showNFz,setShowNFz]=useState(false);
+const [nK,setNK]=useState({anrede:"Herr",vorname:"",nachname:"",firma:"",typ:"privat",telefon:"",email:"",whatsapp:"",strasse:"",plz:"",ort:""});
 const kFz=lFz.filter(x=>x.kunden_id===f.kunden_id);
 const handleK=async()=>{
 if(!nK.nachname){notify("Nachname erforderlich","error");return;}
@@ -1525,7 +1847,8 @@ return React.createElement(Modal, { title: "Neuer Kostenvoranschlag" , onClose: 
 , React.createElement('span', { style: {color:"#6E6E73",fontSize:12,fontWeight:600,letterSpacing:0.4,textTransform:"uppercase"},})
 , React.createElement('button', { onClick: ()=>setShowNK(v=>!v), style: {background:"none",border:"none",color:P.blue,fontSize:13,cursor:"pointer",fontWeight:500,display:"flex",alignItems:"center",gap:4,minHeight:36},}, React.createElement(Ic, { n: "plus", s: 13, c: P.blue,}), "+ Neuer Kunde")
 )
-, React.createElement(KundenSuche, { kunden: lK, value: f.kunden_id, onChange: v=>setF(p=>({...p,kunden_id:v,fahrzeug_id:""})),})
+, !showNK
+?React.createElement(KundenSuche, { kunden: lK, value: f.kunden_id, onChange: v=>setF(p=>({...p,kunden_id:v,fahrzeug_id:""})),})
 :React.createElement('div', { style: {background:"rgba(10,132,255,0.07)",border:"1px solid rgba(10,132,255,0.22)",borderRadius:13,padding:"14px"},}
 , React.createElement('div', { style: {color:P.blue,fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",marginBottom:12},}, "Neuer Kunde" )
 , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:11},}, React.createElement(KundeFormFelder, { f: nK, setF: setNK,}))
@@ -2293,3 +2616,4 @@ class ErrorBoundary extends React.Component {
 }
 
 ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(ErrorBoundary, null, React.createElement(App)));
+
