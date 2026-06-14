@@ -317,7 +317,7 @@ return au;
 }catch(e){notify("Fehler beim Erstellen des Auftrags","error");console.error(e);return null;}
 },[data.settings,addRow,updateRow,saveSettings,notify]);
 // Schnellauftrag (direkt ohne KV)
-const schnellauftragErstellen=useCallback(async({kunden_id,fahrzeug_id,beschreibung,pakete,schnellmodus,schnell_betrag,schnell_beschreibung,annahme_km})=>{
+const schnellauftragErstellen=useCallback(async({kunden_id,fahrzeug_id,beschreibung,pakete,schnellmodus,schnell_betrag,schnell_beschreibung,annahme_km,unverbindlicher_termin})=>{
 const S=data.settings;
 const nr=genNr("AU",S.naechste_au_nr||1);
 // Ab 250 EUR Brutto: Name Pflicht (SS33 UStDV)
@@ -339,7 +339,7 @@ status:"offen",erstellt:tod(),
 beschreibung:beschreibung||schnell_beschreibung||"",
 pakete:paketeNeu,
 interne_notiz:"",timer_aktiv:false,timer_gesamt_sek:0,
-fertigstellung_geplant:null,garantie_bis:null,
+fertigstellung_geplant:unverbindlicher_termin||null,unverbindlicher_termin:unverbindlicher_termin||null,garantie_bis:null,
 checkliste:[],fotos:[],pdfs:[],
 rechnungen_ids:[],abgeschlossen:null,
 zahlungsart:null,bezahlt:false,
@@ -624,6 +624,36 @@ return React.createElement('div', { ref: ref, style: {position:"relative"},}
       , filtered.map(k=>React.createElement('div', { key: k.id, onMouseDown: ()=>{onChange(k.id);setQ("");setOpen(false);}, style: {padding:"11px 14px",cursor:"pointer",borderBottom:"1px solid rgba(0,0,0,0.05)"},}
         , React.createElement('div', { style: {color:"#1D1D1F",fontSize:14,fontWeight:500},}, k.vorname, " " , k.nachname, k.firma?` · ${k.firma}`:"")
         , k.telefon&&React.createElement('div', { style: {color:"#6E6E73",fontSize:12},}, k.telefon)
+      ))
+    )
+  )
+);
+}
+
+function FahrzeugSuche({fahrzeuge,value,onChange,onAdd,label="Fahrzeug"}){
+const [q,setQ]=useState("");
+const [open,setOpen]=useState(false);
+const ref=useRef();
+const sel=(fahrzeuge||[]).find(x=>x.id===value);
+const filtered=q.length>0?(fahrzeuge||[]).filter(x=>`${x.kennzeichen||""} ${x.marke||""} ${x.modell||""}`.toLowerCase().includes(q.toLowerCase())).slice(0,8):(fahrzeuge||[]).slice(0,8);
+React.useEffect(()=>{const h=e=>{if(ref.current&&!ref.current.contains(e.target))setOpen(false);};document.addEventListener("mousedown",h);return()=>document.removeEventListener("mousedown",h);},[]);
+return React.createElement('div', { ref: ref, style: {position:"relative"},}
+  , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:5},}
+    , React.createElement('span', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, label)
+    , React.createElement('button', { onClick: onAdd, style: {background:"rgba(14,143,78,0.10)",border:"none",borderRadius:8,padding:"6px 11px",color:"#0E8F4E",fontSize:12.5,cursor:"pointer",fontWeight:600},}, "+ Neues Fahrzeug" )
+  )
+  , sel?React.createElement('div', { style: {display:"flex",alignItems:"center",gap:10,padding:"11px 14px",background:"rgba(14,143,78,0.06)",border:"1.5px solid rgba(14,143,78,0.3)",borderRadius:12},}
+    , React.createElement('div', { style: {flex:1},}, React.createElement('div', { style: {color:"#1D1D1F",fontSize:14,fontWeight:700,letterSpacing:0.2},}, sel.kennzeichen), React.createElement('div', { style: {color:"#6E6E73",fontSize:12},}, `${sel.marke||""} ${sel.modell||""}`.trim(), sel.km?` · ${fmtKm(sel.km)}`:""))
+    , React.createElement('button', { onClick: ()=>{onChange("");setQ("");}, style: {background:"rgba(120,120,128,0.15)",border:"none",borderRadius:8,padding:"4px 10px",color:"#6E6E73",cursor:"pointer",fontSize:12},}, "Ändern")
+  ):React.createElement(React.Fragment, null
+    , React.createElement('div', { style: {position:"relative"},}
+      , React.createElement('div', { style: {position:"absolute",left:13,top:"50%",transform:"translateY(-50%)"},}, React.createElement(Ic, { n: "search", s: 15, c: "#AEAEB2",}))
+      , React.createElement('input', { value: q, onChange: e=>{setQ(e.target.value);setOpen(true);}, onFocus: ()=>setOpen(true), placeholder: (fahrzeuge||[]).length?"Kennzeichen, Marke, Modell suchen...":"Noch kein Fahrzeug – oben neu anlegen", style: {width:"100%",background:"#fff",border:"1.5px solid rgba(14,143,78,0.35)",borderRadius:12,padding:"11px 14px 11px 40px",fontSize:14,color:"#1D1D1F",outline:"none",boxSizing:"border-box"},})
+    )
+    , open&&filtered.length>0&&React.createElement('div', { style: {position:"absolute",top:"calc(100% + 4px)",left:0,right:0,background:"#fff",borderRadius:12,boxShadow:"0 4px 24px rgba(0,0,0,0.12)",border:"1px solid rgba(0,0,0,0.08)",zIndex:200,overflow:"hidden"},}
+      , filtered.map(x=>React.createElement('div', { key: x.id, onMouseDown: ()=>{onChange(x.id);setQ("");setOpen(false);}, style: {padding:"11px 14px",cursor:"pointer",borderBottom:"1px solid rgba(0,0,0,0.05)"},}
+        , React.createElement('div', { style: {color:"#1D1D1F",fontSize:14,fontWeight:600,letterSpacing:0.2},}, x.kennzeichen||"—")
+        , React.createElement('div', { style: {color:"#6E6E73",fontSize:12},}, `${x.marke||""} ${x.modell||""}`.trim(), x.km?` · ${fmtKm(x.km)}`:"")
       ))
     )
   )
@@ -1186,7 +1216,8 @@ const call=info=>{if(info.k&&info.k.telefon)window.location.href="tel:"+info.k.t
 const done=au=>{updateRow("auftraege",au.id,{status:"abgeschlossen",abgeschlossen:tod()});notify("Auftrag als erledigt markiert");if(pinnedId===au.id)setPinnedId(null);};
 const grpOf=au=>{
 if(au.status==="abgeschlossen")return{key:"_done",label:"Erledigt",order:9e15};
-const d=au.fertigstellung_geplant?new Date(au.fertigstellung_geplant):null;
+const term=au.fertigstellung_geplant||au.unverbindlicher_termin;
+const d=term?new Date(term):null;
 if(!d)return{key:"_none",label:"Ohne Termin",order:8e15};
 if(d<=endToday)return{key:"_today",label:"Heute",order:-1};
 return{key:d.toISOString().slice(0,10),label:`${WOTAG[d.getDay()]}, ${d.getDate()}.`,order:d.getTime()};
@@ -1991,6 +2022,7 @@ const [modus,setModus]=useState("pakete");
 const [schnell_betrag,setSchnell_betrag]=useState("");
 const [pakete,setPakete]=useState([]);
 const [annahme_km,setAnnahme_km]=useState("");
+const [unverbindlicherTermin,setUnverbindlicherTermin]=useState("");
 const [loading2,setLoading2]=useState(false);
 const [nK,setNK]=useState({anrede:"Herr",vorname:"",nachname:"",firma:"",typ:"privat",telefon:"",email:"",whatsapp:"",strasse:"",plz:"",ort:""});
 const [nFz,setNFz]=useState({kennzeichen:"",vin:"",marke:"",modell:"",baujahr:String(new Date().getFullYear()),kraftstoff:"Benzin",km:"",hu_datum:"",au_datum:"",hubraum:"",kw:"",ps:"",getriebe:"Schaltung",farbe:"",farb_code:"",reifengroesse:"",erstzulassung:"",naechste_inspektion:"",anzahl_vorbesitzer:"",fahrzeugschein:null});
@@ -2018,7 +2050,7 @@ if(modus==="pakete"&&(pakete||[]).length===0) fehlt.push("mind. eine Position");
 
 const wirklichErstellen=async()=>{
 setLoading2(true);
-const r=await schnellauftragErstellen({kunden_id,fahrzeug_id:fahrzeug_id||null,beschreibung,pakete,schnellmodus:modus==="schnell",schnell_betrag,schnell_beschreibung:beschreibung,annahme_km:annahme_km||null});
+const r=await schnellauftragErstellen({kunden_id,fahrzeug_id:fahrzeug_id||null,beschreibung,pakete,schnellmodus:modus==="schnell",schnell_betrag,schnell_beschreibung:beschreibung,annahme_km:annahme_km||null,unverbindlicher_termin:unverbindlicherTermin||null});
 setLoading2(false);
 if(r){onClose();setView("auftraege");}
 };
@@ -2057,14 +2089,8 @@ return React.createElement(Modal, { title: "Neuer Auftrag", onClose: onClose, wi
 /* 1. KUNDE */
 , React.createElement(KundenSuche, { kunden: data.kunden||[], value: kunden_id, onChange: v=>{setKunden_id(v);setFahrzeug_id("");}, label: "Kunde *", onAdd: ()=>setPage("newKunde"),})
 
-/* 2. FAHRZEUG */
-, kunden_id&&React.createElement('div', null
-, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6},}
-, React.createElement('span', { style: {color:"#6E6E73",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, "Fahrzeug" )
-, React.createElement('button', { onClick: ()=>setPage("newFahrzeug"), style: {background:"rgba(14,143,78,0.10)",border:"none",borderRadius:8,padding:"6px 11px",color:"#0E8F4E",fontSize:12.5,cursor:"pointer",fontWeight:600},}, "+ Neues Fahrzeug" )
-)
-, React.createElement(Sel, { value: fahrzeug_id, onChange: setFahrzeug_id, options: [{value:"",label:kFz.length?"- Fahrzeug wählen -":"- Noch kein Fahrzeug · oben neu anlegen -"},...kFz.map(f=>({value:f.id,label:`${f.kennzeichen} · ${f.marke||""} ${f.modell||""}`.trim()}))],})
-)
+/* 2. FAHRZEUG – genauso wie der Kunde: suchen ODER neu anlegen */
+, kunden_id&&React.createElement(FahrzeugSuche, { fahrzeuge: kFz, value: fahrzeug_id, onChange: setFahrzeug_id, onAdd: ()=>setPage("newFahrzeug"), label: "Fahrzeug",})
 
 /* 3. KM */
 , kunden_id&&React.createElement(Inp, { label: "KM-Stand (optional)" , value: annahme_km, onChange: setAnnahme_km, type: "number", suffix: "km",})
@@ -2088,6 +2114,9 @@ React.createElement('button', { key: v, onClick: ()=>setModus(v), style: {paddin
 , React.createElement('div', { style: {marginTop:11},}, React.createElement(PaketeEditor, { pakete: pakete, onChange: setPakete, settings: data.settings,}))
 )
 )
+
+/* 5. UNVERBINDLICHER TERMIN (optional) */
+, React.createElement(Inp, { label: "Unverbindlicher Termin (optional)" , value: unverbindlicherTermin, onChange: setUnverbindlicherTermin, type: "datetime-local", note: "Falls schon ein grober Termin mit dem Kunden besprochen ist",})
 
 /* SUBMIT mit weicher Logik */
 , React.createElement('div', null
