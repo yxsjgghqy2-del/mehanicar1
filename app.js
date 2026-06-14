@@ -1,4 +1,4 @@
-function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; }const { useState, useEffect, useRef, useCallback, createContext, useContext } = React;
+ function _optionalChain(ops) { let lastAccessLHS = undefined; let value = ops[0]; let i = 1; while (i < ops.length) { const op = ops[i]; const fn = ops[i + 1]; i += 2; if ((op === 'optionalAccess' || op === 'optionalCall') && value == null) { return undefined; } if (op === 'access' || op === 'optionalAccess') { lastAccessLHS = value; value = fn(value); } else if (op === 'call' || op === 'optionalCall') { value = fn((...args) => value.call(lastAccessLHS, ...args)); lastAccessLHS = undefined; } } return value; }const { useState, useEffect, useRef, useCallback, createContext, useContext } = React;
 const SB_URL = "https://jyyorhojzgubdsbijekx.supabase.co";
 const SB_KEY = "sb_publishable_52CxKyr4PZRlC96eNoiCBg_ew7lRmtu";
 async function sbQ(table, method="GET", body=null, query="") {
@@ -137,7 +137,14 @@ const S=settings||{};
 const kdName=kunde?`${kunde.vorname||""} ${kunde.nachname||""}`.trim():"Kunde";
 const firma=S.firma||"mehanicar";
 const zahlungsziel=S.zahlungsziel||14;
-const text=`Guten Tag ${kdName},\nIhre Rechnung ${re.nr} uber ${eur(re.brutto||0)} ist bereit.\nFallig bis: ${re.faellig?new Date(re.faellig).toLocaleDateString("de-DE"):""}\nBitte uberweisen Sie auf:\nIBAN: ${S.iban||"[IBAN eintragen]"}\nMit freundlichen Grüßen\n${S.inhaber||firma}\n${firma}`;
+const text=`Guten Tag ${kdName},
+Ihre Rechnung ${re.nr} uber ${eur(re.brutto||0)} ist bereit.
+Fallig bis: ${re.faellig?new Date(re.faellig).toLocaleDateString("de-DE"):""}
+Bitte uberweisen Sie auf:
+IBAN: ${S.iban||"[IBAN eintragen]"}
+Mit freundlichen Grüßen
+${S.inhaber||firma}
+${firma}`;
 const encoded=encodeURIComponent(text);
 const phone=_optionalChain([kunde, 'optionalAccess', _2 => _2.whatsapp])||_optionalChain([kunde, 'optionalAccess', _3 => _3.telefon])||"";
 const cleanPhone=phone.replace(/[^0-9]/g,"");
@@ -749,7 +756,7 @@ return React.createElement('div', { style: {border:`1.5px solid ${gesperrt?"rgba
 , showAddA&&!readOnly&&React.createElement('div', { style: {background:"rgba(10,132,255,0.07)",border:"1px solid rgba(10,132,255,0.2)",borderRadius:12,padding:"13px",marginBottom:10},}
 , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:10},}
 , React.createElement(Inp, { label: "Bezeichnung", value: na.beschreibung, onChange: v=>setNa(p=>({...p,beschreibung:v})), placeholder: "z.B. Bremsscheiben wechseln VA"   ,})
-, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10},}, React.createElement(Inp, { label: "AW", value: na.aw, onChange: v=>setNa(p=>({...p,aw:v})), type: "number", placeholder: "1.5",}), React.createElement(Inp, { label: "AW-Preis \u20AC" , value: na.aw_preis, onChange: v=>setNa(p=>({...p,aw_preis:v})), type: "number",}))
+, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10},}, React.createElement(Inp, { label: "AW", value: na.aw, onChange: v=>setNa(p=>({...p,aw:v})), type: "number", placeholder: "1.5",}), React.createElement(Inp, { label: "AW-Preis \\u20AC" , value: na.aw_preis, onChange: v=>setNa(p=>({...p,aw_preis:v})), type: "number",}))
 , na.aw&&na.aw_preis&&React.createElement('div', { style: {padding:"9px 12px",background:"rgba(10,132,255,0.08)",borderRadius:9,color:P.blue,fontSize:13,fontWeight:600,textAlign:"center"},}, "= " , eur(parseFloat(na.aw)*parseFloat(na.aw_preis)))
 , React.createElement(KzFelder, { val: na, setVal: setNa,})
 , React.createElement('div', { style: {display:"flex",gap:8},}, React.createElement(Btn, { v: "primary", size: "sm", onClick: addArb,}, React.createElement(Ic, { n: "check", s: 13,}), " Hinzufügen" ), React.createElement(Btn, { v: "ghost", size: "sm", onClick: ()=>setShowAddA(false),}, "Abbrechen"))
@@ -775,7 +782,7 @@ return React.createElement('div', { style: {border:`1.5px solid ${gesperrt?"rgba
 , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:10},}
 , React.createElement(Inp, { label: "Bezeichnung", value: nm.beschreibung, onChange: v=>setNm(p=>({...p,beschreibung:v})), placeholder: "z.B. Bremsscheiben Brembo"  ,})
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10},}, React.createElement(Inp, { label: "Menge", value: nm.menge, onChange: v=>setNm(p=>({...p,menge:v})), type: "number",}), React.createElement(Inp, { label: "Aufschlag %" , value: nm.aufschlag_pct, onChange: v=>{const pct=parseFloat(v)||0;setNm(p=>({...p,aufschlag_pct:v,vk_preis:p.ek_preis?(parseFloat(p.ek_preis)*(1+pct/100)).toFixed(2):p.vk_preis}));}, type: "number",}))
-, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10},}, React.createElement(Inp, { label: "EK-Preis \u20AC" , value: nm.ek_preis, onChange: v=>{const ek=parseFloat(v)||0,pct=parseFloat(nm.aufschlag_pct)||0;setNm(p=>({...p,ek_preis:v,vk_preis:(ek*(1+pct/100)).toFixed(2)}));}, type: "number",}), React.createElement(Inp, { label: "VK-Preis \u20AC" , value: nm.vk_preis, onChange: v=>setNm(p=>({...p,vk_preis:v})), type: "number",}))
+, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10},}, React.createElement(Inp, { label: "EK-Preis \\u20AC" , value: nm.ek_preis, onChange: v=>{const ek=parseFloat(v)||0,pct=parseFloat(nm.aufschlag_pct)||0;setNm(p=>({...p,ek_preis:v,vk_preis:(ek*(1+pct/100)).toFixed(2)}));}, type: "number",}), React.createElement(Inp, { label: "VK-Preis \\u20AC" , value: nm.vk_preis, onChange: v=>setNm(p=>({...p,vk_preis:v})), type: "number",}))
 , React.createElement(KzFelder, { val: nm, setVal: setNm,})
 , nm.ek_preis&&nm.vk_preis&&React.createElement('div', { style: {padding:"9px 12px",background:"rgba(48,209,88,0.07)",borderRadius:9,color:P.green,fontSize:13,textAlign:"center"},}, "Deckungsbeitrag: " , eur((parseFloat(nm.vk_preis)-parseFloat(nm.ek_preis))*parseFloat(nm.menge)))
 , React.createElement('div', { style: {display:"flex",gap:8},}, React.createElement(Btn, { v: "success", size: "sm", onClick: addMat,}, React.createElement(Ic, { n: "check", s: 13,}), " Hinzufügen" ), React.createElement(Btn, { v: "ghost", size: "sm", onClick: ()=>setShowAddM(false),}, "Abbrechen"))
@@ -1434,7 +1441,7 @@ React.createElement('div',{className:'am-kv'},React.createElement('span',{classN
 React.createElement('div',{className:'am-kv',style:{borderBottom:'none'}},React.createElement('span',{className:'ak'},'E-Mail'),React.createElement('span',{className:'av'},k&&k.email||'-')),
 React.createElement('div',{className:'am-row3'},
 React.createElement('button',{className:'am-abtn',onClick:()=>k&&k.telefon&&window.open(`tel:${k.telefon}`)},'Anrufen'),
-React.createElement('button',{className:'am-abtn',onClick:()=>{const ph=(k&&(k.whatsapp||k.telefon)||'').replace(/[^0-9]/g,'');if(ph)window.open(`https://wa.me/${ph}`);},'WhatsApp'},
+React.createElement('button',{className:'am-abtn',onClick:()=>{const ph=(k&&(k.whatsapp||k.telefon)||'').replace(/[^0-9]/g,'');if(ph)window.open(`https://wa.me/${ph}`);}},
 'WhatsApp'
 ),
 React.createElement('button',{className:'am-abtn',onClick:()=>k&&k.email&&window.open(`mailto:${k.email}`)},'E-Mail')
@@ -1511,6 +1518,7 @@ React.createElement('div',{style:{borderTop:'1px solid rgba(22,22,26,0.1)',margi
 React.createElement('div',{style:{display:'flex',justifyContent:'space-between'}},React.createElement('span',null,'Netto'),React.createElement('span',{style:{fontWeight:600,color:'#16161A'}},eur(c.netto))),
 React.createElement('div',{style:{display:'flex',justifyContent:'space-between'}},React.createElement('span',null,'MwSt. 19%'),React.createElement('span',{style:{fontWeight:600,color:'#16161A'}},eur(c.mwst))),
 React.createElement('div',{style:{display:'flex',justifyContent:'space-between',fontSize:14,fontWeight:700}},React.createElement('span',null,'Brutto'),React.createElement('span',{style:{color:'#0E8F4E'}},eur(c.brutto)))
+)
 )
 )
 ),
@@ -1786,7 +1794,7 @@ return React.createElement('div', { key: p.id, onClick: ()=>toggle(p.id), style:
 , React.createElement('span', { style: {color:P.green,fontSize:14,fontWeight:700,flexShrink:0},}, eur(pc.brutto))
 );
 })
-, sel.length>0&&React.createElement('div', { style: {padding:"12px 14px",background:"rgba(48,209,89,0.07)",borderRadius:12},}
+, sel.length>0&&React.createElement('div', { style: {padding:"12px 14px",background:"rgba(48,209,88,0.07)",borderRadius:12},}
 , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",marginBottom:4},}, React.createElement('span', { style: {color:"#6E6E73",fontSize:13},}, "Netto"), React.createElement('span', { style: {color:"#1D1D1F",fontSize:13},}, eur(total.netto)))
 , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",marginBottom:4},}, React.createElement('span', { style: {color:"#6E6E73",fontSize:13},}, "MwSt. 19%" ), React.createElement('span', { style: {color:"#1D1D1F",fontSize:13},}, eur(total.mwst)))
 , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",paddingTop:8,borderTop:"1px solid rgba(60,60,67,0.10)"},}, React.createElement('span', { style: {color:"#1D1D1F",fontSize:15,fontWeight:700},}, "Brutto"), React.createElement('span', { style: {color:P.green,fontSize:18,fontWeight:700},}, eur(total.brutto)))
@@ -1806,6 +1814,9 @@ const [f,setF]=useState({kunden_id:"",fahrzeug_id:"",titel:"",beschreibung:"",gu
 const [nFz,setNFz]=useState({kennzeichen:"",vin:"",marke:"",modell:"",baujahr:String(new Date().getFullYear()),kraftstoff:"Benzin",km:"",hu_datum:"",au_datum:"",hubraum:"",kw:"",ps:"",getriebe:"Schaltung",farbe:"",farb_code:"",reifengroesse:"",erstzulassung:"",naechste_inspektion:"",anzahl_vorbesitzer:"",fahrzeugschein:null});
 const [lK,setLK]=useState(data.kunden||[]);
 const [lFz,setLFz]=useState(data.fahrzeuge||[]);
+const [showNK,setShowNK]=useState(false);
+const [showNFz,setShowNFz]=useState(false);
+const [nK,setNK]=useState({anrede:"Herr",vorname:"",nachname:"",firma:"",typ:"privat",telefon:"",email:"",whatsapp:"",strasse:"",plz:"",ort:""});
 const kFz=lFz.filter(x=>x.kunden_id===f.kunden_id);
 const handleK=async()=>{
 if(!nK.nachname){notify("Nachname erforderlich","error");return;}
@@ -1836,7 +1847,8 @@ return React.createElement(Modal, { title: "Neuer Kostenvoranschlag" , onClose: 
 , React.createElement('span', { style: {color:"#6E6E73",fontSize:12,fontWeight:600,letterSpacing:0.4,textTransform:"uppercase"},})
 , React.createElement('button', { onClick: ()=>setShowNK(v=>!v), style: {background:"none",border:"none",color:P.blue,fontSize:13,cursor:"pointer",fontWeight:500,display:"flex",alignItems:"center",gap:4,minHeight:36},}, React.createElement(Ic, { n: "plus", s: 13, c: P.blue,}), "+ Neuer Kunde")
 )
-, React.createElement(KundenSuche, { kunden: lK, value: f.kunden_id, onChange: v=>setF(p=>({...p,kunden_id:v,fahrzeug_id:""})),})
+, !showNK
+?React.createElement(KundenSuche, { kunden: lK, value: f.kunden_id, onChange: v=>setF(p=>({...p,kunden_id:v,fahrzeug_id:""})),})
 :React.createElement('div', { style: {background:"rgba(10,132,255,0.07)",border:"1px solid rgba(10,132,255,0.22)",borderRadius:13,padding:"14px"},}
 , React.createElement('div', { style: {color:P.blue,fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",marginBottom:12},}, "Neuer Kunde" )
 , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:11},}, React.createElement(KundeFormFelder, { f: nK, setF: setNK,}))
@@ -1957,7 +1969,7 @@ React.createElement('button', { key: v, onClick: ()=>setFilterStatus(v), style: 
 )
 , React.createElement('div', { style: {padding:"11px 14px",background:"rgba(48,209,88,0.07)",border:`1px solid rgba(48,209,88,0.2)`,borderRadius:12,marginBottom:14,display:"flex",gap:9},}
 , React.createElement(Ic, { n: "rechnungen", s: 15, c: P.green,})
-, React.createElement('span', { style: {color:"#6E6E73",fontSize:13,lineHeight:1.6},}, "Rechnungen entstehen automatisch wenn du Pakete eines Auftrags abrechnest. Bezahlte Pakete sind gesperrt - Änderungen nur per Stornorechnung."                 )
+, React.createElement('span', { style: {color:"#6E6E73",fontSize:13,lineHeight:1.4},}, "Rechnungen entstehen automatisch wenn du Pakete eines Auftrags abrechnest. Bezahlte Pakete sind gesperrt - Änderungen nur per Stornorechnung."                 )
 )
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:14},}
 , React.createElement(Stat, { label: "Offen", value: eur(gO), color: P.orange, icon: "rechnungen",})
@@ -1995,6 +2007,7 @@ React.createElement(Btn, { key: za, v: "ghost", size: "sm", style: {background:`
 );
 })
 , liste.length===0&&React.createElement('div', { style: {textAlign:"center",padding:"56px 20px",color:"#AEAEB2",fontSize:14},}, React.createElement(Ic, { n: "rechnungen", s: 40, c: "rgba(0,0,0,0.06)",}), React.createElement('div', { style: {marginTop:16},}, "Noch keine Rechnungen"  ), React.createElement('div', { style: {marginTop:8,fontSize:12},}, "Schließe Auftragspakete ab um automatisch eine Rechnung zu erstellen"        ))
+)
 );
 }
 function RechnungDetail({re,onBack}){
@@ -2321,7 +2334,7 @@ return React.createElement(Screen, { title: fz.kennzeichen, onBack: onBack, acti
 , React.createElement(Card, { style: {marginBottom:14,padding:"14px"},}
 , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:fz.fahrzeugschein?10:0},}
 , React.createElement('span', { style: {color:"#6E6E73",fontSize:12,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, "Fahrzeugschein")
-, React.createElement('label', { style: {display:"flex",alignItems:"center",justifyContent:"center",gap:6,padding:"7px 13px",background:"rgba(10,132,255,0.1)",border:`1px solid rgba(10,132,255,0.3)`,borderRadius:10,cursor:"pointer",color:P.blue,fontSize:12,fontWeight:600,minHeight:36},}
+, React.createElement('label', { style: {display:"flex",alignItems:"center",gap:6,padding:"7px 13px",background:"rgba(10,132,255,0.1)",border:`1px solid rgba(10,132,255,0.3)`,borderRadius:10,cursor:"pointer",color:P.blue,fontSize:12,fontWeight:600,minHeight:36},}
 , React.createElement(Ic, { n: "scan", s: 14, c: P.blue,}), " " , fz.fahrzeugschein?"Neu scannen":"Scannen"
 , React.createElement('input', { type: "file", accept: "image/*,.pdf", onChange: handleScan, style: {display:"none"},})
 )
@@ -2383,7 +2396,7 @@ React.createElement('div', { key: l.id, style: {display:"flex",alignItems:"cente
 , React.createElement(Inp, { label: "Bezeichnung *" , value: nL.bezeichnung, onChange: v=>setNL(p=>({...p,bezeichnung:v})),})
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}, React.createElement(Inp, { label: "Artikelnr.", value: nL.artikelnr, onChange: v=>setNL(p=>({...p,artikelnr:v})),}), React.createElement(Inp, { label: "Lagerort", value: nL.lagerort, onChange: v=>setNL(p=>({...p,lagerort:v})),}))
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:9},}, React.createElement(Inp, { label: "Bestand", value: nL.bestand, onChange: v=>setNL(p=>({...p,bestand:v})), type: "number",}), React.createElement(Inp, { label: "Mindest", value: nL.mindestbestand, onChange: v=>setNL(p=>({...p,mindestbestand:v})), type: "number",}), React.createElement(Sel, { label: "Einheit", value: nL.einheit, onChange: v=>setNL(p=>({...p,einheit:v})), options: ["Stk.","Liter","Kg","m","Paar","Satz"].map(v=>({value:v,label:v})),}))
-, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}, React.createElement(Inp, { label: "EK-Preis \u20AC" , value: nL.ek_preis, onChange: v=>setNL(p=>({...p,ek_preis:v})), type: "number",}), React.createElement(Inp, { label: "VK-Preis \u20AC" , value: nL.vk_preis, onChange: v=>setNL(p=>({...p,vk_preis:v})), type: "number",}))
+, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11},}, React.createElement(Inp, { label: "EK-Preis \\u20AC" , value: nL.ek_preis, onChange: v=>setNL(p=>({...p,ek_preis:v})), type: "number",}), React.createElement(Inp, { label: "VK-Preis \\u20AC" , value: nL.vk_preis, onChange: v=>setNL(p=>({...p,vk_preis:v})), type: "number",}))
 , React.createElement(Inp, { label: "Lieferant", value: nL.lieferant, onChange: v=>setNL(p=>({...p,lieferant:v})),})
 , React.createElement(Btn, { full: true, onClick: addL, size: "lg",}, React.createElement(Ic, { n: "check", s: 16,}), " Anlegen" )
 )
@@ -2416,7 +2429,7 @@ return React.createElement(Screen, { title: "Finanzen",}
 , React.createElement(Card, { style: {marginBottom:14},}
 , React.createElement('div', { style: {color:"#6E6E73",fontSize:12,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",marginBottom:12},}, "Neue Buchung" )
 , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:10},}
-, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10},}, React.createElement(Inp, { label: "Beschreibung", value: nE.beschreibung, onChange: v=>setNE(p=>({...p,beschreibung:v})),}), React.createElement(Inp, { label: "Betrag \u20AC" , value: nE.betrag, onChange: v=>setNE(p=>({...p,betrag:v})), type: "number",}))
+, React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10},}, React.createElement(Inp, { label: "Beschreibung", value: nE.beschreibung, onChange: v=>setNE(p=>({...p,beschreibung:v})),}), React.createElement(Inp, { label: "Betrag \\u20AC" , value: nE.betrag, onChange: v=>setNE(p=>({...p,betrag:v})), type: "number",}))
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10},}, React.createElement(Sel, { label: "Typ", value: nE.typ, onChange: v=>setNE(p=>({...p,typ:v})), options: [{value:"einnahme",label:"Einnahme"},{value:"ausgabe",label:"Ausgabe"}],}), React.createElement(Sel, { label: "Kategorie", value: nE.kategorie, onChange: v=>setNE(p=>({...p,kategorie:v})), options: ["Reparatur","Teile","Werkzeug","Miete","Personal","Versicherung","Sonstige"].map(v=>({value:v,label:v})),}), React.createElement(Inp, { label: "Datum", value: nE.datum, onChange: v=>setNE(p=>({...p,datum:v})), type: "date",}))
 , React.createElement(Btn, { full: true, onClick: addE, size: "md",}, React.createElement(Ic, { n: "plus", s: 15,}), " Buchen" )
 )
@@ -2523,7 +2536,7 @@ return React.createElement(Screen, { title: "Einstellungen",}
 , React.createElement('div', { style: {display:"flex",justifyContent:"space-between"},}, React.createElement('span', { style: {color:"#6E6E73",fontSize:13},}, "AW-Preis (auto)" ), React.createElement('span', { style: {color:P.green,fontSize:15,fontWeight:700},}, eur(awPreisCalc), " / AW"  ))
 )
 )
-, React.createElement(Inp, { label: "Stundensatz \u20AC/h" , value: String(s.stundensatz||150), onChange: v=>{const st=parseFloat(v)||150;setS(p=>({...p,stundensatz:st}));}, type: "number", note: `-> AW-Preis wird automatisch berechnet: ${eur(awPreisCalc)} pro AW`,})
+, React.createElement(Inp, { label: "Stundensatz \\u20AC/h" , value: String(s.stundensatz||150), onChange: v=>{const st=parseFloat(v)||150;setS(p=>({...p,stundensatz:st}));}, type: "number", note: `-> AW-Preis wird automatisch berechnet: ${eur(awPreisCalc)} pro AW`,})
 , React.createElement('div', { style: {padding:"10px 14px",background:"rgba(48,209,88,0.07)",borderRadius:12,display:"flex",justifyContent:"space-between",alignItems:"center"},}
 , React.createElement('span', { style: {color:"#6E6E73",fontSize:13},}, "Berechneter AW-Preis" )
 , React.createElement('span', { style: {color:P.green,fontSize:18,fontWeight:700},}, eur(awPreisCalc))
