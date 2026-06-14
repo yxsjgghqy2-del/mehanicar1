@@ -174,6 +174,7 @@ storniert:     {label:"Storniert",        c:"#FF453A", bg:"rgba(255,69,58,0.14)"
 };
 const ICONS = {
 dashboard:    `<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>`,
+pin:          `<line x1="12" y1="17" x2="12" y2="22"/><path d="M5 17h14l-1.7-2.8a2 2 0 0 1-.3-1V5a1 1 0 0 0-1-1H8a1 1 0 0 0-1 1v8.2a2 2 0 0 1-.3 1L5 17z"/>`,
 auftraege:    `<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>`,
 rechnungen:   `<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>`,
 kalender:     `<rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>`,
@@ -1104,6 +1105,116 @@ return React.createElement('div', null
 )
 );
 }
+const WOTAG=["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
+function auRowInfo(au,data){
+const k=(data.kunden||[]).find(x=>x.id===au.kunden_id);
+const f=(data.fahrzeuge||[]).find(x=>x.id===au.fahrzeug_id);
+const sc=SC[au.status]||SC.offen;
+const kName=k?`${k.vorname||""} ${k.nachname||k.firma||""}`.trim():"";
+const kennz=(f&&f.kennzeichen)||kName||"Laufkunde";
+const paks=au.pakete||[];
+const arbeit=au.beschreibung||(paks[0]&&(paks[0].beanstandung||paks[0].titel))||"Auftrag";
+let prog=0;
+if(au.status==="abgeschlossen")prog=100;
+else if(paks.length){const done=paks.filter(p=>p.paket_status&&p.paket_status!=="offen").length;prog=Math.round(done/paks.length*100);}
+else prog=au.status==="in_arbeit"?45:au.status==="wartet_teile"?40:au.status==="klaerung"?20:0;
+const c=calcAU(au);
+return {k,f,sc,kName,kennz,arbeit,prog,brutto:c.brutto};
+}
+function SwipeRow({au,info,dark,pinned,onOpen,onCall,onDone,onPin}){
+const [open,setOpen]=useState(false);
+const rowRef=useRef();
+const st=useRef({});
+const W=198;
+const down=e=>{st.current={x:e.clientX,y:e.clientY,base:open?W:0,dragging:true,moved:false,decided:false,scrolled:false};};
+const moveH=e=>{const s=st.current;if(!s.dragging)return;const dx=s.x-e.clientX,dy=Math.abs(e.clientY-s.y);
+if(!s.decided){if(Math.abs(dx)<5&&dy<5)return;if(dy>Math.abs(dx)){s.dragging=false;s.scrolled=true;return;}s.decided=true;s.moved=true;try{rowRef.current.setPointerCapture(e.pointerId);}catch(err){}}
+const raw=s.base+dx;let shrink=raw<0?0:raw>W?W+Math.pow(raw-W,0.6):raw;shrink=Math.min(shrink,W+44);
+rowRef.current.style.width=`calc(100% - ${shrink}px)`;};
+const up=e=>{const s=st.current;if(s.scrolled){s.scrolled=false;s.dragging=false;return;}
+if(!s.moved){s.dragging=false;if(open){setOpen(false);rowRef.current.style.width="";}else onOpen();return;}
+s.dragging=false;const dx=s.x-e.clientX,raw=s.base+dx,willOpen=raw>W/2.4;setOpen(willOpen);rowRef.current.style.width=willOpen?`calc(100% - ${W}px)`:"";};
+const act=(fn)=>{setOpen(false);if(rowRef.current)rowRef.current.style.width="";fn&&fn();};
+return React.createElement('div', { style: {position:"relative",borderRadius:13,marginTop:7,animation:"rowIn .35s cubic-bezier(.34,1.2,.64,1) both"},}
+, React.createElement('div', { style: {position:"absolute",top:0,bottom:0,right:0,width:W,display:"flex",borderRadius:13,overflow:"hidden"},}
+, React.createElement('button', { onClick: ()=>act(onCall), style: {width:66,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,color:"#fff",fontSize:10,fontWeight:700,border:"none",cursor:"pointer",background:"#0A5FFF"},}, React.createElement(Ic, { n: "phone", s: 17, c: "#fff",}), "Anrufen")
+, React.createElement('button', { onClick: ()=>act(onDone), style: {width:66,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,color:"#fff",fontSize:10,fontWeight:700,border:"none",cursor:"pointer",background:"#0E8F4E"},}, React.createElement(Ic, { n: "check", s: 17, c: "#fff",}), "Erledigt")
+, React.createElement('button', { onClick: ()=>act(onPin), style: {width:66,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,color:"#fff",fontSize:10,fontWeight:700,border:"none",cursor:"pointer",background:"#C2710A"},}, React.createElement(Ic, { n: "pin", s: 16, c: "#fff",}), "Anpinnen")
+)
+, React.createElement('div', { ref: rowRef, onPointerDown: down, onPointerMove: moveH, onPointerUp: up, onPointerCancel: up, style: {position:"relative",zIndex:1,display:"flex",alignItems:"center",gap:10,padding:"12px 13px",borderRadius:13,width:"100%",boxSizing:"border-box",overflow:"hidden",whiteSpace:"nowrap",touchAction:"pan-y",userSelect:"none",WebkitUserSelect:"none",cursor:"pointer",transition:"width .42s cubic-bezier(.32,1.3,.5,1),box-shadow .2s",background:dark?"#2C2C2E":"#fff",border:dark?"none":"1px solid rgba(60,60,67,0.09)",boxShadow:dark?"none":"0 1px 3px rgba(0,0,0,0.04)",outline:pinned?"1.5px solid rgba(10,95,255,0.55)":"none"},}
+, React.createElement('span', { style: {width:9,height:9,borderRadius:"50%",background:info.sc.c,flexShrink:0},})
+, React.createElement('span', { style: {fontWeight:800,fontSize:13,letterSpacing:0.2,color:dark?"#fff":"#16161A",flexShrink:0},}, info.kennz)
+, React.createElement('span', { style: {flex:1,fontSize:11.5,color:dark?"rgba(255,255,255,0.55)":"#6E6E73",overflow:"hidden",textOverflow:"ellipsis"},}, info.arbeit, info.prog>0&&info.prog<100?" · "+info.prog+"%":"")
+, pinned&&React.createElement(Ic, { n: "pin", s: 12, c: dark?"#fff":"#C2710A",})
+, React.createElement('span', { style: {fontSize:11,fontWeight:700,color:dark?"rgba(255,255,255,0.85)":"#6E6E73",flexShrink:0},}, eur(info.brutto))
+)
+);
+}
+function PinnedCard({au,info,onClose,onOpen,onCall,onDone}){
+return React.createElement('div', { style: {marginBottom:11},}
+, React.createElement('div', { style: {background:"#fff",border:"2px solid rgba(10,95,255,0.45)",borderRadius:18,padding:14,animation:"cardSpring .5s cubic-bezier(.32,1.3,.5,1)",boxShadow:"0 6px 24px rgba(10,95,255,0.16)"},}
+, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9},}
+, React.createElement('span', { style: {fontSize:10,fontWeight:800,letterSpacing:0.6,color:"#0A5FFF",textTransform:"uppercase",display:"flex",alignItems:"center",gap:5},}, React.createElement(Ic, { n: "pin", s: 13, c: "#0A5FFF",}), "In Bearbeitung")
+, React.createElement('button', { onClick: onClose, style: {background:"rgba(0,0,0,0.06)",border:"none",borderRadius:"50%",width:26,height:26,fontSize:12,color:"#6E6E73",cursor:"pointer"},}, "✕")
+)
+, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"flex-start"},}
+, React.createElement('div', null, React.createElement('div', { style: {fontWeight:800,fontSize:18,letterSpacing:0.2},}, info.kennz), React.createElement('div', { style: {fontSize:12,color:"#6E6E73",marginTop:1},}, info.f?`${info.f.marke||""} ${info.f.modell||""}`.trim():"", info.kName?` · ${info.kName}`:""))
+, React.createElement('span', { style: {background:"rgba(10,95,255,0.1)",color:"#0A5FFF",fontSize:11,fontWeight:700,borderRadius:7,padding:"3px 8px"},}, eur(info.brutto))
+)
+, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",fontSize:11.5,padding:"8px 0 4px",margin:"8px 0",borderTop:"1px solid rgba(0,0,0,0.05)",borderBottom:"1px solid rgba(0,0,0,0.05)"},}
+, React.createElement('span', { style: {color:"#AEAEB2"},}, "Arbeit")
+, React.createElement('span', { style: {fontWeight:600,textAlign:"right",maxWidth:"65%",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"},}, info.arbeit)
+)
+, React.createElement('div', { style: {display:"flex",alignItems:"center",gap:10,marginBottom:12},}
+, React.createElement('div', { style: {height:6,borderRadius:3,background:"rgba(0,0,0,0.07)",overflow:"hidden",flex:1},}, React.createElement('div', { style: {height:"100%",borderRadius:3,background:"linear-gradient(90deg,#0A84FF,#64B5FF)",width:info.prog+"%",transition:"width .8s cubic-bezier(.25,.8,.3,1)"},}))
+, React.createElement('span', { style: {fontSize:12,fontWeight:800,color:"#0A5FFF"},}, info.prog+"%")
+)
+, React.createElement('div', { style: {display:"flex",gap:7},}
+, React.createElement('button', { onClick: onDone, style: {flex:1,padding:10,borderRadius:12,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",background:"#0E8F4E",color:"#fff"},}, "Fertig")
+, React.createElement('button', { onClick: onCall, style: {flex:1,padding:10,borderRadius:12,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",background:"rgba(10,95,255,0.10)",color:"#0A5FFF"},}, "Anrufen")
+, React.createElement('button', { onClick: onOpen, style: {flex:1,padding:10,borderRadius:12,fontSize:12,fontWeight:700,border:"none",cursor:"pointer",background:"rgba(0,0,0,0.06)",color:"#6E6E73"},}, "→ Auftrag")
+)
+)
+);
+}
+function AuftragWischListe({auListe,onOpen}){
+const {data,updateRow,notify}=useApp();
+const [pinnedId,setPinnedId]=useState(null);
+const startToday=new Date();startToday.setHours(0,0,0,0);
+const endToday=new Date();endToday.setHours(23,59,59,999);
+const call=info=>{if(info.k&&info.k.telefon)window.location.href="tel:"+info.k.telefon;else notify("Keine Telefonnummer hinterlegt","error");};
+const done=au=>{updateRow("auftraege",au.id,{status:"abgeschlossen",abgeschlossen:tod()});notify("Auftrag als erledigt markiert");if(pinnedId===au.id)setPinnedId(null);};
+const grpOf=au=>{
+if(au.status==="abgeschlossen")return{key:"_done",label:"Erledigt",order:9e15};
+const d=au.fertigstellung_geplant?new Date(au.fertigstellung_geplant):null;
+if(!d)return{key:"_none",label:"Ohne Termin",order:8e15};
+if(d<=endToday)return{key:"_today",label:"Heute",order:-1};
+return{key:d.toISOString().slice(0,10),label:`${WOTAG[d.getDay()]}, ${d.getDate()}.`,order:d.getTime()};
+};
+const groups={};
+auListe.forEach(au=>{const g=grpOf(au);if(!groups[g.key])groups[g.key]={...g,items:[]};groups[g.key].items.push(au);});
+const sorted=Object.values(groups).sort((a,b)=>a.order-b.order);
+const heute=groups["_today"];
+const ueberfaellig=auListe.filter(a=>a.status!=="abgeschlossen"&&a.fertigstellung_geplant&&new Date(a.fertigstellung_geplant)<startToday).length;
+const pinnedAu=pinnedId?auListe.find(a=>a.id===pinnedId):null;
+if(auListe.length===0)return React.createElement('div', { style: {textAlign:"center",padding:"48px 20px",color:"#AEAEB2",fontSize:14},}, "Keine Aufträge");
+return React.createElement('div', null
+, pinnedAu&&React.createElement(PinnedCard, { au: pinnedAu, info: auRowInfo(pinnedAu,data), onClose: ()=>setPinnedId(null), onOpen: ()=>onOpen(pinnedAu.id), onCall: ()=>call(auRowInfo(pinnedAu,data)), onDone: ()=>done(pinnedAu),})
+, heute&&React.createElement('div', { style: {background:"#1D1D1F",borderRadius:16,padding:"12px 13px",marginBottom:11},}
+, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",marginBottom:2},}
+, React.createElement('span', { style: {fontSize:11,fontWeight:800,textTransform:"uppercase",letterSpacing:0.6,color:"rgba(255,255,255,0.6)"},}, "Heute · " , WOTAG[new Date().getDay()])
+, ueberfaellig>0?React.createElement('span', { style: {fontSize:11,fontWeight:700,color:"#FF6961"},}, ueberfaellig, " überfällig" ):React.createElement('span', { style: {fontSize:11,fontWeight:700,color:"#6EE787"},}, "im Plan" )
+)
+, heute.items.map(au=>React.createElement(SwipeRow, { key: au.id, au: au, info: auRowInfo(au,data), dark: true, pinned: pinnedId===au.id, onOpen: ()=>onOpen(au.id), onCall: ()=>call(auRowInfo(au,data)), onDone: ()=>done(au), onPin: ()=>setPinnedId(au.id),}))
+)
+, sorted.filter(g=>g.key!=="_today").map(g=>React.createElement('div', { key: g.key,}
+, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",fontSize:11,fontWeight:700,color:"#8E8E93",margin:"13px 3px 2px",textTransform:"uppercase",letterSpacing:0.4},}, React.createElement('span', null, g.label), React.createElement('span', null, g.items.length, " Fahrzeug" , g.items.length>1?"e":""))
+, g.items.map(au=>React.createElement(SwipeRow, { key: au.id, au: au, info: auRowInfo(au,data), dark: false, pinned: pinnedId===au.id, onOpen: ()=>onOpen(au.id), onCall: ()=>call(auRowInfo(au,data)), onDone: ()=>done(au), onPin: ()=>setPinnedId(au.id),}))
+))
+, React.createElement('div', { style: {textAlign:"center",fontSize:11,color:"#AEAEB2",marginTop:16},}, "← Zeile nach links wischen für Aktionen"   )
+);
+}
+
 function Auftraege(){
 const {data,addRow,saveSettings,updateRow,notify,kvZuAuftrag,paketeAbrechnen}=useApp();
 const [tab,setTab]=useState("auftraege");
@@ -1193,36 +1304,7 @@ React.createElement('button', { key: fi.v, onClick: ()=>setFilterStatus(fi.v), s
 ))
 )
 )
-, React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:10},}
-, auListe.map(au=>{
-const k=(data.kunden||[]).find(x=>x.id===au.kunden_id),f=(data.fahrzeuge||[]).find(x=>x.id===au.fahrzeug_id),sc=SC[au.status]||SC.offen,c=calcAU(au);
-const offenePakete=(au.pakete||[]).filter(p=>p.paket_status==="offen");
-return React.createElement(Card, { key: au.id, className: "list-item", onClick: ()=>setSelAU(au.id), style: {padding:"15px"},}
-, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:9},}
-, React.createElement('div', { style: {flex:1,minWidth:0,marginRight:12},}
-, React.createElement('div', { style: {display:"flex",alignItems:"center",gap:6,marginBottom:4,flexWrap:"wrap"},}
-, React.createElement('span', { style: {color:P.blue,fontSize:12,fontFamily:"monospace",fontWeight:700},}, au.nr)
-, React.createElement(Bdg, { color: sc.c, bg: sc.bg, small: true,}, sc.label)
-, offenePakete.length>0&&React.createElement(Bdg, { color: P.orange, small: true,}, offenePakete.length, " Paket" , offenePakete.length>1?"e":"", " offen" )
-)
-, React.createElement('div', { style: {color:"#1D1D1F",fontSize:15,fontWeight:600},}, _optionalChain([k, 'optionalAccess', _32 => _32.vorname])||"", " " , _optionalChain([k, 'optionalAccess', _33 => _33.nachname])||"")
-, React.createElement('div', { style: {color:"#6E6E73",fontSize:12,marginTop:3},}, _optionalChain([f, 'optionalAccess', _34 => _34.kennzeichen])||"", f?` . ${f.marke||""} ${f.modell||""}`:"", ".")
-)
-, React.createElement('div', { style: {textAlign:"right",flexShrink:0},}, React.createElement('div', { style: {color:"#1D1D1F",fontSize:17,fontWeight:700},}, eur(c.brutto)))
-)
-, au.beschreibung&&React.createElement('div', { style: {color:"#6E6E73",fontSize:12,marginBottom:8,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"},}, au.beschreibung)
-, React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8,justifyContent:"space-between"},}
-, React.createElement('div', { style: {display:"flex",alignItems:"center",gap:6,color:au.timer_aktiv?P.green:"#AEAEB2"},}
-, React.createElement(Ic, { n: "clock", s: 13, c: au.timer_aktiv?P.green:"#AEAEB2",})
-, React.createElement('span', { style: {fontFamily:"monospace",fontSize:12},}, timerFmt(au.timer_gesamt_sek))
-, au.timer_aktiv&&React.createElement('span', { style: {width:6,height:6,borderRadius:"50%",background:P.green,animation:"pulse 1s infinite",display:"inline-block"},})
-)
-, au.fertigstellung_geplant&&React.createElement('span', { style: {color:"#AEAEB2",fontSize:11,marginLeft:"auto"},}, "Fertig: " , datTime(au.fertigstellung_geplant))
-)
-);
-})
-, auListe.length===0&&React.createElement('div', { style: {textAlign:"center",padding:"48px 20px",color:"#AEAEB2",fontSize:14},}, filterQ||filterStatus!=="alle"?"Keine Ergebnisse":"Noch keine Aufträge")
-)
+, React.createElement(AuftragWischListe, { auListe: auListe, onOpen: setSelAU,})
 )
 , showKVForm&&React.createElement(KVForm, { onClose: ()=>setShowKVForm(false),})
 , showSchnell&&React.createElement(SchnellauftragModal, { onClose: ()=>setShowSchnell(false),})
@@ -2655,7 +2737,7 @@ const VIEWS={dashboard:Dashboard,auftraege:Auftraege,rechnungen:Rechnungen,kalen
 function AppInner(){
 const {view,loading,searchOpen,setSearchOpen}=useApp();
 const ViewComp=VIEWS[view]||Dashboard;
-const animStyles=`@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideIn{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes slideUp{from{transform:translateY(120%);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`;
+const animStyles=`@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideIn{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes slideUp{from{transform:translateY(120%);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes rowIn{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes cardSpring{0%{transform:scale(.92) translateY(-8px);opacity:0}60%{transform:scale(1.015) translateY(0);opacity:1}100%{transform:scale(1)}}`;
 if(loading) return React.createElement('div', { style: {display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#F2F2F7",flexDirection:"column",gap:20,animation:"fadeIn 0.3s ease"},}
 , React.createElement('style', null, animStyles)
 , React.createElement('div', { style: {width:72,height:72,borderRadius:20,background:"#007AFF",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 32px rgba(0,122,255,0.35)"},}
