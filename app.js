@@ -481,12 +481,15 @@ return {confirm,modal};
 }
 function Card({children,style,onClick,noPad}){
 const [p,setP]=useState(false);
+const [h,setH]=useState(false);
 return React.createElement('div', {
   onClick: onClick,
   onPointerDown: ()=>onClick&&setP(true),
   onPointerUp: ()=>setP(false),
   onPointerLeave: ()=>setP(false),
-  style: {background:"#FFFFFF",border:"1px solid rgba(60,60,67,0.1)",borderRadius:16,padding:noPad?0:16,cursor:onClick?"pointer":"default",transition:"transform 0.13s ease,opacity 0.13s ease,box-shadow 0.13s ease",transform:p&&onClick?"scale(0.982)":"scale(1)",opacity:p&&onClick?0.88:1,boxShadow:p&&onClick?"none":"0 1px 3px rgba(0,0,0,0.05)",...style},}
+  onPointerEnter: ()=>setH(true),
+  onPointerLeave: ()=>setH(false),
+  style: {background:"#FFFFFF",border:"1px solid rgba(60,60,67,0.1)",borderRadius:16,padding:noPad?0:16,cursor:onClick?"pointer":"default",transition:"transform 0.13s ease,opacity 0.13s ease,box-shadow 0.2s ease",transform:p&&onClick?"scale(0.982)":h&&onClick?"scale(1.01)":"scale(1)",opacity:p&&onClick?0.88:1,boxShadow:p&&onClick?"none":h&&onClick?"0 8px 24px rgba(0,0,0,0.12)":"0 1px 3px rgba(0,0,0,0.05)",...style},}
   , children
 );
 }
@@ -510,7 +513,7 @@ return React.createElement('button', {
   onMouseDown: ()=>setPressed(true),
   onMouseUp: ()=>setPressed(false),
   disabled: disabled,
-  style: {display:"flex",alignItems:"center",justifyContent:"center",gap:6,cursor:disabled?"not-allowed":"pointer",width:full?"100%":"auto",opacity:disabled?0.45:pressed?0.78:1,transform:pressed?"scale(0.95)":"scale(1)",boxShadow:pressed?"none":stl.shadow,transition:"transform 0.1s ease,opacity 0.1s ease,box-shadow 0.15s ease",...ss,...stl,...ex},}
+  style: {display:"flex",alignItems:"center",justifyContent:"center",gap:6,cursor:disabled?"not-allowed":"pointer",width:full?"100%":"auto",opacity:disabled?0.45:pressed?0.78:1,transform:pressed?"scale(0.94)":"scale(1)",boxShadow:pressed?"none":stl.shadow,transition:"transform 0.12s cubic-bezier(0.34,1.56,0.64,1),opacity 0.12s ease,box-shadow 0.15s ease",...ss,...stl,...ex},}
   , children
 );
 }
@@ -521,11 +524,12 @@ return React.createElement('span', { style: {display:"inline-flex",alignItems:"c
 }
 
 function Inp({label,value,onChange,type="text",placeholder,rows,note,suffix,note2}){
+const [focused,setFocused]=useState(false);
 const isArea=rows>1;
 const el=isArea
-  ?React.createElement('textarea', { value: value||"", onChange: e=>onChange(e.target.value), rows: rows, placeholder: placeholder||"", style: {width:"100%",background:"#fff",border:"1.5px solid rgba(60,60,67,0.15)",borderRadius:12,padding:"11px 13px",fontSize:14,color:"#1D1D1F",resize:"vertical",fontFamily:"-apple-system,sans-serif",minHeight:70,boxSizing:"border-box",transition:"border-color 0.15s,box-shadow 0.15s"},})
+  ?React.createElement('textarea', { onFocus: ()=>setFocused(true), onBlur: ()=>setFocused(false), value: value||"", onChange: e=>onChange(e.target.value), rows: rows, placeholder: placeholder||"", style: {width:"100%",background:"#fff",border:`1.5px solid ${focused?"rgba(0,122,255,0.35)":"rgba(60,60,67,0.15)"}`,borderRadius:12,padding:"11px 13px",fontSize:14,color:"#1D1D1F",resize:"vertical",fontFamily:"-apple-system,sans-serif",minHeight:70,boxSizing:"border-box",boxShadow:focused?"0 0 0 3px rgba(0,122,255,0.1)":"none",transition:"border-color 0.15s,box-shadow 0.15s"},})
   :React.createElement('div', { style: {position:"relative",display:"flex",alignItems:"center"},}
-    , React.createElement('input', { value: value||"", onChange: e=>onChange(e.target.value), type: type, placeholder: placeholder||"", style: {width:"100%",background:"#fff",border:"1.5px solid rgba(60,60,67,0.15)",borderRadius:12,padding:suffix?"11px 44px 11px 13px":"11px 13px",fontSize:14,color:"#1D1D1F",boxSizing:"border-box",transition:"border-color 0.15s,box-shadow 0.15s"},})
+    , React.createElement('input', { onFocus: ()=>setFocused(true), onBlur: ()=>setFocused(false), value: value||"", onChange: e=>onChange(e.target.value), type: type, placeholder: placeholder||"", style: {width:"100%",background:"#fff",border:`1.5px solid ${focused?"rgba(0,122,255,0.35)":"rgba(60,60,67,0.15)"}`,borderRadius:12,padding:suffix?"11px 44px 11px 13px":"11px 13px",fontSize:14,color:"#1D1D1F",boxSizing:"border-box",boxShadow:focused?"0 0 0 3px rgba(0,122,255,0.1)":"none",transition:"border-color 0.15s,box-shadow 0.15s"},})
     , suffix&&React.createElement('span', { style: {position:"absolute",right:13,color:"#AEAEB2",fontSize:13,fontWeight:500,pointerEvents:"none"},}, suffix)
   );
 return React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:5},}
@@ -2591,7 +2595,9 @@ const VIEWS={dashboard:Dashboard,auftraege:Auftraege,rechnungen:Rechnungen,kalen
 function AppInner(){
 const {view,loading,searchOpen,setSearchOpen}=useApp();
 const ViewComp=VIEWS[view]||Dashboard;
+const animStyles=`@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideIn{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes slideUp{from{transform:translateY(120%);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`;
 if(loading) return React.createElement('div', { style: {display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#F2F2F7",flexDirection:"column",gap:20,animation:"fadeIn 0.3s ease"},}
+, React.createElement('style', null, animStyles)
 , React.createElement('div', { style: {width:72,height:72,borderRadius:20,background:"#007AFF",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 32px rgba(0,122,255,0.35)"},}
 , React.createElement('span', { style: {color:"#fff",fontSize:32,fontWeight:900,letterSpacing:-1},}, "m")
 )
@@ -2602,6 +2608,7 @@ if(loading) return React.createElement('div', { style: {display:"flex",alignItem
 , React.createElement('div', { style: {width:28,height:28,border:"3px solid rgba(0,122,255,0.2)",borderTopColor:"#007AFF",borderRadius:"50%",animation:"spin 0.8s linear infinite",marginTop:8},})
 );
 return React.createElement('div', { style: {minHeight:"100vh",background:"#F2F2F7",fontFamily:"-apple-system,BlinkMacSystemFont,Helvetica Neue,sans-serif",color:"#1D1D1F"},}
+, React.createElement('style', null, animStyles)
 , React.createElement(MobileNav, null)
 , React.createElement('div', { style: {paddingTop:44,animation:"fadeIn 0.2s ease"},}, React.createElement(ViewComp, null))
 , React.createElement(GlobalSearch, {isOpen:searchOpen,onClose:()=>setSearchOpen(false)})
