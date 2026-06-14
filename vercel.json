@@ -1,20 +1,9 @@
 {
-  "version": 2,
-  "routes": [
-    { "src": "/app.js", "dest": "/app" },
-    { "src": "/(.*)", "dest": "/index" }
-  ],
   "headers": [
     {
-      "source": "/app",
+      "source": "/app.js",
       "headers": [
         { "key": "Content-Type", "value": "application/javascript; charset=utf-8" }
-      ]
-    },
-    {
-      "source": "/index",
-      "headers": [
-        { "key": "Content-Type", "value": "text/html; charset=utf-8" }
       ]
     }
   ]
