@@ -2691,6 +2691,45 @@ React.createElement('div', { key: l.id, style: {display:"flex",alignItems:"cente
 )
 );
 }
+async function seedTestdaten(addRow,notify){
+const kunden=[
+{vorname:"Markus",nachname:"Bauer",firma:"",anrede:"Herr",typ:"privat",telefon:"0151 23456789",email:"markus.bauer@gmail.com",whatsapp:"4915123456789",strasse:"Hauptstr. 12",plz:"80331",ort:"München",zahlungsmoral:"gut",interne_bewertung:4,tags:["Stammkunde"]},
+{vorname:"Sandra",nachname:"Müller",firma:"",anrede:"Frau",typ:"privat",telefon:"0172 98765432",email:"s.mueller@web.de",whatsapp:"4917298765432",strasse:"Gartenweg 5",plz:"70173",ort:"Stuttgart",zahlungsmoral:"gut",interne_bewertung:5,tags:["VIP","Stammkunde"]},
+{vorname:"Thomas",nachname:"Schneider",firma:"Schneider GmbH",anrede:"Herr",typ:"firma",telefon:"089 12345678",email:"t.schneider@schneider-gmbh.de",whatsapp:"",strasse:"Industriestr. 33",plz:"80339",ort:"München",zahlungsmoral:"mittel",interne_bewertung:3,tags:["Firmenkunde"]},
+{vorname:"Ayşe",nachname:"Kaya",firma:"",anrede:"Frau",typ:"privat",telefon:"0176 55512345",email:"ayse.kaya@hotmail.com",whatsapp:"4917655512345",strasse:"Bahnhofstr. 7",plz:"60313",ort:"Frankfurt",zahlungsmoral:"gut",interne_bewertung:4,tags:[]},
+{vorname:"Kevin",nachname:"Fischer",firma:"",anrede:"Herr",typ:"privat",telefon:"0163 77788899",email:"kevin.fischer@outlook.de",whatsapp:"4916377788899",strasse:"Lindenallee 19",plz:"40210",ort:"Düsseldorf",zahlungsmoral:"schlecht",interne_bewertung:2,tags:[]},
+{vorname:"Petra",nachname:"Weber",firma:"",anrede:"Frau",typ:"privat",telefon:"0160 44455566",email:"petra.weber@t-online.de",whatsapp:"",strasse:"Rosenstr. 3",plz:"50667",ort:"Köln",zahlungsmoral:"gut",interne_bewertung:5,tags:["Stammkunde","Barzahler"]},
+{vorname:"Ali",nachname:"Yilmaz",firma:"Yilmaz Transporte",anrede:"Herr",typ:"firma",telefon:"0151 99900011",email:"ali@yilmaz-transporte.de",whatsapp:"4915199900011",strasse:"Gewerbepark 8",plz:"81669",ort:"München",zahlungsmoral:"gut",interne_bewertung:4,tags:["Firmenkunde"]},
+{vorname:"Julia",nachname:"Hoffmann",firma:"",anrede:"Frau",typ:"privat",telefon:"0175 33344455",email:"j.hoffmann@gmail.com",whatsapp:"4917533344455",strasse:"Kirchgasse 21",plz:"10115",ort:"Berlin",zahlungsmoral:"gut",interne_bewertung:3,tags:[]},
+{vorname:"Michael",nachname:"Wagner",firma:"",anrede:"Herr",typ:"privat",telefon:"0177 66677788",email:"m.wagner@freenet.de",whatsapp:"",strasse:"Bergstr. 44",plz:"80803",ort:"München",zahlungsmoral:"mittel",interne_bewertung:3,tags:[]},
+{vorname:"Claudia",nachname:"Becker",firma:"Reisebüro Becker",anrede:"Frau",typ:"firma",telefon:"030 87654321",email:"c.becker@reisebuero-becker.de",whatsapp:"4930876543210",strasse:"Friedrichstr. 50",plz:"10117",ort:"Berlin",zahlungsmoral:"gut",interne_bewertung:4,tags:["Firmenkunde","Stammkunde"]},
+];
+const fahrzeuge=[
+{kennzeichen:"M-BK 1234",marke:"BMW",modell:"3er",baujahr:"2019",kraftstoff:"Diesel",getriebe:"Automatik",km:"78000",kw:"140",ps:"190",hubraum:"1995",farbe:"Weiß",hu_datum:"2025-06-01",erstzulassung:"2019-03-15"},
+{kennzeichen:"S-MS 5678",marke:"Mercedes-Benz",modell:"C-Klasse",baujahr:"2020",kraftstoff:"Benzin",getriebe:"Automatik",km:"52000",kw:"115",ps:"156",hubraum:"1497",farbe:"Schwarz",hu_datum:"2026-02-01",erstzulassung:"2020-07-20"},
+{kennzeichen:"M-SN 9999",marke:"Volkswagen",modell:"Passat",baujahr:"2017",kraftstoff:"Diesel",getriebe:"DSG",km:"143000",kw:"110",ps:"150",hubraum:"1968",farbe:"Silber",hu_datum:"2024-11-01",erstzulassung:"2017-09-10"},
+{kennzeichen:"F-AK 2222",marke:"Toyota",modell:"Yaris",baujahr:"2021",kraftstoff:"Hybrid",getriebe:"CVT",km:"31000",kw:"85",ps:"116",hubraum:"1490",farbe:"Rot",hu_datum:"2025-09-01",erstzulassung:"2021-04-05"},
+{kennzeichen:"D-KF 3344",marke:"Ford",modell:"Focus",baujahr:"2018",kraftstoff:"Benzin",getriebe:"Schaltung",km:"96000",kw:"92",ps:"125",hubraum:"1499",farbe:"Blau",hu_datum:"2024-08-01",erstzulassung:"2018-01-22"},
+{kennzeichen:"K-PW 7788",marke:"Opel",modell:"Astra",baujahr:"2016",kraftstoff:"Diesel",getriebe:"Schaltung",km:"178000",kw:"81",ps:"110",hubraum:"1598",farbe:"Grau",hu_datum:"2024-07-01",erstzulassung:"2016-06-14"},
+{kennzeichen:"M-AY 4400",marke:"Mercedes-Benz",modell:"Sprinter",baujahr:"2020",kraftstoff:"Diesel",getriebe:"Automatik",km:"210000",kw:"130",ps:"177",hubraum:"1950",farbe:"Weiß",hu_datum:"2025-03-01",erstzulassung:"2020-02-28"},
+{kennzeichen:"B-JH 5566",marke:"Audi",modell:"A4",baujahr:"2019",kraftstoff:"Diesel",getriebe:"DSG",km:"67000",kw:"110",ps:"150",hubraum:"1968",farbe:"Blau",hu_datum:"2025-11-01",erstzulassung:"2019-10-03"},
+{kennzeichen:"M-MW 8800",marke:"Volkswagen",modell:"Golf",baujahr:"2021",kraftstoff:"Benzin",getriebe:"Schaltung",km:"44000",kw:"85",ps:"115",hubraum:"999",farbe:"Grün",hu_datum:"2026-01-01",erstzulassung:"2021-08-17"},
+{kennzeichen:"B-CB 1100",marke:"BMW",modell:"X3",baujahr:"2022",kraftstoff:"Hybrid",getriebe:"Automatik",km:"28000",kw:"180",ps:"245",hubraum:"1998",farbe:"Weiß",hu_datum:"2026-05-01",erstzulassung:"2022-03-30"},
+];
+notify("Testdaten werden eingefügt…","info");
+const savedKunden=[];
+for(let i=0;i<kunden.length;i++){
+const nr=`KD-${String(i+1).padStart(4,"0")}`;
+const saved=await addRow("kunden",{id:uid(),nr,...kunden[i],erstellt:tod(),notizen:"Testdatensatz"});
+savedKunden.push(saved);
+}
+for(let i=0;i<fahrzeuge.length;i++){
+const k=savedKunden[i];
+if(!k)continue;
+await addRow("fahrzeuge",{id:uid(),...fahrzeuge[i],kunden_id:k.id||k.id,km:parseInt(fahrzeuge[i].km)||0,baujahr:parseInt(fahrzeuge[i].baujahr)||2020,kw:parseInt(fahrzeuge[i].kw)||0,ps:parseInt(fahrzeuge[i].ps)||0,hubraum:parseInt(fahrzeuge[i].hubraum)||0,letzte_inspektion:null,notizen:"Testdatensatz",vin:"",farb_code:"",reifengroesse:"",au_datum:"",naechste_inspektion:"",anzahl_vorbesitzer:"1",fahrzeugschein:null});
+}
+notify("10 Kunden + 10 Fahrzeuge eingefügt ✓","success");
+}
 function Finanzen(){
 const {data,addRow,notify,doExport}=useApp();
 const [tab2,setTab2]=useState("kassenbuch");
@@ -2762,6 +2801,12 @@ return React.createElement('div', { key: q, style: {display:"grid",gridTemplateC
 , React.createElement('div', { style: {marginTop:12,padding:"12px",background:"transparent",borderRadius:11,color:"#AEAEB2",fontSize:12,textAlign:"center"},}, "[folder] Gespeichert als: mehanicar_backup_"
    , tod(), ".xls"
 )
+, React.createElement('div', { style: {height:1,background:"rgba(60,60,67,0.1)",margin:"20px 0"},})
+, React.createElement('div', { style: {padding:"14px",background:"rgba(255,149,0,0.07)",border:"1px solid rgba(255,149,0,0.2)",borderRadius:14,marginBottom:12},}
+  , React.createElement('div', { style: {color:P.orange,fontSize:14,fontWeight:700,marginBottom:5},}, "Testdaten")
+  , React.createElement('div', { style: {color:"#6E6E73",fontSize:13,lineHeight:1.6},}, "10 Testkunden + 10 Testfahrzeuge einfügen — nur zum Ausprobieren. Danach in den Profilen wieder löschbar.")
+)
+, React.createElement(Btn, { full: true, v: "orange_out", size: "lg", onClick: ()=>seedTestdaten(addRow,notify),}, React.createElement(Ic, { n: "kunden", s: 16, c: P.orange,}), " 10 Testkunden & Fahrzeuge laden" )
 )
 );
 }
