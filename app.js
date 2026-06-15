@@ -212,6 +212,9 @@ filter:       `<polygon points="22,3 2,3 10,12.46 10,19 14,21 14,12.46"/>`,
 send:         `<line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/>`,
 tag:          `<path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/>`,
 sun:          `<circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>`,
+whatsapp:     `<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>`,
+photo:        `<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>`,
+car:          `<rect x="1" y="3" width="15" height="13" rx="2"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>`,
 };
 function Ic({n,s=18,c="currentColor",style}) {
 const d=ICONS[n];
@@ -488,9 +491,8 @@ return React.createElement('div', {
   onClick: onClick,
   onPointerDown: ()=>onClick&&setP(true),
   onPointerUp: ()=>setP(false),
-  onPointerLeave: ()=>setP(false),
   onPointerEnter: ()=>setH(true),
-  onPointerLeave: ()=>setH(false),
+  onPointerLeave: ()=>{setP(false);setH(false);},
   style: {background:"#FFFFFF",border:"1px solid rgba(60,60,67,0.1)",borderRadius:16,padding:noPad?0:16,cursor:onClick?"pointer":"default",transition:"transform 0.13s ease,opacity 0.13s ease,box-shadow 0.2s ease",transform:p&&onClick?"scale(0.982)":h&&onClick?"scale(1.01)":"scale(1)",opacity:p&&onClick?0.88:1,boxShadow:p&&onClick?"none":h&&onClick?"0 8px 24px rgba(0,0,0,0.12)":"0 1px 3px rgba(0,0,0,0.05)",...style},}
   , children
 );
@@ -505,6 +507,8 @@ success:   {bg:P.green,color:"#fff",border:"none",shadow:"0 2px 10px rgba(52,199
 ghost:     {bg:"transparent",color:"#6E6E73",border:"1px solid rgba(60,60,67,0.2)",shadow:"none"},
 green_out: {bg:"rgba(52,199,89,0.10)",color:"#1A7A3A",border:"1px solid rgba(52,199,89,0.25)",shadow:"none"},
 orange_out:{bg:"rgba(255,149,0,0.10)",color:"#7A5000",border:"1px solid rgba(255,149,0,0.25)",shadow:"none"},
+blue_out:  {bg:"rgba(0,122,255,0.10)",color:"#007AFF",border:"1px solid rgba(0,122,255,0.25)",shadow:"none"},
+red_out:   {bg:"rgba(255,59,48,0.10)",color:"#FF3B30",border:"1px solid rgba(255,59,48,0.25)",shadow:"none"},
 };
 const ss={sm:{fontSize:12,padding:"7px 14px",borderRadius:10,fontWeight:600},md:{fontSize:14,padding:"11px 18px",borderRadius:12,fontWeight:600},lg:{fontSize:16,padding:"15px 22px",borderRadius:14,fontWeight:700}}[size]||{};
 const stl=vs[v]||vs.primary;
@@ -850,16 +854,21 @@ const MOBILE_NAV=[
 {id:"kalender",icon:"kalender",label:"Kalender"},
 {id:"kunden",icon:"kunden",label:"Kunden"},
 ];
-function Stat({label,value,sub,color=P.blue}){
+function Stat({label,value,sub,color=P.blue,icon}){
 return React.createElement(Card, null
-, React.createElement('div', { style: {color:"#6E6E73",fontSize:11,fontWeight:600,letterSpacing:0.5,textTransform:"uppercase",marginBottom:6},}, label)
+, React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:8},}
+  , React.createElement('span', { style: {color:"#8E8E93",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, label)
+  , icon&&React.createElement('div', { style: {width:28,height:28,borderRadius:8,background:color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0},}
+    , React.createElement(Ic, {n:icon,s:14,c:color})
+  )
+)
 , React.createElement('div', { style: {color:"#1D1D1F",fontSize:24,fontWeight:700,letterSpacing:-0.5,lineHeight:1},}, value)
-, sub&&React.createElement('div', { style: {color,fontSize:12,marginTop:5,fontWeight:500},}, sub)
+, sub&&React.createElement('div', { style: {color,fontSize:12,marginTop:5,fontWeight:600},}, sub)
 );
 }
 function SecH({title,action}){
-return React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,marginTop:4},}
-, React.createElement('span', { style: {color:"#AEAEB2",fontSize:11,fontWeight:700,letterSpacing:0.8,textTransform:"uppercase"},}, title)
+return React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10,marginTop:8},}
+, React.createElement('span', { style: {color:"#6E6E73",fontSize:12,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase"},}, title)
 , action
 );
 }
@@ -871,7 +880,7 @@ return React.createElement('div', { style: {flex:1,overflow:"hidden",display:"fl
 , React.createElement(Ic, { n: "chevronL", s: 16, c: P.blue,}), " Zurück"
 )
 , React.createElement('div', { style: {display:"flex",justifyContent:"space-between",alignItems:"center",paddingBottom:14,borderBottom:"1px solid rgba(60,60,67,0.1)"},}
-, React.createElement('h1', { style: {margin:0,fontSize:m?20:28,fontWeight:700,color:"#1D1D1F",letterSpacing:-0.5},}, title)
+, React.createElement('h1', { style: {margin:0,fontSize:m?22:28,fontWeight:800,color:"#1D1D1F",letterSpacing:-0.7,lineHeight:1.1},}, title)
 , action&&React.createElement('div', { style: {flexShrink:0,display:"flex",alignItems:"center",gap:8},}, action)
 )
 )
@@ -897,7 +906,7 @@ return React.createElement('div', {onClick:onClick, style:{display:"flex",alignI
 function MobileNav(){
 const {view,setView,data}=useApp();
 const bdgAU=(data.auftraege||[]).filter(a=>a.status!=="abgeschlossen"&&a.status!=="storniert").length;
-const bdgRE=(data.rechnungen||[]).filter(r=>!r.bezahlt&&!r.storniert&&getMahnStufe(r)>0).length;
+const bdgRE=(data.rechnungen||[]).filter(r=>!r.bezahlt&&!r.storniert&&getMahnStufe(r)!==null).length;
 const tabs=[
   {id:"dashboard",icon:"dashboard",label:"Übersicht"},
   {id:"auftraege",icon:"auftraege",label:"Aufträge",bdg:bdgAU},
@@ -906,19 +915,18 @@ const tabs=[
   {id:"kunden",icon:"kunden",label:"Kunden"},
   {id:"lager",icon:"lager",label:"Lager"},
   {id:"finanzen",icon:"finanzen",label:"Finanzen"},
-  {id:"statistiken",icon:"statistik",label:"Statistik"},
+  {id:"statistik",icon:"statistik",label:"Statistik"},
   {id:"einstellungen",icon:"einstellungen",label:"Einstellungen"},
 ];
 return React.createElement('div', { className: "nav-scroll", style: {position:"fixed",top:0,left:0,right:0,height:44,background:"rgba(242,242,247,0.92)",backdropFilter:"blur(20px)",WebkitBackdropFilter:"blur(20px)",borderBottom:"1px solid rgba(60,60,67,0.1)",zIndex:1000,display:"flex",alignItems:"center",overflowX:"auto",paddingLeft:8,paddingRight:8,gap:0},}
   , tabs.map(tab=>{
     const active=view===tab.id;
-    return React.createElement('button', { key: tab.id, onClick: ()=>setView(tab.id), style: {display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"4px 10px",borderRadius:10,border:"none",background:active?"rgba(0,122,255,0.1)":"transparent",cursor:"pointer",position:"relative",flexShrink:0,gap:2,transition:"background 0.15s ease,transform 0.1s ease",transform:active?"scale(1)":"scale(0.95)"},}
-      , React.createElement('div', { style: {position:"relative"},}
-        , React.createElement(Ic, { n: tab.icon, s: 18, c: active?P.blue:"#8E8E93",})
-        , tab.bdg>0&&React.createElement('div', { style: {position:"absolute",top:-4,right:-6,background:P.red,color:"#fff",borderRadius:10,minWidth:16,height:16,fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 3px",lineHeight:1},}, tab.bdg>9?"9+":tab.bdg)
+    return React.createElement('button', { key: tab.id, onClick: ()=>setView(tab.id), style: {display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",padding:"5px 10px",borderRadius:10,border:"none",background:"transparent",cursor:"pointer",position:"relative",flexShrink:0,gap:2,transition:"transform 0.15s cubic-bezier(0.34,1.56,0.64,1)",transform:active?"scale(1.08)":"scale(1)"},}
+      , React.createElement('div', { style: {position:"relative",width:32,height:24,display:"flex",alignItems:"center",justifyContent:"center",borderRadius:8,background:active?"rgba(0,122,255,0.12)":"transparent",transition:"background 0.2s ease"},}
+        , React.createElement(Ic, { n: tab.icon, s: 17, c: active?P.blue:"#8E8E93",})
+        , tab.bdg>0&&React.createElement('div', { style: {position:"absolute",top:-4,right:-4,background:P.red,color:"#fff",borderRadius:10,minWidth:16,height:16,fontSize:9,fontWeight:700,display:"flex",alignItems:"center",justifyContent:"center",padding:"0 3px",lineHeight:1,boxShadow:"0 1px 4px rgba(255,59,48,0.4)"},}, tab.bdg>9?"9+":tab.bdg)
       )
-      , React.createElement('span', { style: {fontSize:9,fontWeight:active?700:500,color:active?P.blue:"#8E8E93",letterSpacing:-0.1,transition:"color 0.15s"},}, tab.label)
-      , active&&React.createElement('div', { style: {position:"absolute",bottom:2,left:"50%",transform:"translateX(-50%)",width:16,height:2,background:P.blue,borderRadius:1},})
+      , React.createElement('span', { style: {fontSize:9,fontWeight:active?700:500,color:active?P.blue:"#8E8E93",letterSpacing:-0.1,transition:"color 0.2s",lineHeight:1},}, tab.label)
     );
   })
 );
@@ -1058,7 +1066,7 @@ const monatU=React.useMemo(()=>(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.sto
 const offeneRe=React.useMemo(()=>(data.rechnungen||[]).filter(r=>!r.bezahlt&&!r.storniert),[data.rechnungen]);
 const offeneReSum=offeneRe.reduce((s,r)=>s+round2(r.brutto||0),0);
 const huFaellig=(data.auftraege||[]).filter(a=>{if(a.status==="abgeschlossen"||a.status==="storniert")return false;if(!a.fertigstellung_geplant)return false;const d=new Date(a.fertigstellung_geplant);d.setHours(0,0,0,0);const h=new Date();h.setHours(0,0,0,0);return d<=h;});
-const uebFaellig=offeneRe.filter(r=>getMahnStufe(r)>0);
+const uebFaellig=offeneRe.filter(r=>getMahnStufe(r)!==null);
 return React.createElement(Screen, { title: "mehanicar", action: React.createElement(Btn, { v: "secondary", size: "sm", onClick: ()=>setSearchOpen(true),}, React.createElement(Ic, { n: "search", s: 14,})),}
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:11,marginBottom:20},}
   , React.createElement('div', { className: "list-item", style: {background:"#fff",borderRadius:16,padding:"16px",border:"1px solid rgba(60,60,67,0.1)",boxShadow:"0 1px 3px rgba(0,0,0,0.05)"},}
@@ -1121,7 +1129,7 @@ return React.createElement('div', null
 , uebFaellig.map((re,i)=>{const k=(data.kunden||[]).find(x=>x.id===re.kunden_id);return React.createElement('div', { key: re.id, className: "list-item", onClick: ()=>setView("rechnungen"), style: {display:"flex",alignItems:"center",gap:12,padding:"13px 16px",borderBottom:i<uebFaellig.length-1?"1px solid rgba(0,0,0,0.05)":"none",cursor:"pointer"},}
   , React.createElement('div', { style: {width:8,height:8,borderRadius:"50%",background:P.red,flexShrink:0},})
   , React.createElement('div', { style: {flex:1},}, React.createElement('div', { style: {color:"#1D1D1F",fontSize:14,fontWeight:500},}, re.nr), React.createElement('div', { style: {color:"#6E6E73",fontSize:12},}, k?k.vorname+" "+k.nachname:""))
-  , React.createElement('span', { style: {color:P.red,fontSize:12,fontWeight:600},}, getMahnStufe(re)===1?"1. Mahnung":getMahnStufe(re)===2?"2. Mahnung":"Kritisch")
+  , React.createElement('span', { style: {color:P.red,fontSize:12,fontWeight:600},}, getMahnStufe(re)?.stufe>=2?"Kritisch":getMahnStufe(re)?.stufe===1?"1. Mahnung":"Überfällig")
 );})
 )
 )
@@ -2792,7 +2800,7 @@ const VIEWS={dashboard:Dashboard,auftraege:Auftraege,rechnungen:Rechnungen,kalen
 function AppInner(){
 const {view,loading,searchOpen,setSearchOpen}=useApp();
 const ViewComp=VIEWS[view]||Dashboard;
-const animStyles=`@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideIn{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes slideUp{from{transform:translateY(120%);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes rowIn{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes cardSpring{0%{transform:scale(.92) translateY(-8px);opacity:0}60%{transform:scale(1.015) translateY(0);opacity:1}100%{transform:scale(1)}}`;
+const animStyles=`@keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes slideIn{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes slideUp{from{transform:translateY(120%);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes scaleIn{from{transform:scale(0.95);opacity:0}to{transform:scale(1);opacity:1}}@keyframes spin{to{transform:rotate(360deg)}}@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}@keyframes rowIn{from{transform:translateY(14px);opacity:0}to{transform:translateY(0);opacity:1}}@keyframes cardSpring{0%{transform:scale(.92) translateY(-8px);opacity:0}60%{transform:scale(1.015) translateY(0);opacity:1}100%{transform:scale(1)}}@keyframes toastSlide{from{transform:translate(-50%,100%);opacity:0}to{transform:translate(-50%,0);opacity:1}}@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}.list-item{animation:rowIn .3s cubic-bezier(.34,1.2,.64,1) both}.list-item:nth-child(1){animation-delay:0ms}.list-item:nth-child(2){animation-delay:30ms}.list-item:nth-child(3){animation-delay:55ms}.list-item:nth-child(4){animation-delay:75ms}.list-item:nth-child(5){animation-delay:90ms}.list-item:nth-child(6){animation-delay:105ms}`;
 if(loading) return React.createElement('div', { style: {display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#F2F2F7",flexDirection:"column",gap:20,animation:"fadeIn 0.3s ease"},}
 , React.createElement('style', null, animStyles)
 , React.createElement('div', { style: {width:72,height:72,borderRadius:20,background:"#007AFF",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 32px rgba(0,122,255,0.35)"},}
