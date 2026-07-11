@@ -58,11 +58,11 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 .nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:rgba(255,255,255,.92);
  backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--line);
  padding:6px 8px calc(6px + var(--sab));z-index:40}
-.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:6px 2px;
- font-size:9.5px;font-weight:600;color:var(--ink3);border-radius:10px;transition:color .18s}
+.nav button{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 1px;
+ font-size:8px;font-weight:600;color:var(--ink3);border-radius:9px;transition:color .18s}
 .nav button.on{color:var(--blue)}
-.nav .nic{width:22px;height:22px;display:grid;place-items:center}
-.nav svg{width:21px;height:21px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav .nic{width:20px;height:20px;display:grid;place-items:center}
+.nav svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 
 /* ============ PRIMITIVES ============ */
 .card{background:var(--card);border-radius:var(--rad);border:1px solid var(--line);margin-bottom:10px;overflow:hidden}
@@ -376,6 +376,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 .sec-h:active .t{opacity:.6}
 .kv[data-act]:active{opacity:.6}
 .lrow .av{width:38px;height:38px;border-radius:11px;display:grid;place-items:center;font-size:13px;font-weight:750;flex-shrink:0}
+.lrow .av svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .lrow .lt{flex:1;min-width:0}
 .lrow .lt b{display:block;font-size:13.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lrow .lt span{font-size:11px;color:var(--ink3)}
@@ -390,6 +391,26 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 .bar{width:100%;max-width:34px;border-radius:6px 6px 3px 3px;background:linear-gradient(180deg,#5E97FF,#0A5FFF);
  transition:height .6s cubic-bezier(.25,.8,.3,1);min-height:3px}
 .barw span{font-size:9px;color:var(--ink3);font-weight:600}
+
+/* ============ CONTEXT INDICATOR ============ */
+.hdr.ctx-auftrag{border-bottom-color:rgba(10,95,255,.4)}
+.hdr.ctx-kunde{border-bottom-color:rgba(14,143,78,.4)}
+.hdr.ctx-fahrzeug{border-bottom-color:rgba(107,77,214,.4)}
+.hdr.ctx-kv{border-bottom-color:rgba(194,113,10,.4)}
+.hdr.ctx-auftrag .eyebrow{color:var(--blue)}
+.hdr.ctx-kunde .eyebrow{color:var(--green)}
+.hdr.ctx-fahrzeug .eyebrow{color:var(--violet)}
+.hdr.ctx-kv .eyebrow{color:var(--amber)}
+/* Sonstiges-Freitext */
+.son-inp{margin-top:6px;width:100%;background:var(--bg);border:1px solid rgba(10,95,255,.4);border-radius:11px;padding:11px 12px;font-size:13px;color:var(--ink)}
+/* Textposition */
+.pos.text-pos{background:transparent;border:1px dashed var(--line);font-style:italic;color:var(--ink2);opacity:.8}
+/* Kundenansicht */
+.kansicht-bg{position:fixed;inset:0;background:var(--bg);z-index:90;overflow-y:auto;padding:calc(var(--sat)+20px) 16px calc(40px + var(--sab));animation:fadeIn .2s ease}
+/* Suche Kacheln */
+.search-kachel{display:flex;align-items:center;gap:11px;padding:12px;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;cursor:pointer;background:var(--card);transition:all .15s var(--spring)}
+.search-kachel:active{transform:scale(.98);background:var(--bg)}
+.search-kachel.sel{border-color:var(--blue);background:var(--blue-bg)}
 
 /* ============ PRINT / RECHNUNG ============ */
 #printarea{display:none}
@@ -596,7 +617,7 @@ const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
 const KLASS={tb:['Technische Beanstandung','t-red'],kw:['Kundenwunsch','t-blue'],so:['Sonstige','t-gray']};
-const ZAHLER={kunde:'Kunde',vers:'Versicherung',gar:'Garantie',intern:'Intern / Kulanz'};
+const ZAHLER={kunde:'Kunde',vers:'Versicherung',gar:'Garantie',intern:'Intern / Kulanz',son:'Sonstiges'};
 const STATI=[['offen','Offen','#C2710A'],['arbeit','In Arbeit','#0A5FFF'],['teile','Wartet auf Teile','#C2710A'],['fertig','Fertig','#0E8F4E'],['abgeholt','Abgeholt','#6B6B73']];
 const statL=s=>(STATI.find(x=>x[0]===s)||STATI[0]);
 const BEST={lager:['Lager','t-green'],bestellt:['bestellt','t-amber'],da:['eingetroffen','t-blue'],verbaut:['verbaut','t-gray']};
@@ -628,10 +649,10 @@ const ordProg=a=>{if(a.status==='fertig'||a.status==='abgeholt')return 100;
 /* ============ 4. SHELL, ROUTER, KOMPONENTEN ============ */
 let route={v:'planung'};
 function nav(v,id){const prev={v:route.v,id:route.id};route={v,id,_from:prev};window.scrollTo(0,0);render()}
-const NAVITEMS=[['planung','Planung',IC.plan],['auftraege','Aufträge',IC.order],['kunden','Kunden',IC.people],['anfragen','Anfragen',IC.inbox],['mehr','Mehr',IC.more]];
-function shell(inner,{title,eyebrow,back,side='',hideNav=false,bar=''}={}){
+const NAVITEMS=[['planung','Planung',IC.plan],['auftraege','Aufträge',IC.order],['kunden','Kunden',IC.people],['kalender','Kalender',IC.grid],['anfragen','Anfragen',IC.inbox],['mehr','Mehr',IC.more]];
+function shell(inner,{title,eyebrow,back,side='',hideNav=false,bar='',ctx=''}={}){
  return `
- <div class="hdr"><div class="hdr-row">
+ <div class="hdr${ctx?' ctx-'+ctx:''}"><div class="hdr-row">
   ${back?`<button class="back-btn" data-act="back" aria-label="Zurück"></button>`:''}
   <div>${eyebrow?`<div class="eyebrow">${eyebrow}</div>`:''}<h1>${title}</h1></div>
   <div class="hdr-side">${side}</div>
@@ -813,12 +834,12 @@ function vAuftraege(){
   return [a.nr,f.kennz,f.marke,f.modell,k.name].join(' ').toLowerCase().includes(q)})}
  const inner=`
   <div class="searchbar">${IC.search}<input placeholder="Kennzeichen, Kunde, Nummer" value="${esc(ordQ)}" data-input="ordQ"></div>
-  <div class="pills">${[['alle','Alle'],...STATI.map(s=>[s[0],s[1]])].map(([v,l])=>{const c=v==='alle'?'#16161A':statL(v)[2];
+  <div class="pills">${[['alle','Alle'],...STATI.map(s=>[s[0],s[1]])].map(([v,l])=>{const c=v==='alle'?'#0A5FFF':statL(v)[2];
    return `<button class="pill ${ordFilter===v?'on':''}" style="${ordFilter===v?`background:${c}14;border-color:${c};color:${c}`:''}" data-act="ord-filter" data-v="${v}">${l}</button>`}).join('')}</div>
   <div class="card stag">${list.length?list.map(a=>{const f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{};const [,sl,sc]=statL(a.status);
    const noteFlag=a.notiz?`<span class="dotmark" style="margin-left:5px"></span>`:'';
    return `<div class="lrow" data-act="open" data-v="auftrag" data-id="${a.id}">
-    <div class="av num" style="background:${sc}14;color:${sc};font-size:10px">${esc((f.kennz||'??').split(' ')[0])}</div>
+    <div class="av" style="background:${sc}14;color:${sc}">${IC.car}</div>
     <div class="lt"><b>${esc(f.kennz||'—')} · ${esc((f.marke||'')+' '+(f.modell||''))}</b>
     <span>${esc(k.name||'')} · ${a.nr}${noteFlag}</span></div>
     <div class="lr"><b class="num">${fmt(ordNetto(a))}</b><span style="color:${sc};font-weight:700">${sl}</span></div></div>`}).join('')
@@ -836,7 +857,7 @@ ACT['ord-new']=()=>{
   <div class="fld"><label>Fahrzeug</label><div class="selwrap"><select id="no-f"><option value="">— Neues Fahrzeug —</option></select></div></div>
   <div id="no-newf"><div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="no-fk" placeholder="HU-XX 000" style="text-transform:uppercase"></div>
    <div class="fld"><label>Marke / Modell</label><input id="no-fm" placeholder="BMW 320d"></div></div></div>
-  <div class="row2"><div class="fld"><label>Abgabe geplant</label><input type="date" id="no-d" value="${todayISO()}"></div>
+  <div class="row2"><div class="fld"><label>Voraussichtl. Fertigstellung</label><input type="date" id="no-d" value="${todayISO()}"></div>
    <div class="fld"><label>Uhrzeit</label><input type="time" id="no-z" value="17:00"></div></div>
   <div class="fld"><label>Erstes Paket (optional)</label><input id="no-p" placeholder="z. B. Inspektion, Bremsen VA"></div>
   <button class="btn btn-main" style="width:100%" data-act="ord-create">Auftrag anlegen</button>`);
@@ -860,7 +881,7 @@ ACT['ord-create']=()=>{
  const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:kid,fzgId:fid,status:'offen',
   annahme:todayISO(),abgabe:$('#no-d').value||todayISO(),abgabeZeit:$('#no-z').value||'',kmAn:null,kmAb:null,tank:'50',
   anzahlungCt:0,rabatt:{typ:'eur',wert:0},pakete:[],komm:[],fotos:[],check:[],docs:[],zeiten:[],timerStart:null,
-  notiz:'',erinnerung:'',erinnerungDat:null,sig:null,pinned:false,created:Date.now()};
+  notiz:'',erinnerung:'',erinnerungDat:null,sig:null,sig2:null,pinned:false,created:Date.now()};
  const pn=$('#no-p').value.trim();
  if(pn)a.pakete.push({id:'p'+uid(),name:pn,klass:'kw',zahler:'kunde',status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,pos:[]});
  S.auftraege.push(a);save();closeSheet();toast(a.nr+' angelegt');nav('auftrag',a.id);
@@ -922,12 +943,13 @@ function vAuftrag(id){
  const pakHtml=pk=>{
   const [kl,kc]=KLASS[pk.klass]||KLASS.so;
   const open=pakOpen[a.id].has(pk.id)?'open':'';
-  const arbeiten=pk.pos.filter(p=>p.typ==='arbeit'),teile=pk.pos.filter(p=>p.typ==='teil');
+  const arbeiten=pk.pos.filter(p=>p.typ==='arbeit'),teile=pk.pos.filter(p=>p.typ==='teil'),texte=pk.pos.filter(p=>p.typ==='text');
   const posRow=p=>{const meta=[];
+   if(p.typ==='text'){return `<div class="pos text-pos" data-act="pos-edit" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${p.id}" style="cursor:pointer"><div class="pn">${esc(p.bez)}</div></div>`}
    if(p.typ==='arbeit'&&p.aw)meta.push(pct1(p.aw)+' AW');
+   if(p.typ==='arbeit')meta.push('EK '+fmt(p.ekCt||0));
    if(p.typ==='teil'){if((p.menge||1)!==1)meta.push(p.menge+' ×');meta.push('EK '+fmt(p.ekCt)+' → VK '+fmt(p.vkCt));
     meta.push(`<span class="gain">+${fmt((p.vkCt-p.ekCt)*(p.menge||1))}</span>`)}
-   else if(p.ekCt)meta.push('Kosten '+fmt(p.ekCt));
    if(p.best&&BEST[p.best])meta.push(`<span class="tag ${BEST[p.best][1]}" style="font-size:9px">${BEST[p.best][0]}${p.best==='bestellt'&&p.eta?', ETA '+dLabel(p.eta):''}</span>`);
    if(p.rab&&p.rab.wert)meta.push('Rabatt –'+(p.rab.typ==='pct'?p.rab.wert+' %':fmt(p.rab.wert)));
    if(p.ext)meta.push('nachträglich');
@@ -949,15 +971,17 @@ function vAuftrag(id){
       ${Object.entries(ZAHLER).map(([v,l])=>`<option value="${v}" ${pk.zahler===v?'selected':''}>${l}</option>`).join('')}</select></div></div></div>
     ${arbeiten.length?'<div class="lbl">Arbeiten</div>'+arbeiten.map(posRow).join(''):''}
     ${teile.length?'<div class="lbl">Teile</div>'+teile.map(posRow).join(''):''}
+    ${texte.length?'<div class="lbl">Textpositionen</div>'+texte.map(posRow).join(''):''}
     ${extPos.map(p=>p.extKommId?`<div class="ext-note">Erweiterung nachträglich vereinbart — ${esc(p.bez)}, ${fmt(posNetto(p))}. <span class="lk" data-act="goto-komm" data-oid="${a.id}">In Kommunikation ansehen</span></div>`:'').join('')}
     ${(()=>{const pf=a.fotos.filter(x=>x.paketId===pk.id);return pf.length?`<div class="lbl">Fotos zu diesem Paket</div>
      <div class="fgrid">${pf.map(fo=>fotoTile(a,fo)).join('')}${camTile(a,pk.id)}</div>`:''})()}
     ${pk.rabatt&&pk.rabatt.wert?`<div class="kv" style="border:none"><span class="k">Rabatt Paket</span><span class="v" style="color:var(--blue)">– ${pk.rabatt.typ==='pct'?pk.rabatt.wert+' %':fmt(pk.rabatt.wert)}</span></div>`:''}
     <div class="sum"><span class="sl">Paket netto · Gewinn <span class="gain"${pakGewinn(pk)<0?' style="color:var(--red)"':''}>${fmt(pakGewinn(pk))}</span></span><b class="num">${fmt(pakNetto(pk))}</b></div>
-    <div class="row3">
-     <button class="btn-ghost" data-act="add-arbeit" data-oid="${a.id}" data-pid="${pk.id}">+ Arbeit</button>
-     <button class="btn-ghost" data-act="add-teil" data-oid="${a.id}" data-pid="${pk.id}">+ Teil</button>
-     <button class="btn-ghost" data-act="add-foto-btn" data-oid="${a.id}" data-pid="${pk.id}">+ Foto</button></div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+     <button class="btn-ghost" data-act="add-arbeit" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Arbeit</button>
+     <button class="btn-ghost" data-act="add-teil" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Teil</button>
+     <button class="btn-ghost" data-act="add-text" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Text</button>
+     <button class="btn-ghost" data-act="add-foto-btn" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Foto</button></div>
     ${!pk.abger?`<button class="btn btn-soft-green" style="width:100%;margin-top:10px" data-act="bill-pak" data-oid="${a.id}" data-pid="${pk.id}">Nur dieses Paket abrechnen</button>`:''}
     <button class="btn-ghost" style="width:100%;margin-top:8px;color:var(--red);border-color:rgba(224,53,59,.3)" data-act="pak-del" data-oid="${a.id}" data-pid="${pk.id}">Paket löschen</button>
    </div></div></div>`};
@@ -987,7 +1011,10 @@ function vAuftrag(id){
    <div class="klass" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px">
     <span style="font-size:10px;color:var(--ink3);font-weight:700;letter-spacing:.06em">NEUES PAKET</span>
     ${Object.entries(KLASS).map(([v,[l]])=>`<button class="chip" data-act="pak-new" data-oid="${a.id}" data-k="${v}">${l}</button>`).join('')}</div>`
-   :calcHtml()}`);
+   :calcHtml()}
+  <div class="card" style="margin-top:10px;padding:12px"><div style="font-weight:600;font-size:12px;margin-bottom:6px">Anzahlung</div>
+   <input class="priceinp" style="width:100%" inputmode="decimal" value="${fmtIn(a.anzahlungCt)}" data-f="o-anz" data-oid="${a.id}">
+   <div style="font-size:10px;color:var(--ink3);margin-top:4px">wird auf der Rechnung abgezogen</div></div>`);
 
  /* --- Kommunikation --- */
  const kanalName={wa:'WhatsApp',call:'Anruf',mail:'E-Mail',pers:'Persönlich',diag:'Diagnose',man:'Notiz'};
@@ -998,12 +1025,7 @@ function vAuftrag(id){
    <div class="te-h"><span class="ch">${kanalName[m.kanal]||m.kanal}</span><span class="sep">·</span><span>${dtLabel(m.ts)}</span>
     ${pend?'<span class="tag t-amber">Vorschlag</span>':just?'<span class="tag t-green">soeben bestätigt</span>':m.status==='best'?'<span class="tag t-green">bestätigt</span>':'<span class="tag t-gray">manuell</span>'}</div>
    <div class="te-txt">${esc(m.txt)}</div>
-   ${bezug||m.preisCt!=null?`<div class="te-badges">${bezug?`<span class="tag t-blue">${esc(bezug.name)}</span>`:''}
-    ${m.preisCt!=null?`<span class="tag t-green num">${fmt(Math.abs(m.preisCt))} genannt</span>`:''}</div>`:''}
-   ${m.preisCt!=null&&m.nachherCt!=null?`<div class="price-upd num"><span>Auftrag</span>
-    ${m.vorherCt?`<span class="old">${fmt(m.vorherCt)}</span><span>→</span>`:''}
-    <span class="new">${fmt(m.nachherCt)}</span>
-    <span class="delta ${m.preisCt<0?'neg':''}">${m.vorherCt?(m.preisCt>0?'+':'')+fmt(m.preisCt):'Erstkalkulation'}</span></div>`:''}
+   ${bezug?`<div class="te-badges"><span class="tag t-blue">${esc(bezug.name)}</span></div>`:''}
    <button class="src-btn" data-act="komm-src" data-oid="${a.id}" data-mid="${m.id}" data-s="${src[1]}">${src[0]}</button>
    ${pend?`<div class="te-btns">
     <button class="te-btn" style="background:var(--green);color:#fff" data-act="komm-ok" data-oid="${a.id}" data-mid="${m.id}">Bestätigen</button>
@@ -1057,41 +1079,41 @@ function vAuftrag(id){
    return hasRe&&!a.reviewSent?`<div style="background:var(--green-bg);border:1px solid rgba(14,143,78,.3);border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:650;font-size:12.5px;margin-bottom:8px">Zufriedener Kunde? Jetzt um Bewertung bitten.</div><button class="btn btn-soft-green btn-sm" style="width:100%" data-act="review-ask" data-oid="${a.id}">Google-Bewertung anfragen (WhatsApp)</button></div>`
    :hasRe&&a.reviewSent?`<div style="font-size:11px;color:var(--green);margin-bottom:12px">Bewertungsanfrage wurde gesendet.</div>`:''})()}
   ${a.notiz?'<div class="hd-note" style="margin-bottom:12px"><span class="nb">!</span>Interne Notiz hinterlegt — auch oben am Auftrag markiert.</div>':''}
-  <div class="row2">
-   <div class="card" style="margin:0;padding:12px"><div style="font-weight:600;font-size:12px;margin-bottom:3px">Anzahlung</div>
-    <input class="priceinp" style="width:100%" inputmode="decimal" value="${fmtIn(a.anzahlungCt)}" data-f="o-anz" data-oid="${a.id}">
-    <div style="font-size:10px;color:var(--ink3);margin-top:4px">wird auf der Rechnung abgezogen</div></div>
-   <div class="card" style="margin:0;padding:12px"><div style="font-weight:600;font-size:12px;margin-bottom:3px">Erinnerung</div>
+  <div class="card" style="margin:0;padding:12px"><div style="font-weight:600;font-size:12px;margin-bottom:3px">Erinnerung</div>
     <input style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12px" placeholder="z. B. Ölwechsel" value="${esc(a.erinnerung||'')}" data-f="o-erinn" data-oid="${a.id}">
-    <input type="date" style="width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px" value="${a.erinnerungDat||''}" data-f="o-erinnd" data-oid="${a.id}"></div></div>
+    <input type="date" style="width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px" value="${a.erinnerungDat||''}" data-f="o-erinnd" data-oid="${a.id}"></div>
   <div class="lbl">Interne Notiz — erscheint nicht auf der Rechnung</div>
   <textarea rows="2" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 12px" data-f="o-notiz" data-oid="${a.id}" placeholder="Notiz...">${esc(a.notiz||'')}</textarea>
   <button class="btn btn-danger" style="width:100%;margin-top:14px" data-act="ord-del" data-oid="${a.id}">Auftrag löschen</button>`);
 
  /* --- Unterschrift --- */
- const secSig=sec('sig','Unterschrift Auftragserteilung',a.sig?'<span class="tag t-green">liegt vor</span>':'',
-  a.sig?`<img class="sig-img" src="${a.sig}" alt="Unterschrift">
-   <button class="btn-ghost" style="width:100%;margin-top:10px" data-act="sig-redo" data-oid="${a.id}">Neu unterschreiben</button>`
-  :`<canvas class="sigc" id="sig-${a.id}"></canvas>
+ const sigBlock=(sigKey,sigId,label)=>{const curSig=a[sigKey];return curSig?
+  `<img class="sig-img" src="${curSig}" alt="${label}">
+   <button class="btn-ghost" style="width:100%;margin-top:8px" data-act="sig-redo" data-oid="${a.id}" data-sk="${sigKey}">Neu unterschreiben</button>`
+  :`<canvas class="sigc" id="${sigId}"></canvas>
    <div class="sig-foot"><span>Mit dem Finger unterschreiben</span>
-    <span><button style="color:var(--ink3);font-weight:600;font-size:12px;margin-right:14px" data-act="sig-clear" data-oid="${a.id}">Löschen</button>
-    <button style="color:var(--blue);font-weight:700;font-size:12px" data-act="sig-save" data-oid="${a.id}">Übernehmen</button></span></div>`);
+    <span><button style="color:var(--ink3);font-weight:600;font-size:12px;margin-right:14px" data-act="sig-clear" data-oid="${a.id}" data-sk="${sigKey}">Löschen</button>
+    <button style="color:var(--blue);font-weight:700;font-size:12px" data-act="sig-save" data-oid="${a.id}" data-sk="${sigKey}">Übernehmen</button></span></div>`};
+ const secSig=sec('sig','Unterschriften',(a.sig&&a.sig2)?'<span class="tag t-green">beide vorhanden</span>':a.sig?'<span class="tag t-blue">Erteilung</span>':'',
+  `<div class="lbl">Auftragserteilung</div>${sigBlock('sig','sig-'+a.id,'Auftragserteilung')}
+   <div class="lbl" style="margin-top:12px">Fahrzeugabholung</div>${sigBlock('sig2','sig2-'+a.id,'Fahrzeugabholung')}
+   <button class="btn btn-2nd" style="width:100%;margin-top:14px" data-act="kansicht" data-oid="${a.id}">Kundenansicht anzeigen</button>`);
 
  const offen=ordOffenNetto(a);
  const bar=`<div class="pills" style="margin:0;padding:4px 0 4px">${STATI.map(([v,l,c])=>
   `<button class="pill ${a.status===v?'on':''}" style="${a.status===v?`background:${c}14;border-color:${c};color:${c}`:''}" data-act="ord-status" data-oid="${a.id}" data-v="${v}">${l}</button>`).join('')}</div>`;
  const inner=`<div class="stag">${secKunde}${secFzg}${secPak}${secKomm}${secFoto}${secZeit}${secOrga}${secSig}</div>
   <div style="height:96px"></div>
-  <input type="file" accept="image/*" capture="environment" multiple id="photoinp" style="display:none">`;
+  <input type="file" accept="image/*,video/*" multiple id="photoinp" style="display:none">`;
  const side=a.notiz?`<button class="hd-note" data-act="goto-orga" data-oid="${a.id}"><span class="nb">!</span>Notiz</button>`:'';
- return shell(inner,{title:a.nr,eyebrow:'Auftrag · '+esc(f.kennz||''),back:1,side,bar,hideNav:true})+
+ return shell(inner,{title:a.nr,eyebrow:'Auftrag · '+esc(f.kennz||''),back:1,side,bar,hideNav:true,ctx:'auftrag'})+
   `<div class="calcbar"><div class="calc">
    <div>Netto<b class="num">${fmt(ordNetto(a))}</b></div><div>MwSt ${S.settings.mwst} %<b class="num">${fmt(ordMwst(a))}</b></div>
    <div>Brutto<b class="num">${fmt(ordBrutto(a))}</b></div><div class="gw">Gewinn<b class="num"${ordGewinn(a)<0?' style="color:var(--red)"':''}>${fmt(ordGewinn(a))}</b></div></div>
    <div class="bbtns"><button class="bb bb-2nd" data-act="print-kv" data-oid="${a.id}">PDF</button>
    <button class="bb bb-main" data-act="bill-all" data-oid="${a.id}">${offen>0?'Rechnung erstellen':'Alles abgerechnet'}</button></div></div>`;
 }
-function fotoTile(a,fo){return `<div class="foto"><img src="${fo.data}" alt=""><span class="loc">${esc(fo.label)}</span>
+function fotoTile(a,fo){return `<div class="foto">${fo.isVideo?`<video src="${fo.data}" muted playsinline style="width:100%;height:100%;object-fit:cover" controls></video>`:`<img src="${fo.data}" alt="">`}<span class="loc">${esc(fo.label)}</span>
  <button class="fx" data-act="foto-del" data-oid="${a.id}" data-fid="${fo.id}">✕</button></div>`}
 function camTile(a,pid){return `<div class="foto cam" data-act="add-foto-btn" data-oid="${a.id}" data-pid="${pid}">+</div>`}
 
@@ -1187,6 +1209,17 @@ function posSheet(a,pk,x){
   if(!isNaN(v))$('#ps-vk').value=fmtIn(Math.round(v*S.settings.awCt))});
 }
 ACT['add-arbeit']=el=>posSheet(auftrag(el.dataset.oid),auftrag(el.dataset.oid).pakete.find(p=>p.id===el.dataset.pid),null);
+ACT['add-text']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
+ sheet('Textposition',`<div class="fld"><label>Text *</label><textarea id="tx-t" rows="3" placeholder="z. B. Kostenvoranschlag inkl. Ersatzteile…"></textarea></div>
+  <button class="btn btn-main" style="width:100%" data-act="text-save" data-oid="${a.id}" data-pid="${pk.id}">Hinzufügen</button>`);
+ setTimeout(()=>$('#tx-t').focus(),150)};
+ACT['text-upd']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
+ const x=pk.pos.find(p=>p.id===el.dataset.xid);const bez=$('#tx-t').value.trim();
+ if(!bez)return toast('Text fehlt',true);x.bez=bez;save();closeSheet();render();toast('Gespeichert')};
+ACT['text-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
+ const bez=$('#tx-t').value.trim();if(!bez)return toast('Text fehlt',true);
+ pk.pos.push({id:'x'+uid(),typ:'text',bez,vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null});
+ save();closeSheet();render();toast('Textposition hinzugefügt')};
 ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  sheet('Teil hinzufügen',`
   <div class="fld"><label>Aus dem Lager</label><div class="selwrap"><select id="pt-l">
@@ -1218,7 +1251,13 @@ ACT['teil-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id==
  if(ext)logExtension(a,pk,x,vorher);
  save();closeSheet();render();toast('Teil hinzugefügt')};
 ACT['pos-edit']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
- posSheet(a,pk,pk.pos.find(p=>p.id===el.dataset.xid))};
+ const x=pk.pos.find(p=>p.id===el.dataset.xid);
+ if(x&&x.typ==='text'){
+  sheet('Textposition bearbeiten',`<div class="fld"><label>Text *</label><textarea id="tx-t" rows="3">${esc(x.bez)}</textarea></div>
+   <div class="row2"><button class="btn btn-danger" data-act="pos-del" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Löschen</button>
+   <button class="btn btn-main" data-act="text-upd" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Speichern</button></div>`);
+  return}
+ posSheet(a,pk,x)};
 ACT['pos-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const bez=$('#ps-b').value.trim();if(!bez)return toast('Bezeichnung fehlt',true);
  let x=el.dataset.xid?pk.pos.find(p=>p.id===el.dataset.xid):null;
@@ -1260,23 +1299,17 @@ function kommSheet(a,m){
   <div class="fld"><label>Bezug (Paket)</label><div class="selwrap"><select id="km-p"><option value="">—</option>
    ${a.pakete.map(p=>`<option value="${p.id}" ${m&&m.bezug===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div></div></div>
   <div class="fld"><label>Was wurde besprochen *</label><textarea id="km-t" rows="3">${m?esc(m.txt):''}</textarea></div>
-  <div class="fld"><label>Kommunizierter Preis (± €, optional)</label><input id="km-pr" inputmode="decimal" value="${m&&m.preisCt!=null?fmtIn(m.preisCt):''}" placeholder="z. B. 45,00 oder -20,00"></div>
   <div class="row2">
    ${m?`<button class="btn btn-danger" data-act="komm-del" data-oid="${a.id}" data-mid="${m.id}">Löschen</button>`:'<span></span>'}
    <button class="btn btn-main" data-act="komm-save" data-oid="${a.id}" ${m?`data-mid="${m.id}"`:''}>Speichern</button></div>`);
 }
 ACT['komm-save']=el=>{const a=auftrag(el.dataset.oid);
  const txt=$('#km-t').value.trim();if(!txt)return toast('Text fehlt',true);
- const prRaw=$('#km-pr').value.trim();
- const neg=prRaw.startsWith('-')||prRaw.startsWith('–');
- const pr=prRaw?(neg?-1:1)*Math.abs(parseEuro(prRaw)):null;
  let m=el.dataset.mid?a.komm.find(x=>x.id===el.dataset.mid):null;
  if(m){m.kanal=$('#km-k').value;m.bezug=$('#km-p').value||null;m.txt=txt;
-  if(pr!==m.preisCt){m.preisCt=pr;m.nachherCt=ordNetto(a);m.vorherCt=pr!=null?m.nachherCt-pr:null}
   if(m.status==='ki')m.status='best'}
- else{const nach=ordNetto(a);
-  a.komm.push({id:'m'+uid(),kanal:$('#km-k').value,ts:Date.now(),txt,preisCt:pr,
-   vorherCt:pr!=null?nach-pr:null,nachherCt:pr!=null?nach:null,bezug:$('#km-p').value||null,status:'man',orig:null})}
+ else{a.komm.push({id:'m'+uid(),kanal:$('#km-k').value,ts:Date.now(),txt,preisCt:null,
+   vorherCt:null,nachherCt:null,bezug:$('#km-p').value||null,status:'man',orig:null})}
  save();closeSheet();render();toast('Eintrag gespeichert')};
 ACT['komm-del']=el=>{const a=auftrag(el.dataset.oid);
  confirmBox('Eintrag löschen?','Der Kommunikations-Eintrag wird entfernt.','Löschen',()=>{
@@ -1292,12 +1325,16 @@ let photoTarget=null;
 ACT['add-foto-btn']=el=>{photoTarget={oid:el.dataset.oid,pid:el.dataset.pid||null};$('#photoinp').click()};
 function handlePhotos(files){const t=photoTarget;if(!t)return;const a=auftrag(t.oid);if(!a)return;
  const pk=t.pid?a.pakete.find(p=>p.id===t.pid):null;
- [...files].forEach(file=>{const r=new FileReader();r.onload=()=>{const img=new Image();img.onload=()=>{
-  const max=1100,sc=Math.min(1,max/Math.max(img.width,img.height));
-  const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
-  c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-  a.fotos.push({id:'fo'+uid(),paketId:t.pid,label:pk?pk.name:'Annahme',data:c.toDataURL('image/jpeg',.72)});
-  save();render();toast('Foto gespeichert')};img.src=r.result};r.readAsDataURL(file)})}
+ [...files].forEach(file=>{const r=new FileReader();r.onload=()=>{
+  if(file.type.startsWith('video/')){
+   a.fotos.push({id:'fo'+uid(),paketId:t.pid,label:pk?pk.name:'Annahme',data:r.result,isVideo:true});
+   save();render();toast('Video gespeichert');return}
+  const img=new Image();img.onload=()=>{
+   const max=1100,sc=Math.min(1,max/Math.max(img.width,img.height));
+   const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+   c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+   a.fotos.push({id:'fo'+uid(),paketId:t.pid,label:pk?pk.name:'Annahme',data:c.toDataURL('image/jpeg',.72)});
+   save();render();toast('Foto gespeichert')};img.src=r.result};r.readAsDataURL(file)})}
 ACT['foto-del']=el=>{const a=auftrag(el.dataset.oid);
  confirmBox('Foto löschen?','Das Foto wird dauerhaft entfernt.','Löschen',()=>{
   a.fotos=a.fotos.filter(f=>f.id!==el.dataset.fid);save();render()})};
@@ -1340,10 +1377,38 @@ function initSig(){$$('.sigc').forEach(cv=>{if(cv._init)return;cv._init=true;
  cv.addEventListener('mousedown',st);cv.addEventListener('mousemove',mv);
  cv.addEventListener('mouseup',end);cv.addEventListener('mouseleave',end);
  cv.addEventListener('touchstart',st,{passive:false});cv.addEventListener('touchmove',mv,{passive:false});cv.addEventListener('touchend',end);cv.addEventListener('touchcancel',end)})}
-ACT['sig-clear']=el=>{const cv=$('#sig-'+el.dataset.oid);if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);cv._drawn=false}};
-ACT['sig-save']=el=>{const cv=$('#sig-'+el.dataset.oid);if(!cv||!cv._drawn)return toast('Bitte erst unterschreiben',true);
- auftrag(el.dataset.oid).sig=cv.toDataURL('image/png');save();render();toast('Unterschrift gespeichert')};
-ACT['sig-redo']=el=>{auftrag(el.dataset.oid).sig=null;save();render()};
+ACT['sig-clear']=el=>{const sk=el.dataset.sk||'sig';const cvId=sk==='sig'?'sig-'+el.dataset.oid:'sig2-'+el.dataset.oid;
+ const cv=$('#'+cvId);if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);cv._drawn=false}};
+ACT['sig-save']=el=>{const sk=el.dataset.sk||'sig';const cvId=sk==='sig'?'sig-'+el.dataset.oid:'sig2-'+el.dataset.oid;
+ const cv=$('#'+cvId);if(!cv||!cv._drawn)return toast('Bitte erst unterschreiben',true);
+ const a=auftrag(el.dataset.oid);a[sk]=cv.toDataURL('image/png');
+ if(sk==='sig'){const anf=S.anfragen&&S.anfragen.find(q=>q.auftragId===a.id);if(anf&&anf.status!=='gewonnen'){anf.status='gewonnen';save();toast('Unterschrift gespeichert — Anfrage als gewonnen markiert')}else{save();toast('Unterschrift gespeichert')}}
+ else{save();toast('Unterschrift gespeichert')}render()};
+ACT['sig-redo']=el=>{const sk=el.dataset.sk||'sig';auftrag(el.dataset.oid)[sk]=null;save();render()};
+ACT['kansicht']=el=>{const a=auftrag(el.dataset.oid),f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{},fi=S.settings.firma;
+ const bg=document.createElement('div');bg.className='kansicht-bg';
+ bg.innerHTML=`<div style="max-width:480px;margin:0 auto">
+  <div style="text-align:center;margin-bottom:20px"><b style="font-size:16px">${esc(fi.name)}</b><div style="font-size:12px;color:var(--ink3)">${esc(fi.adresse)}</div></div>
+  <div class="card" style="padding:16px;margin-bottom:12px">
+   <div style="font-weight:700;font-size:15px;margin-bottom:10px">Auftrag ${esc(a.nr)}</div>
+   <div class="kv"><span class="k">Fahrzeug</span><span class="v">${esc(f.kennz||'—')} · ${esc((f.marke||'')+' '+(f.modell||''))}</span></div>
+   <div class="kv"><span class="k">Kunde</span><span class="v">${esc(k.name||'—')}</span></div></div>
+  <div class="card" style="padding:16px;margin-bottom:12px">
+   <div style="font-weight:600;font-size:13px;margin-bottom:10px">Auftragserteilung</div>
+   ${a.sig?`<img src="${a.sig}" style="width:100%;max-height:120px;object-fit:contain;background:var(--bg2);border-radius:8px">`
+    :`<canvas class="sigc" id="sigk-${a.id}" style="background:var(--bg2)"></canvas>
+     <div class="sig-foot"><span>Unterschrift Auftragserteilung</span>
+      <span><button style="color:var(--ink3);font-weight:600;font-size:12px;margin-right:14px" data-act="sig-clear" data-oid="${a.id}" data-sk="sig">Löschen</button>
+      <button style="color:var(--blue);font-weight:700;font-size:12px" data-act="sig-save" data-oid="${a.id}" data-sk="sig">Speichern</button></span></div>`}</div>
+  <div class="card" style="padding:16px;margin-bottom:20px">
+   <div style="font-weight:600;font-size:13px;margin-bottom:10px">Fahrzeugabholung</div>
+   ${a.sig2?`<img src="${a.sig2}" style="width:100%;max-height:120px;object-fit:contain;background:var(--bg2);border-radius:8px">`
+    :`<canvas class="sigc" id="sigk2-${a.id}" style="background:var(--bg2)"></canvas>
+     <div class="sig-foot"><span>Unterschrift Fahrzeugabholung</span>
+      <span><button style="color:var(--ink3);font-weight:600;font-size:12px;margin-right:14px" data-act="sig-clear" data-oid="${a.id}" data-sk="sig2">Löschen</button>
+      <button style="color:var(--blue);font-weight:700;font-size:12px" data-act="sig-save" data-oid="${a.id}" data-sk="sig2">Speichern</button></span></div>`}</div>
+  <button class="btn btn-main" style="width:100%;margin-bottom:20px" onclick="this.closest('.kansicht-bg').remove()">Schließen</button></div>`;
+ document.body.appendChild(bg);setTimeout(()=>initSig(),100)};
 
 /* Auftrag löschen */
 ACT['ord-del']=el=>{const a=auftrag(el.dataset.oid);
@@ -1444,7 +1509,7 @@ function vKunde(id){
     <button class="abtn" data-act="mail" data-id="${k.id}">E-Mail</button></div></div>
   <div class="card"><div class="sec-h" style="cursor:default"><span class="t">Fahrzeuge</span><span class="mini">${fz.length}</span></div>
    ${fz.map(f=>`<div class="lrow" data-act="open" data-v="fahrzeug" data-id="${f.id}">
-    <div class="av num" style="background:var(--violet-bg);color:var(--violet);font-size:10px">${esc(f.kennz.split(' ')[0])}</div>
+    <div class="av" style="background:var(--gray-bg);color:var(--ink3)">${IC.car}</div>
     <div class="lt"><b>${esc(f.kennz)}</b><span>${esc(f.marke+' '+f.modell)}</span></div><span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')||'<div style="padding:0 15px 14px;font-size:12px;color:var(--ink3)">Keine Fahrzeuge</div>'}</div>
   <div class="card"><div class="sec-h" style="cursor:default"><span class="t">Aufträge</span><span class="mini">${ords.length}</span></div>
    ${ords.slice(0,8).map(a=>{const f=fzg(a.fzgId)||{};const[,sl,sc]=statL(a.status);
@@ -1453,7 +1518,7 @@ function vKunde(id){
     <div class="lr"><b class="num">${fmt(ordNetto(a))}</b><span style="color:${sc};font-weight:700">${sl}</span></div></div>`}).join('')||'<div style="padding:0 15px 14px;font-size:12px;color:var(--ink3)">Keine Aufträge</div>'}</div>
   <div class="row2"><button class="btn btn-2nd" data-act="kunde-edit" data-id="${k.id}">Bearbeiten</button>
    <button class="btn btn-danger" data-act="kunde-del" data-id="${k.id}">Löschen</button></div></div>`;
- return shell(inner,{title:k.name,eyebrow:'Kunde',back:1,hideNav:false});
+ return shell(inner,{title:k.name,eyebrow:'Kunde',back:1,hideNav:false,ctx:'kunde'});
 }
 ACT['kunde-edit']=el=>{const k=el.dataset.id?kunde(el.dataset.id):null;
  sheet(k?'Kunde bearbeiten':'Neuer Kunde',`
@@ -1486,7 +1551,7 @@ function vFahrzeuge(){
  const list=S.fahrzeuge.slice().sort((a,b)=>a.kennz.localeCompare(b.kennz));
  const inner=`<div class="card stag">${list.map(f=>{const k=kunde(f.kundeId)||{};
   return `<div class="lrow" data-act="open" data-v="fahrzeug" data-id="${f.id}">
-   <div class="av num" style="background:var(--violet-bg);color:var(--violet);font-size:10px">${esc(f.kennz.split(' ')[0])}</div>
+   <div class="av" style="background:var(--gray-bg);color:var(--ink3)">${IC.car}</div>
    <div class="lt"><b>${esc(f.kennz)} · ${esc(f.marke+' '+f.modell)}</b><span>${esc(k.name||'—')}${f.hu?' · HU '+f.hu.split('-').reverse().join('/'):''}</span></div>
    <span class="chev" style="transform:rotate(-45deg)"></span></div>`}).join('')||'<div class="empty"><b>Keine Fahrzeuge</b></div>'}</div>`;
  return shell(inner,{title:'Fahrzeuge',eyebrow:S.fahrzeuge.length+' gesamt',back:1})+`<button class="fab" data-act="fzg-edit">+</button>`;
@@ -1509,7 +1574,7 @@ function vFahrzeug(id){
     <div class="lr"><b class="num">${fmt(ordNetto(a))}</b><span style="color:${sc};font-weight:700">${sl}</span></div></div>`}).join('')||'<div style="padding:0 15px 14px;font-size:12px;color:var(--ink3)">Noch keine Aufträge</div>'}</div>
   <div class="row2"><button class="btn btn-2nd" data-act="fzg-edit" data-id="${f.id}">Bearbeiten</button>
    <button class="btn btn-danger" data-act="fzg-del" data-id="${f.id}">Löschen</button></div></div>`;
- return shell(inner,{title:f.kennz,eyebrow:'Fahrzeug',back:1});
+ return shell(inner,{title:f.kennz,eyebrow:'Fahrzeug',back:1,ctx:'fahrzeug'});
 }
 ACT['fzg-edit']=el=>{const f=el.dataset.id?fzg(el.dataset.id):null;
  sheet(f?'Fahrzeug bearbeiten':'Neues Fahrzeug',`
@@ -1961,16 +2026,22 @@ function vAnfragen(){
    const[,pc]=PRIO[x.prio]||['',''];const[sl,sc]=QSTAT[x.status];
    const kc=KCOL[x.kanal]||'#6B6B73';
    const orig=(x.original||'').replace(/\s+/g,' ');
-   return `<div class="card lrow" data-act="anfrage-open" data-id="${x.id}" style="align-items:flex-start;border-left:3px solid ${x.prio?pc:'transparent'};margin-bottom:8px;padding:12px 13px 12px 11px">
-    <div class="av" style="background:${kc}18;color:${kc};width:36px;height:36px">${KICON[x.kanal]||KICON.tel}</div>
-    <div class="lt" style="min-width:0">
-     <b style="white-space:normal">${esc(x.betreff||orig.slice(0,38)||'Anfrage')}</b>
-     <span>${esc(x.name||'Unbekannt')} · <span style="color:${kc};font-weight:600">${QKANAL[x.kanal]||''}</span> · ${relTime(x.ts)}</span>
-     ${orig?`<span style="display:block;white-space:normal;font-style:italic;color:var(--ink3);font-size:10.5px;line-height:1.45;margin-top:3px">„${esc(orig.slice(0,72))}${orig.length>72?'…':''}"</span>`:''}
-    </div>
-    <div class="lr" style="align-self:stretch;display:flex;flex-direction:column;justify-content:space-between">
-     <b class="num">${x.wertCt?'~'+fmt(x.wertCt):''}</b>
-     <span style="color:${over?'var(--red)':sc};font-weight:700">${over?'Nachfassen!':sl}</span></div></div>`}).join('')
+   return `<div class="card" style="border-left:3px solid ${x.prio?pc:'transparent'};margin-bottom:8px;padding:10px 13px 10px 11px">
+    <div class="lrow" data-act="anfrage-open" data-id="${x.id}" style="align-items:flex-start;padding:0 0 8px;border:none">
+     <div class="av" style="background:${kc}18;color:${kc};width:36px;height:36px">${KICON[x.kanal]||KICON.tel}</div>
+     <div class="lt" style="min-width:0">
+      <b style="white-space:normal">${esc(x.betreff||orig.slice(0,38)||'Anfrage')}</b>
+      <span>${esc(x.name||'Unbekannt')} · <span style="color:${kc};font-weight:600">${QKANAL[x.kanal]||''}</span> · ${relTime(x.ts)}</span>
+      ${orig?`<span style="display:block;white-space:normal;font-style:italic;color:var(--ink3);font-size:10.5px;line-height:1.45;margin-top:3px">„${esc(orig.slice(0,72))}${orig.length>72?'…':''}"</span>`:''}
+     </div>
+     <div class="lr" style="align-self:stretch;display:flex;flex-direction:column;justify-content:space-between">
+      <b class="num">${x.wertCt?'~'+fmt(x.wertCt):''}</b>
+      <span style="color:${over?'var(--red)':sc};font-weight:700">${over?'Nachfassen!':sl}</span></div></div>
+    <div style="display:flex;gap:6px">
+     ${x.tel?`<button class="btn btn-sm btn-soft-green" data-act="anfr-wa" data-id="${x.id}" style="flex:1">WhatsApp</button>`:''}
+     ${(x.email||x.antwort)?`<button class="btn btn-sm btn-2nd" data-act="anfr-mail" data-id="${x.id}" style="flex:1">E-Mail</button>`:''}
+     ${!x.auftragId?`<button class="btn btn-sm btn-2nd" data-act="anfr-convert-quick" data-id="${x.id}" style="flex:1">→ Auftrag</button>`:`<button class="btn btn-sm btn-2nd" data-act="open" data-v="auftrag" data-id="${x.auftragId}" style="flex:1">Auftrag</button>`}
+    </div></div>`}).join('')
    :'<div class="card"><div class="empty"><b>Keine Einträge</b>Neue Kundenanfragen erscheinen hier.</div></div>'}</div>
   <div style="text-align:center;font-size:11px;color:var(--ink3);margin-top:12px">Alle Kanäle an einem Ort — Telefon, Anrufbeantworter, WhatsApp, Instagram, E-Mail, Website.</div>`;
  }else{
@@ -2041,6 +2112,8 @@ ACT['anfrage-save']=el=>{const v=readQSheet();
  let x=el.dataset.id?anfrage(el.dataset.id):null;
  const orig=nwOrig();
  if(!x&&!orig&&!v.name)return toast('Original oder Name eintragen',true);
+ if(v.status==='gewonnen'&&x&&x.auftragId){
+  const a=auftrag(x.auftragId);if(!a||!a.sig)return toast('Unterschrift Auftragserteilung fehlt — Status wird automatisch gesetzt wenn Kunde unterschreibt',true)}
  if(x){const wasWon=x.status==='gewonnen';Object.assign(x,v);
   if(v.status==='gewonnen'&&!wasWon)x.wonTs=Date.now()}
  else{x={id:'q'+uid(),ts:Date.now(),auftragId:null,kiQuelle:null,grund:'',original:orig,...v};
@@ -2089,9 +2162,32 @@ ACT['anfrage-convert']=el=>{const v=readQSheet();
    txt:'Erstanfrage ('+(QKANAL[v.kanal]||'')+'), Original wortgetreu: „'+(x.original||'—')+'"',
    preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'man',orig:x.origUrl||null}],
   fotos:[],check:[],docs:[],zeiten:[],timerStart:null,notiz:x.notiz||'',erinnerung:'',erinnerungDat:null,
-  sig:null,pinned:false,reviewSent:false,created:Date.now()};
+  sig:null,sig2:null,pinned:false,reviewSent:false,created:Date.now()};
  S.auftraege.push(a);x.auftragId=a.id;if(x.status==='neu'||x.status==='beantwortet')x.status='termin';
  save();closeSheet();toast('Auftrag '+a.nr+' angelegt — Fahrzeug noch zuordnen');nav('auftrag',a.id)};
+ACT['anfr-wa']=el=>{const x=anfrage(el.dataset.id);if(!x||!x.tel)return toast('Keine Telefonnummer hinterlegt',true);
+ const msg=x.antwort||'';location.href='https://wa.me/'+x.tel.replace(/[^\d]/g,'')+(msg?'?text='+encodeURIComponent(msg):'')};
+ACT['anfr-mail']=el=>{const x=anfrage(el.dataset.id);if(!x||(!x.email&&!x.antwort))return toast('Keine E-Mail vorhanden',true);
+ const email=x.email||'';location.href='mailto:'+email+(x.antwort?'?body='+encodeURIComponent(x.antwort):'')};
+ACT['anfr-convert-quick']=el=>{const x=anfrage(el.dataset.id);if(!x)return;
+ const digits=t=>String(t||'').replace(/[^\d]/g,'').slice(-9);
+ let k=S.kunden.find(kk=>x.tel&&digits(kk.tel)===digits(x.tel)&&digits(x.tel).length>5);
+ if(!k){k={id:'k'+uid(),name:x.name||'Neuer Kunde',tel:x.tel||'',wa:['wa','ig'].includes(x.kanal),email:x.email||'',adresse:'',
+  stamm:false,moral:'Gut',notiz:'Aus Anfrage erstellt',created:Date.now()};S.kunden.push(k)}
+ const y=new Date().getFullYear();
+ const kMap={wa:'wa',ig:'wa',mail:'mail',tel:'call',ab:'call',theke:'pers',web:'mail'};
+ const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:k.id,fzgId:null,
+  status:'offen',annahme:todayISO(),abgabe:addDays(todayISO(),2),abgabeZeit:'',kmAn:null,kmAb:null,tank:'50',
+  anzahlungCt:0,rabatt:{typ:'eur',wert:0},buehne:null,
+  pakete:[{id:'p'+uid(),name:x.betreff||((x.original||'Anfrage').slice(0,40)),klass:'kw',zahler:'kunde',
+   status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,pos:[]}],
+  komm:[{id:'m'+uid(),kanal:kMap[x.kanal]||'man',ts:x.ts,
+   txt:'Erstanfrage ('+(QKANAL[x.kanal]||'')+'), Original: „'+(x.original||'—')+'"',
+   preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'man',orig:x.origUrl||null}],
+  fotos:[],check:[],docs:[],zeiten:[],timerStart:null,notiz:x.notiz||'',erinnerung:'',erinnerungDat:null,
+  sig:null,sig2:null,pinned:false,reviewSent:false,created:Date.now()};
+ S.auftraege.push(a);x.auftragId=a.id;if(x.status==='neu'||x.status==='beantwortet')x.status='termin';
+ save();toast('Auftrag '+a.nr+' angelegt');nav('auftrag',a.id)};
 ACT['radar-wa']=el=>{const it=radarItems().find(r=>r.key===el.dataset.key);if(!it)return;
  if(!it.k.tel)return toast('Keine Telefonnummer hinterlegt',true);
  S.radarDone=S.radarDone||{};S.radarDone[it.key]=Date.now();save();
@@ -2386,6 +2482,17 @@ document.addEventListener('input',e=>{const el=e.target.closest('[data-input]');
   const n=$('[data-input="'+el.dataset.input+'"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(x){}}},260)});
 window.addEventListener('hashchange',()=>{const h=location.hash.replace('#/','').split('/');
  if(h[0])nav(h[0],h[1])});
+
+/* Edge swipe for tab navigation */
+(()=>{const EDGE=40,MIN_X=60,MIN_RATIO=2;let es={};
+ document.addEventListener('touchstart',e=>{const t=e.touches[0];
+  es={x:t.clientX,y:t.clientY,edge:t.clientX<EDGE?'L':t.clientX>window.innerWidth-EDGE?'R':null}},{passive:true});
+ document.addEventListener('touchend',e=>{if(!es.edge)return;const t=e.changedTouches[0];
+  const dx=t.clientX-es.x,dy=Math.abs(t.clientY-es.y);
+  if(Math.abs(dx)<MIN_X||dy>Math.abs(dx)/MIN_RATIO)return;
+  const tabs=NAVITEMS.map(n=>n[0]);const cur=tabs.indexOf(route.v);const top=cur<0?0:cur;
+  if(es.edge==='L'&&dx>0&&top>0)nav(tabs[top-1]);
+  else if(es.edge==='R'&&dx<0&&top<tabs.length-1)nav(tabs[top+1])},{passive:true})})();
 
 /* Selbsttest der Kalkulations-Engine (läuft still in der Konsole) */
 function selftest(){
