@@ -137,7 +137,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 .searchbar svg{width:16px;height:16px;stroke:var(--ink3);fill:none;stroke-width:2;flex-shrink:0}
 
 /* Pills */
-.pills{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:2px 0;margin-bottom:12px}
+.pills{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:2px 4px;margin-bottom:12px}
 .pills::-webkit-scrollbar{display:none}
 .pill{padding:7px 13px;border-radius:9px;font-size:12px;font-weight:600;border:1px solid var(--line);
  background:var(--card);color:var(--ink2);white-space:nowrap;transition:all .2s var(--spring)}
@@ -419,6 +419,10 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 .hdr.ctx-fahrzeug .back-btn::before{border-left-color:var(--violet);border-bottom-color:var(--violet)}
 .hdr.ctx-kv .back-btn{background:rgba(194,113,10,.12);border-color:rgba(194,113,10,.3)}
 .hdr.ctx-kv .back-btn::before{border-left-color:var(--amber);border-bottom-color:var(--amber)}
+.hdr.ctx-anfrage{background:rgba(0,148,180,.06);border-bottom:2px solid rgba(0,148,180,.35)}
+.hdr.ctx-anfrage .eyebrow{color:#0094B4}
+.hdr.ctx-anfrage .back-btn{background:rgba(0,148,180,.12);border-color:rgba(0,148,180,.3)}
+.hdr.ctx-anfrage .back-btn::before{border-left-color:#0094B4;border-bottom-color:#0094B4}
 /* Sonstiges-Freitext */
 .son-inp{margin-top:6px;width:100%;background:var(--bg);border:1px solid rgba(10,95,255,.4);border-radius:11px;padding:11px 12px;font-size:13px;color:var(--ink)}
 /* Textposition */
@@ -611,7 +615,9 @@ function load(){
 S.anfragen=S.anfragen||[];S.radarDone=S.radarDone||{};
 S.anfragen.forEach(q=>{if(q.kanal==='anruf')q.kanal='tel';if(!QKANAL[q.kanal])q.kanal='tel';
  if(q.original===undefined)q.original=q.txt||'';if(q.betreff===undefined)q.betreff='';
- if(q.origUrl===undefined)q.origUrl='';if(q.notiz===undefined)q.notiz='';delete q.txt});
+ if(q.origUrl===undefined)q.origUrl='';if(q.notiz===undefined)q.notiz='';delete q.txt;
+ if(!q.fotos)q.fotos=[];if(!q.antworten)q.antworten=[];if(!q.kiSugg)q.kiSugg=[]});
+S.customReplies=S.customReplies||[];
 S.settings.buehnen=S.settings.buehnen||3;
 S.settings.ki=S.settings.ki||{endpoint:'/api/analyse',model:'claude-fable-5'};
 S.settings.firma.reviewUrl=S.settings.firma.reviewUrl||'';
@@ -1591,10 +1597,14 @@ function vFahrzeug(id){
    <div class="kv"><span class="k">VIN</span><span class="v num" style="font-family:ui-monospace,monospace;font-size:11px">${esc(f.vin||'—')}</span></div>
    <div class="kv"><span class="k">Kilometerstand</span><span class="v num">${f.km!=null?f.km.toLocaleString('de-DE')+' km':'—'}</span></div>
    <div class="kv"><span class="k">HU fällig</span><span class="v">${f.hu?f.hu.split('-').reverse().join('/'):'—'}</span></div>
+   ${f.zustand?`<div class="kv"><span class="k">Fahrzeugzustand</span><span class="v">${f.zustand==='son'?esc(f.zustandTxt||'Sonstiges'):{gut:'Gut',rep:'Reparaturbedürftig',totalschaden:'Totalschaden'}[f.zustand]||esc(f.zustand)}</span></div>`:''}
    ${f.notiz?`<div class="kv"><span class="k">Notiz</span><span class="v">${esc(f.notiz)}</span></div>`:''}</div>
   <div class="card"><div class="sec-h" style="cursor:default"><span class="t">Historie</span><span class="mini">${ords.length} Aufträge</span></div>
-   ${ords.map(a=>{const[,sl,sc]=statL(a.status);return `<div class="lrow" data-act="open" data-v="auftrag" data-id="${a.id}">
-    <div class="lt"><b>${a.nr} · ${dLabel(a.annahme)}</b><span>${esc(a.pakete.map(p=>p.name).join(', ')||'—')}</span></div>
+   ${ords.map(a=>{const[,sl,sc]=statL(a.status);const aktiv=['offen','arbeit','teile','fertig'].includes(a.status);return `<div class="lrow" data-act="open" data-v="auftrag" data-id="${a.id}">
+    <div class="lt"><b>${a.nr} · ${dLabel(a.annahme)}</b>
+     <span>${esc(a.pakete.map(p=>p.name).join(', ')||'—')}</span>
+     ${aktiv?`<span style="display:flex;align-items:center;gap:5px;margin-top:3px"><span class="tag t-gray" data-act="buehne-pick" data-id="${a.id}" style="cursor:pointer">Bühne ${a.buehne||'—'}</span></span>`:''}
+    </div>
     <div class="lr"><b class="num">${fmt(ordNetto(a))}</b><span style="color:${sc};font-weight:700">${sl}</span></div></div>`}).join('')||'<div style="padding:0 15px 14px;font-size:12px;color:var(--ink3)">Noch keine Aufträge</div>'}</div>
   <div class="row2"><button class="btn btn-2nd" data-act="fzg-edit" data-id="${f.id}">Bearbeiten</button>
    <button class="btn btn-danger" data-act="fzg-del" data-id="${f.id}">Löschen</button></div></div>`;
@@ -1611,10 +1621,20 @@ ACT['fzg-edit']=el=>{const f=el.dataset.id?fzg(el.dataset.id):null;
   <div class="fld"><label>VIN</label><input id="fz-v" value="${f?esc(f.vin):''}"></div>
   <div class="row2"><div class="fld"><label>Kilometerstand</label><input id="fz-km" inputmode="numeric" value="${f&&f.km!=null?f.km:''}"></div>
    <div class="fld"><label>HU fällig</label><input type="month" id="fz-hu" value="${f?f.hu:''}"></div></div>
+  <div class="fld"><label>Fahrzeugzustand</label><div class="selwrap"><select id="fz-zustand" onchange="document.getElementById('fz-ztxt-wrap').style.display=this.value==='son'?'block':'none'">
+   <option value="">—</option>
+   <option value="gut" ${f&&f.zustand==='gut'?'selected':''}>Gut</option>
+   <option value="rep" ${f&&f.zustand==='rep'?'selected':''}>Reparaturbedürftig</option>
+   <option value="totalschaden" ${f&&f.zustand==='totalschaden'?'selected':''}>Totalschaden</option>
+   <option value="son" ${f&&f.zustand==='son'?'selected':''}>Sonstiges</option>
+  </select></div></div>
+  <div id="fz-ztxt-wrap" style="display:${f&&f.zustand==='son'?'block':'none'}"><div class="fld"><label>Sonstiges Zustand — was?</label><input id="fz-ztxt" value="${f?esc(f.zustandTxt||''):''}"></div></div>
   <button class="btn btn-main" style="width:100%" data-act="fzg-save" ${f?`data-id="${f.id}"`:''}>Speichern</button>`)};
 ACT['fzg-save']=el=>{const kz=$('#fz-kz').value.trim().toUpperCase();if(!kz)return toast('Kennzeichen fehlt',true);
+ const zst=$('#fz-zustand').value;
  const vals={kundeId:$('#fz-k').value,kennz:kz,marke:$('#fz-ma').value.trim(),modell:$('#fz-mo').value.trim(),
-  bj:parseInt($('#fz-bj').value)||null,vin:$('#fz-v').value.trim(),km:parseInt($('#fz-km').value.replace(/\D/g,''))||null,hu:$('#fz-hu').value||''};
+  bj:parseInt($('#fz-bj').value)||null,vin:$('#fz-v').value.trim(),km:parseInt($('#fz-km').value.replace(/\D/g,''))||null,hu:$('#fz-hu').value||'',
+  zustand:zst,zustandTxt:zst==='son'?($('#fz-ztxt').value.trim()):''};
  if(el.dataset.id)Object.assign(fzg(el.dataset.id),vals);
  else S.fahrzeuge.push({id:'f'+uid(),notiz:'',...vals});
  save();closeSheet();render();toast('Gespeichert')};
@@ -2037,12 +2057,20 @@ function vAnfragen(){
   else if(anfrFilter!=='alle')list=list.filter(x=>x.status===anfrFilter);
   const prioOrd={hoch:0,mittel:1,niedrig:2};
   if(anfrFilter==='offen')list.sort((a,b)=>(a.status==='neu'?0:1)-(b.status==='neu'?0:1)||(prioOrd[a.prio]??3)-(prioOrd[b.prio]??3)||b.ts-a.ts);
+  // Kanal-Statistik
+  const chanCt={};q.forEach(x=>chanCt[x.kanal]=(chanCt[x.kanal]||0)+1);
+  const chanStat=Object.entries(QKANAL).filter(([k])=>chanCt[k]).map(([k,l])=>{const kc=KCOL[k]||'#6B6B73';
+   return `<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:52px;background:${kc}10;border:1px solid ${kc}30;border-radius:10px;padding:7px 9px">
+    <span style="color:${kc};display:flex;width:18px;height:18px">${KICON[k]||KICON.tel}</span>
+    <span style="font-size:13px;font-weight:750;color:var(--ink);line-height:1">${chanCt[k]}</span>
+    <span style="font-size:9px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.03em">${l.split(' ')[0]}</span></div>`}).join('');
   body=`
   <div class="kpis stag">
    <div class="kpi"><b class="num" style="${neu?'color:var(--blue)':''}">${neu}</b><span>Neu</span></div>
    <div class="kpi"><b class="num">${offen}</b><span>Offen</span></div>
    <div class="kpi"><b class="num">${termine}</b><span>Termine</span></div>
    <div class="kpi"><b class="num" style="color:var(--green)">${fmt(gerettetMonatCt()).replace(' €','')}<small style="font-size:10px;font-weight:600"> €</small></b><span>Gewonnen /Mon.</span></div></div>
+  ${chanStat?`<div style="display:flex;gap:7px;overflow-x:auto;margin-bottom:13px;padding:2px 4px;scrollbar-width:none">${chanStat}</div>`:''}
   <div class="pills">${[['offen','Offen'],['termin','Termine'],['gewonnen','Gewonnen'],['verloren','Verloren'],['alle','Alle']].map(([v,l])=>
    `<button class="pill ${anfrFilter===v?'on':''}" style="${anfrFilter===v?'background:rgba(10,95,255,.08);border-color:var(--blue);color:var(--blue)':''}" data-act="anfr-filter" data-v="${v}">${l}</button>`).join('')}</div>
   <div class="stag">${list.length?list.map(x=>{
@@ -2050,24 +2078,23 @@ function vAnfragen(){
    const[,pc]=PRIO[x.prio]||['',''];const[sl,sc]=QSTAT[x.status];
    const kc=KCOL[x.kanal]||'#6B6B73';
    const orig=(x.original||'').replace(/\s+/g,' ');
-   return `<div class="card" style="border-left:3px solid ${x.prio?pc:'transparent'};margin-bottom:8px;padding:10px 13px 10px 11px">
-    <div class="lrow" data-act="anfrage-open" data-id="${x.id}" style="align-items:flex-start;padding:0 0 8px;border:none">
-     <div class="av" style="background:${kc}18;color:${kc};width:36px;height:36px">${KICON[x.kanal]||KICON.tel}</div>
-     <div class="lt" style="min-width:0">
-      <b style="white-space:normal">${esc(x.betreff||orig.slice(0,38)||'Anfrage')}</b>
-      <span>${esc(x.name||'Unbekannt')} · <span style="color:${kc};font-weight:600">${QKANAL[x.kanal]||''}</span> · ${relTime(x.ts)}</span>
-      ${orig?`<span style="display:block;white-space:normal;font-style:italic;color:var(--ink3);font-size:10.5px;line-height:1.45;margin-top:3px">„${esc(orig.slice(0,72))}${orig.length>72?'…':''}"</span>`:''}
+   return `<div class="card" style="border-left:3px solid ${x.prio?pc:'transparent'};margin-bottom:8px">
+    <div data-act="anfrage-open" data-id="${x.id}" style="display:flex;align-items:flex-start;gap:11px;padding:12px 13px 10px;cursor:pointer">
+     <div style="width:40px;height:40px;border-radius:12px;background:${kc}18;display:grid;place-items:center;color:${kc};flex-shrink:0">${KICON[x.kanal]||KICON.tel}</div>
+     <div style="flex:1;min-width:0">
+      <div style="font-size:13.5px;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(x.betreff||orig.slice(0,40)||'Anfrage')}</div>
+      <div style="font-size:11px;color:var(--ink3);margin-top:2px">${esc(x.name||'Unbekannt')} · <span style="color:${kc};font-weight:600">${QKANAL[x.kanal]||''}</span> · ${relTime(x.ts)}</div>
+      ${orig?`<div style="font-size:11px;font-style:italic;color:var(--ink3);line-height:1.4;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">„${esc(orig.slice(0,100))}"</div>`:''}
      </div>
-     <div class="lr" style="align-self:stretch;display:flex;flex-direction:column;justify-content:space-between">
-      <b class="num">${x.wertCt?'~'+fmt(x.wertCt):''}</b>
-      <span style="color:${over?'var(--red)':sc};font-weight:700">${over?'Nachfassen!':sl}</span></div></div>
-    <div style="display:flex;gap:6px">
+     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+      ${x.wertCt?`<span style="font-size:12px;font-weight:700;color:var(--green)">~${fmt(x.wertCt)}</span>`:''}
+      <span class="tag" style="background:${sc}18;color:${sc};font-size:9.5px">${over?'Nachfassen!':sl}</span></div></div>
+    <div style="display:flex;gap:6px;padding:0 12px 11px">
      ${x.tel?`<button class="btn btn-sm btn-soft-green" data-act="anfr-wa" data-id="${x.id}" style="flex:1">WhatsApp</button>`:''}
-     ${(x.email||x.antwort)?`<button class="btn btn-sm btn-2nd" data-act="anfr-mail" data-id="${x.id}" style="flex:1">E-Mail</button>`:''}
+     ${x.tel?`<button class="btn btn-sm btn-2nd" data-act="anfr-call" data-id="${x.id}" style="flex:1">Anrufen</button>`:''}
      ${!x.auftragId?`<button class="btn btn-sm btn-2nd" data-act="anfr-convert-quick" data-id="${x.id}" style="flex:1">→ Auftrag</button>`:`<button class="btn btn-sm btn-2nd" data-act="open" data-v="auftrag" data-id="${x.auftragId}" style="flex:1">Auftrag</button>`}
     </div></div>`}).join('')
-   :'<div class="card"><div class="empty"><b>Keine Einträge</b>Neue Kundenanfragen erscheinen hier.</div></div>'}</div>
-  <div style="text-align:center;font-size:11px;color:var(--ink3);margin-top:12px">Alle Kanäle an einem Ort — Telefon, Anrufbeantworter, WhatsApp, Instagram, E-Mail, Website.</div>`;
+   :'<div class="card"><div class="empty"><b>Keine Einträge</b>Neue Kundenanfragen erscheinen hier.</div></div>'}</div>`;
  }else{
   const row=r=>`
    <div class="lrow" style="cursor:default">
@@ -2130,8 +2157,10 @@ function readQSheet(){return{name:$('#q-name').value.trim(),tel:$('#q-tel').valu
  antwort:$('#q-antwort').value.trim(),notiz:$('#q-notiz').value.trim(),origUrl:$('#q-origurl').value.trim()}}
 ACT['anfr-seg']=el=>{anfrSeg=el.dataset.v;render()};
 ACT['anfr-filter']=el=>{anfrFilter=el.dataset.v;render()};
+ACT['anfr-call']=el=>{const x=anfrage(el.dataset.id);if(x&&x.tel)location.href='tel:'+x.tel.replace(/\s/g,'')};
 ACT['anfrage-new']=()=>anfrageSheet(null);
-ACT['anfrage-open']=el=>anfrageSheet(anfrage(el.dataset.id));
+ACT['anfrage-open']=el=>nav('anfrage',el.dataset.id);
+ACT['anfrage-edit']=el=>anfrageSheet(anfrage(el.dataset.id));
 ACT['anfrage-save']=el=>{const v=readQSheet();
  let x=el.dataset.id?anfrage(el.dataset.id):null;
  const orig=nwOrig();
@@ -2212,6 +2241,120 @@ ACT['anfr-convert-quick']=el=>{const x=anfrage(el.dataset.id);if(!x)return;
   sig:null,sig2:null,pinned:false,reviewSent:false,created:Date.now()};
  S.auftraege.push(a);x.auftragId=a.id;if(x.status==='neu'||x.status==='beantwortet')x.status='termin';
  save();toast('Auftrag '+a.nr+' angelegt');nav('auftrag',a.id)};
+/* ---- Anfrage Vollansicht ---- */
+function vAnfrage(id){
+ const x=anfrage(id);
+ if(!x)return shell('<div class="empty"><b>Nicht gefunden</b></div>',{title:'Anfrage',back:1});
+ const kc=KCOL[x.kanal]||'#6B6B73';
+ const[sl,sc]=QSTAT[x.status]||['Neu','#0A5FFF'];
+ const over=x.followUp&&x.followUp<todayISO()&&['neu','beantwortet','termin'].includes(x.status);
+ // Originalnachricht
+ const origCard=`<div class="card" style="padding:14px 15px 15px;border-left:3.5px solid ${kc}">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+   <div style="width:36px;height:36px;border-radius:50%;background:${kc}18;color:${kc};display:grid;place-items:center;flex-shrink:0">${KICON[x.kanal]||KICON.tel}</div>
+   <div style="flex:1;min-width:0">
+    <div style="font-size:13px;font-weight:650">${esc(x.name||'Unbekannt')}</div>
+    <div style="font-size:10.5px;color:var(--ink3)">${QKANAL[x.kanal]||''} · ${dtLabel(x.ts)}</div></div>
+   ${x.origUrl?`<a href="${esc(x.origUrl)}" target="_blank" rel="noopener" style="font-size:10px;color:${kc};font-weight:650;text-decoration:none;padding:5px 9px;border:1.5px solid ${kc}40;border-radius:8px;flex-shrink:0">${x.kanal==='ab'||x.kanal==='tel'?'Anhören':'Original öffnen'}</a>`:''}
+  </div>
+  <div style="font-size:13px;line-height:1.65;white-space:pre-wrap;word-break:break-word;color:var(--ink)">${esc(x.original||'—')}</div>
+ </div>`;
+ // Kundenanhänge
+ const fots=x.fotos||[];
+ const fotosBlock=`<div class="lbl">Kundenanhänge</div>
+  <div class="fgrid" style="margin-bottom:14px">
+   ${fots.map((f,i)=>`<div class="foto"><img src="${esc(f.dataUrl)}" alt="Anhang ${i+1}"><button class="foto fx" data-act="anfr-foto-del" data-id="${x.id}" data-i="${i}">×</button></div>`).join('')}
+   <label class="foto cam" for="anfrinp" style="font-size:18px">📎<input type="file" id="anfrinp" accept="image/*" style="display:none" data-anfid="${x.id}"></label>
+  </div>`;
+ // KI-Vorschläge
+ const suggs=x.kiSugg||[];
+ const suggBlock=suggs.length?`<div class="lbl">KI-Antwortvorschläge</div>
+  <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px">
+   ${suggs.map((s,i)=>`<div style="background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:12px 13px">
+    <div style="font-size:12.5px;line-height:1.55;color:var(--ink2);margin-bottom:9px">${esc(s)}</div>
+    <button class="btn btn-sm btn-2nd" data-act="anfr-sugg-use" data-id="${x.id}" data-i="${i}">Diese Antwort verwenden</button>
+   </div>`).join('')}
+  </div>`:'';
+ // Eigene bewährte Antworten
+ const custR=S.customReplies||[];
+ const kw=(x.betreff||x.original||'').toLowerCase().split(/\s+/).filter(w=>w.length>4).slice(0,3);
+ const relR=custR.filter(r=>!kw.length||kw.some(w=>r.text.toLowerCase().includes(w))).sort((a,b)=>b.used-a.used).slice(0,3);
+ const custBlock=relR.length?`<div class="lbl">Bewährte eigene Antworten</div>
+  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:14px">
+   ${relR.map((r,gi)=>`<div style="background:rgba(14,143,78,.04);border:1px solid rgba(14,143,78,.22);border-radius:10px;padding:10px 12px;display:flex;gap:10px;align-items:flex-start">
+    <div style="font-size:11.5px;line-height:1.5;color:var(--ink2);flex:1">${esc(r.text.slice(0,130))}${r.text.length>130?'…':''}</div>
+    <button class="btn btn-sm" style="background:var(--green-bg);color:var(--green);border:1px solid rgba(14,143,78,.3);flex-shrink:0" data-act="anfr-custR-use" data-id="${x.id}" data-gi="${gi}">Nutzen</button>
+   </div>`).join('')}
+  </div>`:'';
+ // Antwort-Composer
+ const replyBlock=`<div class="card" style="padding:14px 15px 15px">
+  <div class="lbl" style="margin-top:0">Antwort verfassen</div>
+  <textarea id="anfr-repl-txt" rows="4" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 12px;font-size:13px;resize:none;line-height:1.5;margin-bottom:11px" placeholder="Antwort formulieren oder Vorschlag wählen…">${esc(x.antwort||'')}</textarea>
+  <div class="row2" style="gap:8px">
+   <button class="btn btn-main" data-act="anfr-repl-save" data-id="${x.id}">Speichern</button>
+   ${x.tel?`<button class="btn btn-soft-green" data-act="anfr-repl-wa" data-id="${x.id}">WhatsApp senden</button>`:x.email?`<button class="btn btn-2nd" data-act="anfr-repl-mail" data-id="${x.id}">E-Mail senden</button>`:''}
+  </div>
+  <button class="btn-ghost" style="width:100%;margin-top:8px;font-size:11px" data-act="anfr-ki-sugg" data-id="${x.id}">
+   <span class="ai-dot" style="position:relative;width:7px;height:7px;display:inline-block"></span>&nbsp;KI-Antwortvorschläge generieren
+  </button>
+ </div>`;
+ // Verlauf gesendeter Antworten
+ const sents=x.antworten||[];
+ const histBlock=sents.length?`<div class="lbl">Gesendet</div><div class="tl" style="margin-bottom:12px">
+  ${sents.map(r=>`<div class="te" style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-left:-12px">
+   <div class="te-h"><span>${dtLabel(r.ts)}</span><span class="tag t-gray" style="font-size:9px">${QKANAL[r.kanal]||r.kanal}</span></div>
+   <div class="te-txt">${esc(r.text)}</div></div>`).join('')}</div>`:'';
+ // Aktionsleiste
+ const actBlock=`<div class="row3" style="margin-bottom:9px">
+  ${x.auftragId?`<button class="btn btn-2nd btn-sm" data-act="open" data-v="auftrag" data-id="${x.auftragId}">Auftrag</button>`:`<button class="btn btn-2nd btn-sm" data-act="anfr-convert-quick" data-id="${x.id}">→ Auftrag</button>`}
+  ${x.tel?`<button class="btn btn-2nd btn-sm" data-act="anfr-call" data-id="${x.id}">Anrufen</button>`:'<span></span>'}
+  <button class="btn btn-sm" style="background:${sc}18;color:${sc};border:1px solid ${sc}40" data-act="anfrage-edit" data-id="${x.id}">Bearbeiten</button>
+ </div>
+ <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+  <span class="tag" style="background:${over?'var(--red-bg)':sc+'18'};color:${over?'var(--red)':sc};font-size:10.5px">${over?'⚠ Nachfassen überfällig!':sl}</span>
+  ${x.wertCt?`<span style="font-size:12px;font-weight:700;color:var(--green)">~${fmt(x.wertCt)}</span>`:''}
+ </div>`;
+ const side=`<span class="tag" style="background:${kc}18;color:${kc};font-size:10px">${QKANAL[x.kanal]||''}</span>`;
+ const inner=`<div class="stag">
+  ${origCard}${fotosBlock}${suggBlock}${custBlock}${replyBlock}${histBlock}${actBlock}
+ </div>`;
+ return shell(inner,{title:esc(x.betreff||x.name||'Anfrage'),eyebrow:esc(x.name||'Unbekannt'),back:1,side,ctx:'anfrage'});
+}
+/* Aktionen für vAnfrage */
+ACT['anfr-foto-del']=el=>{const x=anfrage(el.dataset.id);x.fotos=x.fotos||[];x.fotos.splice(+el.dataset.i,1);save();render()};
+ACT['anfr-sugg-use']=el=>{const x=anfrage(el.dataset.id);const s=(x.kiSugg||[])[+el.dataset.i]||'';const t=$('#anfr-repl-txt');if(t)t.value=s};
+ACT['anfr-custR-use']=el=>{
+ const custR=S.customReplies||[];
+ const kw=(anfrage(el.dataset.id)?.betreff||anfrage(el.dataset.id)?.original||'').toLowerCase().split(/\s+/).filter(w=>w.length>4).slice(0,3);
+ const relR=custR.filter(r=>!kw.length||kw.some(w=>r.text.toLowerCase().includes(w))).sort((a,b)=>b.used-a.used).slice(0,3);
+ const r=relR[+el.dataset.gi];const t=$('#anfr-repl-txt');if(r&&t){t.value=r.text;r.used=(r.used||0)+1;save()}};
+ACT['anfr-repl-save']=el=>{const x=anfrage(el.dataset.id);const txt=$('#anfr-repl-txt');if(!txt)return;const t=txt.value.trim();
+ if(!t)return toast('Antwort fehlt',true);
+ x.antwort=t;x.antworten=x.antworten||[];x.antworten.push({ts:Date.now(),text:t,kanal:x.kanal});
+ if(x.status==='neu')x.status='beantwortet';
+ // Zur Wiederverwendung speichern
+ S.customReplies=S.customReplies||[];const ex=S.customReplies.find(r=>r.text===t);
+ if(ex){ex.used=(ex.used||0)+1}else{S.customReplies.unshift({text:t,used:1});if(S.customReplies.length>50)S.customReplies.length=50}
+ save();render();toast('Antwort gespeichert')};
+ACT['anfr-repl-wa']=el=>{const x=anfrage(el.dataset.id);const t=$('#anfr-repl-txt');
+ const msg=t?t.value.trim():(x.antwort||'');if(!x.tel)return toast('Keine Telefonnummer',true);
+ if(msg){x.antwort=msg;x.antworten=x.antworten||[];x.antworten.push({ts:Date.now(),text:msg,kanal:x.kanal});
+  if(x.status==='neu')x.status='beantwortet';save()}
+ location.href='https://wa.me/'+x.tel.replace(/[^\d]/g,'')+(msg?'?text='+encodeURIComponent(msg):'')};
+ACT['anfr-repl-mail']=el=>{const x=anfrage(el.dataset.id);const t=$('#anfr-repl-txt');
+ const msg=t?t.value.trim():(x.antwort||'');
+ location.href='mailto:'+esc(x.email||'')+'?subject='+encodeURIComponent('Re: '+(x.betreff||'Ihre Anfrage'))+(msg?'&body='+encodeURIComponent(msg):'')};
+ACT['anfr-ki-sugg']=async el=>{const x=anfrage(el.dataset.id);if(!x)return;
+ el.disabled=true;el.textContent='KI analysiert…';
+ const r=await kiAnalyze(x.original||'',x.kanal,x.name||'');
+ el.disabled=false;el.innerHTML='<span class="ai-dot" style="position:relative;width:7px;height:7px;display:inline-block"></span>&nbsp;KI-Antwortvorschläge generieren';
+ // Generiere 3 Varianten basierend auf dem Hauptvorschlag
+ const base=r.antwort||'';
+ x.kiSugg=[base,base?base.replace('Wir können','Ich kann').replace('wir ','ich ').replace('uns ','mir '):'',r.grund?'Guten Tag, vielen Dank für Ihre Anfrage. '+r.grund+' Wir melden uns kurzfristig.':''];
+ x.kiSugg=x.kiSugg.filter(s=>s.trim());
+ if(!x.prio)x.prio=r.prio;if(!x.betreff)x.betreff=r.betreff||'';if(!x.wertCt)x.wertCt=r.wert;
+ x.kiQuelle=r.quelle;x.grund=r.grund;save();render();toast('Vorschläge generiert')};
+
 ACT['radar-wa']=el=>{const it=radarItems().find(r=>r.key===el.dataset.key);if(!it)return;
  if(!it.k.tel)return toast('Keine Telefonnummer hinterlegt',true);
  S.radarDone=S.radarDone||{};S.radarDone[it.key]=Date.now();save();
@@ -2482,7 +2625,7 @@ function render(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
  const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
-  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen};
+  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen};
  app.innerHTML=(V[route.v]||vPlanung)();
  if(navSlideDir!==0&&!skipNextSlide){
   app.classList.add(navSlideDir>0?'tsR':'tsL');
@@ -2494,6 +2637,10 @@ function render(){
  attachSwipe(app);initSig();syncUi();
  requestAnimationFrame(()=>requestAnimationFrame(()=>{$$('[data-pbar]').forEach(el=>el.style.width=el.dataset.pbar+'%')}));
  const pi=$('#photoinp');if(pi&&!pi._b){pi._b=true;pi.addEventListener('change',e=>{if(e.target.files.length)handlePhotos(e.target.files);e.target.value=''})}
+ const ai=$('#anfrinp');if(ai&&!ai._b){ai._b=true;ai.addEventListener('change',e=>{
+  const qid=ai.dataset.anfid;const x=anfrage(qid);if(!x)return;
+  const files=[...e.target.files];e.target.value='';
+  files.forEach(f=>{const rd=new FileReader();rd.onload=ev=>{x.fotos=x.fotos||[];x.fotos.push({dataUrl:ev.target.result,name:f.name});save();render()};rd.readAsDataURL(f)})})};
  const ii=$('#importinp');if(ii&&!ii._b){ii._b=true;ii.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;
   const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.version||!Array.isArray(d.auftraege))throw 0;
    S=d;save();render();toast('Sicherung geladen')}catch(x){toast('Datei ungültig',true)}};r.readAsText(f)})}
@@ -2560,7 +2707,7 @@ function viewHtml(v){
   const prog=gs.side==='L'
    ?Math.max(0,Math.min(1,(t.clientX-gs.sx)/w))
    :Math.max(0,Math.min(1,(gs.sx-t.clientX)/w));
-  const dir=gs.side==='L'?1:-1;
+  const dir=gs.side==='L'?-1:1;
   ov.style.transition='none';
   ov.style.transform=`translateX(${dir*(1-prog)*w}px)`;
   const a=$('#app');if(a){a.style.transition='none';a.style.transform=`translateX(${-dir*prog*w*0.25}px)`}
@@ -2571,7 +2718,7 @@ function viewHtml(v){
   if(!gs){return}
   if(!gs.started){gs=null;return}
   const prog=gs.progress||0,w=window.innerWidth;
-  const dir=gs.side==='L'?1:-1,tgt=tabs()[gs.ti];
+  const dir=gs.side==='L'?-1:1,tgt=tabs()[gs.ti];
   if(prog>THRESH){
    if(ov){ov.style.transition=`transform ${DUR}ms cubic-bezier(.32,1.3,.5,1)`;ov.style.transform='translateX(0)'}
    const a=$('#app');if(a){a.style.transition=`transform ${DUR}ms cubic-bezier(.32,1.3,.5,1)`;a.style.transform=`translateX(${-dir*w*0.25}px)`}
@@ -2634,7 +2781,7 @@ try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}ca
 setTimeout(syncStartup,400);
 if(memOnly)setTimeout(()=>toast('Achtung: Speichern blockiert — Daten gehen beim Schließen verloren',true),600);
 const h0=location.hash.replace('#/','').split('/');
-if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','kalender','bestellungen','kampagnen','team','mehr','finanzen','einstellungen'].includes(h0[0]))route={v:h0[0],id:h0[1]};
+if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','mehr','finanzen','einstellungen'].includes(h0[0]))route={v:h0[0],id:h0[1]};
 render();
 </script>
 </body>
