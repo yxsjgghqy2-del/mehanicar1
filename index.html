@@ -463,6 +463,79 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
  #printarea .tots .big{border-top:1.5px solid #111;font-weight:800;font-size:13px;padding-top:6px;margin-top:3px}
  #printarea .foot{margin-top:28px;font-size:9.5px;color:#666;line-height:1.6;border-top:1px solid #ddd;padding-top:10px}
 }
+/* ============ DARK MODE ============ */
+@media (prefers-color-scheme:dark){
+ :root{
+  --bg:#111113;--card:#1C1C1E;--ink:#F5F5F7;--ink2:#AEAEB2;--ink3:#636366;
+  --line:rgba(255,255,255,.09);--line2:rgba(255,255,255,.05);
+  --blue:#3B82FF;--green:#34C759;--amber:#FF9F0A;--red:#FF453A;--violet:#BF5AF2;
+  --blue-bg:rgba(59,130,255,.15);--green-bg:rgba(52,199,89,.13);--amber-bg:rgba(255,159,10,.14);
+  --red-bg:rgba(255,69,58,.14);--violet-bg:rgba(191,90,242,.13);--gray-bg:rgba(255,255,255,.08)
+ }
+ .nav{background:rgba(17,17,19,.97)!important;border-top-color:rgba(255,255,255,.08)!important}
+ .hdr{background:rgba(17,17,19,.94)!important;border-bottom-color:rgba(255,255,255,.08)!important}
+ .calcbar{background:rgba(17,17,19,.96)!important;border-top-color:rgba(255,255,255,.08)!important}
+ .fix{background:#242428}
+ .pin-card{border-color:rgba(59,130,255,.4)}
+ .sw-row.dark{background:#28282C}
+ .back-btn{background:var(--card)!important}
+}
+body.theme-dark{
+ --bg:#111113;--card:#1C1C1E;--ink:#F5F5F7;--ink2:#AEAEB2;--ink3:#636366;
+ --line:rgba(255,255,255,.09);--line2:rgba(255,255,255,.05);
+ --blue:#3B82FF;--green:#34C759;--amber:#FF9F0A;--red:#FF453A;--violet:#BF5AF2;
+ --blue-bg:rgba(59,130,255,.15);--green-bg:rgba(52,199,89,.13);--amber-bg:rgba(255,159,10,.14);
+ --red-bg:rgba(255,69,58,.14);--violet-bg:rgba(191,90,242,.13);--gray-bg:rgba(255,255,255,.08)
+}
+body.theme-dark .nav{background:rgba(17,17,19,.97)!important;border-top-color:rgba(255,255,255,.08)!important}
+body.theme-dark .hdr{background:rgba(17,17,19,.94)!important;border-bottom-color:rgba(255,255,255,.08)!important}
+body.theme-dark .calcbar{background:rgba(17,17,19,.96)!important;border-top-color:rgba(255,255,255,.08)!important}
+body.theme-dark .fix{background:#242428}
+body.theme-dark .pin-card{border-color:rgba(59,130,255,.4)}
+body.theme-dark .sw-row.dark{background:#28282C}
+body.theme-dark .back-btn{background:var(--card)!important}
+body.theme-light{
+ --bg:#F2F2F7;--card:#FFFFFF;--ink:#16161A;--ink2:#6B6B73;--ink3:#A6A6AE;
+ --line:rgba(22,22,26,.09);--line2:rgba(22,22,26,.06);
+ --blue:#0A5FFF;--green:#0E8F4E;--amber:#C2710A;--red:#E0353B;--violet:#6B4DD6;
+ --blue-bg:rgba(10,95,255,.09);--green-bg:rgba(14,143,78,.10);--amber-bg:rgba(194,113,10,.11);
+ --red-bg:rgba(224,53,59,.09);--violet-bg:rgba(107,77,214,.10);--gray-bg:rgba(22,22,26,.06)
+}
+/* ============ NAV ENHANCEMENTS ============ */
+.nav button{transition:color .18s,background .18s}
+.nav button.on{color:var(--blue);background:var(--blue-bg);border-radius:8px}
+.nav-badge{
+ position:absolute;top:-1px;right:0px;
+ width:7px;height:7px;
+ background:var(--red);border-radius:50%;
+ border:1.5px solid var(--bg)
+}
+/* ============ THEME TOGGLE ============ */
+.theme-tog{display:flex;gap:4px;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:3px;min-width:160px}
+.theme-tog button{flex:1;padding:8px 4px;border-radius:8px;font-size:11.5px;font-weight:600;color:var(--ink2);transition:all .18s var(--spring)}
+.theme-tog button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 5px rgba(0,0,0,.10)}
+/* ============ SHEET DRAG ============ */
+.sheet{will-change:transform;transition:transform .32s var(--spring)}
+.sheet.dragging{transition:none!important}
+.grab{cursor:grab;padding:8px 40px;margin:-8px -40px;touch-action:pan-x}
+/* ============ KPI ENHANCEMENTS ============ */
+.kpi{transition:background .2s,border-color .2s}
+.kpi b.hi{color:var(--green)}
+.kpi b.lo{color:var(--amber)}
+.kpi b.warn{color:var(--red)}
+.kpi b.ok{color:var(--green)}
+/* ============ MICRO-INTERACTIONS ============ */
+.lrow{transition:background .12s}
+.tag{transition:opacity .15s}
+.icon-btn{transition:transform .12s var(--spring),background .15s}
+.icon-btn:active{transform:scale(.88)}
+/* ============ GREET BAR ============ */
+.greet{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:12px}
+.greet .gt{font-size:13px;font-weight:650;flex:1}
+.greet .gs{font-size:10.5px;color:var(--ink3)}
+/* ============ STATUS INDICATOR ============ */
+.status-row{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:11px;margin-bottom:8px;font-size:12px;font-weight:600}
+.status-row svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 </style>
 </head>
 <body>
@@ -615,7 +688,7 @@ function seed(){
   {id:'q3',ts:now-86400000*3,kanal:'ig',name:'markus.hu63',tel:'',betreff:'Klimaservice',original:'Hi, macht ihr auch Klimaservice? Golf 6, kühlt kaum noch. Was würde das kosten?',origUrl:'',notiz:'Über Instagram-DM',status:'gewonnen',prio:'niedrig',grund:'Standardanliegen.',kiQuelle:null,antwort:'',wertCt:15000,followUp:null,auftragId:null,wonTs:now-86400000*3}];
  const BU={a1:1,a2:2,a4:1,a5:3};A.forEach(a=>{a.buehne=BU[a.id]||null;a.reviewSent=false});
  return {version:2,demo:true,
-  settings:{awCt:12500,mwst:19,nextRe:101,nextAu:49,nextBe:1,buehnen:3,ki:{endpoint:'/api/analyse',model:'claude-fable-5'},
+  settings:{awCt:12500,mwst:19,nextRe:101,nextAu:49,nextBe:1,buehnen:3,theme:'auto',ki:{endpoint:'/api/analyse',model:'claude-fable-5'},
    firma:{name:'mehanicar Kfz-Meisterwerkstatt',inhaber:'Samed',adresse:'Musterstraße 1, 63450 Hanau',tel:'+49 6181 000000',email:'info@mehanicar.de',iban:'DE00 0000 0000 0000 0000 00',ustid:'DE000000000',web:'mehanicar.de',reviewUrl:''}},
   kunden:K,fahrzeuge:F,lager:L,auftraege:A,rechnungen:[],anfragen:Q,radarDone:{},bestellungen:[],kampagnen:[],mitarbeiter:[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#0A5FFF',aktiv:true}],termine:[]};
 }
@@ -646,6 +719,7 @@ S.settings.garantieMonate=S.settings.garantieMonate!=null?S.settings.garantieMon
 S.settings.startseite=S.settings.startseite||'planung';
 S.settings.mahnTage=S.settings.mahnTage||14;
 if(S.settings.autoPrio===undefined)S.settings.autoPrio=true;
+S.settings.theme=S.settings.theme||'auto';
 return}}catch(e){memOnly=(typeof localStorage==='undefined')}
  S=seed();save();
 }
@@ -653,6 +727,16 @@ let saveT=null;
 function save(){
  if(saveT)clearTimeout(saveT);
  saveT=setTimeout(()=>{S.meta=S.meta||{changes:0,lastBackup:null};S.meta.changes=(S.meta.changes||0)+1;S.meta.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));scheduleSync()}catch(e){memOnly=true;console.warn('Speicher voll oder blockiert — Daten nur im Arbeitsspeicher',e)}},120);
+}
+function applyTheme(t){
+ t=t||'auto';
+ document.body.classList.remove('theme-dark','theme-light');
+ if(t!=='auto')document.body.classList.add('theme-'+t);
+ const meta=document.querySelector('meta[name="theme-color"]');
+ if(meta){
+  const dark=t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
+  meta.content=dark?'#111113':'#F2F2F7';
+ }
 }
 /* Lookups */
 const kunde=id=>S.kunden.find(k=>k.id===id);
@@ -708,7 +792,7 @@ function shell(inner,{title,eyebrow,back,side='',hideNav=false,bar='',ctx=''}={}
   <div class="hdr-side">${side}</div>
  </div>${bar}</div>
  <div class="main" id="main">${inner}</div>
- ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>`<button data-act="nav" data-v="${v}" class="${route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen'].includes(route.v))?'on':''}"><span class="nic">${ic}</span>${l}</button>`).join('')}</div>`}`;
+ ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>{const isOn=route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen','termine','buchen'].includes(route.v));const badge=v==='anfragen'&&(S.anfragen||[]).filter(q=>q.status==='neu').length>0?'<i class="nav-badge"></i>':'';return`<button data-act="nav" data-v="${v}" class="${isOn?'on':''}" style="position:relative"><span class="nic">${ic}</span>${l}${badge}</button>`}).join('')}</div>`}`;
 }
 function toast(msg,err){const old=$('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast'+(err?' err':'');t.textContent=msg;
  document.body.appendChild(t);setTimeout(()=>{t.style.transition='opacity .3s';t.style.opacity='0';setTimeout(()=>t.remove(),320)},2200)}
@@ -719,6 +803,15 @@ function sheet(title,body,foot=''){
   <button class="sheet-x" data-act="sheet-close">✕</button></div><div class="sheet-b">${body}${foot}</div></div>`;
  w.addEventListener('click',e=>{if(e.target===w)closeSheet()});
  document.body.appendChild(w);
+ const sh=w.querySelector('.sheet'),grab=w.querySelector('.grab');
+ let sy=0,dragging=false;
+ function onStart(y){sy=y;dragging=true;sh.classList.add('dragging')}
+ function onMove(y){if(!dragging)return;const dy=Math.max(0,y-sy);sh.style.transform=`translateY(${dy}px)`}
+ function onEnd(y){if(!dragging)return;dragging=false;sh.classList.remove('dragging');const dy=Math.max(0,y-sy);if(dy>sh.offsetHeight*0.3){closeSheet()}else{sh.style.transform=''}}
+ grab.addEventListener('touchstart',e=>{onStart(e.touches[0].clientY)},{passive:true});
+ grab.addEventListener('touchmove',e=>{onMove(e.touches[0].clientY)},{passive:true});
+ grab.addEventListener('touchend',e=>{onEnd(e.changedTouches[0].clientY)});
+ grab.addEventListener('mousedown',e=>{onStart(e.clientY);const mu=ev=>{onEnd(ev.clientY);document.removeEventListener('mousemove',mm);document.removeEventListener('mouseup',mu)};const mm=ev=>onMove(ev.clientY);document.addEventListener('mousemove',mm);document.addEventListener('mouseup',mu)});
  return w;
 }
 function closeSheet(){const s=$('#sheetbg');if(s)s.remove()}
@@ -856,10 +949,10 @@ function vPlanung(){
     <button class="btn btn-2nd btn-sm" data-act="open" data-v="auftrag" data-id="${pinned.id}">Auftrag</button></div></div>`}
  const inner=`
   <div class="kpis stag">
-   <div class="kpi"><b class="num">${heute.length}</b><span>Heute</span></div>
-   <div class="kpi"><b class="num" style="${over?'color:var(--red)':''}">${over}</b><span>Überfällig</span></div>
-   <div class="kpi"><b class="num">${fmt(offenCt).replace(' €','')}<small style="font-size:10px;font-weight:600"> €</small></b><span>Offen</span></div>
-   <div class="kpi"><b class="num">${effs.length?Math.round(effs.reduce((a,b)=>a+b,0)/effs.length)+' %':'—'}</b><span>Effizienz</span></div></div>
+   <div class="kpi"><b class="num${heute.length>0?' hi':''}">${heute.length}</b><span>Heute</span></div>
+   <div class="kpi"><b class="num${over>0?' lo':' ok'}">${over}</b><span>Überfällig</span></div>
+   <div class="kpi"><b class="num${offenCt>0?' warn':''}">${fmt(offenCt).replace(' €','')}<small style="font-size:10px;font-weight:600"> €</small></b><span>Offen</span></div>
+   <div class="kpi">${(()=>{const avg=effs.length?Math.round(effs.reduce((a,b)=>a+b,0)/effs.length):null;return`<b class="num${avg===null?'':avg>=100?' hi':avg>=80?' ok':' lo'}">${avg!==null?avg+' %':'—'}</b>`})()}<span>Effizienz</span></div></div>
   ${(()=>{const m=S.meta||{};const hasData=S.auftraege.length||S.kunden.length;
    const sc=S.settings.sync||{};const syncOk=sc.on&&!syncState.err;const syncBroken=sc.on&&syncState.err;const due=hasData&&!window._bkDismiss&&(syncBroken||(!sc.on&&((m.changes||0)>=15||(m.lastBackup&&Date.now()-m.lastBackup>7*86400000))));
    return due?`<div class="warnrow" style="display:flex;align-items:center;gap:10px"><span style="flex:1">${syncBroken?'Cloud-Backup gestört — Daten evtl. ungesichert.':'Backup empfohlen — '+(m.lastBackup?'letzte Sicherung '+dLabel(new Date(m.lastBackup).toISOString().slice(0,10)):'noch keine Sicherung')+'.'}</span>
@@ -1828,10 +1921,19 @@ function vFinanzen(){
  return shell(inner,{title:'Finanzen',eyebrow:'Übersicht',back:1});
 }
 ACT['fin-tog']=el=>{finSec[el.dataset.k]=!finSec[el.dataset.k];render()};
+ACT['theme-set']=el=>{S.settings.theme=el.dataset.v;applyTheme(el.dataset.v);save();render()};
 function vEinstellungen(){
  const fi=S.settings.firma;
  const st=S.settings;
+ const thm=st.theme||'auto';
  const inner=`<div class="stag">
+  <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Erscheinungsbild</div>
+   <div class="kv"><span class="k">Design-Modus</span><span class="v">
+    <div class="theme-tog">
+     <button class="${thm==='light'?'on':''}" data-act="theme-set" data-v="light">Hell</button>
+     <button class="${thm==='auto'?'on':''}" data-act="theme-set" data-v="auto">Auto</button>
+     <button class="${thm==='dark'?'on':''}" data-act="theme-set" data-v="dark">Dunkel</button>
+    </div></span></div></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Kalkulation & Preise</div>
    <div class="kv"><span class="k">Preis pro AW (Arbeitswert)</span><span class="v"><input class="priceinp" value="${fmtIn(st.awCt)}" data-f="set-aw"></span></div>
    <div class="kv"><span class="k">MwSt-Satz %</span><span class="v"><input class="priceinp" style="width:56px" inputmode="numeric" value="${st.mwst}" data-f="set-mwst"></span></div>
@@ -3186,6 +3288,7 @@ function selftest(){
 }
 /* Init */
 load();
+applyTheme(S.settings.theme||'auto');
 selftest();
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 setTimeout(syncStartup,400);
