@@ -926,7 +926,7 @@ ACT['ord-new']=()=>{
   <div class="fld"><label>Fahrzeug</label><div class="selwrap"><select id="no-f"><option value="">— Neues Fahrzeug —</option></select></div></div>
   <div id="no-newf"><div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="no-fk" placeholder="HU-XX 000" style="text-transform:uppercase"></div>
    <div class="fld"><label>Marke / Modell</label><input id="no-fm" placeholder="BMW 320d"></div></div>
-  <button class="btn-ghost" style="width:100%;margin-bottom:8px" data-act="kfz-lookup">Fahrzeugdaten online abfragen →</button></div>
+  </div>
   <div class="row2"><div class="fld"><label>Voraussichtl. Fertigstellung</label><input type="date" id="no-d" value="${todayISO()}"></div>
    <div class="fld"><label>Uhrzeit</label><input type="time" id="no-z" value="17:00"></div></div>
   <div class="fld"><label>Erstes Paket (optional)</label><input id="no-p" placeholder="z. B. Inspektion, Bremsen VA"></div>
@@ -1005,7 +1005,6 @@ function vAuftrag(id){
   <div class="kv"><span class="k">HU fällig</span>${huWarn}</div>
   <div class="kv"><span class="k">Bühne</span><span class="v"><div class="selwrap" style="display:inline-block"><select data-f="o-buehne" data-oid="${a.id}" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 26px 6px 10px;font-size:12px"><option value="0">keine</option>${[...Array(Math.max(1,Math.min(8,S.settings.buehnen||3)))].map((_,bi)=>`<option value="${bi+1}" ${a.buehne===bi+1?'selected':''}>Bühne ${bi+1}</option>`).join('')}</select></div></span></div>
   <div class="kv"><span class="k">Garantie</span><span class="v"><span class="tag t-blue">12 Monate auf alle Arbeiten</span></span></div>
-  <button class="btn-ghost" style="width:100%;margin-top:8px" data-act="kfz-lookup" data-kz="${esc(f.kennz||'')}">Fahrzeugdaten online abfragen (kfz-auskunft.de) →</button>
   ${histAll.length?`<div class="lbl">Fahrzeug-Historie · ${histAll.length} Aufträge</div>
    ${histAll.map(h=>`<div class="kv" data-act="open" data-v="auftrag" data-id="${h.id}" style="cursor:pointer"><span class="k">${dLabel(h.abgabe)} · ${h.nr}</span><span class="v num">${esc(h.pakete[0]?h.pakete[0].name:'')} · ${fmt(ordNetto(h))}</span></div>`).join('')}`:''}
   <button class="btn btn-2nd btn-sm" style="width:100%;margin-top:12px" data-act="open" data-v="fahrzeug" data-id="${f.id}">Fahrzeugakte öffnen</button>`);
@@ -3029,11 +3028,6 @@ ACT['datev-export']=()=>{
  a.download='DATEV-Export-'+todayISO()+'.csv';document.body.appendChild(a);a.click();a.remove();
  toast('DATEV-Export heruntergeladen')};
 
-/* ============ KFZ-DATENABFRAGE ============ */
-ACT['kfz-lookup']=el=>{
- const kz=(el.dataset.kz||($('#no-fk')?$('#no-fk').value:'')||'').trim().toUpperCase().replace(/\s/g,'-');
- if(!kz)return toast('Bitte zuerst Kennzeichen eingeben',true);
- window.open('https://www.kfz-auskunft.de/kfz/'+encodeURIComponent(kz)+'.html','_blank')};
 
 /* ============ 8. RENDER, EVENTS, INIT ============ */
 function render(){
