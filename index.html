@@ -434,6 +434,15 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 .search-kachel:active{transform:scale(.98);background:var(--bg)}
 .search-kachel.sel{border-color:var(--blue);background:var(--blue-bg)}
 
+/* ============ TERMINKALENDER ============ */
+.kal-time{font-size:8.5px;font-weight:700;color:var(--ink3);padding:5px 4px 0;text-align:right;background:var(--bg);border-right:1px solid var(--line2);width:34px;flex-shrink:0}
+.kal-cell{border-left:1px solid var(--line2);min-height:48px;padding:2px;overflow:hidden;cursor:pointer;transition:background .12s}
+.kal-cell:active{background:var(--bg)}
+.kal-cell.today{background:rgba(10,95,255,.03);border-left-color:rgba(10,95,255,.3)}
+.kal-hd-cell{font-size:10px;font-weight:700;text-align:center;padding:7px 2px;border-left:1px solid var(--line2)}
+.kal-hd-cell.today{color:var(--blue)}
+.kal-evt{border-radius:5px;padding:2px 5px;font-size:9px;font-weight:700;cursor:pointer;margin-bottom:2px;color:#fff;display:block;width:100%;text-align:left;border:none;font-family:inherit;line-height:1.3;transition:filter .12s}
+.kal-evt:active{filter:brightness(.85)}
 /* ============ PRINT / RECHNUNG ============ */
 #printarea{display:none}
 @media print{
@@ -608,7 +617,7 @@ function seed(){
  return {version:2,demo:true,
   settings:{awCt:12500,mwst:19,nextRe:101,nextAu:49,nextBe:1,buehnen:3,ki:{endpoint:'/api/analyse',model:'claude-fable-5'},
    firma:{name:'mehanicar Kfz-Meisterwerkstatt',inhaber:'Samed',adresse:'Musterstraße 1, 63450 Hanau',tel:'+49 6181 000000',email:'info@mehanicar.de',iban:'DE00 0000 0000 0000 0000 00',ustid:'DE000000000',web:'mehanicar.de',reviewUrl:''}},
-  kunden:K,fahrzeuge:F,lager:L,auftraege:A,rechnungen:[],anfragen:Q,radarDone:{},bestellungen:[],kampagnen:[],mitarbeiter:[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#0A5FFF',aktiv:true}]};
+  kunden:K,fahrzeuge:F,lager:L,auftraege:A,rechnungen:[],anfragen:Q,radarDone:{},bestellungen:[],kampagnen:[],mitarbeiter:[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#0A5FFF',aktiv:true}],termine:[]};
 }
 function load(){
  try{const raw=localStorage.getItem(KEY);if(raw){S=JSON.parse(raw);if(!S.version)throw 0;S.meta=S.meta||{changes:0,lastBackup:null};
@@ -627,7 +636,7 @@ S.settings.firma.reviewUrl=S.settings.firma.reviewUrl||'';
 S.bestellungen=S.bestellungen||[];S.kampagnen=S.kampagnen||[];
 S.settings.nextBe=S.settings.nextBe||1;
 if(!S.mitarbeiter||!S.mitarbeiter.length)S.mitarbeiter=[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#0A5FFF',aktiv:true}];
-S.krankmeldungen=S.krankmeldungen||[];S.urlaub=S.urlaub||[];
+S.krankmeldungen=S.krankmeldungen||[];S.urlaub=S.urlaub||[];S.termine=S.termine||[];
 S.settings.defaultAbgabeZeit=S.settings.defaultAbgabeZeit||'17:00';
 S.settings.defaultKlass=S.settings.defaultKlass||'kw';
 S.settings.defaultZahler=S.settings.defaultZahler||'kunde';
@@ -916,7 +925,8 @@ ACT['ord-new']=()=>{
    <div class="fld"><label>Telefon</label><input id="no-kt" inputmode="tel" placeholder="+49 ..."></div></div></div>
   <div class="fld"><label>Fahrzeug</label><div class="selwrap"><select id="no-f"><option value="">— Neues Fahrzeug —</option></select></div></div>
   <div id="no-newf"><div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="no-fk" placeholder="HU-XX 000" style="text-transform:uppercase"></div>
-   <div class="fld"><label>Marke / Modell</label><input id="no-fm" placeholder="BMW 320d"></div></div></div>
+   <div class="fld"><label>Marke / Modell</label><input id="no-fm" placeholder="BMW 320d"></div></div>
+  <button class="btn-ghost" style="width:100%;margin-bottom:8px" data-act="kfz-lookup">Fahrzeugdaten online abfragen →</button></div>
   <div class="row2"><div class="fld"><label>Voraussichtl. Fertigstellung</label><input type="date" id="no-d" value="${todayISO()}"></div>
    <div class="fld"><label>Uhrzeit</label><input type="time" id="no-z" value="17:00"></div></div>
   <div class="fld"><label>Erstes Paket (optional)</label><input id="no-p" placeholder="z. B. Inspektion, Bremsen VA"></div>
@@ -980,9 +990,9 @@ function vAuftrag(id){
    <button class="abtn" data-act="wa" data-id="${k.id}">WhatsApp</button>
    <button class="abtn" data-act="mail" data-id="${k.id}">E-Mail</button></div>
   <div class="lbl">Schnellnachricht (WhatsApp + Protokoll)</div>
-  <div class="chips">
-   ${['Ihr Fahrzeug ist fertig und kann abgeholt werden.','Das Angebot liegt bereit — melden Sie sich bei Fragen.','Die bestellten Teile verzögern sich leider etwas.'].map((m,i)=>
-    `<button class="chip" data-act="chip" data-oid="${a.id}" data-m="${i}">${['Fahrzeug fertig','Angebot liegt bereit','Teile verzögern sich'][i]}</button>`).join('')}</div>
+  <div class="chips">${(()=>{const dflt=[{l:'Fahrzeug fertig',m:'Ihr Fahrzeug ist fertig und kann abgeholt werden.'},{l:'Angebot bereit',m:'Das Angebot liegt bereit — melden Sie sich bei Fragen.'},{l:'Teile verzögert',m:'Die bestellten Teile verzögern sich leider etwas.'},{l:'Termin morgen',m:'Freundliche Erinnerung: Ihr Termin bei uns ist morgen. Bitte melden Sie sich bei Fragen.'}];
+   const tpls=S.settings.waTemplates&&S.settings.waTemplates.length?S.settings.waTemplates:dflt;
+   return tpls.map((t,i)=>`<button class="chip" data-act="chip-wa" data-oid="${a.id}" data-m="${esc(t.m)}">${esc(t.l)}</button>`).join('')})()}</div>
   <button class="btn btn-2nd btn-sm" style="width:100%;margin-top:12px" data-act="open" data-v="kunde" data-id="${k.id}">Kundenakte öffnen</button>`);
 
  /* --- Fahrzeug --- */
@@ -995,6 +1005,7 @@ function vAuftrag(id){
   <div class="kv"><span class="k">HU fällig</span>${huWarn}</div>
   <div class="kv"><span class="k">Bühne</span><span class="v"><div class="selwrap" style="display:inline-block"><select data-f="o-buehne" data-oid="${a.id}" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 26px 6px 10px;font-size:12px"><option value="0">keine</option>${[...Array(Math.max(1,Math.min(8,S.settings.buehnen||3)))].map((_,bi)=>`<option value="${bi+1}" ${a.buehne===bi+1?'selected':''}>Bühne ${bi+1}</option>`).join('')}</select></div></span></div>
   <div class="kv"><span class="k">Garantie</span><span class="v"><span class="tag t-blue">12 Monate auf alle Arbeiten</span></span></div>
+  <button class="btn-ghost" style="width:100%;margin-top:8px" data-act="kfz-lookup" data-kz="${esc(f.kennz||'')}">Fahrzeugdaten online abfragen (kfz-auskunft.de) →</button>
   ${histAll.length?`<div class="lbl">Fahrzeug-Historie · ${histAll.length} Aufträge</div>
    ${histAll.map(h=>`<div class="kv" data-act="open" data-v="auftrag" data-id="${h.id}" style="cursor:pointer"><span class="k">${dLabel(h.abgabe)} · ${h.nr}</span><span class="v num">${esc(h.pakete[0]?h.pakete[0].name:'')} · ${fmt(ordNetto(h))}</span></div>`).join('')}`:''}
   <button class="btn btn-2nd btn-sm" style="width:100%;margin-top:12px" data-act="open" data-v="fahrzeug" data-id="${f.id}">Fahrzeugakte öffnen</button>`);
@@ -1198,6 +1209,15 @@ ACT.chip=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId);
  save();el.classList.add('sent');const t=el.textContent;el.textContent='Gesendet';
  setTimeout(()=>{el.classList.remove('sent');el.textContent=t},1500);
  if(k&&k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(m)};
+ACT['chip-wa']=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId);
+ const m=el.dataset.m||'';if(!m)return;
+ const fi=S.settings.firma;
+ const f=fzg(a.fzgId)||{};
+ const filled=m.replace(/\{name\}/g,k?k.name:'').replace(/\{kennz\}/g,f.kennz||'').replace(/\{firma\}/g,fi.name||'');
+ a.komm.push({id:'m'+uid(),kanal:'wa',ts:Date.now(),txt:'Nachricht: „'+filled+'"',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'man',orig:'wa'});
+ save();el.classList.add('sent');const t=el.textContent;el.textContent='✓ Gesendet';
+ setTimeout(()=>{el.classList.remove('sent');el.textContent=t},1600);
+ if(k&&k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(filled)};
 
 /* Feld-Änderungen */
 const FSET={};
@@ -1717,7 +1737,7 @@ ACT['lager-del']=el=>{const l=lagerT(el.dataset.id);
 /* Mehr / Finanzen / Einstellungen */
 function vMehr(){
  const inner=`<div class="card stag">
-  ${[['lager','Lager',IC.box,S.lager.length+' Artikel im Bestand'],['kalender','Kapazität',IC.grid,'10-Tage-Plan · Mitarbeiter'],['bestellungen','Bestellungen',IC.truck,(S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen').length||'Keine')+' offen'],['kampagnen','Kampagnen',IC.mega,S.kampagnen.length+' Kampagnen gesendet'],['team','Team',IC.team,S.mitarbeiter.length+' Mitarbeiter'],['personal','Personalwesen',IC.team,(S.krankmeldungen||[]).filter(k=>k.von<=todayISO()&&k.bis>=todayISO()).length+' aktive Krankmeldungen'],['fahrzeuge','Fahrzeuge',IC.car,S.fahrzeuge.length+' Fahrzeuge'],['finanzen','Finanzen',IC.fin,S.rechnungen.length+' Rechnungen'],['einstellungen','Einstellungen',IC.gear,'Firma, Preise, Werkstatt, Daten']].map(([v,l,ic,sub])=>
+  ${[['termine','Terminkalender',IC.plan,(S.termine||[]).filter(t=>t.datum>=todayISO()).length+' anstehende Termine'],['lager','Lager',IC.box,S.lager.length+' Artikel im Bestand'],['kalender','Kapazität',IC.grid,'10-Tage-Plan · Mitarbeiter'],['bestellungen','Bestellungen',IC.truck,(S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen').length||'Keine')+' offen'],['kampagnen','Kampagnen',IC.mega,S.kampagnen.length+' Kampagnen gesendet'],['team','Team',IC.team,S.mitarbeiter.length+' Mitarbeiter'],['personal','Personalwesen',IC.team,(S.krankmeldungen||[]).filter(k=>k.von<=todayISO()&&k.bis>=todayISO()).length+' aktive Krankmeldungen'],['fahrzeuge','Fahrzeuge',IC.car,S.fahrzeuge.length+' Fahrzeuge'],['finanzen','Finanzen',IC.fin,S.rechnungen.length+' Rechnungen'],['einstellungen','Einstellungen',IC.gear,'Firma, Preise, Werkstatt, Daten']].map(([v,l,ic,sub])=>
    `<div class="lrow" data-act="open" data-v="${v}"><div class="av" style="background:var(--gray-bg);color:var(--ink2)">${ic}</div>
     <div class="lt"><b>${l}</b><span>${sub}</span></div><span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')}</div>
   <div style="text-align:center;font-size:10.5px;color:var(--ink3);margin-top:18px;line-height:1.7">mehanicar 2.0 · Werkstatt-Management<br>${memOnly?'<span style="color:var(--red)">Achtung: Speicher blockiert — Daten gehen beim Schließen verloren</span>':((S.settings.sync&&S.settings.sync.on)?'Cloud-Backup aktiv — jede Änderung wird automatisch gesichert':'Daten nur lokal — Cloud-Backup in den Einstellungen aktivierbar')}</div>`;
@@ -1797,7 +1817,7 @@ function vFinanzen(){
    ${STATI.map(([s,l,c])=>statCt[s]?`<div style="text-align:center;background:${c}12;border:1px solid ${c}30;border-radius:10px;padding:10px 13px">
     <div style="font-size:20px;font-weight:800;color:${c}">${statCt[s]||0}</div>
     <div style="font-size:10px;color:var(--ink3);font-weight:600">${l}</div></div>`:'').join('')}</div></div>`:''}
- ${finSec.rechnung?`<div class="lbl">Rechnungen</div>
+ ${finSec.rechnung?`<div style="display:flex;align-items:center;gap:8px;margin:17px 0 9px"><span style="font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);flex:1">Rechnungen</span><button class="btn btn-2nd btn-sm" data-act="datev-export" style="padding:5px 10px;font-size:11px">DATEV CSV</button></div>
   <div class="card">${S.rechnungen.slice().reverse().slice(0,20).map(r=>{const a=auftrag(r.auftragId);const k=a?kunde(a.kundeId):null;
     const od=!r.bezahlt&&(Date.parse(todayISO())-Date.parse(r.datum))/86400000>14;
     return `<div class="lrow" style="cursor:default">
@@ -1832,6 +1852,15 @@ function vEinstellungen(){
     ${[['planung','Planung'],['auftraege','Aufträge'],['anfragen','Anfragen']].map(([v,l])=>`<option value="${v}" ${(st.startseite||'planung')===v?'selected':''}>${l}</option>`).join('')}</select></div></span></div>
    <div class="kv"><span class="k">Rechnungs-Fußzeile</span><span class="v" style="max-width:200px"><input class="priceinp" value="${esc(st.reFuss||'')}" placeholder="z. B. Zahlbar sofort ohne Abzug" data-f="set-re-fuss"></span></div>
    <div class="kv"><span class="k">Mahnung nach (Tage)</span><span class="v"><input class="priceinp" style="width:56px" inputmode="numeric" value="${st.mahnTage||14}" data-f="set-mahn-tage"></span></div></div>
+  <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">WhatsApp-Schnelltemplates</div>
+   <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;line-height:1.5">Diese Nachrichten erscheinen als Chip-Buttons in jedem Auftrag. Platzhalter: <code>{name}</code> = Kundenname, <code>{kennz}</code> = Kennzeichen, <code>{firma}</code> = Werkstattname.</div>
+   ${(()=>{const dflt=[{l:'Fahrzeug fertig',m:'Ihr Fahrzeug ist fertig und kann abgeholt werden.'},{l:'Angebot bereit',m:'Das Angebot liegt bereit — melden Sie sich bei Fragen.'},{l:'Teile verzögert',m:'Die bestellten Teile verzögern sich leider etwas.'},{l:'Termin morgen',m:'Freundliche Erinnerung: Ihr Termin bei uns ist morgen. Bitte melden Sie sich bei Fragen.'}];
+    const tpls=S.settings.waTemplates&&S.settings.waTemplates.length?S.settings.waTemplates:dflt;
+    return tpls.map((t,i)=>`<div class="kv" style="align-items:flex-start;flex-direction:column;gap:4px">
+     <div style="display:flex;align-items:center;gap:6px;width:100%"><input class="priceinp" style="width:90px;flex-shrink:0" value="${esc(t.l)}" data-f="watpl-l" data-i="${i}">
+      <input class="priceinp" style="flex:1" value="${esc(t.m)}" data-f="watpl-m" data-i="${i}">
+      <button style="color:var(--red);padding:6px;font-size:14px;flex-shrink:0" data-act="watpl-del" data-i="${i}">✕</button></div></div>`).join('')})()}
+   <button class="btn-ghost" style="width:100%;margin-top:6px" data-act="watpl-add">+ Template hinzufügen</button></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Anfragen & KI</div>
    <div class="kv"><span class="k">Anfragen-Benachrichtigung</span><span class="v"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ${st.pushAnfragen?'checked':''} data-f="set-push-anfr" style="accent-color:var(--blue);width:18px;height:18px"><span>${st.pushAnfragen?'aktiviert':'deaktiviert'}</span></label></span></div>
    <div class="kv"><span class="k">Automatische Priorisierung</span><span class="v"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ${(st.autoPrio!==false)?'checked':''} data-f="set-auto-prio" style="accent-color:var(--blue);width:18px;height:18px"><span>${(st.autoPrio!==false)?'an':'aus'}</span></label></span></div>
@@ -1862,6 +1891,11 @@ create policy "backup_all" on backup for all using (true) with check (true);</te
      <div class="fld"><label>Supabase-URL</label><input value="${esc((S.settings.sync||{url:''}).url||'')}" data-f="sync-url" placeholder="https://xxxx.supabase.co"></div>
      <div class="fld" style="margin-bottom:0"><label>Publishable Key</label><input value="${esc((S.settings.sync||{key:''}).key||'')}" data-f="sync-key"></div>
     </div></div></div></div>
+  <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Online-Terminbuchung</div>
+   <div style="font-size:11.5px;color:var(--ink2);line-height:1.55;margin-bottom:10px">Dieser Link führt Kunden zum öffentlichen Buchungsformular. Jede Anfrage landet automatisch unter <b>Anfragen</b> — du bestätigst jeden Termin persönlich.</div>
+   <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:11px;font-family:ui-monospace,monospace;word-break:break-all;color:var(--ink2);margin-bottom:10px">${esc(typeof location!=='undefined'?location.origin+location.pathname+'#/buchen':'https://deine-domain.de/#/buchen')}</div>
+   <div class="row2"><button class="btn btn-2nd btn-sm" data-act="buchen-link-share">Link teilen</button>
+    <button class="btn btn-main btn-sm" data-act="open" data-v="buchen">Vorschau öffnen</button></div></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Daten</div>
    <button class="btn btn-main" style="width:100%" data-act="data-xlsx">Excel-Backup erstellen (.xlsx)</button>
    <div style="font-size:10.5px;color:var(--ink3);margin:6px 2px 10px;line-height:1.5">Lesbares Archiv: Aufträge, Positionen, Kunden, Fahrzeuge, Lager, Rechnungen, Kommunikation — je ein Tabellenblatt.</div>
@@ -1888,6 +1922,11 @@ FSET['set-re-fuss']=el=>{S.settings.reFuss=el.value.trim();save()};
 FSET['set-mahn-tage']=el=>{S.settings.mahnTage=Math.max(1,parseInt(el.value)||14);save()};
 FSET['set-push-anfr']=el=>{S.settings.pushAnfragen=el.checked;save()};
 FSET['set-auto-prio']=el=>{S.settings.autoPrio=el.checked;save()};
+FSET['watpl-l']=el=>{if(!S.settings.waTemplates)S.settings.waTemplates=[...watplDflt()];S.settings.waTemplates[+el.dataset.i].l=el.value.trim();save()};
+FSET['watpl-m']=el=>{if(!S.settings.waTemplates)S.settings.waTemplates=[...watplDflt()];S.settings.waTemplates[+el.dataset.i].m=el.value;save()};
+function watplDflt(){return[{l:'Fahrzeug fertig',m:'Ihr Fahrzeug ist fertig und kann abgeholt werden.'},{l:'Angebot bereit',m:'Das Angebot liegt bereit — melden Sie sich bei Fragen.'},{l:'Teile verzögert',m:'Die bestellten Teile verzögern sich leider etwas.'},{l:'Termin morgen',m:'Freundliche Erinnerung: Ihr Termin bei uns ist morgen. Bitte melden Sie sich bei Fragen.'}]}
+ACT['watpl-del']=el=>{if(!S.settings.waTemplates)S.settings.waTemplates=[...watplDflt()];S.settings.waTemplates.splice(+el.dataset.i,1);save();render()};
+ACT['watpl-add']=()=>{if(!S.settings.waTemplates)S.settings.waTemplates=[...watplDflt()];S.settings.waTemplates.push({l:'Neu',m:'Ihre Nachricht hier...'});save();render()};
 ACT['data-export']=()=>{const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
  a.download='mehanicar-sicherung-'+todayISO()+'.json';a.click();toast('Sicherung erstellt')};
@@ -2826,12 +2865,182 @@ ACT['pers-save']=()=>{
 ACT['km-del']=el=>{S.krankmeldungen=S.krankmeldungen.filter(x=>x.id!==el.dataset.id);save();render()};
 ACT['url-del']=el=>{S.urlaub=S.urlaub.filter(x=>x.id!==el.dataset.id);save();render()};
 
+/* ============ TERMINKALENDER ============ */
+let termWoche=0;
+const TTYP={annahme:['Annahme','#0A5FFF'],werkstatt:['Werkstatt','#C2710A'],abholung:['Abholung','#0E8F4E'],besprechung:['Besprechung','#6B4DD6'],lieferung:['Lieferung','#3E3E46'],sonstiges:['Sonstiges','#6B6B73']};
+function wkMon(ofs){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7)+ofs*7);
+ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function vTermine(){
+ const mon=wkMon(termWoche);
+ const days=[];for(let i=0;i<7;i++)days.push(addDays(mon,i));
+ const today=todayISO();
+ const T=S.termine||[];
+ const WDS=['Mo','Di','Mi','Do','Fr','Sa','So'];
+ const HOURS=['07','08','09','10','11','12','13','14','15','16','17','18'];
+ const byDay={};days.forEach(d=>{byDay[d]=T.filter(t=>t.datum===d)});
+ const kw=(()=>{const d=new Date(mon+'T12:00');const o=new Date(d.getFullYear(),0,4);return Math.ceil((((d-o)/86400000)+o.getDay()+1)/7)})();
+ const hdr=['<div class="kal-time" style="background:var(--bg);border-right:1px solid var(--line)"></div>',
+  ...days.map((d,i)=>{const isTod=d===today;const dd=new Date(d+'T12:00');
+   return`<div class="kal-hd-cell${isTod?' today':''}" style="flex:1">${WDS[i]}<br><b style="font-size:12px">${dd.getDate()}.${dd.getMonth()+1}.</b></div>`})].join('');
+ const rows=HOURS.map(h=>{
+  const cells=days.map(d=>{const isTod=d===today;
+   const slot=(byDay[d]||[]).filter(t=>t.von&&t.von.startsWith(h));
+   return`<div class="kal-cell${isTod?' today':''}" style="flex:1" data-act="termin-slot" data-datum="${d}" data-h="${h}:00">${slot.map(t=>`<button class="kal-evt" style="background:${(TTYP[t.typ]||TTYP.sonstiges)[1]}" data-act="termin-open" data-id="${t.id}">${esc(t.titel)}<br><span style="font-weight:500;font-size:8px;opacity:.9">${t.von}</span></button>`).join('')}</div>`}).join('');
+  return`<div style="display:flex;border-bottom:1px solid var(--line2)"><div class="kal-time">${h}</div>${cells}</div>`;
+ }).join('');
+ const weekTerms=days.flatMap(d=>byDay[d]||[]);
+ const bookUrl=location.origin+location.pathname+'#/buchen';
+ const inner=`
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+   <button class="icon-btn" data-act="term-woche" data-d="-1" style="flex-shrink:0">‹</button>
+   <b style="flex:1;text-align:center;font-size:13px">KW ${kw} · ${new Date(days[0]+'T12:00').getDate()}.${new Date(days[0]+'T12:00').getMonth()+1}. – ${new Date(days[6]+'T12:00').getDate()}.${new Date(days[6]+'T12:00').getMonth()+1}.</b>
+   <button class="icon-btn" data-act="term-woche" data-d="1" style="flex-shrink:0">›</button></div>
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
+   <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
+    <div style="min-width:420px">
+     <div style="display:flex;border-bottom:2px solid var(--line)">${hdr}</div>
+     ${rows}
+    </div></div></div>
+  ${weekTerms.length?`<div class="lbl">Diese Woche · ${weekTerms.length} Termin${weekTerms.length!==1?'e':''}</div>
+  <div class="card stag">${weekTerms.map(t=>{const k=t.kundeId?kunde(t.kundeId):null;
+   const [tl,tc]=(TTYP[t.typ]||TTYP.sonstiges);
+   return`<div class="lrow" data-act="termin-open" data-id="${t.id}">
+    <div class="av" style="background:${tc}18;color:${tc}">${IC.plan}</div>
+    <div class="lt"><b>${esc(t.titel)}</b><span>${t.datum} ${t.von}–${t.bis}${k?' · '+esc(k.name):''}</span></div>
+    <span class="tag" style="background:${tc}18;color:${tc}">${tl}</span></div>`}).join('')}</div>`
+  :'<div class="empty"><b>Keine Termine diese Woche</b>Mit + anlegen oder Zelle im Kalender antippen.</div>'}
+  <div class="card" style="padding:12px;margin-top:4px">
+   <div style="font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Online-Terminbuchungslink</div>
+   <div style="display:flex;align-items:center;gap:8px">
+    <code style="flex:1;font-size:10px;color:var(--ink2);word-break:break-all;background:var(--bg);border-radius:7px;padding:6px 8px">${esc(bookUrl)}</code>
+    <button class="icon-btn" data-act="buchen-link-share" style="flex-shrink:0" title="Link teilen">⎋</button></div>
+   <div style="font-size:10px;color:var(--ink3);margin-top:5px;line-height:1.5">Kunden öffnen diesen Link im Browser — Terminwünsche landen automatisch als Anfragen bei dir.</div>
+  </div>`;
+ return shell(inner,{title:'Terminkalender',eyebrow:'Wochenplanung',back:1})+`<button class="fab" data-act="termin-new">+</button>`;
+}
+ACT['term-woche']=el=>{termWoche=(termWoche||0)+parseInt(el.dataset.d||0);render()};
+ACT['termin-slot']=el=>showTerminSheet(null,el.dataset.datum,el.dataset.h,null);
+ACT['termin-new']=()=>showTerminSheet(null,todayISO(),'09:00',null);
+ACT['termin-open']=el=>{const t=(S.termine||[]).find(x=>x.id===el.dataset.id);if(t)showTerminSheet(t)};
+ACT['buchen-link-share']=async()=>{const url=location.origin+location.pathname+'#/buchen';
+ if(navigator.share){try{await navigator.share({title:S.settings.firma.name+' — Termin buchen',url})}catch(e){}}
+ else{try{await navigator.clipboard.writeText(url);toast('Link kopiert')}catch(e){toast(url)}}};
+function showTerminSheet(t,defDatum,defVon,defBis){
+ const isNew=!t;
+ const defBisCalc=defVon?String(Math.min(19,parseInt(defVon.split(':')[0])+1)).padStart(2,'0')+':00':null;
+ t=t||{titel:'',datum:defDatum||todayISO(),von:defVon||'09:00',bis:defBis||defBisCalc||'10:00',mitarbeiterId:(S.mitarbeiter[0]||{}).id||'',kundeId:'',typ:'annahme',notiz:'',status:'geplant'};
+ const maO=S.mitarbeiter.map(m=>`<option value="${m.id}"${t.mitarbeiterId===m.id?' selected':''}>${esc(m.name)}</option>`).join('');
+ const kO=S.kunden.map(k=>`<option value="${k.id}"${t.kundeId===k.id?' selected':''}>${esc(k.name)}</option>`).join('');
+ const typO=Object.entries(TTYP).map(([v,[l]])=>`<option value="${v}"${t.typ===v?' selected':''}>${l}</option>`).join('');
+ sheet(isNew?'Termin anlegen':'Termin bearbeiten',`
+  <div class="fld"><label>Bezeichnung *</label><input id="te-titel" value="${esc(t.titel)}" placeholder="z.B. Inspektion Weber"></div>
+  <div class="row2"><div class="fld"><label>Datum</label><input type="date" id="te-datum" value="${t.datum}"></div>
+   <div class="fld"><label>Typ</label><div class="selwrap"><select id="te-typ">${typO}</select></div></div></div>
+  <div class="row2"><div class="fld"><label>Von</label><input type="time" id="te-von" value="${t.von}"></div>
+   <div class="fld"><label>Bis</label><input type="time" id="te-bis" value="${t.bis}"></div></div>
+  <div class="row2">
+   <div class="fld"><label>Mitarbeiter</label><div class="selwrap"><select id="te-mid"><option value="">— alle —</option>${maO}</select></div></div>
+   <div class="fld"><label>Kunde</label><div class="selwrap"><select id="te-kid"><option value="">— kein —</option>${kO}</select></div></div></div>
+  <div class="fld"><label>Notiz</label><textarea id="te-notiz" rows="2" placeholder="optional">${esc(t.notiz||'')}</textarea></div>
+  <div class="row2">${!isNew?`<button class="btn btn-danger" data-act="termin-del" data-id="${t.id}">Löschen</button>`:'<span></span>'}
+   <button class="btn btn-main" data-act="termin-save"${!isNew?` data-id="${t.id}"`:''}>${isNew?'Anlegen':'Speichern'}</button></div>`)
+}
+ACT['termin-save']=el=>{
+ const titel=($('#te-titel').value||'').trim();if(!titel)return toast('Bezeichnung fehlt',true);
+ const datum=$('#te-datum').value,von=$('#te-von').value,bis=$('#te-bis').value;
+ if(!datum)return toast('Datum fehlt',true);
+ if(von&&bis&&von>=bis)return toast('Endzeit muss nach Startzeit liegen',true);
+ const v={titel,datum,von:von||'09:00',bis:bis||'10:00',typ:$('#te-typ').value,
+  mitarbeiterId:$('#te-mid').value,kundeId:$('#te-kid').value,
+  notiz:($('#te-notiz').value||'').trim(),status:'geplant'};
+ if(el.dataset.id){const t=(S.termine||[]).find(x=>x.id===el.dataset.id);if(t)Object.assign(t,v)}
+ else{if(!S.termine)S.termine=[];S.termine.push({id:'te'+uid(),...v})}
+ save();closeSheet();render();toast('Termin gespeichert')};
+ACT['termin-del']=el=>{S.termine=(S.termine||[]).filter(x=>x.id!==el.dataset.id);save();closeSheet();render();toast('Termin gelöscht')};
+
+/* ============ ONLINE-TERMINBUCHUNG (öffentlich, kein Login) ============ */
+function vBuchen(){
+ const fi=S.settings.firma;
+ return`<div style="min-height:100%;background:var(--bg);padding:calc(var(--sat,0px) + 20px) 16px calc(40px + var(--sab,0px));font-family:-apple-system,BlinkMacSystemFont,sans-serif">
+  <div style="max-width:480px;margin:0 auto">
+   <div style="text-align:center;margin-bottom:22px;padding-top:8px">
+    <div style="font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:3px">${esc(fi.name||'Werkstatt')}</div>
+    <div style="font-size:12.5px;color:var(--ink2)">${[fi.adresse,fi.tel,fi.email].filter(Boolean).map(esc).join(' · ')}</div>
+   </div>
+   <div class="card" style="padding:18px">
+    <div style="font-size:16px;font-weight:750;margin-bottom:3px">Online-Terminanfrage</div>
+    <div style="font-size:12px;color:var(--ink2);margin-bottom:14px;line-height:1.5">Wir bestätigen Ihren Wunschtermin persönlich — per Anruf oder WhatsApp.</div>
+    <div class="fld"><label>Ihr Name *</label><input id="bk-name" placeholder="Max Mustermann"></div>
+    <div class="fld"><label>Telefon / WhatsApp *</label><input id="bk-tel" inputmode="tel" placeholder="+49 ..."></div>
+    <div class="row2">
+     <div class="fld"><label>Kennzeichen</label><input id="bk-kz" placeholder="HU-XX 000" style="text-transform:uppercase"></div>
+     <div class="fld"><label>Fahrzeug</label><input id="bk-fzg" placeholder="VW Golf 7"></div></div>
+    <div class="row2">
+     <div class="fld"><label>Wunschdatum</label><input type="date" id="bk-dat" value="${addDays(todayISO(),2)}"></div>
+     <div class="fld"><label>Wunschzeit</label><input type="time" id="bk-uhr" value="09:00"></div></div>
+    <div class="fld"><label>Ihr Anliegen *</label><textarea id="bk-anl" rows="3" placeholder="z.B. Bremsscheiben vorne wechseln, TÜV-Vorbereitung..."></textarea></div>
+    <div style="font-size:11px;color:var(--ink3);background:rgba(194,113,10,.08);border:1px solid rgba(194,113,10,.25);border-radius:9px;padding:9px 11px;margin-bottom:13px;line-height:1.55">Hinweis: Terminwünsche werden persönlich von unserem Team geprüft und bestätigt. Sie erhalten Rückmeldung per Telefon oder WhatsApp.</div>
+    <button class="btn btn-main" style="width:100%" data-act="buchen-send">Terminanfrage absenden</button>
+   </div>
+   <div style="text-align:center;font-size:10px;color:var(--ink3);margin-top:14px;line-height:1.6">${fi.web?esc(fi.web)+' · ':''}Powered by mehanicar</div>
+  </div></div>`;
+}
+ACT['buchen-send']=()=>{
+ const name=($('#bk-name').value||'').trim(),tel=($('#bk-tel').value||'').trim();
+ const anl=($('#bk-anl').value||'').trim();
+ if(!name||!tel)return toast('Name und Telefon sind Pflichtfelder',true);
+ if(!anl)return toast('Bitte Ihr Anliegen beschreiben',true);
+ const kz=($('#bk-kz').value||'').trim().toUpperCase();
+ const fzgBez=($('#bk-fzg').value||'').trim();
+ const dat=($('#bk-dat').value)||addDays(todayISO(),2),uhr=($('#bk-uhr').value)||'09:00';
+ const r=ruleAnalyze(anl);
+ S.anfragen.push({id:'q'+uid(),ts:Date.now(),kanal:'web',name,tel,
+  betreff:r.betreff||(kz||'Terminanfrage'),
+  original:anl+(kz?'\nFahrzeug: '+kz+(fzgBez?' '+fzgBez:''):'')+'\nWunschtermin: '+dat+' '+uhr,
+  origUrl:'',notiz:'Online-Terminanfrage — bitte telefonisch bestätigen.',status:'neu',
+  prio:r.prio,grund:'Online-Terminanfrage: immer persönlich bestätigen.',kiQuelle:'web',
+  antwort:r.antwort,wertCt:r.wertCt||25000,followUp:dat,auftragId:null,wonTs:null,fotos:[],antworten:[],kiSugg:[]});
+ save();
+ const app=$('#app');if(app)app.innerHTML=`
+  <div style="height:100%;display:grid;place-items:center;background:var(--bg);padding:20px;font-family:-apple-system,sans-serif;text-align:center">
+   <div style="max-width:340px">
+    <div style="width:70px;height:70px;border-radius:50%;background:var(--green-bg);display:grid;place-items:center;margin:0 auto 18px;border:2px solid rgba(14,143,78,.25)">
+     <svg viewBox="0 0 24 24" style="width:34px;height:34px;stroke:var(--green);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg></div>
+    <div style="font-size:21px;font-weight:800;margin-bottom:8px">Anfrage erhalten!</div>
+    <div style="font-size:13px;color:var(--ink2);line-height:1.6;margin-bottom:16px">Ihre Terminanfrage ist bei uns eingegangen. Wir melden uns persönlich bei <b>${esc(name)}</b> unter <b>${esc(tel)}</b>.</div>
+    <div style="font-size:12px;font-weight:600;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px;color:var(--ink2)">Wunschtermin: ${dat} ${uhr}</div>
+   </div></div>`;};
+
+/* ============ DATEV-EXPORT ============ */
+ACT['datev-export']=()=>{
+ if(!S.rechnungen.length)return toast('Keine Rechnungen vorhanden',true);
+ const rows=[['Belegdatum','Belegnummer','Buchungstext','Umsatz-Netto EUR','MwSt EUR','Umsatz-Brutto EUR','Skonto','Gegenkonto']];
+ S.rechnungen.slice().sort((a,b)=>a.datum.localeCompare(b.datum)).forEach(r=>{
+  const a=auftrag(r.auftragId),k=a?kunde(a.kundeId):null;
+  const netto=Math.round(r.bruttoCt/(1+(S.settings.mwst||19)/100));
+  rows.push([r.datum,r.nr,k?k.name:'Kunde',
+   (netto/100).toFixed(2).replace('.',','),
+   ((r.bruttoCt-netto)/100).toFixed(2).replace('.',','),
+   (r.bruttoCt/100).toFixed(2).replace('.',','),
+   '0,00','8400'])});
+ const csv='﻿'+rows.map(r=>r.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
+ const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+ a.download='DATEV-Export-'+todayISO()+'.csv';document.body.appendChild(a);a.click();a.remove();
+ toast('DATEV-Export heruntergeladen')};
+
+/* ============ KFZ-DATENABFRAGE ============ */
+ACT['kfz-lookup']=el=>{
+ const kz=(el.dataset.kz||($('#no-fk')?$('#no-fk').value:'')||'').trim().toUpperCase().replace(/\s/g,'-');
+ if(!kz)return toast('Bitte zuerst Kennzeichen eingeben',true);
+ window.open('https://www.kfz-auskunft.de/kfz/'+encodeURIComponent(kz)+'.html','_blank')};
+
 /* ============ 8. RENDER, EVENTS, INIT ============ */
 function render(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
  const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
-  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen};
+  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen};
  app.innerHTML=(V[route.v]||vPlanung)();
  if(navSlideDir!==0&&!skipNextSlide){
   app.classList.add(navSlideDir>0?'tsR':'tsL');
@@ -2988,7 +3197,7 @@ try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}ca
 setTimeout(syncStartup,400);
 if(memOnly)setTimeout(()=>toast('Achtung: Speichern blockiert — Daten gehen beim Schließen verloren',true),600);
 const h0=location.hash.replace('#/','').split('/');
-if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen'].includes(h0[0]))route={v:h0[0],id:h0[1]};
+if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen'].includes(h0[0]))route={v:h0[0],id:h0[1]};
 render();
 </script>
 </body>
