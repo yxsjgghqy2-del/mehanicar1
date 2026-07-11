@@ -769,7 +769,7 @@ return React.createElement('div', { style: {border:`1.5px solid ${gesperrt?"rgba
 , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:10,padding:"12px 14px",background:gesperrt?"rgba(48,209,88,0.06)":paket.paket_status==="abgerechnet"?"rgba(255,159,10,0.06)":"rgba(0,0,0,0.03)",cursor:"pointer"}, onClick: ()=>onChange({...paket,expanded:!exp}),}
 , React.createElement(Ic, { n: exp?"chevronU":"chevronD", s: 16, c: P.purple,})
 , React.createElement('div', { style: {flex:1,minWidth:0},}
-, readOnly?React.createElement('span', { style: {color:gesperrt?"#6E6E73":"#fff",fontSize:14,fontWeight:600},}, paket.beanstandung||`Paket ${pi+1}`)
+, readOnly?React.createElement('span', { style: {color:gesperrt?"#6E6E73":"#1D1D1F",fontSize:14,fontWeight:600},}, paket.beanstandung||`Paket ${pi+1}`)
 :React.createElement('input', { value: paket.beanstandung||"", onChange: e=>onChange({...paket,beanstandung:e.target.value}), placeholder: `Beanstandung / Kundenwunsch ${pi+1}`, onClick: e=>e.stopPropagation(), style: {background:"transparent",border:"none",outline:"none",color:"#1D1D1F",fontSize:14,fontWeight:600,width:"100%",fontFamily:FA},})
 , React.createElement('div', { style: {display:"flex",alignItems:"center",gap:8,marginTop:3},}
 , React.createElement('span', { style: {color:"#6E6E73",fontSize:11},}, (paket.arbeiten||[]).length, " Arb. . "   , (paket.material||[]).length, " Teile . "   , eur(paketA+paketM))
@@ -1108,7 +1108,7 @@ return React.createElement(Screen, { title: "mehanicar", action: React.createEle
       , React.createElement('div', null
         , React.createElement('div', { style: {color:"rgba(255,255,255,0.7)",fontSize:11,fontWeight:700,letterSpacing:0.5,textTransform:"uppercase",marginBottom:6},}, "Monatsumsatz · "+new Date().toLocaleDateString("de-DE",{month:"long"}))
         , React.createElement('div', { style: {color:"#fff",fontSize:28,fontWeight:800,letterSpacing:-1,lineHeight:1},}, eur(monatU))
-        , React.createElement('div', { style: {color:"rgba(255,255,255,0.65)",fontSize:12,marginTop:5},}, offene.length+" offene Aufträge")
+        , React.createElement('div', { style: {color:"rgba(255,255,255,0.65)",fontSize:12,marginTop:5},}, offene.length===1?"1 offener Auftrag":offene.length+" offene Aufträge")
       )
       , React.createElement('div', { style: {width:40,height:40,borderRadius:12,background:"rgba(255,255,255,0.2)",display:"flex",alignItems:"center",justifyContent:"center"},}
         , React.createElement(Ic, {n:"finanzen",s:20,c:"#fff"})
@@ -2452,7 +2452,7 @@ return React.createElement(Screen, { title: "Kunden & Fahrzeuge"  , action: Reac
 , hasKFilter&&React.createElement('div', { style: {marginTop:8,color:P.blue,fontSize:12,fontWeight:500},}, filteredK.length, " Ergebnis" , filteredK.length!==1?"se":"")
 )
 , React.createElement(Card, { noPad: true,}
-, filteredK.map((k,i,arr)=>{const mc={gut:P.green,mittel:P.orange,schlecht:P.red}[k.zahlungsmoral]||P.blue;return React.createElement(Row, { key: k.id, icon: "kunden", iconColor: P.blue, left: `${k.vorname||""} ${k.nachname||""}${k.firma?` (${k.firma})`:""}`, sub: `${k.nr||""} . ${k.telefon||"-"}`, badge: React.createElement(Bdg, { color: mc, small: true,}, "*".repeat(k.interne_bewertung||3)), onClick: ()=>setSelKId(k.id), last: i===arr.length-1,});} )
+, filteredK.map((k,i,arr)=>{const mc={gut:P.green,mittel:P.orange,schlecht:P.red}[k.zahlungsmoral]||P.blue;const stars="★".repeat(k.interne_bewertung||3)+"☆".repeat(5-(k.interne_bewertung||3));return React.createElement(Row, { key: k.id, icon: "kunden", iconColor: P.blue, left: `${k.vorname||""} ${k.nachname||""}${k.firma?` (${k.firma})`:""}`, sub: `${k.nr||""} · ${k.telefon||"-"}`, badge: React.createElement(Bdg, { color: mc, small: true,}, stars), onClick: ()=>setSelKId(k.id), last: i===arr.length-1,});} )
 , filteredK.length===0&&React.createElement('div', { style: {padding:"28px",textAlign:"center",color:"#AEAEB2",fontSize:14},}, hasKFilter?"Keine Treffer":"Noch keine Kunden")
 )
 )
@@ -2565,7 +2565,7 @@ React.createElement(React.Fragment, null
 , kunde.email&&React.createElement('a', { href: `mailto:${kunde.email}`, style: {display:"flex",alignItems:"center",justifyContent:"center",gap:7,padding:"12px",background:"rgba(10,132,255,0.1)",border:`1px solid rgba(10,132,255,0.3)`,borderRadius:13,color:P.blue,textDecoration:"none",fontSize:14,fontWeight:600,minHeight:48,gridColumn:!kunde.whatsapp&&!kunde.telefon?"1/-1":"auto"},}, React.createElement(Ic, { n: "email", s: 15, c: P.blue,}), " Mail" )
 )
 , React.createElement('div', { style: {display:"flex",gap:5,flexWrap:"wrap",alignItems:"center",marginBottom:10},}
-, [1,2,3,4,5].map(n=>React.createElement('button', { key: n, onClick: ()=>updateRow("kunden",kunde.id,{interne_bewertung:n}), style: {background:"none",border:"none",cursor:"pointer",padding:"1px",fontSize:20,color:n<=(kunde.interne_bewertung||0)?"#FFCC00":"#E5E5EA"},}, "*"))
+, [1,2,3,4,5].map(n=>React.createElement('button', { key: n, onClick: ()=>updateRow("kunden",kunde.id,{interne_bewertung:n}), style: {background:"none",border:"none",cursor:"pointer",padding:"1px",fontSize:22,color:n<=(kunde.interne_bewertung||0)?"#FFCC00":"#E5E5EA",lineHeight:1},}, n<=(kunde.interne_bewertung||0)?"★":"☆"))
 , (kunde.tags||[]).map(t=>React.createElement('span', { key: t, onClick: ()=>updateRow("kunden",kunde.id,{tags:(kunde.tags||[]).filter(x=>x!==t)}), style: {background:"rgba(0,122,255,0.08)",color:P.blue,borderRadius:20,padding:"3px 10px",fontSize:12,fontWeight:600,cursor:"pointer"},}, "x " , t))
 , ["Stammkunde","Barzahler","VIP","Firmenkunde"].filter(t=>!(kunde.tags||[]).includes(t)).slice(0,2).map(t=>React.createElement('button', { key: t, onClick: ()=>updateRow("kunden",kunde.id,{tags:[...(kunde.tags||[]),t]}), style: {background:"rgba(0,0,0,0.04)",border:"1px dashed rgba(0,0,0,0.12)",borderRadius:20,padding:"3px 9px",fontSize:12,color:"#AEAEB2",cursor:"pointer"},}, "+ " , t))
 )
@@ -2602,13 +2602,14 @@ notify("Fahrzeugschein gespeichert");
 if(!file.type.startsWith("image/"))return;
 try{
 const b64=imgData.split(",")[1];
-const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"claude-sonnet-4-20250514",max_tokens:400,messages:[{role:"user",content:[{type:"image",source:{type:"base64",media_type:file.type,data:b64}},{type:"text",text:"Fahrzeugdokument. JSON: kennzeichen,vin,marke,modell,baujahr,erstzulassung(YYYY-MM-DD),hu_datum(YYYY-MM-DD),kraftstoff,hubraum,kw,farbe,farb_code."}]}]})});
+const res=await fetch("/api/scan",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({media_type:file.type,data:b64})});
+if(!res.ok)throw new Error("scan "+res.status);
 const json=await res.json();
-const parsed=JSON.parse(_optionalChain([((json.content||[]).find(c=>c.type==="text")||{}), 'access', _62 => _62.text, 'optionalAccess', _63 => _63.replace, 'call', _64 => _64(/```json|```/g,""), 'access', _65 => _65.trim, 'call', _66 => _66()])||"{}");
+const parsed=json.fields||{};
 const upd={fahrzeugschein:{name:file.name,type:file.type,data:imgData}};
-["kennzeichen","vin","marke","modell","baujahr","erstzulassung","hu_datum","kraftstoff","hubraum","kw","farbe","farb_code"].forEach(k=>{if(parsed[k]!=null&&!fz[k])upd[k]=String(parsed[k]);});
-updateRow("fahrzeuge",fz.id,upd);notify("Felder ausgefuellt");
-}catch(e){console.error(e);}
+let n=0;["kennzeichen","vin","marke","modell","baujahr","erstzulassung","hu_datum","kraftstoff","hubraum","kw","farbe","farb_code"].forEach(k=>{if(parsed[k]!=null&&!fz[k]){upd[k]=String(parsed[k]);n++;}});
+updateRow("fahrzeuge",fz.id,upd);notify(n>0?"Felder ausgefüllt ✓":"Scan gespeichert — Felder bitte manuell prüfen");
+}catch(e){console.error(e);notify("Scan fehlgeschlagen — bitte von Hand ausfüllen","warning");}
 };reader.readAsDataURL(file);
 };
 
@@ -2652,7 +2653,7 @@ React.createElement('div', { key: l, style: {display:"flex",justifyContent:"spac
 );
 }
 function Lager(){
-const {data,addRow,updateRow,notify}=useApp();
+const {data,addRow,updateRow,deleteRow,notify}=useApp();
 const [q,setQ]=useState(""); const [showForm,setShowForm]=useState(false);
 const [nL,setNL]=useState({artikelnr:"",bezeichnung:"",bestand:"0",mindestbestand:"2",ek_preis:"",vk_preis:"",lieferant:"",lagerort:"",einheit:"Stk."});
 const filtered=(data.lager||[]).filter(l=>`${l.bezeichnung||""} ${l.artikelnr||""} ${l.lieferant||""}`.toLowerCase().includes(q.toLowerCase()));
@@ -2674,6 +2675,7 @@ React.createElement('div', { key: l.id, style: {display:"flex",alignItems:"cente
 , React.createElement('div', { style: {display:"flex",flexDirection:"column",gap:5},}
 , React.createElement('button', { onClick: ()=>updateRow("lager",l.id,{bestand:(l.bestand||0)+1}), style: {width:32,height:32,borderRadius:9,background:"rgba(48,209,88,0.15)",border:"none",cursor:"pointer",color:P.green,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700},}, "+")
 , React.createElement('button', { onClick: ()=>updateRow("lager",l.id,{bestand:Math.max(0,(l.bestand||0)-1)}), style: {width:32,height:32,borderRadius:9,background:"rgba(255,69,58,0.12)",border:"none",cursor:"pointer",color:P.red,fontSize:18,display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700},}, "-")
+, React.createElement('button', { onClick: ()=>{if(window.confirm(`"${l.bezeichnung}" löschen?`))deleteRow("lager",l.id);}, style: {width:32,height:32,borderRadius:9,background:"rgba(120,120,128,0.1)",border:"none",cursor:"pointer",color:"#AEAEB2",fontSize:12,display:"flex",alignItems:"center",justifyContent:"center"},}, React.createElement(Ic, { n: "trash", s: 13, c: "#AEAEB2",}))
 )
 )
 ))
@@ -2744,7 +2746,7 @@ const addE=async()=>{if(!nE.beschreibung||!nE.betrag){notify("Pflichtfelder fehl
 const jEinn=(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.storniert&&_optionalChain([r, 'access', _81 => _81.bezahlt_am, 'optionalAccess', _82 => _82.startsWith, 'call', _83 => _83(String(yr()))])).reduce((s,r)=>s+(r.netto||0),0);
 const jAusg=kassen.filter(k=>_optionalChain([k, 'access', _84 => _84.datum, 'optionalAccess', _85 => _85.startsWith, 'call', _86 => _86(String(yr()))])&&k.typ==="ausgabe").reduce((s,k)=>s+(k.betrag||0),0);
 const jMwst=(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.storniert&&_optionalChain([r, 'access', _87 => _87.bezahlt_am, 'optionalAccess', _88 => _88.startsWith, 'call', _89 => _89(String(yr()))])).reduce((s,r)=>s+(r.mwst_betrag||0),0);
-const TABS2=[{v:"kassenbuch",l:"Kassenbuch"},{v:"euer",l:"EÜR"},{v:"backup",l:"Backup"}];
+const TABS2=[{v:"kassenbuch",l:"Kassenbuch"},{v:"euer",l:"EÜR"},{v:"ust",l:"UStVA"},{v:"backup",l:"Backup"}];
 return React.createElement(Screen, { title: "Finanzen",}
 , React.createElement(Tabs, { tabs: TABS2, active: tab2, onChange: setTab2,})
 , tab2==="kassenbuch"&&React.createElement(React.Fragment, null
@@ -2762,7 +2764,7 @@ return React.createElement(Screen, { title: "Finanzen",}
 )
 )
 , React.createElement(Card, { noPad: true,}
-, kassen.slice(0,40).map((k,i,arr)=>{const tp=k.typ==="einnahme"?P.green:P.red;return React.createElement(Row, { key: k.id, icon: k.typ==="einnahme"?"finanzen":"arrow_r", iconColor: tp, left: k.beschreibung||"-", sub: `${k.kategorie||""} . ${dat(k.datum)}`, right: `${k.typ==="einnahme"?"+":"-"} ${eur(k.betrag)}`, last: i===arr.length-1,});} )
+, kassen.map((k,i,arr)=>{const tp=k.typ==="einnahme"?P.green:P.red;return React.createElement(Row, { key: k.id, icon: k.typ==="einnahme"?"finanzen":"arrow_r", iconColor: tp, left: k.beschreibung||"-", sub: `${k.kategorie||""} · ${dat(k.datum)}`, right: `${k.typ==="einnahme"?"+":"-"} ${eur(k.betrag)}`, last: i===arr.length-1,});} )
 , kassen.length===0&&React.createElement('div', { style: {padding:"28px",textAlign:"center",color:"#AEAEB2",fontSize:14},}, "Keine Buchungen" )
 )
 )
@@ -2813,7 +2815,7 @@ return React.createElement('div', { key: q, style: {display:"grid",gridTemplateC
 function Statistiken(){
 const {data}=useApp();
 const monate=["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
-const monatData=monate.map((_,i)=>{const m=String(i+1).padStart(2,"0");return{u:(data.rechnungen||[]).filter(r=>!r.storniert&&_optionalChain([r, 'access', _105 => _105.datum, 'optionalAccess', _106 => _106.includes, 'call', _107 => _107(`-${m}-`)])).reduce((s,r)=>s+(r.brutto||0),0)};});
+const monatData=monate.map((_,i)=>{const m=String(i+1).padStart(2,"0");return{u:(data.rechnungen||[]).filter(r=>r.bezahlt&&!r.storniert&&_optionalChain([r, 'access', _105 => _105.bezahlt_am, 'optionalAccess', _106 => _106.includes, 'call', _107 => _107(`-${m}-`)])).reduce((s,r)=>s+(r.brutto||0),0)};});
 const maxU=Math.max(...monatData.map(d=>d.u),1);
 const gesamtU=(data.rechnungen||[]).filter(r=>!r.storniert).reduce((s,r)=>s+(r.brutto||0),0);
 const gesamtAU=(data.auftraege||[]).length;
@@ -2823,7 +2825,7 @@ return React.createElement(Screen, { title: "Statistiken",}
 , React.createElement('div', { style: {display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:16},}
 , React.createElement(Stat, { label: "Gesamtumsatz", value: eur(gesamtU), color: P.green, icon: "finanzen",})
 , React.createElement(Stat, { label: "Aufträge", value: gesamtAU, color: P.blue, icon: "auftraege",})
-, React.createElement(Stat, { label: "o Auftragswert" , value: eur(gesamtAU>0?gesamtU/gesamtAU:0), color: P.purple, icon: "statistik",})
+, React.createElement(Stat, { label: "Ø Auftragswert" , value: eur(gesamtAU>0?gesamtU/gesamtAU:0), color: P.purple, icon: "statistik",})
 , React.createElement(Stat, { label: "Abschlussquote", value: `${gesamtAU>0?(abg/gesamtAU*100).toFixed(0):0}%`, color: P.orange, icon: "check",})
 )
 , React.createElement(SecH, { title: `Monatsumsatz ${yr()}`,})
