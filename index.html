@@ -116,6 +116,8 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 .btn-sm{padding:9px 13px;font-size:12px;border-radius:10px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
+.row2>*,.row3>*{min-width:0}
+input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-webkit-appearance:none;appearance:none;min-width:0;max-width:100%;display:block;min-height:42px;text-align:left;font-family:inherit}
 .fab{position:fixed;right:18px;bottom:calc(60px + var(--sab));width:54px;height:54px;border-radius:17px;
  background:var(--blue);color:#fff;font-size:27px;font-weight:300;display:grid;place-items:center;
  box-shadow:0 8px 28px rgba(10,95,255,.38);z-index:35;transition:transform .15s var(--spring)}
@@ -140,11 +142,11 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 .searchbar svg{width:16px;height:16px;stroke:var(--ink3);fill:none;stroke-width:2;flex-shrink:0}
 
 /* Pills */
-.pills{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:2px 4px;margin-bottom:12px}
+.pills{display:flex;gap:7px;overflow-x:auto;scrollbar-width:none;padding:4px;margin-bottom:12px}
 .pills::-webkit-scrollbar{display:none}
 .pill{padding:7px 13px;border-radius:9px;font-size:12px;font-weight:600;border:1px solid var(--line);
- background:var(--card);color:var(--ink2);white-space:nowrap;transition:all .2s var(--spring)}
-.pill.on{transform:scale(1.03)}
+ background:var(--card);color:var(--ink2);white-space:nowrap;transition:background .2s,color .2s,border-color .2s}
+.pill.on{font-weight:700}
 
 /* ============ PLANUNG ============ */
 .fix{background:#1D1D1F;border-radius:16px;padding:12px 13px;margin-bottom:11px;color:#fff}
@@ -241,6 +243,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 .pak.open>.pak-b{max-height:4400px}
 .pak-in{padding:0 12px 12px}
 .pak-kz{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:2px 0 4px}
+.pak-kz select{font-size:11.5px;text-overflow:ellipsis;padding-right:26px}
 .pos{display:flex;align-items:center;gap:10px;padding:9px 11px;background:var(--bg);border-radius:9px;margin-bottom:6px;font-size:12px}
 .pos .pn{flex:1;font-weight:550;min-width:0}
 .pos .pmeta{font-size:10px;color:var(--ink3);margin-top:2px;font-weight:400}
@@ -768,9 +771,35 @@ S.settings.startseite=S.settings.startseite||'planung';
 S.settings.mahnTage=S.settings.mahnTage||14;
 if(S.settings.autoPrio===undefined)S.settings.autoPrio=true;
 S.settings.theme=S.settings.theme||'auto';
-kunNorm();
+kunNorm();migrate2();
 return}}catch(e){memOnly=true}
- S=seed();kunNorm();save();
+ S=seed();kunNorm();migrate2();save();
+}
+/* Migration v3: Freigabe, Sonstiges-Status, AW-Satz je Auftrag, AP-Datenbank, Fahrzeug-Extras */
+const AP_SEED=[['Inspektion nach Herstellervorgabe',1.8],['Ölservice inkl. Filter',0.6],['Bremsscheiben + Beläge VA erneuern',1.5],['Bremsscheiben + Beläge HA erneuern',1.5],['Bremsflüssigkeit wechseln',0.7],['Räder umstecken / Reifenwechsel',0.5],['Komplettrad ab- und anmontieren',0.4],['Reifen auf Felge erneuern (pro Stück)',0.3],['Achsvermessung',1.0],['HU/AU-Vorbereitung + Vorführung',1.5],['Fehlerdiagnose auslesen',0.5],['Batterie erneuern + anlernen',0.4],['Zündkerzen erneuern',0.8],['Klimaservice',1.2],['Zahnriemensatz inkl. Wasserpumpe erneuern',3.5],['Kupplung + ZMS erneuern',5.5],['Steuerkette erneuern',6.0],['Stoßdämpfer VA erneuern (Paar)',1.8],['Querlenker erneuern (pro Seite)',1.2],['Auspuff-Endtopf erneuern',0.8]];
+const AP_KOMBI=[[/reifen|räder|komplettrad/i,'Komplettrad ab- und anmontieren'],[/reifen auf felge|neue reifen/i,'Achsvermessung'],[/bremsscheiben|bremsbeläge|bremsen/i,'Bremsflüssigkeit wechseln'],[/stoßdämpfer|querlenker|spurstange|achse/i,'Achsvermessung'],[/zahnriemen/i,'Kühlflüssigkeit erneuern'],[/kupplung/i,'Getriebeöl prüfen/auffüllen']];
+function migrate2(){
+ if(!S.apDb||!S.apDb.length)S.apDb=AP_SEED.map(([bez,aw])=>({bez,aw}));
+ (S.kunden||[]).forEach(k=>{if(k.ansprechpartner===undefined)k.ansprechpartner=''});
+ (S.fahrzeuge||[]).forEach(f=>{if(f.kraftstoff===undefined)f.kraftstoff='';if(f.farbe===undefined)f.farbe=''});
+ (S.auftraege||[]).forEach(a=>{
+  if(a.freigabe===undefined)a.freigabe=a.sig?{ts:a.created||Date.now(),art:'sig',notiz:'Unterschrift',origUrl:''}:null;
+  if(a.statusTxt===undefined)a.statusTxt='';
+  if(a.awCt===undefined)a.awCt=null;
+ });
+}
+function apLearn(bez,aw){
+ if(!bez||!(aw>0))return;
+ const key=bez.trim().toLowerCase();
+ const hit=S.apDb.find(e=>e.bez.toLowerCase()===key);
+ if(hit)hit.aw=aw;else{S.apDb.push({bez:bez.trim(),aw});if(S.apDb.length>300)S.apDb.shift()}
+}
+function apKombiFor(pk){
+ const out=[];
+ pk.pos.filter(p=>p.typ==='arbeit').forEach(p=>{
+  AP_KOMBI.forEach(([re,partner])=>{
+   if(re.test(p.bez)&&!pk.pos.some(q=>q.bez.toLowerCase()===partner.toLowerCase())&&!out.includes(partner))out.push(partner)})});
+ return out.slice(0,2);
 }
 let saveT=null;
 function save(){
@@ -792,10 +821,12 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const KLASS={tb:['Technische Beanstandung','t-red'],kw:['Kundenwunsch','t-blue'],so:['Sonstige','t-gray']};
+const KLASS={tb:['Techn. Beanstandung','t-red'],kw:['Kundenwunsch','t-blue'],so:['Sonstige','t-gray']};
 const ZAHLER={kunde:'Kunde',vers:'Versicherung',gar:'Garantie',intern:'Intern / Kulanz',son:'Sonstiges'};
-const STATI=[['offen','Offen','#C2710A'],['arbeit','In Arbeit','#0A5FFF'],['teile','Wartet auf Teile','#C2710A'],['fertig','Fertig','#0E8F4E'],['abgeholt','Abgeholt','#6B6B73']];
+const STATI=[['offen','Offen','#C2710A'],['arbeit','In Arbeit','#0A5FFF'],['teile','Wartet auf Teile','#C2710A'],['fertig','Fertig','#0E8F4E'],['abgeholt','Abgeholt','#6B6B73'],['sonst','Sonstiges','#6B4DD6']];
 const statL=s=>(STATI.find(x=>x[0]===s)||STATI[0]);
+const ordStatusLabel=a=>a.status==='sonst'&&(a.statusTxt||'').trim()?a.statusTxt.trim():statL(a.status)[1];
+const ordFreigegeben=a=>!!(a.sig||a.freigabe);
 const BEST={lager:['Lager','t-green'],bestellt:['bestellt','t-amber'],da:['eingetroffen','t-blue'],verbaut:['verbaut','t-gray']};
 
 /* ============ 3. KALKULATIONS-ENGINE (pur, Cent-genau) ============ */
@@ -918,7 +949,7 @@ setInterval(()=>{
 },1000);
 
 /* ============ 5. VIEWS: PLANUNG + AUFTRÄGE ============ */
-const ACT={};
+const ACT={},FSET={};
 ACT.nav=el=>nav(el.dataset.v==='mehr'?'mehr':el.dataset.v);
 ACT.back=()=>{if(route._from&&route._from.v&&route._from.v!==route.v){const f=route._from;route={v:f.v,id:f.id};window.scrollTo(0,0);render()}else nav(route.v==='auftrag'?'auftraege':route.v==='kunde'?'kunden':route.v==='fahrzeug'?'fahrzeuge':'planung')};
 ACT['sheet-close']=()=>closeSheet();
@@ -1062,7 +1093,7 @@ ACT['row-done']=el=>{const a=auftrag(el.dataset.id);if(!a)return;
 /* -------- Aufträge Liste -------- */
 let ordFilter='alle',ordQ='';
 function ordRow(a,strip){
- const f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{};const [,sl,sc]=statL(a.status);
+ const f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{};const sc=statL(a.status)[2],sl=ordStatusLabel(a);
  const noteFlag=a.notiz?`<span class="dotmark" style="margin-left:5px"></span>`:'';
  const aw=totalAW(a);
  return `<div class="lrow" data-act="open" data-v="auftrag" data-id="${a.id}" ${strip?`style="box-shadow:inset 3px 0 0 ${strip}"`:''}>
@@ -1154,72 +1185,111 @@ function bindKPicker(id,onChange,preK){
 let ordNewPick=null;
 ACT['ord-new']=()=>{
  sheet('Neuer Auftrag',`
+  <button class="btn" style="width:100%;margin-bottom:14px;background:linear-gradient(135deg,#0A5FFF,#3D7CFF);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px" data-act="schein-scan" data-mode="ord">
+   <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>Am schnellsten: Fahrzeugschein fotografieren</button>
+  <input type="file" accept="image/*" id="scheininp" style="display:none">
+  <div id="schein-status"></div>
   <div class="lbl" style="margin-top:0">Kunde</div>
-  ${kPickerHtml('ck',null)}
-  <div id="no-newk">
-   <div style="font-size:11px;font-weight:600;color:var(--ink3);margin:-2px 2px 8px">… oder neuen Kunden anlegen:</div>
-   <div class="row2"><div class="fld"><label>Vorname</label><input id="no-kvn" placeholder="Max" autocomplete="off"></div>
-    <div class="fld"><label>Nachname *</label><input id="no-knn" placeholder="Mustermann" autocomplete="off"></div></div>
+  <div class="seg" style="margin-bottom:12px">
+   <button type="button" id="km-best" class="on">Bestehender Kunde</button>
+   <button type="button" id="km-neu">Neuer Kunde</button></div>
+  <div id="no-bestk">${kPickerHtml('ck',null)}</div>
+  <div id="no-newk" style="display:none">
+   <div class="seg" style="margin-bottom:12px">
+    <button type="button" id="kt-priv" class="on">Privatkunde</button>
+    <button type="button" id="kt-firma">Firma</button></div>
+   <div id="nk-priv">
+    <div class="row2"><div class="fld"><label>Vorname</label><input id="no-kvn" placeholder="Max" autocomplete="off"></div>
+     <div class="fld"><label>Nachname *</label><input id="no-knn" placeholder="Mustermann" autocomplete="off"></div></div>
+   </div>
+   <div id="nk-firma" style="display:none">
+    <div class="fld"><label>Firmenname *</label><input id="no-kfa" placeholder="z. B. Autohaus Schmidt GmbH" autocomplete="off"></div>
+    <div class="fld"><label>Ansprechpartner</label><input id="no-kap" placeholder="Vor- und Nachname" autocomplete="off"></div>
+   </div>
    <div class="fld"><label>Telefon (für WhatsApp & Rückrufe)</label><input id="no-kt" inputmode="tel" placeholder="+49 170 1234567"></div>
   </div>
   <div class="lbl">Fahrzeug</div>
   <div id="cf-list"></div>
   <div id="no-newf">
-   <button class="btn btn-2nd" style="width:100%;margin-bottom:11px" data-act="schein-scan" data-mode="ord">
-    <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Fahrzeugschein fotografieren — Daten automatisch übernehmen</button>
-   <input type="file" accept="image/*" capture="environment" id="scheininp" style="display:none">
-   <div id="schein-status"></div>
-   <input type="hidden" id="no-fvin"><input type="hidden" id="no-fhu">
    <div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="no-fk" placeholder="HU-XX 000" style="text-transform:uppercase" autocomplete="off"></div>
     <div class="fld"><label>Marke</label><input id="no-fma" placeholder="BMW" autocomplete="off"></div></div>
    <div class="fld"><label>Modell</label><input id="no-fmo" placeholder="320d" autocomplete="off"></div>
+   <div class="sec" style="animation:none;margin:0 0 11px">
+    <div class="sec-h" data-act="sec-plain" style="padding:10px 12px"><span class="t" style="font-size:12px">Weitere Fahrzeugdaten (optional)</span><span class="chev"></span></div>
+    <div class="sec-b"><div class="sec-in" style="padding:0 12px 12px">
+     <div class="row2"><div class="fld"><label>VIN / Fahrgestellnummer</label><input id="no-fvin" autocomplete="off" style="font-family:ui-monospace,monospace;font-size:12px"></div>
+      <div class="fld"><label>Baujahr / EZ</label><input id="no-fbj" inputmode="numeric" placeholder="2019"></div></div>
+     <div class="row2"><div class="fld"><label>Kilometerstand</label><input id="no-fkm" inputmode="numeric" placeholder="87450"></div>
+      <div class="fld"><label>HU fällig</label><input type="month" id="no-fhu"></div></div>
+     <div class="row2"><div class="fld"><label>Kraftstoff</label><div class="selwrap"><select id="no-fkr"><option value="">—</option>${['Benzin','Diesel','Hybrid','Elektro','LPG/CNG'].map(v=>`<option>${v}</option>`).join('')}</select></div></div>
+      <div class="fld"><label>Farbe</label><input id="no-ffa" placeholder="z. B. Alpinweiß" autocomplete="off"></div></div>
+    </div></div></div>
   </div>
   <div class="lbl">Termin</div>
-  <div class="row2"><div class="fld"><label>Voraussichtl. Fertigstellung</label><input type="date" id="no-d" value="${todayISO()}"></div>
+  <div class="row2"><div class="fld"><label>Fertig am</label><input type="date" id="no-d" value="${todayISO()}"></div>
    <div class="fld"><label>Uhrzeit</label><input type="time" id="no-z" value="${S.settings.defaultAbgabeZeit||'17:00'}"></div></div>
-  <div class="fld"><label>Erstes Paket (optional)</label><input id="no-p" placeholder="z. B. Inspektion, Bremsen VA"></div>
+  <div style="font-size:10.5px;color:var(--ink3);margin:-3px 2px 12px;line-height:1.5">Pakete und Arbeitspositionen legst du direkt danach im Auftrag an.</div>
   <button class="btn btn-main" style="width:100%" data-act="ord-create">Auftrag anlegen</button>`);
- const newK=$('#no-newk'),cfList=$('#cf-list'),newF=$('#no-newf');
+ const newK=$('#no-newk'),bestK=$('#no-bestk'),cfList=$('#cf-list'),newF=$('#no-newf');
+ const segBtn=(on,off,showEl,hideEl)=>{on.classList.add('on');off.classList.remove('on');showEl.style.display='block';hideEl.style.display='none'};
+ $('#km-best').onclick=()=>{segBtn($('#km-best'),$('#km-neu'),bestK,newK);refreshFz()};
+ $('#km-neu').onclick=()=>{segBtn($('#km-neu'),$('#km-best'),newK,bestK);if(ordNewPick)ordNewPick.set(null);cfList.dataset.sel='';refreshFz()};
+ $('#kt-priv').onclick=()=>segBtn($('#kt-priv'),$('#kt-firma'),$('#nk-priv'),$('#nk-firma'));
+ $('#kt-firma').onclick=()=>segBtn($('#kt-firma'),$('#kt-priv'),$('#nk-firma'),$('#nk-priv'));
  function refreshFz(){
-  const k=ordNewPick?ordNewPick.get():null;
+  const useBest=$('#km-best').classList.contains('on');
+  const k=useBest&&ordNewPick?ordNewPick.get():null;
   const fs=k?S.fahrzeuge.filter(f=>f.kundeId===k.id):[];
   const sel=cfList.dataset.sel||'';
-  cfList.innerHTML=fs.map(f=>`<div class="fzpick-row ${sel===f.id?'on':''}" data-fzid="${f.id}">
-    <div class="fzpick-radio"></div>
-    <div style="flex:1;min-width:0"><b>${esc(f.kennz)}</b><span>${esc((f.marke+' '+f.modell).trim()||'—')}</span></div></div>`).join('')
-   +(fs.length?`<div class="fzpick-row ${sel===''?'on':''}" data-fzid=""><div class="fzpick-radio"></div><div><b>Neues Fahrzeug anlegen</b></div></div>`:'');
+  /* Nur beim Wechsel der Fahrzeugliste neu bauen — Auswahl per Klasse togglen (kein Layout-Springen) */
+  if(cfList.dataset.built!==(k?k.id:'')){
+   cfList.dataset.built=k?k.id:'';
+   cfList.innerHTML=fs.map(f=>`<div class="fzpick-row" data-fzid="${f.id}">
+     <div class="fzpick-radio"></div>
+     <div style="flex:1;min-width:0"><b>${esc(f.kennz)}</b><span>${esc((f.marke+' '+f.modell).trim()||'—')}</span></div></div>`).join('')
+    +(fs.length?`<div class="fzpick-row" data-fzid=""><div class="fzpick-radio"></div><div><b>Neues Fahrzeug anlegen</b></div></div>`:'');
+  }
+  cfList.querySelectorAll('.fzpick-row').forEach(r=>r.classList.toggle('on',r.dataset.fzid===sel));
   newF.style.display=sel===''?'block':'none';
  }
  cfList.addEventListener('click',e=>{const r=e.target.closest('[data-fzid]');if(!r)return;
   cfList.dataset.sel=r.dataset.fzid;refreshFz()});
  ordNewPick=bindKPicker('ck',k=>{
-  newK.style.display=k?'none':'block';
   const fs=k?S.fahrzeuge.filter(f=>f.kundeId===k.id):[];
   cfList.dataset.sel=fs.length===1?fs[0].id:'';
   refreshFz()},null);
  cfList.dataset.sel='';refreshFz();
 };
 ACT['ord-create']=()=>{
- const selK=ordNewPick?ordNewPick.get():null;
+ const useBest=$('#km-best').classList.contains('on');
+ const selK=useBest&&ordNewPick?ordNewPick.get():null;
  let kid;
- if(selK)kid=selK.id;
- else{const vn=$('#no-kvn').value.trim(),nn=$('#no-knn').value.trim();
-  if(!nn&&!vn)return toast('Kunden wählen oder Namen eintragen',true);
-  kid='k'+uid();S.kunden.push({id:kid,name:kunName(vn,nn,''),vorname:vn,nachname:nn,firma:'',
+ if(useBest){
+  if(!selK)return toast('Kunden auswählen — oder auf „Neuer Kunde" wechseln',true);
+  kid=selK.id;
+ }else{
+  const isFirma=$('#kt-firma').classList.contains('on');
+  const vn=isFirma?'':$('#no-kvn').value.trim(),nn=isFirma?'':$('#no-knn').value.trim();
+  const fa=isFirma?$('#no-kfa').value.trim():'';
+  const ap=isFirma?$('#no-kap').value.trim():'';
+  if(isFirma&&!fa)return toast('Firmenname fehlt',true);
+  if(!isFirma&&!nn&&!vn)return toast('Name des Kunden fehlt',true);
+  kid='k'+uid();S.kunden.push({id:kid,name:kunName(vn,nn,fa),vorname:vn,nachname:nn,firma:fa,ansprechpartner:ap,
    tel:$('#no-kt').value.trim(),wa:true,email:'',adresse:'',strasse:'',plz:'',ort:'',
    stamm:false,moral:'Gut',notiz:'',created:Date.now()})}
  let fid=$('#cf-list').dataset.sel||'';
  if(!fid){const kz=$('#no-fk').value.trim().toUpperCase();if(!kz)return toast('Kennzeichen fehlt',true);
   fid='f'+uid();S.fahrzeuge.push({id:fid,kundeId:kid,kennz:kz,marke:$('#no-fma').value.trim(),modell:$('#no-fmo').value.trim(),
-   bj:null,vin:$('#no-fvin').value||'',km:null,hu:$('#no-fhu').value||'',notiz:''})}
+   bj:parseInt($('#no-fbj').value)||null,vin:$('#no-fvin').value.trim(),km:parseInt(($('#no-fkm').value||'').replace(/\D/g,''))||null,
+   hu:$('#no-fhu').value||'',kraftstoff:$('#no-fkr').value||'',farbe:$('#no-ffa').value.trim(),notiz:''})}
  const y=new Date().getFullYear();
- const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:kid,fzgId:fid,status:'offen',
+ const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:kid,fzgId:fid,status:'offen',statusTxt:'',
   annahme:todayISO(),abgabe:$('#no-d').value||todayISO(),abgabeZeit:$('#no-z').value||'',kmAn:null,kmAb:null,tank:'50',
-  anzahlungCt:0,rabatt:{typ:'eur',wert:0},pakete:[],komm:[],fotos:[],check:[],docs:[],zeiten:[],timerStart:null,
+  anzahlungCt:0,rabatt:{typ:'eur',wert:0},awCt:null,freigabe:null,pakete:[],
+  komm:[{id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Auftrag angelegt.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null}],
+  fotos:[],check:[],docs:[],zeiten:[],timerStart:null,
   notiz:'',erinnerung:'',erinnerungDat:null,sig:null,sig2:null,pinned:false,created:Date.now()};
- const pn=$('#no-p').value.trim();
- if(pn)a.pakete.push({id:'p'+uid(),name:pn,klass:'kw',zahler:'kunde',status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,pos:[]});
- S.auftraege.push(a);save();closeSheet();toast(a.nr+' angelegt');nav('auftrag',a.id);
+ S.auftraege.push(a);save();closeSheet();toast(a.nr+' angelegt — jetzt Pakete anlegen');nav('auftrag',a.id);
 };
 
 /* ============ 6. AUFTRAGSMASKE ============ */
@@ -1278,11 +1348,13 @@ function vAuftrag(id){
  const pakHtml=pk=>{
   const [kl,kc]=KLASS[pk.klass]||KLASS.so;
   const open=pakOpen[a.id].has(pk.id)?'open':'';
-  const arbeiten=pk.pos.filter(p=>p.typ==='arbeit'),teile=pk.pos.filter(p=>p.typ==='teil'),texte=pk.pos.filter(p=>p.typ==='text');
+  const arbeiten=pk.pos.filter(p=>p.typ==='arbeit'),teile=pk.pos.filter(p=>p.typ==='teil'),texte=pk.pos.filter(p=>p.typ==='text'),befunde=pk.pos.filter(p=>p.typ==='befund');
   const posRow=p=>{const meta=[];
+   if(p.typ==='befund'){return `<div class="pos" data-act="pos-edit" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${p.id}" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:5px;border-left:3px solid var(--amber)">
+    <div><span style="font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--amber)">BEFUND</span><div class="pn" style="margin-top:2px;white-space:pre-wrap">${esc(p.bez)}</div></div>
+    ${p.abhilfe?`<div><span style="font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--green)">ABHILFE</span><div class="pn" style="margin-top:2px;white-space:pre-wrap">${esc(p.abhilfe)}</div></div>`:''}</div>`}
    if(p.typ==='text'){return `<div class="pos text-pos" data-act="pos-edit" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${p.id}" style="cursor:pointer"><div class="pn">${esc(p.bez)}</div></div>`}
-   if(p.typ==='arbeit'&&p.aw)meta.push(pct1(p.aw)+' AW');
-   if(p.typ==='arbeit')meta.push('EK '+fmt(p.ekCt||0));
+   if(p.typ==='arbeit'&&p.aw)meta.push(pct1(p.aw)+' AW'+(p.awSatz&&p.awSatz!==S.settings.awCt?' à '+fmt(p.awSatz):''));
    if(p.typ==='teil'){if((p.menge||1)!==1)meta.push(p.menge+' ×');meta.push('EK '+fmt(p.ekCt)+' → VK '+fmt(p.vkCt));
     meta.push(`<span class="gain">+${fmt((p.vkCt-p.ekCt)*(p.menge||1))}</span>`)}
    if(p.best&&BEST[p.best])meta.push(`<span class="tag ${BEST[p.best][1]}" style="font-size:9px">${BEST[p.best][0]}${p.best==='bestellt'&&p.eta?', ETA '+dLabel(p.eta):''}</span>`);
@@ -1304,19 +1376,22 @@ function vAuftrag(id){
       ${Object.entries(KLASS).map(([v,[l]])=>`<option value="${v}" ${pk.klass===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
      <div class="fld" style="margin:0"><label>Wer zahlt</label><div class="selwrap"><select data-f="p-zahler" data-oid="${a.id}" data-pid="${pk.id}">
       ${Object.entries(ZAHLER).map(([v,l])=>`<option value="${v}" ${pk.zahler===v?'selected':''}>${l}</option>`).join('')}</select></div></div></div>
+    ${befunde.length?'<div class="lbl">Befund & Abhilfe</div>'+befunde.map(posRow).join(''):''}
     ${arbeiten.length?'<div class="lbl">Arbeiten</div>'+arbeiten.map(posRow).join(''):''}
     ${teile.length?'<div class="lbl">Teile</div>'+teile.map(posRow).join(''):''}
     ${texte.length?'<div class="lbl">Textpositionen</div>'+texte.map(posRow).join(''):''}
+    ${(()=>{const kb=apKombiFor(pk);return kb.length?kb.map(b=>`<button class="btn-ghost" style="width:100%;margin-bottom:6px;border-style:dashed;color:var(--violet);border-color:rgba(107,77,214,.4);text-align:left;font-size:11.5px" data-act="add-kombi" data-oid="${a.id}" data-pid="${pk.id}" data-bez="${esc(b)}">+ Passt oft dazu: ${esc(b)}</button>`).join(''):''})()}
     ${extPos.map(p=>p.extKommId?`<div class="ext-note">Erweiterung nachträglich vereinbart — ${esc(p.bez)}, ${fmt(posNetto(p))}. <span class="lk" data-act="goto-komm" data-oid="${a.id}">In Kommunikation ansehen</span></div>`:'').join('')}
     ${(()=>{const pf=a.fotos.filter(x=>x.paketId===pk.id);return pf.length?`<div class="lbl">Fotos zu diesem Paket</div>
      <div class="fgrid">${pf.map(fo=>fotoTile(a,fo)).join('')}${camTile(a,pk.id)}</div>`:''})()}
     ${pk.rabatt&&pk.rabatt.wert?`<div class="kv" style="border:none"><span class="k">Rabatt Paket</span><span class="v" style="color:var(--blue)">– ${pk.rabatt.typ==='pct'?pk.rabatt.wert+' %':fmt(pk.rabatt.wert)}</span></div>`:''}
     <div class="sum"><span class="sl">Paket netto · Gewinn <span class="gain"${pakGewinn(pk)<0?' style="color:var(--red)"':''}>${fmt(pakGewinn(pk))}</span></span><b class="num">${fmt(pakNetto(pk))}</b></div>
     <div style="display:flex;gap:7px;flex-wrap:wrap">
-     <button class="btn-ghost" data-act="add-arbeit" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Arbeit</button>
-     <button class="btn-ghost" data-act="add-teil" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Teil</button>
+     <button class="btn-ghost" data-act="add-arbeit" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">${ordFreigegeben(a)?'+ Arbeit (Erw.)':'+ Arbeit'}</button>
+     <button class="btn-ghost" data-act="add-teil" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">${ordFreigegeben(a)?'+ Teil (Erw.)':'+ Teil'}</button>
+     <button class="btn-ghost" data-act="add-befund" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Befund</button>
      <button class="btn-ghost" data-act="add-text" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Text</button>
-     <button class="btn-ghost" data-act="add-foto-btn" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Foto</button></div>
+     <button class="btn-ghost" data-act="add-foto-btn" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Foto/Video</button></div>
     ${!pk.abger?`<button class="btn btn-soft-green" style="width:100%;margin-top:10px" data-act="bill-pak" data-oid="${a.id}" data-pid="${pk.id}">Nur dieses Paket abrechnen</button>`:''}
     <button class="btn-ghost" style="width:100%;margin-top:8px;color:var(--red);border-color:rgba(224,53,59,.3)" data-act="pak-del" data-oid="${a.id}" data-pid="${pk.id}">Paket löschen</button>
    </div></div></div>`};
@@ -1334,6 +1409,9 @@ function vAuftrag(id){
    <div class="disc"><span class="dl">Rabatt auf Paket</span>${discTog('prab',pk.id,pk.rabatt||{typ:'eur',wert:0})}</div>
    <div class="calc-tot"><span>Paket netto</span><span class="num">${fmt(pakNetto(pk))}<span class="gn">DB ${fmt(pakGewinn(pk))}</span></span></div></div>`).join('')+
   `<div class="card" style="padding:12px">
+   <div class="disc" style="border:none;background:none;padding:0 0 10px"><span class="dl" style="color:var(--ink)">AW-Satz dieses Auftrags</span>
+    <input class="priceinp" style="width:80px" inputmode="decimal" value="${fmtIn(a.awCt||S.settings.awCt)}" data-f="o-awsatz" data-oid="${a.id}">
+    <span style="font-size:10px;color:var(--ink3)">Std. ${fmt(S.settings.awCt)}</span></div>
    <div class="disc" style="border:none;background:none;padding:0 0 10px"><span class="dl" style="color:var(--ink)">Gesamtrabatt auf Auftrag</span>${discTog('orab',null,a.rabatt||{typ:'eur',wert:0})}</div>
    <div class="kv"><span class="k">Zwischensumme netto</span><span class="v num">${fmt(ordSub(a))}</span></div>
    <div class="kv"><span class="k">Rabatte gesamt</span><span class="v num" style="color:var(--blue)">– ${fmt(ordSub(a)-ordNetto(a)+a.pakete.reduce((s,pk)=>s+rabCt(pakBrutto(pk),pk.rabatt),0)+a.pakete.reduce((s,pk)=>s+pk.pos.reduce((x,p)=>x+rabCt(Math.round(p.vkCt*(p.menge||1)),p.rab),0),0))}</span></div>
@@ -1352,7 +1430,7 @@ function vAuftrag(id){
    <div style="font-size:10px;color:var(--ink3);margin-top:4px">wird auf der Rechnung abgezogen</div></div>`);
 
  /* --- Kommunikation --- */
- const kanalName={wa:'WhatsApp',call:'Anruf',mail:'E-Mail',pers:'Persönlich',diag:'Diagnose',man:'Notiz'};
+ const kanalName={wa:'WhatsApp',call:'Anruf',mail:'E-Mail',pers:'Persönlich',diag:'Diagnose',man:'Notiz',sys:'System',ig:'Instagram'};
  const teHtml=m=>{const pend=m.status==='ki';const just=lastConf===m.id;
   const bezug=m.bezug?a.pakete.find(p=>p.id===m.bezug):null;
   const src=m.kanal==='wa'?['Originalnachricht ansehen','wa']:m.kanal==='call'?['Aufnahme / Transkript','rec']:m.kanal==='mail'?['E-Mail öffnen','mail']:['Eintrag bearbeiten','edit'];
@@ -1429,14 +1507,29 @@ function vAuftrag(id){
    <div class="sig-foot"><span>Mit dem Finger unterschreiben</span>
     <span><button style="color:var(--ink3);font-weight:600;font-size:12px;margin-right:14px" data-act="sig-clear" data-oid="${a.id}" data-sk="${sigKey}">Löschen</button>
     <button style="color:var(--blue);font-weight:700;font-size:12px" data-act="sig-save" data-oid="${a.id}" data-sk="${sigKey}">Übernehmen</button></span></div>`};
- const secSig=sec('sig','Unterschriften',(a.sig&&a.sig2)?'<span class="tag t-green">beide vorhanden</span>':a.sig?'<span class="tag t-blue">Erteilung</span>':'',
-  `<div class="lbl">Auftragserteilung</div>${sigBlock('sig','sig-'+a.id,'Auftragserteilung')}
+ const fgArtL={tel:'Telefonisch',wa:'WhatsApp',mail:'E-Mail',ig:'Instagram',pers:'Persönlich',sig:'Unterschrift'};
+ const secSig=sec('sig','Freigabe & Unterschriften',a.freigabe?'<span class="tag t-green">freigegeben</span>':(a.sig?'<span class="tag t-blue">Erteilung</span>':'<span class="tag t-amber">offen</span>'),
+  `<div class="lbl">Auftragsfreigabe — auch ohne Unterschrift</div>
+   ${a.freigabe?`<div style="background:var(--green-bg);border:1px solid rgba(14,143,78,.3);border-radius:11px;padding:11px 12px;margin-bottom:12px">
+    <div style="font-size:12.5px;font-weight:700;color:var(--green)">Freigegeben · ${fgArtL[a.freigabe.art]||a.freigabe.art}</div>
+    <div style="font-size:11px;color:var(--ink2);margin-top:3px">${dtLabel(a.freigabe.ts)}${a.freigabe.notiz?' · '+esc(a.freigabe.notiz):''}</div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+     ${a.freigabe.origUrl?`<a class="btn btn-2nd btn-sm" style="flex:1" href="${esc(a.freigabe.origUrl)}" target="_blank" rel="noopener">Zur Originalnachricht</a>`:''}
+     <button class="btn btn-2nd btn-sm" style="flex:1" data-act="freigabe-sheet" data-oid="${a.id}">Ändern</button></div></div>`
+   :`<button class="btn btn-main" style="width:100%;margin-bottom:12px" data-act="freigabe-sheet" data-oid="${a.id}">Auftrag freigeben (telefonisch, E-Mail, WhatsApp …)</button>`}
+   <div class="lbl">Auftragserteilung (Unterschrift)</div>${sigBlock('sig','sig-'+a.id,'Auftragserteilung')}
    <div class="lbl" style="margin-top:12px">Fahrzeugabholung</div>${sigBlock('sig2','sig2-'+a.id,'Fahrzeugabholung')}
    <button class="btn btn-2nd" style="width:100%;margin-top:14px" data-act="kansicht" data-oid="${a.id}">Kundenansicht anzeigen</button>`);
 
  const offen=ordOffenNetto(a);
- const bar=`<div class="pills" style="margin:0;padding:4px 0 4px">${STATI.map(([v,l,c])=>
-  `<button class="pill ${a.status===v?'on':''}" style="${a.status===v?`background:${c}14;border-color:${c};color:${c}`:''}" data-act="ord-status" data-oid="${a.id}" data-v="${v}">${l}</button>`).join('')}</div>`;
+ const stc=statL(a.status)[2];
+ const bar=`<div style="display:flex;gap:8px;align-items:center;padding:6px 0 8px">
+  <div class="selwrap" style="flex-shrink:0"><select data-f="ord-status-sel" data-oid="${a.id}" style="background:${stc}14;border:1.5px solid ${stc};border-radius:10px;padding:8px 30px 8px 12px;font-size:12.5px;font-weight:700;color:${stc}">
+   ${STATI.map(([v,l])=>`<option value="${v}" ${a.status===v?'selected':''}>${l}</option>`).join('')}</select></div>
+  ${a.status==='sonst'?`<input class="priceinp" style="flex:1;min-width:0;padding:8px 11px" placeholder="Eigener Status, z. B. Gutachter kommt" value="${esc(a.statusTxt||'')}" data-f="ord-status-txt" data-oid="${a.id}">`:
+   ordFreigegeben(a)?`<span class="tag t-green" style="flex-shrink:0">Freigegeben${a.freigabe&&a.freigabe.art!=='sig'?' · '+({tel:'telefonisch',mail:'per E-Mail',wa:'per WhatsApp',ig:'per Instagram',pers:'persönlich'}[a.freigabe.art]||''):' · Unterschrift'}</span>`
+   :`<button class="tag t-amber" style="border:none;cursor:pointer;font-family:inherit;flex-shrink:0" data-act="freigabe-sheet" data-oid="${a.id}">Noch nicht freigegeben</button>`}
+ </div>`;
  const inner=`<div class="stag">${secKunde}${secFzg}${secPak}${secKomm}${secFoto}${secZeit}${secOrga}${secSig}</div>
   <div style="height:96px"></div>
   <input type="file" accept="image/*,video/*" multiple id="photoinp" style="display:none">`;
@@ -1459,6 +1552,35 @@ ACT['sec-tog']=el=>{const s=secOpen[el.dataset.oid];s.has(el.dataset.s)?s.delete
 ACT['pak-tog']=el=>{const s=pakOpen[el.dataset.oid];s.has(el.dataset.pid)?s.delete(el.dataset.pid):s.add(el.dataset.pid);
  el.parentElement.classList.toggle('open')};
 ACT['calc-mode']=el=>{calcMode[el.dataset.oid]=el.dataset.m;render()};
+FSET['ord-status-sel']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;const v=el.value;
+ a.status=v;if(v==='abgeholt')a.pinned=false;
+ if(v==='fertig'&&a.timerStart){a.zeiten.push({start:a.timerStart,end:Date.now(),mid:curMid||'m1'});a.timerStart=null}
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Status geändert: '+(v==='sonst'?(a.statusTxt||'Sonstiges'):statL(v)[1])+'.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
+ save();render()};
+FSET['ord-status-txt']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;a.statusTxt=el.value.trim();save()};
+ACT['freigabe-sheet']=el=>freigabeSheet(auftrag(el.dataset.oid));
+function freigabeSheet(a){
+ if(!a)return;
+ const q=S.anfragen.find(x=>x.auftragId===a.id);
+ const now=new Date();const dtLocal=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-'+String(now.getDate()).padStart(2,'0')+'T'+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+ sheet('Auftrag freigeben',`
+  <div style="font-size:11.5px;color:var(--ink2);line-height:1.55;margin-bottom:13px">Hält fest, dass der Kunde den Auftrag erteilt hat — auch ohne Unterschrift (telefonisch, per E-Mail, WhatsApp …). Erscheint in der Kommunikations-Historie.</div>
+  <div class="row2"><div class="fld"><label>Freigegeben per</label><div class="selwrap"><select id="fg-art">
+   ${[['tel','Telefonisch'],['wa','WhatsApp'],['mail','E-Mail'],['ig','Instagram'],['pers','Persönlich vor Ort']].map(([v,l])=>`<option value="${v}" ${a.freigabe&&a.freigabe.art===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
+   <div class="fld"><label>Am / um</label><input type="datetime-local" id="fg-ts" value="${dtLocal}"></div></div>
+  <div class="fld"><label>Link zur Originalnachricht / Aufnahme (optional)</label><input id="fg-url" value="${esc((a.freigabe&&a.freigabe.origUrl)||(q&&q.origUrl)||'')}" placeholder="z. B. Link zur E-Mail oder AB-Aufnahme"></div>
+  ${q?`<div style="font-size:11px;background:var(--blue-bg);border-radius:9px;padding:8px 11px;margin:-4px 0 12px;color:var(--blue)">Dieser Auftrag entstand aus einer Anfrage — <button style="color:var(--blue);font-weight:700;text-decoration:underline" data-act="anfrage-open" data-id="${q.id}">zur Originalnachricht</button></div>`:''}
+  <div class="fld"><label>Notiz (optional)</label><input id="fg-notiz" placeholder="z. B. mit Frau Klein besprochen, 445 € genannt"></div>
+  <button class="btn btn-main" style="width:100%" data-act="freigabe-save" data-oid="${a.id}">Freigabe festhalten</button>`);
+}
+ACT['freigabe-save']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;
+ const art=$('#fg-art').value,ts=$('#fg-ts').value?Date.parse($('#fg-ts').value):Date.now();
+ a.freigabe={ts,art,notiz:$('#fg-notiz').value.trim(),origUrl:$('#fg-url').value.trim()};
+ const artL={tel:'telefonisch',wa:'per WhatsApp',mail:'per E-Mail',ig:'per Instagram',pers:'persönlich vor Ort'}[art]||art;
+ a.komm.push({id:'m'+uid(),kanal:art==='tel'?'call':art==='wa'?'wa':art==='mail'?'mail':art==='pers'?'pers':'man',ts,
+  txt:'Auftrag freigegeben '+artL+' — Summe zum Zeitpunkt: '+fmt(ordNetto(a))+' netto.'+(a.freigabe.notiz?' '+a.freigabe.notiz:''),
+  preisCt:ordNetto(a),vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:a.freigabe.origUrl||null});
+ save();closeSheet();render();toast('Freigabe festgehalten — neue Positionen gelten ab jetzt als Erweiterung')};
 ACT['ord-status']=el=>{const a=auftrag(el.dataset.oid);a.status=el.dataset.v;if(el.dataset.v==='abgeholt')a.pinned=false;
  if(el.dataset.v==='fertig'&&a.timerStart){a.zeiten.push({start:a.timerStart,end:Date.now(),mid:curMid||'m1'});a.timerStart=null}
  save();render();hap()};
@@ -1484,10 +1606,11 @@ ACT['chip-wa']=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId);
  if(k&&k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(filled)};
 
 /* Feld-Änderungen */
-const FSET={};
 FSET['o-kmab']=el=>{const a=auftrag(el.dataset.oid);const v=parseInt(String(el.value).replace(/\D/g,''));a.kmAb=isNaN(v)?null:v;save()};
 FSET['o-tank']=el=>{auftrag(el.dataset.oid).tank=el.value;save()};
 FSET['o-anz']=el=>{auftrag(el.dataset.oid).anzahlungCt=parseEuro(el.value);save();render()};
+FSET['o-awsatz']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;const v=parseEuro(el.value);
+ a.awCt=(v&&v!==S.settings.awCt)?v:null;save();toast('AW-Satz für diesen Auftrag: '+fmt(a.awCt||S.settings.awCt)+' — gilt für neue Positionen')};
 FSET['o-erinn']=el=>{auftrag(el.dataset.oid).erinnerung=el.value;save()};
 FSET['o-erinnd']=el=>{auftrag(el.dataset.oid).erinnerungDat=el.value||null;save()};
 FSET['o-notiz']=el=>{auftrag(el.dataset.oid).notiz=el.value.trim();save();render()};
@@ -1525,32 +1648,42 @@ ACT['pak-del']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===e
   a.pakete=a.pakete.filter(p=>p.id!==pk.id);save();render();toast('Paket gelöscht')})};
 
 /* Positionen */
-function posSheet(a,pk,x){
+function posSheet(a,pk,x,prefillBez){
  const isT=x?x.typ==='teil':false;
- sheet(x?'Position bearbeiten':'Neue Position',`
-  <div class="fld"><label>Bezeichnung *</label><input id="ps-b" value="${x?esc(x.bez):''}" placeholder="z. B. Bremsscheiben wechseln"></div>
+ const isExtNew=!x&&ordFreigegeben(a);
+ const awSatz=(x&&x.awSatz)||a.awCt||S.settings.awCt;
+ sheet(x?'Position bearbeiten':(isExtNew?'Auftrag erweitern — neue Position':'Neue Position'),`
+  ${isExtNew?`<div style="font-size:11px;background:var(--amber-bg);border:1px solid rgba(194,113,10,.3);border-radius:9px;padding:8px 11px;margin-bottom:12px;color:var(--amber)">Auftrag ist bereits freigegeben — diese Position wird automatisch als <b>Erweiterung</b> markiert und protokolliert. Mit dem Kunden abstimmen!</div>`:''}
+  <div class="fld"><label>Bezeichnung *</label><input id="ps-b" list="ap-dl" value="${x?esc(x.bez):esc(prefillBez||'')}" placeholder="z. B. Bremsscheiben wechseln" autocomplete="off">
+   <datalist id="ap-dl">${(S.apDb||[]).map(e=>`<option value="${esc(e.bez)}">`).join('')}</datalist></div>
+  ${!isT?`<div class="row3">
+   <div class="fld"><label>AW</label><input id="ps-aw" inputmode="decimal" value="${x&&x.aw?String(x.aw).replace('.',','):''}" placeholder="1,5"></div>
+   <div class="fld"><label>AW-Satz €</label><input id="ps-aws" inputmode="decimal" value="${fmtIn(awSatz)}"></div>
+   <div class="fld"><label>VK gesamt €</label><input id="ps-vk" inputmode="decimal" value="${x?fmtIn(x.vkCt):''}"></div></div>
+   <div style="font-size:10px;color:var(--ink3);margin:-6px 2px 11px">VK = AW × Satz, automatisch berechnet — lässt sich aber jederzeit überschreiben.</div>`
+  :`<div class="row2">
+   <div class="fld"><label>Menge</label><input id="ps-m" inputmode="numeric" value="${x?(x.menge||1):1}"></div>
+   <div class="fld"><label>VK / Stück €</label><input id="ps-vk" inputmode="decimal" value="${x?fmtIn(x.vkCt):''}"></div></div>`}
   <div class="row2">
-   <div class="fld" id="ps-awf" style="${isT?'display:none':''}"><label>AW (à ${fmt(S.settings.awCt)})</label><input id="ps-aw" inputmode="decimal" value="${x&&x.aw?String(x.aw).replace('.',','):''}" placeholder="1,5"></div>
-   <div class="fld" id="ps-mf" style="${isT?'':'display:none'}"><label>Menge</label><input id="ps-m" inputmode="numeric" value="${x?(x.menge||1):1}"></div>
-   <div class="fld"><label>VK gesamt${isT?' / Stück':''} €</label><input id="ps-vk" inputmode="decimal" value="${x?fmtIn(x.vkCt):''}"></div></div>
-  <div class="row2">
-   <div class="fld"><label>EK${isT?' / Stück':''} € (Kosten)</label><input id="ps-ek" inputmode="decimal" value="${x?fmtIn(x.ekCt):'0,00'}"></div>
-   <div class="fld"><label>Rabatt Position</label><div style="display:flex;gap:6px"><input id="ps-rw" inputmode="decimal" style="flex:1;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 12px" value="${x&&x.rab?(x.rab.typ==='pct'?String(x.rab.wert).replace('.',','):fmtIn(x.rab.wert)):''}" placeholder="0">
+   ${isT?`<div class="fld"><label>EK / Stück € (Einkauf)</label><input id="ps-ek" inputmode="decimal" value="${x?fmtIn(x.ekCt):'0,00'}"></div>`:''}
+   <div class="fld" ${isT?'':'style="grid-column:1/-1"'}><label>Rabatt Position</label><div style="display:flex;gap:6px"><input id="ps-rw" inputmode="decimal" style="flex:1;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 12px" value="${x&&x.rab?(x.rab.typ==='pct'?String(x.rab.wert).replace('.',','):fmtIn(x.rab.wert)):''}" placeholder="0">
     <div class="disc-tog" style="align-self:center"><button id="ps-re" class="${!x||!x.rab||x.rab.typ==='eur'?'on':''}" type="button">€</button><button id="ps-rp" class="${x&&x.rab&&x.rab.typ==='pct'?'on':''}" type="button">%</button></div></div></div></div>
   ${isT?`<div class="row2"><div class="fld"><label>Bestellstatus</label><div class="selwrap"><select id="ps-best">
     <option value="">—</option>${Object.entries(BEST).map(([v,[l]])=>`<option value="${v}" ${x&&x.best===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
    <div class="fld"><label>ETA</label><input type="date" id="ps-eta" value="${x&&x.eta?x.eta:''}"></div></div>`:''}
-  <div class="cl ${x&&x.ext?'done':''}" id="ps-ext" style="border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:12px">
-   <div class="cb"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
-   <span class="ct" style="text-decoration:none;color:var(--ink)">Erweiterung — nachträglich mit Kunde vereinbart</span></div>
   <div class="row2">
    ${x?`<button class="btn btn-danger" data-act="pos-del" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Löschen</button>`:'<span></span>'}
    <button class="btn btn-main" data-act="pos-save" data-oid="${a.id}" data-pid="${pk.id}" ${x?`data-xid="${x.id}"`:''} data-typ="${x?x.typ:'arbeit'}">Speichern</button></div>`);
  $('#ps-re').onclick=()=>{$('#ps-re').classList.add('on');$('#ps-rp').classList.remove('on')};
  $('#ps-rp').onclick=()=>{$('#ps-rp').classList.add('on');$('#ps-re').classList.remove('on')};
- $('#ps-ext').onclick=e=>{e.currentTarget.classList.toggle('done')};
- const aw=$('#ps-aw');if(aw)aw.addEventListener('input',()=>{const v=parseFloat(aw.value.replace(',','.'));
-  if(!isNaN(v))$('#ps-vk').value=fmtIn(Math.round(v*S.settings.awCt))});
+ const aw=$('#ps-aw'),aws=$('#ps-aws'),bez=$('#ps-b');
+ const calcVk=()=>{if(!aw||!aws)return;const v=parseFloat((aw.value||'').replace(',','.'));const s=parseEuro(aws.value)||S.settings.awCt;
+  if(!isNaN(v)&&v>0)$('#ps-vk').value=fmtIn(Math.round(v*s))};
+ if(aw)aw.addEventListener('input',calcVk);
+ if(aws)aws.addEventListener('input',calcVk);
+ if(bez&&!isT)bez.addEventListener('change',()=>{
+  const hit=(S.apDb||[]).find(e=>e.bez.toLowerCase()===bez.value.trim().toLowerCase());
+  if(hit&&aw&&!aw.value){aw.value=String(hit.aw).replace('.',',');calcVk()}});
 }
 ACT['add-arbeit']=el=>posSheet(auftrag(el.dataset.oid),auftrag(el.dataset.oid).pakete.find(p=>p.id===el.dataset.pid),null);
 ACT['add-text']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
@@ -1574,17 +1707,14 @@ ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
    <div class="fld"><label>Menge</label><input id="pt-m" inputmode="numeric" value="1"></div>
    <div class="fld"><label>EK / Stück €</label><input id="pt-ek" inputmode="decimal" value="0,00"></div>
    <div class="fld"><label>VK / Stück €</label><input id="pt-vk" inputmode="decimal" value="0,00"></div></div>
-  <div class="cl" id="pt-ext" style="border:1px solid var(--line);border-radius:11px;padding:10px 12px;margin-bottom:12px">
-   <div class="cb"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div>
-   <span class="ct" style="text-decoration:none;color:var(--ink)">Erweiterung — nachträglich vereinbart</span></div>
+  ${ordFreigegeben(a)?`<div style="font-size:11px;background:var(--amber-bg);border:1px solid rgba(194,113,10,.3);border-radius:9px;padding:8px 11px;margin-bottom:12px;color:var(--amber)">Auftrag ist freigegeben — dieses Teil wird automatisch als <b>Erweiterung</b> protokolliert.</div>`:''}
   <button class="btn btn-main" style="width:100%" data-act="teil-save" data-oid="${a.id}" data-pid="${pk.id}">Hinzufügen</button>`);
- $('#pt-ext').onclick=e=>e.currentTarget.classList.toggle('done');
  $('#pt-l').addEventListener('change',e=>{const l=lagerT(e.target.value);if(!l)return;
   $('#pt-b').value=l.teil;$('#pt-ek').value=fmtIn(l.ekCt);$('#pt-vk').value=fmtIn(l.vkCt)})};
 ACT['teil-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const bez=$('#pt-b').value.trim();if(!bez)return toast('Bezeichnung fehlt',true);
  const lid=$('#pt-l').value||null,menge=Math.max(1,parseInt($('#pt-m').value)||1);
- const ext=$('#pt-ext').classList.contains('done');
+ const ext=ordFreigegeben(a);
  const vorher=ordNetto(a);
  const x={id:'x'+uid(),typ:'teil',bez,aw:0,menge,ekCt:parseEuro($('#pt-ek').value),vkCt:parseEuro($('#pt-vk').value),
   best:lid?'lager':null,eta:null,lagerId:lid,ext};
@@ -1596,6 +1726,13 @@ ACT['teil-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id==
  save();closeSheet();render();toast('Teil hinzugefügt')};
 ACT['pos-edit']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const x=pk.pos.find(p=>p.id===el.dataset.xid);
+ if(x&&x.typ==='befund'){
+  sheet('Befund & Abhilfe bearbeiten',`
+   <div class="fld"><label>Befund *</label><textarea id="bf-b" rows="3">${esc(x.bez)}</textarea></div>
+   <div class="fld"><label>Abhilfe</label><textarea id="bf-a" rows="2">${esc(x.abhilfe||'')}</textarea></div>
+   <div class="row2"><button class="btn btn-danger" data-act="pos-del" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Löschen</button>
+   <button class="btn btn-main" data-act="befund-upd" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Speichern</button></div>`);
+  return}
  if(x&&x.typ==='text'){
   sheet('Textposition bearbeiten',`<div class="fld"><label>Text *</label><textarea id="tx-t" rows="3">${esc(x.bez)}</textarea></div>
    <div class="row2"><button class="btn btn-danger" data-act="pos-del" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Löschen</button>
@@ -1605,20 +1742,47 @@ ACT['pos-edit']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
 ACT['pos-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const bez=$('#ps-b').value.trim();if(!bez)return toast('Bezeichnung fehlt',true);
  let x=el.dataset.xid?pk.pos.find(p=>p.id===el.dataset.xid):null;
- const vorher=ordNetto(a);const wasExt=x?x.ext:false;
+ const isNew=!x;
+ const vorher=ordNetto(a);
+ const isArbeit=(x?x.typ:el.dataset.typ)==='arbeit';
  const rw=$('#ps-rw').value.trim();
  const rab=rw?{typ:$('#ps-rp').classList.contains('on')?'pct':'eur',
   wert:$('#ps-rp').classList.contains('on')?parseFloat(rw.replace(',','.'))||0:parseEuro(rw)}:null;
- const vals={bez,vkCt:parseEuro($('#ps-vk').value),ekCt:parseEuro($('#ps-ek').value),
+ const vals={bez,vkCt:parseEuro($('#ps-vk').value),
+  ekCt:isArbeit?0:parseEuro($('#ps-ek')?$('#ps-ek').value:'0'),
   aw:$('#ps-aw')?parseFloat(($('#ps-aw').value||'0').replace(',','.'))||0:(x?x.aw:0),
+  awSatz:$('#ps-aws')?(parseEuro($('#ps-aws').value)||null):(x?x.awSatz:null),
   menge:$('#ps-m')?Math.max(1,parseInt($('#ps-m').value)||1):(x?x.menge||1:1),
-  rab,ext:$('#ps-ext').classList.contains('done'),
+  rab,
   best:$('#ps-best')?($('#ps-best').value||null):(x?x.best:null),
   eta:$('#ps-eta')?($('#ps-eta').value||null):(x?x.eta:null)};
+ /* Nach Freigabe: jede NEUE Position ist automatisch eine Erweiterung */
+ vals.ext=x?x.ext:ordFreigegeben(a);
  if(x)Object.assign(x,vals);
  else{x={id:'x'+uid(),typ:el.dataset.typ,lagerId:null,...vals};pk.pos.push(x)}
- if(vals.ext&&!wasExt)logExtension(a,pk,x,vorher);
- save();closeSheet();render();toast('Gespeichert')};
+ if(isNew&&vals.ext)logExtension(a,pk,x,vorher);
+ if(isArbeit&&vals.aw>0)apLearn(bez,vals.aw);
+ save();closeSheet();render();toast(isNew&&vals.ext?'Erweiterung hinzugefügt und protokolliert':'Gespeichert')};
+/* Befund & Abhilfe */
+ACT['add-befund']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
+ sheet('Befund & Abhilfe',`
+  <div class="fld"><label>Befund — was wurde festgestellt? *</label><textarea id="bf-b" rows="3" placeholder="z. B. Bremsscheiben VA unter Verschleißgrenze, Beläge verglast"></textarea></div>
+  <div class="fld"><label>Abhilfe — was wird / wurde gemacht?</label><textarea id="bf-a" rows="2" placeholder="z. B. Scheiben und Beläge VA erneuert"></textarea></div>
+  <button class="btn btn-main" style="width:100%" data-act="befund-save" data-oid="${a.id}" data-pid="${pk.id}">Hinzufügen</button>`);
+ setTimeout(()=>$('#bf-b').focus(),150)};
+ACT['befund-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
+ const b=$('#bf-b').value.trim();if(!b)return toast('Befund fehlt',true);
+ pk.pos.push({id:'x'+uid(),typ:'befund',bez:b,abhilfe:$('#bf-a').value.trim(),vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null});
+ save();closeSheet();render();toast('Befund dokumentiert')};
+ACT['befund-upd']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
+ const x=pk.pos.find(p=>p.id===el.dataset.xid);const b=$('#bf-b').value.trim();
+ if(!b)return toast('Befund fehlt',true);x.bez=b;x.abhilfe=$('#bf-a').value.trim();save();closeSheet();render();toast('Gespeichert')};
+/* Kombi-Vorschlag: passende Zusatzarbeit mit einem Tipp übernehmen */
+ACT['add-kombi']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
+ posSheet(a,pk,null,el.dataset.bez);
+ setTimeout(()=>{const bez=$('#ps-b'),aw=$('#ps-aw');
+  const hit=(S.apDb||[]).find(e=>e.bez.toLowerCase()===el.dataset.bez.toLowerCase());
+  if(hit&&aw){aw.value=String(hit.aw).replace('.',',');aw.dispatchEvent(new Event('input'))}},120)};
 ACT['pos-del']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),x=pk.pos.find(p=>p.id===el.dataset.xid);
  confirmBox('Position löschen?','„'+esc(x.bez)+'" wird entfernt.'+(x.lagerId&&x.best==='lager'?' Der Lagerbestand wird zurückgebucht.':''),'Löschen',()=>{
   if(x.lagerId&&x.best==='lager'){const l=lagerT(x.lagerId);if(l)l.bestand+=(x.menge||1)}
@@ -1669,7 +1833,9 @@ let photoTarget=null;
 ACT['add-foto-btn']=el=>{photoTarget={oid:el.dataset.oid,pid:el.dataset.pid||null};$('#photoinp').click()};
 function handlePhotos(files){const t=photoTarget;if(!t)return;const a=auftrag(t.oid);if(!a)return;
  const pk=t.pid?a.pakete.find(p=>p.id===t.pid):null;
- [...files].forEach(file=>{const r=new FileReader();r.onload=()=>{
+ [...files].forEach(file=>{
+  if(file.type.startsWith('video/')&&file.size>12*1024*1024)return toast('Video zu groß (max. 12 MB) — bitte kürzer aufnehmen',true);
+  const r=new FileReader();r.onload=()=>{
   if(file.type.startsWith('video/')){
    a.fotos.push({id:'fo'+uid(),paketId:t.pid,label:pk?pk.name:'Annahme',data:r.result,isVideo:true});
    save();render();toast('Video gespeichert');return}
@@ -1726,7 +1892,10 @@ ACT['sig-clear']=el=>{const sk=el.dataset.sk||'sig';const cvId=sk==='sig'?'sig-'
 ACT['sig-save']=el=>{const sk=el.dataset.sk||'sig';const cvId=sk==='sig'?'sig-'+el.dataset.oid:'sig2-'+el.dataset.oid;
  const cv=$('#'+cvId);if(!cv||!cv._drawn)return toast('Bitte erst unterschreiben',true);
  const a=auftrag(el.dataset.oid);a[sk]=cv.toDataURL('image/png');
- if(sk==='sig'){const anf=S.anfragen&&S.anfragen.find(q=>q.auftragId===a.id);if(anf&&anf.status!=='gewonnen'){anf.status='gewonnen';save();toast('Unterschrift gespeichert — Anfrage als gewonnen markiert')}else{save();toast('Unterschrift gespeichert')}}
+ if(sk==='sig'){
+  if(!a.freigabe)a.freigabe={ts:Date.now(),art:'sig',notiz:'Unterschrift Auftragserteilung',origUrl:''};
+  a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Auftragserteilung unterschrieben — Summe: '+fmt(ordNetto(a))+' netto.',preisCt:ordNetto(a),vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
+  const anf=S.anfragen&&S.anfragen.find(q=>q.auftragId===a.id);if(anf&&anf.status!=='gewonnen'){anf.status='gewonnen';save();toast('Unterschrift gespeichert — Anfrage als gewonnen markiert')}else{save();toast('Unterschrift gespeichert')}}
  else{save();toast('Unterschrift gespeichert')}render()};
 ACT['sig-redo']=el=>{const sk=el.dataset.sk||'sig';auftrag(el.dataset.oid)[sk]=null;save();render()};
 ACT['kansicht']=el=>{const a=auftrag(el.dataset.oid),f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{},fi=S.settings.firma;
@@ -1772,7 +1941,9 @@ function buildInvoiceHtml(a,pakIds,reNr){
  const rows=paks.map(pk=>{
   const prab=rabCt(pakBrutto(pk),pk.rabatt);
   return `<tr class="paksep"><td colspan="4">${esc(pk.name)} · ${KLASS[pk.klass][0]}${pk.zahler!=='kunde'?' · zahlt: '+ZAHLER[pk.zahler]:''}</td></tr>`+
-  pk.pos.map(p=>`<tr><td>${esc(p.bez)}${p.ext?' (Erweiterung)':''}</td>
+  pk.pos.map(p=>(p.typ==='text'||p.typ==='befund')?
+   `<tr><td colspan="4" style="font-size:10px;color:#444">${esc(p.bez)}${p.abhilfe?' — Abhilfe: '+esc(p.abhilfe):''}</td></tr>`
+  :`<tr><td>${esc(p.bez)}${p.ext?' (Erweiterung)':''}</td>
    <td class="tr">${p.typ==='teil'?(p.menge||1)+' ×':(p.aw?String(p.aw).replace('.',',')+' AW':'')}</td>
    <td class="tr">${fmt(p.vkCt)}</td><td class="tr">${fmt(posNetto(p))}</td></tr>`).join('')+
   (prab?`<tr><td colspan="3">Rabatt Paket</td><td class="tr">– ${fmt(prab)}</td></tr>`:'')}).join('');
@@ -1809,6 +1980,7 @@ function doBill(a,pakIds){
   const inv=buildInvoiceHtml(a,pakIds,reNr);
   const gewinn=paks.reduce((s,pk)=>s+pakGewinn(pk),0);
   S.rechnungen.push({id:'r'+uid(),nr:reNr,auftragId:a.id,datum:todayISO(),nettoCt:inv.netto,mwstCt:inv.mwst,bruttoCt:inv.brutto,gewinnCt:gewinn,paketIds:pakIds});
+  a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Rechnung '+reNr+' erstellt — '+fmt(inv.brutto)+' brutto.',preisCt:inv.brutto,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
   paks.forEach(p=>{p.abger=true;if(p.status!=='fertig')p.status='fertig'});
   if(inv.anz)a.anzVerr=true;
   if(a.pakete.every(p=>p.abger)&&a.status!=='abgeholt')a.status='fertig';
@@ -1857,6 +2029,7 @@ function vKunde(id){
  const inner=`<div class="stag">
   <div class="card" style="padding:15px">
    ${k.firma&&k.firma!==k.name?`<div class="kv"><span class="k">Firma</span><span class="v">${esc(k.firma)}</span></div>`:''}
+   ${k.ansprechpartner?`<div class="kv"><span class="k">Ansprechpartner</span><span class="v">${esc(k.ansprechpartner)}</span></div>`:''}
    <div class="kv"><span class="k">Telefon</span><span class="v num">${esc(k.tel||'—')}</span></div>
    <div class="kv"><span class="k">WhatsApp</span><span class="v">${k.wa?'<span class="tag t-green">verknüpft</span>':'<span class="tag t-gray">nein</span>'}</span></div>
    <div class="kv"><span class="k">E-Mail</span><span class="v">${esc(k.email||'—')}</span></div>
@@ -1887,6 +2060,7 @@ ACT['kunde-edit']=el=>{kunNorm();const k=el.dataset.id?kunde(el.dataset.id):null
   <div class="row2"><div class="fld"><label>Vorname</label><input id="ku-vn" value="${k?esc(k.vorname||''):''}" placeholder="Max" autocomplete="off"></div>
    <div class="fld"><label>Nachname *</label><input id="ku-nn" value="${k?esc(k.nachname||''):''}" placeholder="Mustermann" autocomplete="off"></div></div>
   <div class="fld"><label>Firma (optional)</label><input id="ku-fa" value="${k?esc(k.firma||''):''}" placeholder="z. B. Autohaus Schmidt GmbH"></div>
+  <div class="fld"><label>Ansprechpartner (bei Firma)</label><input id="ku-ap" value="${k?esc(k.ansprechpartner||''):''}" placeholder="Vor- und Nachname"></div>
   <div class="lbl">Kontakt</div>
   <div class="row2"><div class="fld"><label>Telefon</label><input id="ku-t" inputmode="tel" value="${k?esc(k.tel):''}" placeholder="+49 170 1234567"></div>
    <div class="fld"><label>E-Mail</label><input id="ku-e" inputmode="email" value="${k?esc(k.email):''}" placeholder="name@mail.de"></div></div>
@@ -1906,7 +2080,7 @@ ACT['kunde-save']=el=>{
  const vn=$('#ku-vn').value.trim(),nn=$('#ku-nn').value.trim(),fa=$('#ku-fa').value.trim();
  if(!nn&&!vn&&!fa)return toast('Nachname oder Firma eintragen',true);
  const str=$('#ku-str').value.trim(),plz=$('#ku-plz').value.trim(),ort=$('#ku-ort').value.trim();
- const vals={vorname:vn,nachname:nn,firma:fa,name:kunName(vn,nn,fa),
+ const vals={vorname:vn,nachname:nn,firma:fa,ansprechpartner:$('#ku-ap').value.trim(),name:kunName(vn,nn,fa),
   tel:$('#ku-t').value.trim(),email:$('#ku-e').value.trim(),
   strasse:str,plz:plz,ort:ort,adresse:kunAdresse(str,plz,ort),
   moral:$('#ku-m').value,stamm:$('#ku-s').checked,wa:$('#ku-w').checked,notiz:$('#ku-no').value.trim()};
@@ -1941,6 +2115,8 @@ function vFahrzeug(id){
    <div class="kv"><span class="k">VIN</span><span class="v num" style="font-family:ui-monospace,monospace;font-size:11px">${esc(f.vin||'—')}</span></div>
    <div class="kv"><span class="k">Kilometerstand</span><span class="v num">${f.km!=null?f.km.toLocaleString('de-DE')+' km':'—'}</span></div>
    <div class="kv"><span class="k">HU fällig</span><span class="v">${f.hu?f.hu.split('-').reverse().join('/'):'—'}</span></div>
+   ${f.kraftstoff?`<div class="kv"><span class="k">Kraftstoff</span><span class="v">${esc(f.kraftstoff)}</span></div>`:''}
+   ${f.farbe?`<div class="kv"><span class="k">Farbe</span><span class="v">${esc(f.farbe)}</span></div>`:''}
    ${f.zustand?`<div class="kv"><span class="k">Fahrzeugzustand</span><span class="v">${f.zustand==='son'?esc(f.zustandTxt||'Sonstiges'):{gut:'Gut',rep:'Reparaturbedürftig',totalschaden:'Totalschaden'}[f.zustand]||esc(f.zustand)}</span></div>`:''}
    ${f.notiz?`<div class="kv"><span class="k">Notiz</span><span class="v">${esc(f.notiz)}</span></div>`:''}</div>
   <div class="card"><div class="sec-h" style="cursor:default"><span class="t">Historie</span><span class="mini">${ords.length} Aufträge</span></div>
@@ -1959,8 +2135,8 @@ ACT['fzg-edit']=el=>{const f=el.dataset.id?fzg(el.dataset.id):null;
  const preK=f?kunde(f.kundeId):null;
  sheet(f?'Fahrzeug bearbeiten':'Neues Fahrzeug',`
   <button class="btn btn-2nd" style="width:100%;margin-bottom:13px" data-act="schein-scan">
-   <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Fahrzeugschein fotografieren — Daten automatisch übernehmen</button>
-  <input type="file" accept="image/*" capture="environment" id="scheininp" style="display:none">
+   <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Fahrzeugschein scannen (Kamera oder Galerie)</button>
+  <input type="file" accept="image/*" id="scheininp" style="display:none">
   <div id="schein-status"></div>
   <div class="lbl" style="margin-top:0">Halter *</div>
   ${S.kunden.length?kPickerHtml('fzk',preK):'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Noch keine Kunden vorhanden — bitte zuerst unter Kunden anlegen.</div>'}
@@ -1972,6 +2148,8 @@ ACT['fzg-edit']=el=>{const f=el.dataset.id?fzg(el.dataset.id):null;
   <div class="fld"><label>VIN</label><input id="fz-v" value="${f?esc(f.vin):''}"></div>
   <div class="row2"><div class="fld"><label>Kilometerstand</label><input id="fz-km" inputmode="numeric" value="${f&&f.km!=null?f.km:''}"></div>
    <div class="fld"><label>HU fällig</label><input type="month" id="fz-hu" value="${f?f.hu:''}"></div></div>
+  <div class="row2"><div class="fld"><label>Kraftstoff</label><div class="selwrap"><select id="fz-kr"><option value="">—</option>${['Benzin','Diesel','Hybrid','Elektro','LPG/CNG'].map(v=>`<option ${f&&f.kraftstoff===v?'selected':''}>${v}</option>`).join('')}</select></div></div>
+   <div class="fld"><label>Farbe</label><input id="fz-fa" value="${f?esc(f.farbe||''):''}" placeholder="z. B. Alpinweiß"></div></div>
   <div class="fld"><label>Fahrzeugzustand</label><div class="selwrap"><select id="fz-zustand" onchange="document.getElementById('fz-ztxt-wrap').style.display=this.value==='son'?'block':'none'">
    <option value="">—</option>
    <option value="gut" ${f&&f.zustand==='gut'?'selected':''}>Gut</option>
@@ -1988,6 +2166,7 @@ ACT['fzg-save']=el=>{const kz=$('#fz-kz').value.trim().toUpperCase();if(!kz)retu
  const zst=$('#fz-zustand').value;
  const vals={kundeId:halter.id,kennz:kz,marke:$('#fz-ma').value.trim(),modell:$('#fz-mo').value.trim(),
   bj:parseInt($('#fz-bj').value)||null,vin:$('#fz-v').value.trim(),km:parseInt($('#fz-km').value.replace(/\D/g,''))||null,hu:$('#fz-hu').value||'',
+  kraftstoff:$('#fz-kr').value||'',farbe:$('#fz-fa').value.trim(),
   zustand:zst,zustandTxt:zst==='son'?($('#fz-ztxt').value.trim()):''};
  if(el.dataset.id)Object.assign(fzg(el.dataset.id),vals);
  else S.fahrzeuge.push({id:'f'+uid(),notiz:'',...vals});
@@ -2020,13 +2199,19 @@ ACT['schein-scan']=el=>{
     if(inp.dataset.mode==='ord'){
      setV('#no-fk',(fl.kennzeichen||'').toUpperCase());
      setV('#no-fma',fl.marke||'');setV('#no-fmo',fl.modell||'');
-     setV('#no-fvin',fl.vin||'');setV('#no-fhu',(fl.hu_datum||'').slice(0,7));
+     setV('#no-fvin',fl.vin||'');
+     setV('#no-fbj',fl.baujahr||(fl.erstzulassung||'').slice(0,4));
+     setV('#no-fhu',(fl.hu_datum||'').slice(0,7));
+     setV('#no-ffa',fl.farbe||'');
+     const kr=$('#no-fkr');if(kr&&fl.kraftstoff&&!kr.value){const opt=[...kr.options].find(o=>o.value.toLowerCase().startsWith(String(fl.kraftstoff).toLowerCase().slice(0,4)));if(opt)kr.value=opt.value}
+     const det=$('#no-newf .sec');if(det&&(fl.vin||fl.baujahr||fl.hu_datum))det.classList.add('open');
     }else{
      setV('#fz-kz',(fl.kennzeichen||'').toUpperCase());
      setV('#fz-ma',fl.marke||'');setV('#fz-mo',fl.modell||'');
      setV('#fz-v',fl.vin||'');
      setV('#fz-bj',fl.baujahr||(fl.erstzulassung||'').slice(0,4));
      setV('#fz-hu',(fl.hu_datum||'').slice(0,7));
+     setV('#fz-kr',fl.kraftstoff||'');setV('#fz-fa',fl.farbe||'');
     }
     const got=['kennzeichen','marke','modell','vin','baujahr','hu_datum'].filter(k=>fl[k]).length;
     if(st)st.innerHTML=got?`<div style="font-size:11.5px;color:var(--green);background:var(--green-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">${got} Felder erkannt und eingetragen — bitte kurz prüfen.</div>`
@@ -2743,9 +2928,11 @@ ACT['anfrage-convert']=el=>{const v=readQSheet();
  const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:k.id,fzgId:null,
   status:'offen',annahme:todayISO(),abgabe:addDays(todayISO(),2),abgabeZeit:'',kmAn:null,kmAb:null,tank:'50',
   anzahlungCt:0,rabatt:{typ:'eur',wert:0},buehne:null,
-  pakete:[{id:'p'+uid(),name:x.betreff||((x.original||'Anfrage').slice(0,40)),klass:'kw',zahler:'kunde',
-   status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,pos:[]}],
-  komm:[{id:'m'+uid(),kanal:kMap[v.kanal]||'man',ts:x.ts,
+  pakete:[{id:'p'+uid(),name:x.betreff||((x.original||'Anfrage').slice(0,40)),klass:'tb',zahler:'kunde',
+   status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,
+   pos:x.original?[{id:'x'+uid(),typ:'befund',bez:'Kundenbeanstandung (wörtlich): „'+x.original+'"',abhilfe:'',vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null}]:[]}],
+  komm:[{id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Auftrag angelegt aus Kundenanfrage.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null},
+   {id:'m'+uid(),kanal:kMap[v.kanal]||'man',ts:x.ts,
    txt:'Erstanfrage ('+(QKANAL[v.kanal]||'')+'), Original wortgetreu: „'+(x.original||'—')+'"',
    preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'man',orig:x.origUrl||null}],
   fotos:[],check:[],docs:[],zeiten:[],timerStart:null,notiz:x.notiz||'',erinnerung:'',erinnerungDat:null,
@@ -2766,9 +2953,11 @@ ACT['anfr-convert-quick']=el=>{const x=anfrage(el.dataset.id);if(!x)return;
  const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:k.id,fzgId:null,
   status:'offen',annahme:todayISO(),abgabe:addDays(todayISO(),2),abgabeZeit:'',kmAn:null,kmAb:null,tank:'50',
   anzahlungCt:0,rabatt:{typ:'eur',wert:0},buehne:null,
-  pakete:[{id:'p'+uid(),name:x.betreff||((x.original||'Anfrage').slice(0,40)),klass:'kw',zahler:'kunde',
-   status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,pos:[]}],
-  komm:[{id:'m'+uid(),kanal:kMap[x.kanal]||'man',ts:x.ts,
+  pakete:[{id:'p'+uid(),name:x.betreff||((x.original||'Anfrage').slice(0,40)),klass:'tb',zahler:'kunde',
+   status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,
+   pos:x.original?[{id:'x'+uid(),typ:'befund',bez:'Kundenbeanstandung (wörtlich): „'+x.original+'"',abhilfe:'',vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null}]:[]}],
+  komm:[{id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Auftrag angelegt aus Kundenanfrage.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null},
+   {id:'m'+uid(),kanal:kMap[x.kanal]||'man',ts:x.ts,
    txt:'Erstanfrage ('+(QKANAL[x.kanal]||'')+'), Original: „'+(x.original||'—')+'"',
    preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'man',orig:x.origUrl||null}],
   fotos:[],check:[],docs:[],zeiten:[],timerStart:null,notiz:x.notiz||'',erinnerung:'',erinnerungDat:null,
