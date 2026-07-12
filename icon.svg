@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+ <rect width="512" height="512" rx="112" fill="#0A5FFF"/>
+ <g fill="none" stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Car body -->
+  <rect x="80" y="230" width="352" height="120" rx="28" fill="#fff" stroke="none"/>
+  <!-- Cabin -->
+  <path d="M160 230 L200 160 L312 160 L352 230" fill="rgba(255,255,255,0.2)" stroke="#fff" stroke-width="14"/>
+  <!-- Wheels -->
+  <circle cx="170" cy="356" r="46" fill="#0A5FFF" stroke="#fff" stroke-width="18"/>
+  <circle cx="170" cy="356" r="16" fill="#fff"/>
+  <circle cx="342" cy="356" r="46" fill="#0A5FFF" stroke="#fff" stroke-width="18"/>
+  <circle cx="342" cy="356" r="16" fill="#fff"/>
+  <!-- Wrench -->
+  <path d="M310 120 L380 190 M310 120 C310 100 330 80 350 90 L330 110 L340 120 L360 100 C370 120 350 140 330 140 Z" stroke="none" fill="rgba(255,255,255,0.3)"/>
+ </g>
+</svg>
