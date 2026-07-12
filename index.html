@@ -6,8 +6,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="mehanicar">
-<meta name="theme-color" content="#F5F5F7">
+<meta name="theme-color" content="#F2F2F7">
 <title>mehanicar</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
 <style>
 /* ============ DESIGN TOKENS ============ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -783,7 +786,7 @@ function nav(v,id){
  navSlideDir=(fi>=0&&ti>=0&&fi!==ti)?(ti>fi?1:-1):0;
  route={v,id,_from:prev};window.scrollTo(0,0);render()
 }
-const NAVITEMS=[['planung','Planung',IC.plan],['auftraege','Aufträge',IC.order],['kunden','Kunden',IC.people],['kalender','Kalender',IC.grid],['anfragen','Anfragen',IC.inbox],['mehr','Mehr',IC.more]];
+const NAVITEMS=[['planung','Planung',IC.plan],['auftraege','Aufträge',IC.order],['kunden','Kunden',IC.people],['termine','Termine',IC.plan],['anfragen','Anfragen',IC.inbox],['mehr','Mehr',IC.more]];
 function shell(inner,{title,eyebrow,back,side='',hideNav=false,bar='',ctx=''}={}){
  return `
  <div class="hdr${ctx?' ctx-'+ctx:''}"><div class="hdr-row">
@@ -792,7 +795,7 @@ function shell(inner,{title,eyebrow,back,side='',hideNav=false,bar='',ctx=''}={}
   <div class="hdr-side">${side}</div>
  </div>${bar}</div>
  <div class="main" id="main">${inner}</div>
- ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>{const isOn=route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen','termine','buchen'].includes(route.v));const badge=v==='anfragen'&&(S.anfragen||[]).filter(q=>q.status==='neu').length>0?'<i class="nav-badge"></i>':'';return`<button data-act="nav" data-v="${v}" class="${isOn?'on':''}" style="position:relative"><span class="nic">${ic}</span>${l}${badge}</button>`}).join('')}</div>`}`;
+ ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>{const isOn=route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen','kalender','buchen'].includes(route.v));const badge=v==='anfragen'&&(S.anfragen||[]).filter(q=>q.status==='neu').length>0?'<i class="nav-badge"></i>':'';return`<button data-act="nav" data-v="${v}" class="${isOn?'on':''}" style="position:relative"><span class="nic">${ic}</span>${l}${badge}</button>`}).join('')}</div>`}`;
 }
 function toast(msg,err){const old=$('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast'+(err?' err':'');t.textContent=msg;
  document.body.appendChild(t);setTimeout(()=>{t.style.transition='opacity .3s';t.style.opacity='0';setTimeout(()=>t.remove(),320)},2200)}
@@ -1619,7 +1622,7 @@ function buildInvoiceHtml(a,pakIds,reNr){
    <div class="big"><span>Brutto</span><span>${fmt(brutto)}</span></div>
    ${anz?`<div><span>abzgl. Anzahlung</span><span>– ${fmt(anz)}</span></div><div class="big"><span>Zu zahlen</span><span>${fmt(brutto-anz)}</span></div>`:''}
   </div>
-  <div class="foot">12 Monate Garantie auf alle Arbeiten. ${reNr?'Zahlbar innerhalb von 14 Tagen ohne Abzug.':'Unverbindliche Übersicht — keine Rechnung.'}
+  <div class="foot">${S.settings.garantieMonate>0?S.settings.garantieMonate+' Monate Garantie auf alle Arbeiten. ':''}${reNr?'Zahlbar innerhalb von '+(S.settings.mahnTage||14)+' Tagen ohne Abzug.':'Unverbindliche Übersicht — keine Rechnung.'}
    ${fi.iban?'<br>IBAN: '+esc(fi.iban):''}${fi.web?' · '+esc(fi.web):''}</div>`};
 }
 ACT['print-kv']=el=>{const a=auftrag(el.dataset.oid);
@@ -2021,7 +2024,11 @@ FSET['set-garantie']=el=>{S.settings.garantieMonate=Math.max(0,parseInt(el.value
 FSET['set-startseite']=el=>{S.settings.startseite=el.value;save()};
 FSET['set-re-fuss']=el=>{S.settings.reFuss=el.value.trim();save()};
 FSET['set-mahn-tage']=el=>{S.settings.mahnTage=Math.max(1,parseInt(el.value)||14);save()};
-FSET['set-push-anfr']=el=>{S.settings.pushAnfragen=el.checked;save()};
+FSET['set-push-anfr']=el=>{
+ if(el.checked&&'Notification' in window&&Notification.permission==='default'){
+  Notification.requestPermission().then(p=>{S.settings.pushAnfragen=p==='granted';save();render();
+   if(p!=='granted')toast('Benachrichtigungen wurden nicht erlaubt',true)});
+ }else{S.settings.pushAnfragen=el.checked&&Notification.permission==='granted';save()}};
 FSET['set-auto-prio']=el=>{S.settings.autoPrio=el.checked;save()};
 FSET['watpl-l']=el=>{if(!S.settings.waTemplates)S.settings.waTemplates=[...watplDflt()];S.settings.waTemplates[+el.dataset.i].l=el.value.trim();save()};
 FSET['watpl-m']=el=>{if(!S.settings.waTemplates)S.settings.waTemplates=[...watplDflt()];S.settings.waTemplates[+el.dataset.i].m=el.value;save()};
@@ -2034,9 +2041,9 @@ ACT['data-export']=()=>{const blob=new Blob([JSON.stringify(S,null,1)],{type:'ap
 ACT['data-import']=()=>$('#importinp').click();
 ACT['demo-reset']=()=>confirmBox('Demo-Daten laden?','Aktuelle Daten werden durch die Beispieldaten ersetzt.','Neu laden',()=>{
  S=seed();save();render();toast('Demo-Daten geladen')});
-ACT['data-wipe']=()=>confirmBox('Wirklich alles löschen?','Alle Kunden, Fahrzeuge, Aufträge und Rechnungen werden entfernt. Das kann nicht rückgängig gemacht werden.','Alles löschen',()=>{
- S={version:2,demo:false,settings:S.settings,kunden:[],fahrzeuge:[],lager:[],auftraege:[],rechnungen:[]};
- S.settings.nextAu=1;S.settings.nextRe=1;save();render();toast('Alle Daten gelöscht')});
+ACT['data-wipe']=()=>confirmBox('Wirklich alles löschen?','Alle Kunden, Fahrzeuge, Aufträge, Rechnungen und Anfragen werden entfernt. Das kann nicht rückgängig gemacht werden.','Alles löschen',()=>{
+ S={version:2,demo:false,settings:S.settings,kunden:[],fahrzeuge:[],lager:[],auftraege:[],rechnungen:[],anfragen:[],bestellungen:[],kampagnen:[],termine:[],mitarbeiter:[{id:'m1',name:S.settings.firma&&S.settings.firma.inhaber||'Inhaber',kuerzel:'IN',farbe:'#0A5FFF',aktiv:true}],krankmeldungen:[],urlaub:[],radarDone:{},meta:{changes:0,lastBackup:null}};
+ S.settings.nextAu=1;S.settings.nextRe=1;S.settings.nextBe=1;save();render();toast('Alle Daten gelöscht')});
 
 /* ============ 9. EXCEL-EXPORT (.xlsx, ohne Bibliotheken) ============ */
 const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c}return t})();
@@ -3102,6 +3109,8 @@ ACT['buchen-send']=()=>{
   prio:r.prio,grund:'Online-Terminanfrage: immer persönlich bestätigen.',kiQuelle:'web',
   antwort:r.antwort,wertCt:r.wertCt||25000,followUp:dat,auftragId:null,wonTs:null,fotos:[],antworten:[],kiSugg:[]});
  save();
+ if(S.settings.pushAnfragen&&'Notification'in window&&Notification.permission==='granted'){
+  new Notification('mehanicar — Neue Terminanfrage',{body:name+' · '+anl.slice(0,80),icon:'./icon.svg',tag:'anfrage-'+Date.now()})}
  const app=$('#app');if(app)app.innerHTML=`
   <div style="height:100%;display:grid;place-items:center;background:var(--bg);padding:20px;font-family:-apple-system,sans-serif;text-align:center">
    <div style="max-width:340px">
@@ -3174,7 +3183,7 @@ window.addEventListener('hashchange',()=>{const h=location.hash.replace('#/','')
 function viewHtml(v){
  const saved={v:route.v,id:route.id,_from:route._from,_keepScroll:route._keepScroll};
  route={v:v,id:null};
- const V={planung:vPlanung,auftraege:vAuftraege,kunden:vKunden,kalender:vKalender,anfragen:vAnfragen,mehr:vMehr};
+ const V={planung:vPlanung,auftraege:vAuftraege,kunden:vKunden,termine:vTermine,anfragen:vAnfragen,mehr:vMehr};
  let html='';try{html=(V[v]||vPlanung)()}catch(e){}
  route=saved;
  return html;
@@ -3286,10 +3295,18 @@ function selftest(){
  console.log(ok?'mehanicar Selbsttest: alle Kalkulationen korrekt':'mehanicar Selbsttest: FEHLER — siehe oben');
  return ok;
 }
+ACT['buehne-pick']=el=>{const a=auftrag(el.dataset.id);if(!a)return;
+ const n=S.settings.buehnen||3;
+ sheet('Bühne zuweisen',`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px">
+  ${Array.from({length:n},(_,i)=>`<button class="btn ${a.buehne===i+1?'btn-main':'btn-2nd'}" data-act="buehne-set" data-oid="${a.id}" data-b="${i+1}">Bühne ${i+1}</button>`).join('')}
+  <button class="btn btn-2nd" data-act="buehne-set" data-oid="${a.id}" data-b="0">Keine</button></div>`)};
+ACT['buehne-set']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;a.buehne=+el.dataset.b||null;save();closeSheet();render()};
+
 /* Init */
 load();
 applyTheme(S.settings.theme||'auto');
 selftest();
+if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
 try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
 setTimeout(syncStartup,400);
 if(memOnly)setTimeout(()=>toast('Achtung: Speichern blockiert — Daten gehen beim Schließen verloren',true),600);
