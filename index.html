@@ -795,7 +795,7 @@ function shell(inner,{title,eyebrow,back,side='',hideNav=false,bar='',ctx=''}={}
   <div class="hdr-side">${side}</div>
  </div>${bar}</div>
  <div class="main" id="main">${inner}</div>
- ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>{const isOn=route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen','kalender','buchen'].includes(route.v));const badge=v==='anfragen'&&(S.anfragen||[]).filter(q=>q.status==='neu').length>0?'<i class="nav-badge"></i>':'';return`<button data-act="nav" data-v="${v}" class="${isOn?'on':''}" style="position:relative"><span class="nic">${ic}</span>${l}${badge}</button>`}).join('')}</div>`}`;
+ ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>{const isOn=route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen','kalender','buchen','lager','bestellungen','kampagnen','team','personal','impressum','datenschutz'].includes(route.v));const badge=v==='anfragen'&&(S.anfragen||[]).filter(q=>q.status==='neu').length>0?'<i class="nav-badge"></i>':'';return`<button data-act="nav" data-v="${v}" class="${isOn?'on':''}" style="position:relative"><span class="nic">${ic}</span>${l}${badge}</button>`}).join('')}</div>`}`;
 }
 function toast(msg,err){const old=$('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast'+(err?' err':'');t.textContent=msg;
  document.body.appendChild(t);setTimeout(()=>{t.style.transition='opacity .3s';t.style.opacity='0';setTimeout(()=>t.remove(),320)},2200)}
@@ -1608,9 +1608,9 @@ function buildInvoiceHtml(a,pakIds,reNr){
    <td class="tr">${fmt(p.vkCt)}</td><td class="tr">${fmt(posNetto(p))}</td></tr>`).join('')+
   (prab?`<tr><td colspan="3">Rabatt Paket</td><td class="tr">– ${fmt(prab)}</td></tr>`:'')}).join('');
  return {netto,mwst,brutto,anz,html:`
-  <div class="ph"><div><h1>${esc(fi.name)}</h1><div class="small">${esc(fi.adresse)}<br>${esc(fi.tel)} · ${esc(fi.email)}${fi.ustid?'<br>USt-ID: '+esc(fi.ustid):''}</div></div>
+  <div class="ph"><div><h1>${esc(fi.name)}</h1><div class="small">${esc(fi.adresse)}<br>${esc(fi.tel)} · ${esc(fi.email)}${fi.ustid?'<br>USt-IdNr.: '+esc(fi.ustid):fi.steuernr?'<br>Steuernr.: '+esc(fi.steuernr):''}</div></div>
    <div class="small" style="text-align:right"><b style="font-size:14px;color:#111">${reNr?'Rechnung '+reNr:'Auftragsübersicht'}</b><br>
-    Datum: ${new Date().toLocaleDateString('de-DE')}<br>Auftrag: ${a.nr}<br>Fahrzeug: ${esc(f.kennz||'')} · ${esc((f.marke||'')+' '+(f.modell||''))}<br>
+    Rechnungsdatum: ${new Date().toLocaleDateString('de-DE')}<br>Leistungsdatum: ${new Date((a.abgabe||todayISO())+'T00:00').toLocaleDateString('de-DE')}<br>Auftrag: ${a.nr}<br>Fahrzeug: ${esc(f.kennz||'')} · ${esc((f.marke||'')+' '+(f.modell||''))}<br>
     ${a.kmAn!=null?'KM: '+a.kmAn.toLocaleString('de-DE'):''}</div></div>
   <div class="small" style="margin-bottom:4px">Kunde</div>
   <div><b>${esc(k.name||'')}</b><br><span class="small">${esc(k.adresse||'')}</span></div>
@@ -1972,7 +1972,7 @@ function vEinstellungen(){
    <div class="fld" style="margin-bottom:6px"><label>KI-Modell</label><input value="${esc((st.ki||{}).model||'claude-fable-5')}" data-f="set-ki-model"></div>
    <div style="font-size:10.5px;color:var(--ink3);line-height:1.55">Datei <b>api/analyse.js</b> ins GitHub-Repo — <b>ANTHROPIC_API_KEY</b> als Vercel-Env-Variable. Ohne Endpoint läuft die App regelbasiert weiter.</div></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Firma (für Rechnungen & Nachrichten)</div>
-   ${[['name','Name'],['inhaber','Inhaber / Meister'],['adresse','Adresse'],['tel','Telefon'],['email','E-Mail'],['iban','IBAN'],['ustid','USt-ID'],['web','Website'],['reviewUrl','Google-Bewertungslink']].map(([f,l])=>
+   ${[['name','Name'],['inhaber','Inhaber / Meister'],['adresse','Adresse'],['tel','Telefon'],['email','E-Mail'],['iban','IBAN'],['ustid','USt-ID'],['steuernr','Steuernummer (falls keine USt-ID)'],['web','Website'],['reviewUrl','Google-Bewertungslink']].map(([f,l])=>
     `<div class="fld"><label>${l}</label><input value="${esc(fi[f]||'')}" data-f="set-firma" data-k="${f}"></div>`).join('')}</div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Cloud-Backup — automatisch</div>
    <div class="kv"><span class="k">Status</span><span class="v" id="sync-status"></span></div>
@@ -2000,6 +2000,10 @@ create policy "backup_all" on backup for all using (true) with check (true);</te
    <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:11px;font-family:ui-monospace,monospace;word-break:break-all;color:var(--ink2);margin-bottom:10px">${esc(typeof location!=='undefined'?location.origin+location.pathname+'#/buchen':'https://deine-domain.de/#/buchen')}</div>
    <div class="row2"><button class="btn btn-2nd btn-sm" data-act="buchen-link-share">Link teilen</button>
     <button class="btn btn-main btn-sm" data-act="open" data-v="buchen">Vorschau öffnen</button></div></div>
+  <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Rechtliches</div>
+   <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;line-height:1.5">Impressum und Datenschutzerklärung werden automatisch aus deinen Firmendaten erzeugt und sind auf der öffentlichen Buchungsseite verlinkt${legalMissing().length?' — <b style="color:var(--amber)">bitte erst Firmendaten vervollständigen ('+legalMissing().join(', ')+')</b>':''}.</div>
+   <div class="row2"><button class="btn btn-2nd btn-sm" data-act="open" data-v="impressum">Impressum ansehen</button>
+    <button class="btn btn-2nd btn-sm" data-act="open" data-v="datenschutz">Datenschutz ansehen</button></div></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Daten</div>
    <button class="btn btn-main" style="width:100%" data-act="data-xlsx">Excel-Backup erstellen (.xlsx)</button>
    <div style="font-size:10.5px;color:var(--ink3);margin:6px 2px 10px;line-height:1.5">Lesbares Archiv: Aufträge, Positionen, Kunden, Fahrzeuge, Lager, Rechnungen, Kommunikation — je ein Tabellenblatt.</div>
@@ -3090,8 +3094,63 @@ function vBuchen(){
     <div style="font-size:11px;color:var(--ink3);background:rgba(194,113,10,.08);border:1px solid rgba(194,113,10,.25);border-radius:9px;padding:9px 11px;margin-bottom:13px;line-height:1.55">Hinweis: Terminwünsche werden persönlich von unserem Team geprüft und bestätigt. Sie erhalten Rückmeldung per Telefon oder WhatsApp.</div>
     <button class="btn btn-main" style="width:100%" data-act="buchen-send">Terminanfrage absenden</button>
    </div>
-   <div style="text-align:center;font-size:10px;color:var(--ink3);margin-top:14px;line-height:1.6">${fi.web?esc(fi.web)+' · ':''}Powered by mehanicar</div>
+   <div style="text-align:center;font-size:10px;color:var(--ink3);margin-top:14px;line-height:1.6">${fi.web?esc(fi.web)+' · ':''}Powered by mehanicar<br>
+    <button style="font-size:10px;color:var(--ink3);text-decoration:underline;padding:4px 6px" data-act="open" data-v="impressum">Impressum</button>·<button style="font-size:10px;color:var(--ink3);text-decoration:underline;padding:4px 6px" data-act="open" data-v="datenschutz">Datenschutz</button></div>
   </div></div>`;
+}
+/* ============ RECHTLICHES ============ */
+function legalMissing(){
+ const fi=S.settings.firma;
+ return['name','inhaber','adresse','tel','email'].filter(f=>!(fi[f]||'').trim());
+}
+function vImpressum(){
+ const fi=S.settings.firma;
+ const miss=legalMissing();
+ const inner=`<div class="stag">
+  ${miss.length?`<div class="warnrow">Unvollständig: Bitte in Einstellungen → Firma noch ausfüllen: ${miss.join(', ')}. Ein Impressum ist für die öffentliche Buchungsseite gesetzlich vorgeschrieben (§ 5 DDG).</div>`:''}
+  <div class="card" style="padding:16px">
+   <div class="lbl" style="margin-top:0">Angaben gemäß § 5 DDG</div>
+   <div style="font-size:13px;line-height:1.75">
+    <b>${esc(fi.name||'[Werkstattname]')}</b><br>
+    Inhaber: ${esc(fi.inhaber||'[Inhaber]')}<br>
+    ${esc(fi.adresse||'[Anschrift]').replace(/,\s*/,'<br>')}
+   </div>
+   <div class="lbl">Kontakt</div>
+   <div style="font-size:13px;line-height:1.75">
+    Telefon: ${esc(fi.tel||'[Telefon]')}<br>
+    E-Mail: ${esc(fi.email||'[E-Mail]')}
+    ${fi.web?'<br>Web: '+esc(fi.web):''}
+   </div>
+   ${fi.ustid?`<div class="lbl">Umsatzsteuer</div>
+   <div style="font-size:13px;line-height:1.75">Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG:<br>${esc(fi.ustid)}</div>`:''}
+   <div class="lbl">Verantwortlich für den Inhalt (§ 18 Abs. 2 MStV)</div>
+   <div style="font-size:13px;line-height:1.75">${esc(fi.inhaber||'[Inhaber]')}<br>${esc(fi.adresse||'[Anschrift]')}</div>
+   <div class="lbl">Handwerksbetrieb</div>
+   <div style="font-size:12.5px;line-height:1.7;color:var(--ink2)">Kfz-Techniker-Handwerk. Zuständige Kammer: Handwerkskammer am Betriebssitz. Es gelten die berufsrechtlichen Regelungen der Handwerksordnung (HwO), einsehbar unter gesetze-im-internet.de.</div>
+   <div class="lbl">Streitbeilegung</div>
+   <div style="font-size:12.5px;line-height:1.7;color:var(--ink2)">Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen (§ 36 VSBG).</div>
+  </div></div>`;
+ return shell(inner,{title:'Impressum',eyebrow:'Rechtliches',back:1,hideNav:route._from&&route._from.v==='buchen'});
+}
+function vDatenschutz(){
+ const fi=S.settings.firma;
+ const sync=S.settings.sync&&S.settings.sync.on;
+ const ki=(S.settings.ki||{}).endpoint;
+ const sec=(t,b)=>`<div class="lbl">${t}</div><div style="font-size:12.5px;line-height:1.7;color:var(--ink2)">${b}</div>`;
+ const inner=`<div class="stag">
+  <div class="card" style="padding:16px">
+   <div class="lbl" style="margin-top:0">Verantwortlicher</div>
+   <div style="font-size:13px;line-height:1.75"><b>${esc(fi.name||'[Werkstattname]')}</b>, ${esc(fi.inhaber||'[Inhaber]')}<br>${esc(fi.adresse||'[Anschrift]')}<br>${esc(fi.tel||'')} · ${esc(fi.email||'')}</div>
+   ${sec('1. Grundsatz: Lokale Datenhaltung','Diese Anwendung speichert alle Werkstattdaten (Kunden, Fahrzeuge, Aufträge, Rechnungen, Anfragen) ausschließlich lokal auf dem verwendeten Gerät (Browser-Speicher). Es findet keine automatische Übertragung an Dritte statt. Für die Richtigkeit und Sicherung der Daten ist der Betreiber der Werkstatt verantwortlich.')}
+   ${sec('2. Online-Terminanfrage','Wenn Sie über unser Buchungsformular eine Terminanfrage stellen, verarbeiten wir die von Ihnen angegebenen Daten (Name, Telefonnummer, ggf. Kennzeichen, Fahrzeug und Anliegen) ausschließlich zur Bearbeitung Ihrer Anfrage und Terminvereinbarung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertragsanbahnung). Die Daten werden gelöscht, sobald sie für diesen Zweck nicht mehr erforderlich sind und keine gesetzlichen Aufbewahrungspflichten (z. B. § 147 AO für Rechnungsdaten: 10 Jahre) entgegenstehen.')}
+   ${sec('3. Hosting','Die Anwendung wird bei Vercel Inc. (USA) gehostet. Beim Aufruf werden technisch notwendige Daten (IP-Adresse, Zeitpunkt, abgerufene Datei) in Server-Logs verarbeitet. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der sicheren Bereitstellung). Vercel ist nach dem EU-US Data Privacy Framework zertifiziert.')}
+   ${sync?sec('4. Cloud-Sicherung (aktiviert)','Der Betreiber nutzt eine automatische Datensicherung über Supabase. Dabei werden die Werkstattdaten verschlüsselt übertragen und in einer Datenbank gespeichert. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Datensicherung). Mit Supabase besteht ein Auftragsverarbeitungsverhältnis.'):sec('4. Cloud-Sicherung','Eine optionale Cloud-Sicherung (Supabase) ist derzeit nicht aktiviert. Alle Daten verbleiben lokal.')}
+   ${ki?sec('5. KI-gestützte Anfragen-Einschätzung','Zur Priorisierung von Kundenanfragen kann der Text einer Anfrage an die Anthropic-API (Claude) übermittelt werden. Übermittelt werden nur der Anfragetext, der Kanal und ggf. der Vorname — keine weiteren Kundendaten. Anthropic verwendet API-Daten nicht zum Training. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (effiziente Anfragenbearbeitung).'):''}
+   ${sec((ki?'6':'5')+'. Keine Cookies, kein Tracking','Diese Anwendung verwendet keine Cookies, keine Analyse-Tools und kein Tracking. Der lokale Browser-Speicher dient ausschließlich der Funktion der Anwendung.')}
+   ${sec((ki?'7':'6')+'. Ihre Rechte','Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21). Wenden Sie sich dazu an die oben genannten Kontaktdaten. Außerdem besteht ein Beschwerderecht bei der zuständigen Datenschutz-Aufsichtsbehörde Ihres Bundeslandes.')}
+   <div style="font-size:10.5px;color:var(--ink3);margin-top:14px">Stand: ${dLabel(todayISO())}</div>
+  </div></div>`;
+ return shell(inner,{title:'Datenschutz',eyebrow:'Rechtliches',back:1,hideNav:route._from&&route._from.v==='buchen'});
 }
 ACT['buchen-send']=()=>{
  const name=($('#bk-name').value||'').trim(),tel=($('#bk-tel').value||'').trim();
@@ -3145,7 +3204,7 @@ function render(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
  const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
-  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen};
+  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz};
  app.innerHTML=(V[route.v]||vPlanung)();
  if(navSlideDir!==0&&!skipNextSlide){
   app.classList.add(navSlideDir>0?'tsR':'tsL');
@@ -3311,7 +3370,7 @@ try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}ca
 setTimeout(syncStartup,400);
 if(memOnly)setTimeout(()=>toast('Achtung: Speichern blockiert — Daten gehen beim Schließen verloren',true),600);
 const h0=location.hash.replace('#/','').split('/');
-if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen'].includes(h0[0]))route={v:h0[0],id:h0[1]};
+if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen','impressum','datenschutz'].includes(h0[0]))route={v:h0[0],id:h0[1]};
 render();
 </script>
 </body>
