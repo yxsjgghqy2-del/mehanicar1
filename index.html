@@ -2295,7 +2295,9 @@ FSET['set-push-anfr']=el=>{
  if(el.checked&&'Notification' in window&&Notification.permission==='default'){
   Notification.requestPermission().then(p=>{S.settings.pushAnfragen=p==='granted';save();render();
    if(p!=='granted')toast('Benachrichtigungen wurden nicht erlaubt',true)});
- }else{S.settings.pushAnfragen=el.checked&&Notification.permission==='granted';save()}};
+ }else{S.settings.pushAnfragen=el.checked&&('Notification' in window)&&Notification.permission==='granted';
+  if(el.checked&&!('Notification' in window))toast('Push-Benachrichtigungen werden auf diesem Gerät nicht unterstützt (iOS: nur als installierte App ab iOS 16.4)',true);
+  save()}};
 FSET['set-auto-prio']=el=>{S.settings.autoPrio=el.checked;save()};
 FSET['watpl-l']=el=>{if(!S.settings.waTemplates)S.settings.waTemplates=[...watplDflt()];S.settings.waTemplates[+el.dataset.i].l=el.value.trim();save()};
 FSET['watpl-m']=el=>{if(!S.settings.waTemplates)S.settings.waTemplates=[...watplDflt()];S.settings.waTemplates[+el.dataset.i].m=el.value;save()};
@@ -3565,7 +3567,19 @@ ACT['datev-export']=()=>{
 
 
 /* ============ 8. RENDER, EVENTS, INIT ============ */
+function renderErrScreen(err){
+ const app=$('#app');if(!app)return;
+ app.innerHTML=`<div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:24px;background:#F2F2F7;font-family:-apple-system,sans-serif;text-align:center">
+  <div style="font-size:17px;font-weight:800;margin-bottom:8px;color:#16161A">Etwas ist schiefgelaufen</div>
+  <div style="font-size:12.5px;color:#6B6B73;line-height:1.6;margin-bottom:16px">Bitte mache einen Screenshot dieser Meldung und schicke ihn — damit lässt sich der Fehler gezielt beheben.</div>
+  <div style="font-size:10.5px;font-family:ui-monospace,monospace;color:#E0353B;background:#fff;border:1px solid rgba(224,53,59,.3);border-radius:10px;padding:11px;text-align:left;word-break:break-word;max-height:180px;overflow-y:auto">${String((err&&(err.stack||err.message))||err).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>
+  <button style="margin-top:16px;padding:11px;border-radius:10px;background:#0A5FFF;color:#fff;font-weight:700;font-size:13px" onclick="localStorage.removeItem('${KEY}');location.reload()">Zurücksetzen und neu laden</button>
+  </div>`;
+}
 function render(){
+ try{renderInner()}catch(err){console.error('RENDER-FEHLER:',err);renderErrScreen(err)}
+}
+function renderInner(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
  const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
@@ -3728,16 +3742,26 @@ ACT['buehne-pick']=el=>{const a=auftrag(el.dataset.id);if(!a)return;
 ACT['buehne-set']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;a.buehne=+el.dataset.b||null;save();closeSheet();render()};
 
 /* Init */
-load();
-applyTheme(S.settings.theme||'auto');
-selftest();
-try{if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{})}catch(e){}
-try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
-setTimeout(syncStartup,400);
-if(memOnly)setTimeout(()=>toast('Achtung: Speichern blockiert — Daten gehen beim Schließen verloren',true),600);
-const h0=location.hash.replace('#/','').split('/');
-if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen','impressum','datenschutz'].includes(h0[0]))route={v:h0[0],id:h0[1]};
-render();
+try{
+ load();
+ applyTheme(S.settings.theme||'auto');
+ selftest();
+ try{if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{})}catch(e){}
+ try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
+ setTimeout(syncStartup,400);
+ if(memOnly)setTimeout(()=>toast('Achtung: Speichern blockiert — Daten gehen beim Schließen verloren',true),600);
+ const h0=location.hash.replace('#/','').split('/');
+ if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen','impressum','datenschutz'].includes(h0[0]))route={v:h0[0],id:h0[1]};
+ render();
+}catch(err){
+ console.error('START-FEHLER:',err);
+ document.body.innerHTML='<div style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:24px;background:#F2F2F7;font-family:-apple-system,sans-serif;text-align:center">'
+  +'<div style="font-size:17px;font-weight:800;margin-bottom:8px;color:#16161A">App konnte nicht starten</div>'
+  +'<div style="font-size:12.5px;color:#6B6B73;line-height:1.6;margin-bottom:16px">Bitte Screenshot senden, damit der Fehler behoben werden kann.</div>'
+  +'<div style="font-size:10.5px;font-family:ui-monospace,monospace;color:#E0353B;background:#fff;border:1px solid rgba(224,53,59,.3);border-radius:10px;padding:11px;text-align:left;word-break:break-word">'
+  +String((err&&(err.stack||err.message))||err).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+'</div>'
+  +'<button style="margin-top:16px;padding:11px;border-radius:10px;background:#0A5FFF;color:#fff;font-weight:700;font-size:13px" onclick="try{localStorage.clear()}catch(e){};location.reload()">Zurücksetzen und neu laden</button></div>';
+}
 </script>
 </body>
 </html>
