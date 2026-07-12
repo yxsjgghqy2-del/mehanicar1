@@ -619,6 +619,10 @@ IC.grid='<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="3
 IC.truck='<svg viewBox="0 0 24 24"><path d="M1.5 6h12v10h-12z"/><path d="M13.5 9h4l3 3v4h-7z"/><circle cx="6" cy="18.5" r="1.8"/><circle cx="17" cy="18.5" r="1.8"/></svg>';
 IC.mega='<svg viewBox="0 0 24 24"><path d="M3 10v4l11 5V5L3 10z"/><path d="M17 8.5c2 .9 2 6.1 0 7"/><path d="M6.5 15v4a1.5 1.5 0 0 0 3 0v-2.6"/></svg>';
 IC.team='<svg viewBox="0 0 24 24"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.8-3.2 2.9-4.8 5.5-4.8s4.7 1.6 5.5 4.8"/><circle cx="17.5" cy="9.5" r="2.6"/><path d="M15.6 14.6c2.4.2 4.2 1.6 4.9 4.4"/></svg>';
+IC.book='<svg viewBox="0 0 24 24"><path d="M4 4.5A2 2 0 0 1 6 3h13v16H6a2 2 0 0 0-2 2z"/><path d="M6 3v16"/><path d="M8 8h8M8 11h6"/></svg>';
+IC.stack='<svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 17.5l9 5 9-5"/></svg>';
+IC.link='<svg viewBox="0 0 24 24"><path d="M10 14a4.5 4.5 0 0 0 6.4.3l2.5-2.5a4.5 4.5 0 0 0-6.4-6.4L11 6.9"/><path d="M14 10a4.5 4.5 0 0 0-6.4-.3L5.1 12.2a4.5 4.5 0 0 0 6.4 6.4L13 17.1"/></svg>';
+IC.chart='<svg viewBox="0 0 24 24"><path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/></svg>';
 
 /* ============ 2. STORE ============ */
 const KEY='mehanicar_v2';
@@ -777,9 +781,43 @@ return}}catch(e){memOnly=true}
 }
 /* Migration v3: Freigabe, Sonstiges-Status, AW-Satz je Auftrag, AP-Datenbank, Fahrzeug-Extras */
 const AP_SEED=[['Inspektion nach Herstellervorgabe',1.8],['Ölservice inkl. Filter',0.6],['Bremsscheiben + Beläge VA erneuern',1.5],['Bremsscheiben + Beläge HA erneuern',1.5],['Bremsflüssigkeit wechseln',0.7],['Räder umstecken / Reifenwechsel',0.5],['Komplettrad ab- und anmontieren',0.4],['Reifen auf Felge erneuern (pro Stück)',0.3],['Achsvermessung',1.0],['HU/AU-Vorbereitung + Vorführung',1.5],['Fehlerdiagnose auslesen',0.5],['Batterie erneuern + anlernen',0.4],['Zündkerzen erneuern',0.8],['Klimaservice',1.2],['Zahnriemensatz inkl. Wasserpumpe erneuern',3.5],['Kupplung + ZMS erneuern',5.5],['Steuerkette erneuern',6.0],['Stoßdämpfer VA erneuern (Paar)',1.8],['Querlenker erneuern (pro Seite)',1.2],['Auspuff-Endtopf erneuern',0.8]];
-const AP_KOMBI=[[/reifen|räder|komplettrad/i,'Komplettrad ab- und anmontieren'],[/reifen auf felge|neue reifen/i,'Achsvermessung'],[/bremsscheiben|bremsbeläge|bremsen/i,'Bremsflüssigkeit wechseln'],[/stoßdämpfer|querlenker|spurstange|achse/i,'Achsvermessung'],[/zahnriemen/i,'Kühlflüssigkeit erneuern'],[/kupplung/i,'Getriebeöl prüfen/auffüllen']];
+const AP_KOMBI_SEED=[
+ [['reifen','räder','komplettrad'],'Komplettrad ab- und anmontieren'],
+ [['reifen auf felge','neue reifen'],'Achsvermessung'],
+ [['bremsscheiben','bremsbeläge','bremsen'],'Bremsflüssigkeit wechseln'],
+ [['stoßdämpfer','querlenker','spurstange','achse'],'Achsvermessung'],
+ [['zahnriemen'],'Kühlflüssigkeit erneuern'],
+ [['kupplung'],'Getriebeöl prüfen/auffüllen']];
+function reEsc(s){return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')}
+const PAK_VORLAGEN_SEED=[
+ {id:'tpl1',name:'Große Inspektion',klass:'kw',pos:[
+  {bez:'Inspektion nach Herstellervorgabe',aw:1.8,typ:'arbeit'},
+  {bez:'Ölwechsel inkl. Filter',aw:0.6,typ:'arbeit'},
+  {bez:'Luftfilter erneuern',aw:0.2,typ:'arbeit'},
+  {bez:'Bremsflüssigkeit wechseln',aw:0.7,typ:'arbeit'},
+  {bez:'Motoröl 5W-30 (1 l)',menge:5,ekCt:750,vkCt:1650,typ:'teil'},
+  {bez:'Ölfilter',ekCt:900,vkCt:1900,typ:'teil'}]},
+ {id:'tpl2',name:'HU-Vorbereitung',klass:'kw',pos:[
+  {bez:'HU/AU-Vorbereitung + Vorführung',aw:1.5,typ:'arbeit'},
+  {bez:'HU/AU-Gebühren (Fremdleistung)',ekCt:14000,vkCt:16500,typ:'teil'}]},
+ {id:'tpl3',name:'Bremsen komplett VA',klass:'tb',pos:[
+  {bez:'Bremsscheiben + Beläge VA erneuern',aw:1.5,typ:'arbeit'},
+  {bez:'Bremsflüssigkeit wechseln',aw:0.7,typ:'arbeit'},
+  {bez:'Bremsscheiben (Paar)',ekCt:9800,vkCt:14500,typ:'teil'},
+  {bez:'Bremsbeläge Satz VA',ekCt:5200,vkCt:8900,typ:'teil'}]},
+ {id:'tpl4',name:'Zahnriemen + Wasserpumpe',klass:'tb',pos:[
+  {bez:'Zahnriemensatz inkl. Wasserpumpe erneuern',aw:3.5,typ:'arbeit'},
+  {bez:'Zahnriemen-Kit + Wasserpumpe',ekCt:11000,vkCt:20000,typ:'teil'},
+  {bez:'Kühlflüssigkeit erneuern',aw:0.4,typ:'arbeit'}]},
+ {id:'tpl5',name:'Reifenwechsel (4 Räder)',klass:'kw',pos:[
+  {bez:'Komplettrad ab- und anmontieren',aw:0.4,typ:'arbeit'},
+  {bez:'Achsvermessung',aw:1.0,typ:'arbeit'}]},
+];
 function migrate2(){
  if(!S.apDb||!S.apDb.length)S.apDb=AP_SEED.map(([bez,aw])=>({bez,aw}));
+ (S.apDb||[]).forEach(e=>{if(e.byMarke===undefined)e.byMarke={}});
+ if(!S.apKombi)S.apKombi=AP_KOMBI_SEED.map(([kws,partner])=>({keywords:kws,partner}));
+ if(!S.pakVorlagen)S.pakVorlagen=PAK_VORLAGEN_SEED.map(t=>({...t,pos:t.pos.map(p=>({...p}))}));
  (S.kunden||[]).forEach(k=>{if(k.ansprechpartner===undefined)k.ansprechpartner=''});
  (S.fahrzeuge||[]).forEach(f=>{if(f.kraftstoff===undefined)f.kraftstoff='';if(f.farbe===undefined)f.farbe=''});
  (S.auftraege||[]).forEach(a=>{
@@ -788,16 +826,25 @@ function migrate2(){
   if(a.awCt===undefined)a.awCt=null;
  });
 }
-function apLearn(bez,aw){
+function apLearn(bez,aw,marke){
  if(!bez||!(aw>0))return;
  const key=bez.trim().toLowerCase();
- const hit=S.apDb.find(e=>e.bez.toLowerCase()===key);
- if(hit)hit.aw=aw;else{S.apDb.push({bez:bez.trim(),aw});if(S.apDb.length>300)S.apDb.shift()}
+ let hit=S.apDb.find(e=>e.bez.toLowerCase()===key);
+ if(!hit){hit={bez:bez.trim(),aw,byMarke:{}};S.apDb.push(hit);if(S.apDb.length>300)S.apDb.shift()}
+ else hit.aw=aw;
+ if(marke){hit.byMarke=hit.byMarke||{};hit.byMarke[marke.trim()]=aw}
+}
+function apAwFor(bez,marke){
+ const hit=(S.apDb||[]).find(e=>e.bez.toLowerCase()===bez.trim().toLowerCase());
+ if(!hit)return null;
+ if(marke&&hit.byMarke&&hit.byMarke[marke.trim()]!=null)return hit.byMarke[marke.trim()];
+ return hit.aw;
 }
 function apKombiFor(pk){
  const out=[];
+ const rules=(S.apKombi||[]).map(r=>({re:new RegExp(r.keywords.map(reEsc).join('|'),'i'),partner:r.partner}));
  pk.pos.filter(p=>p.typ==='arbeit').forEach(p=>{
-  AP_KOMBI.forEach(([re,partner])=>{
+  rules.forEach(({re,partner})=>{
    if(re.test(p.bez)&&!pk.pos.some(q=>q.bez.toLowerCase()===partner.toLowerCase())&&!out.includes(partner))out.push(partner)})});
  return out.slice(0,2);
 }
@@ -872,7 +919,7 @@ function shell(inner,{title,eyebrow,back,side='',hideNav=false,bar='',ctx=''}={}
   <div class="hdr-side">${side}</div>
  </div>${bar}</div>
  <div class="main" id="main">${inner}</div>
- ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>{const isOn=route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen','kalender','buchen','lager','bestellungen','kampagnen','team','personal','impressum','datenschutz'].includes(route.v));const badge=v==='anfragen'&&(S.anfragen||[]).filter(q=>q.status==='neu').length>0?'<i class="nav-badge"></i>':'';return`<button data-act="nav" data-v="${v}" class="${isOn?'on':''}" style="position:relative"><span class="nic">${ic}</span>${l}${badge}</button>`}).join('')}</div>`}`;
+ ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>{const isOn=route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen','kalender','buchen','lager','bestellungen','kampagnen','team','personal','impressum','datenschutz','apdb','pakvorlagen'].includes(route.v));const badge=v==='anfragen'&&(S.anfragen||[]).filter(q=>q.status==='neu').length>0?'<i class="nav-badge"></i>':'';return`<button data-act="nav" data-v="${v}" class="${isOn?'on':''}" style="position:relative"><span class="nic">${ic}</span>${l}${badge}</button>`}).join('')}</div>`}`;
 }
 function toast(msg,err){const old=$('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast'+(err?' err':'');t.textContent=msg;
  document.body.appendChild(t);setTimeout(()=>{t.style.transition='opacity .3s';t.style.opacity='0';setTimeout(()=>t.remove(),320)},2200)}
@@ -1423,7 +1470,8 @@ function vAuftrag(id){
   ${mode==='over'?a.pakete.map(pakHtml).join('')+`
    <div class="klass" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px">
     <span style="font-size:10px;color:var(--ink3);font-weight:700;letter-spacing:.06em">NEUES PAKET</span>
-    ${Object.entries(KLASS).map(([v,[l]])=>`<button class="chip" data-act="pak-new" data-oid="${a.id}" data-k="${v}">${l}</button>`).join('')}</div>`
+    ${Object.entries(KLASS).map(([v,[l]])=>`<button class="chip" data-act="pak-new" data-oid="${a.id}" data-k="${v}">${l}</button>`).join('')}
+    <button class="chip" style="border-style:dashed;color:var(--violet);border-color:rgba(107,77,214,.4);display:inline-flex;align-items:center;gap:5px" data-act="pak-from-vorlage" data-oid="${a.id}"><span style="width:13px;height:13px;display:block">${IC.stack.replace('<svg ','<svg style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;width:100%;height:100%" ')}</span>Aus Vorlage</button></div>`
    :calcHtml()}
   <div class="card" style="margin-top:10px;padding:12px"><div style="font-weight:600;font-size:12px;margin-bottom:6px">Anzahlung</div>
    <input class="priceinp" style="width:100%" inputmode="decimal" value="${fmtIn(a.anzahlungCt)}" data-f="o-anz" data-oid="${a.id}">
@@ -1657,7 +1705,7 @@ function posSheet(a,pk,x,prefillBez){
   <div class="fld"><label>Bezeichnung *</label><input id="ps-b" list="ap-dl" value="${x?esc(x.bez):esc(prefillBez||'')}" placeholder="z. B. Bremsscheiben wechseln" autocomplete="off">
    <datalist id="ap-dl">${(S.apDb||[]).map(e=>`<option value="${esc(e.bez)}">`).join('')}</datalist></div>
   ${!isT?`<div class="row3">
-   <div class="fld"><label>AW</label><input id="ps-aw" inputmode="decimal" value="${x&&x.aw?String(x.aw).replace('.',','):''}" placeholder="1,5"></div>
+   <div class="fld"><label>AW <span id="ps-aw-hint" style="text-transform:none;font-weight:400;color:var(--violet)"></span></label><input id="ps-aw" inputmode="decimal" value="${x&&x.aw?String(x.aw).replace('.',','):''}" placeholder="1,5"></div>
    <div class="fld"><label>AW-Satz €</label><input id="ps-aws" inputmode="decimal" value="${fmtIn(awSatz)}"></div>
    <div class="fld"><label>VK gesamt €</label><input id="ps-vk" inputmode="decimal" value="${x?fmtIn(x.vkCt):''}"></div></div>
    <div style="font-size:10px;color:var(--ink3);margin:-6px 2px 11px">VK = AW × Satz, automatisch berechnet — lässt sich aber jederzeit überschreiben.</div>`
@@ -1682,8 +1730,13 @@ function posSheet(a,pk,x,prefillBez){
  if(aw)aw.addEventListener('input',calcVk);
  if(aws)aws.addEventListener('input',calcVk);
  if(bez&&!isT)bez.addEventListener('change',()=>{
+  const f=fzg(a.fzgId);
   const hit=(S.apDb||[]).find(e=>e.bez.toLowerCase()===bez.value.trim().toLowerCase());
-  if(hit&&aw&&!aw.value){aw.value=String(hit.aw).replace('.',',');calcVk()}});
+  const marke=f&&f.marke;
+  const fromMarke=hit&&marke&&hit.byMarke&&hit.byMarke[marke.trim()]!=null;
+  const suggested=hit?(fromMarke?hit.byMarke[marke.trim()]:hit.aw):null;
+  if(suggested!=null&&aw&&!aw.value){aw.value=String(suggested).replace('.',',');calcVk()}
+  const hintEl=$('#ps-aw-hint');if(hintEl)hintEl.textContent=fromMarke?'· '+marke+'-Wert':'';});
 }
 ACT['add-arbeit']=el=>posSheet(auftrag(el.dataset.oid),auftrag(el.dataset.oid).pakete.find(p=>p.id===el.dataset.pid),null);
 ACT['add-text']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
@@ -1761,7 +1814,7 @@ ACT['pos-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
  if(x)Object.assign(x,vals);
  else{x={id:'x'+uid(),typ:el.dataset.typ,lagerId:null,...vals};pk.pos.push(x)}
  if(isNew&&vals.ext)logExtension(a,pk,x,vorher);
- if(isArbeit&&vals.aw>0)apLearn(bez,vals.aw);
+ if(isArbeit&&vals.aw>0){const f=fzg(a.fzgId);apLearn(bez,vals.aw,f&&f.marke)}
  save();closeSheet();render();toast(isNew&&vals.ext?'Erweiterung hinzugefügt und protokolliert':'Gespeichert')};
 /* Befund & Abhilfe */
 ACT['add-befund']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
@@ -2279,7 +2332,7 @@ function vMehr(){
      <div style="font-size:11px;color:var(--ink3);line-height:1.5;margin-top:2px">${isIOS?'Safari: Teilen-Symbol → „Zum Home-Bildschirm" — dann läuft mehanicar wie eine echte App, auch offline.':'Browser-Menü → „App installieren" bzw. „Zum Startbildschirm hinzufügen".'}</div></div>
     <button style="color:var(--ink3);padding:6px;font-size:14px;flex-shrink:0" data-act="install-hint-done">✕</button></div></div>`:'';
  const inner=`${installHint}<div class="card stag">
-  ${[['termine','Terminkalender',IC.plan,(S.termine||[]).filter(t=>t.datum>=todayISO()).length+' anstehende Termine'],['lager','Lager',IC.box,S.lager.length+' Artikel im Bestand'],['kalender','Kapazität',IC.grid,'10-Tage-Plan · Mitarbeiter'],['bestellungen','Bestellungen',IC.truck,(S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen').length||'Keine')+' offen'],['kampagnen','Kampagnen',IC.mega,S.kampagnen.length+' Kampagnen gesendet'],['team','Team',IC.team,S.mitarbeiter.length+' Mitarbeiter'],['personal','Personalwesen',IC.team,(S.krankmeldungen||[]).filter(k=>k.von<=todayISO()&&k.bis>=todayISO()).length+' aktive Krankmeldungen'],['fahrzeuge','Fahrzeuge',IC.car,S.fahrzeuge.length+' Fahrzeuge'],['finanzen','Finanzen',IC.fin,S.rechnungen.length+' Rechnungen'],['einstellungen','Einstellungen',IC.gear,'Firma, Preise, Werkstatt, Daten']].map(([v,l,ic,sub])=>
+  ${[['termine','Terminkalender',IC.plan,(S.termine||[]).filter(t=>t.datum>=todayISO()).length+' anstehende Termine'],['lager','Lager',IC.box,S.lager.length+' Artikel im Bestand'],['kalender','Kapazität',IC.grid,'10-Tage-Plan · Mitarbeiter'],['bestellungen','Bestellungen',IC.truck,(S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen').length||'Keine')+' offen'],['kampagnen','Kampagnen',IC.mega,S.kampagnen.length+' Kampagnen gesendet'],['apdb','Arbeitspositionen',IC.book,(S.apDb||[]).length+' Positionen · '+(S.apKombi||[]).length+' Kombis'],['pakvorlagen','Paket-Vorlagen',IC.stack,(S.pakVorlagen||[]).length+' Vorlagen'],['team','Team',IC.team,S.mitarbeiter.length+' Mitarbeiter'],['personal','Personalwesen',IC.team,(S.krankmeldungen||[]).filter(k=>k.von<=todayISO()&&k.bis>=todayISO()).length+' aktive Krankmeldungen'],['fahrzeuge','Fahrzeuge',IC.car,S.fahrzeuge.length+' Fahrzeuge'],['finanzen','Finanzen',IC.fin,S.rechnungen.length+' Rechnungen'],['einstellungen','Einstellungen',IC.gear,'Firma, Preise, Werkstatt, Daten']].map(([v,l,ic,sub])=>
    `<div class="lrow" data-act="open" data-v="${v}"><div class="av" style="background:var(--gray-bg);color:var(--ink2)">${ic}</div>
     <div class="lt"><b>${l}</b><span>${sub}</span></div><span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')}</div>
   <div style="text-align:center;font-size:10.5px;color:var(--ink3);margin-top:18px;line-height:1.7">mehanicar 2.0 · Werkstatt-Management<br>${memOnly?'<span style="color:var(--red)">Achtung: Speicher blockiert — Daten gehen beim Schließen verloren</span>':((S.settings.sync&&S.settings.sync.on)?'Cloud-Backup aktiv — jede Änderung wird automatisch gesichert':'Daten nur lokal — Cloud-Backup in den Einstellungen aktivierbar')}</div>`;
@@ -3375,6 +3428,182 @@ ACT['kamp-done']=()=>{const n=Object.keys(kampSent).length;if(!n)return;
 function teamHours(){const wk=Date.now()-7*86400000;const hrs={};
  S.auftraege.forEach(a=>a.zeiten.forEach(z=>{if(!z.end||z.end<wk)return;
   const mid=z.mid||a.mitarbeiterId||'m1';hrs[mid]=(hrs[mid]||0)+(z.end-z.start)}));return hrs}
+/* ============ ARBEITSPOSITIONEN-DATENBANK ============ */
+let apSeg='pos',apQ='';
+function vApDb(){
+ const seg=`<div class="seg" style="margin-bottom:13px">
+  <button class="${apSeg==='pos'?'on':''}" data-act="apdb-seg" data-v="pos">Positionen · ${(S.apDb||[]).length}</button>
+  <button class="${apSeg==='kombi'?'on':''}" data-act="apdb-seg" data-v="kombi">Kombi-Vorschläge · ${(S.apKombi||[]).length}</button></div>`;
+ let body;
+ if(apSeg==='pos'){
+  let list=(S.apDb||[]).slice().sort((a,b)=>a.bez.localeCompare(b.bez,'de'));
+  if(apQ){const q=apQ.toLowerCase();list=list.filter(e=>e.bez.toLowerCase().includes(q))}
+  body=`<div class="searchbar">${IC.search}<input placeholder="Position suchen" value="${esc(apQ)}" data-input="apQ"></div>
+   <div style="font-size:11px;color:var(--ink3);margin:-6px 2px 12px;line-height:1.5">Jede gespeicherte Arbeit lernt hier automatisch mit. AW-Werte lassen sich hier zentral pflegen — auch abweichend je Fahrzeugmarke.</div>
+   <div class="card stag">${list.length?list.map(e=>{
+    const markeCt=Object.keys(e.byMarke||{}).length;
+    return `<div class="lrow" data-act="apdb-edit" data-bez="${esc(e.bez)}">
+     <div class="av" style="background:var(--violet-bg);color:var(--violet)">${IC.book}</div>
+     <div class="lt"><b>${esc(e.bez)}</b><span class="num">${pct1(e.aw)} AW${markeCt?' · '+markeCt+' markenspez. Wert'+(markeCt>1?'e':''):''}</span></div>
+     <span class="chev" style="transform:rotate(-45deg)"></span></div>`}).join('')
+    :'<div class="empty"><b>Keine Treffer</b></div>'}</div>`;
+ }else{
+  body=`<div style="font-size:11px;color:var(--ink3);margin:-6px 2px 12px;line-height:1.5">Enthält eine Arbeit einen dieser Begriffe, schlägt die App beim Bearbeiten des Pakets automatisch die verknüpfte Zusatzarbeit vor.</div>
+   <div class="card stag">${(S.apKombi||[]).length?(S.apKombi||[]).map((r,i)=>`
+    <div class="lrow" data-act="apkombi-edit" data-i="${i}">
+     <div class="av" style="background:var(--blue-bg);color:var(--blue)">${IC.link}</div>
+     <div class="lt"><b>${esc(r.partner)}</b><span>bei: ${r.keywords.map(esc).join(', ')}</span></div>
+     <span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')
+    :'<div class="empty"><b>Keine Regeln</b></div>'}</div>`;
+ }
+ return shell(seg+body,{title:'Arbeitspositionen',eyebrow:'Datenbank & Kombis',back:1})+
+  `<button class="fab" data-act="${apSeg==='pos'?'apdb-new':'apkombi-new'}">+</button>`;
+}
+ACT['apdb-seg']=el=>{apSeg=el.dataset.v;render()};
+ACT['apdb-new']=()=>apdbSheet(null);
+ACT['apdb-edit']=el=>apdbSheet((S.apDb||[]).find(e=>e.bez===el.dataset.bez));
+function apdbSheet(e){
+ const nw=!e;
+ const markeRows=(e&&e.byMarke)?Object.entries(e.byMarke):[];
+ sheet(nw?'Position hinzufügen':'Position bearbeiten',`
+  <div class="fld"><label>Bezeichnung *</label><input id="ap-b" value="${e?esc(e.bez):''}" placeholder="z. B. Bremsscheiben wechseln" ${e?'readonly style="opacity:.65"':''}></div>
+  <div class="fld"><label>Standard-AW</label><input id="ap-aw" inputmode="decimal" value="${e?String(e.aw).replace('.',','):''}" placeholder="1,5"></div>
+  ${!nw?`<div class="lbl">Markenspezifische Werte</div>
+   <div id="ap-marken">${markeRows.map(([mk,aw],i)=>`<div class="row2" data-mi="${i}" style="align-items:center">
+    <input class="priceinp" placeholder="Marke, z. B. BMW" value="${esc(mk)}" data-mk>
+    <div style="display:flex;gap:6px"><input class="priceinp" style="flex:1" inputmode="decimal" value="${String(aw).replace('.',',')}" data-mv>
+     <button style="color:var(--red);padding:8px" data-act="apdb-marke-del" data-i="${i}">✕</button></div></div>`).join('')}</div>
+   <button class="btn-ghost" style="width:100%;margin-bottom:14px" data-act="apdb-marke-add">+ Marke hinzufügen</button>`:''}
+  <div class="row2">
+   ${e?`<button class="btn btn-danger" data-act="apdb-del" data-bez="${esc(e.bez)}">Löschen</button>`:'<span></span>'}
+   <button class="btn btn-main" data-act="apdb-save" ${e?`data-bez="${esc(e.bez)}"`:''}>Speichern</button></div>`);
+}
+ACT['apdb-marke-add']=()=>{const wrap=$('#ap-marken');const i=wrap.children.length;
+ const row=document.createElement('div');row.className='row2';row.dataset.mi=i;row.style.alignItems='center';
+ row.innerHTML=`<input class="priceinp" placeholder="Marke, z. B. BMW" data-mk>
+  <div style="display:flex;gap:6px"><input class="priceinp" style="flex:1" inputmode="decimal" placeholder="AW" data-mv>
+   <button style="color:var(--red);padding:8px" data-act="apdb-marke-del" data-i="${i}">✕</button></div>`;
+ wrap.appendChild(row)};
+ACT['apdb-marke-del']=el=>{el.closest('[data-mi]').remove()};
+ACT['apdb-save']=el=>{
+ const bez=$('#ap-b').value.trim();if(!bez)return toast('Bezeichnung fehlt',true);
+ const aw=parseFloat(($('#ap-aw').value||'0').replace(',','.'))||0;if(!(aw>0))return toast('AW fehlt',true);
+ const byMarke={};$$('#ap-marken [data-mi]').forEach(row=>{
+  const mk=row.querySelector('[data-mk]').value.trim();const mv=parseFloat((row.querySelector('[data-mv]').value||'').replace(',','.'));
+  if(mk&&mv>0)byMarke[mk]=mv});
+ const old=el.dataset.bez;
+ if(old){const hit=S.apDb.find(x=>x.bez===old);Object.assign(hit,{bez,aw,byMarke})}
+ else{if(S.apDb.some(x=>x.bez.toLowerCase()===bez.toLowerCase()))return toast('Gibt es schon',true);S.apDb.push({bez,aw,byMarke})}
+ save();closeSheet();render();toast('Gespeichert')};
+ACT['apdb-del']=el=>{confirmBox('Position löschen?','„'+esc(el.dataset.bez)+'" wird aus der Datenbank entfernt.','Löschen',()=>{
+ S.apDb=S.apDb.filter(x=>x.bez!==el.dataset.bez);save();closeSheet();render()})};
+ACT['apkombi-new']=()=>apkombiSheet(null,-1);
+ACT['apkombi-edit']=el=>apkombiSheet(S.apKombi[+el.dataset.i],+el.dataset.i);
+function apkombiSheet(r,i){
+ sheet(r?'Kombi-Vorschlag bearbeiten':'Neuer Kombi-Vorschlag',`
+  <div class="fld"><label>Schlüsselwörter (durch Komma getrennt) *</label><input id="km-kw" value="${r?esc(r.keywords.join(', ')):''}" placeholder="z. B. reifen, räder, komplettrad"></div>
+  <div class="fld"><label>Vorgeschlagene Zusatzarbeit *</label><input id="km-p" list="ap-dl2" value="${r?esc(r.partner):''}" placeholder="z. B. Komplettrad ab- und anmontieren">
+   <datalist id="ap-dl2">${(S.apDb||[]).map(e=>`<option value="${esc(e.bez)}">`).join('')}</datalist></div>
+  <div style="font-size:10.5px;color:var(--ink3);margin:-4px 2px 13px;line-height:1.5">Kommt eines der Schlüsselwörter in einer Arbeitsposition vor, wird die Zusatzarbeit im Paket als Ein-Tipp-Vorschlag angezeigt.</div>
+  <div class="row2">
+   ${r?`<button class="btn btn-danger" data-act="apkombi-del" data-i="${i}">Löschen</button>`:'<span></span>'}
+   <button class="btn btn-main" data-act="apkombi-save" data-i="${i}">Speichern</button></div>`);
+}
+ACT['apkombi-save']=el=>{
+ const kw=$('#km-kw').value.split(',').map(s=>s.trim()).filter(Boolean);
+ const partner=$('#km-p').value.trim();
+ if(!kw.length||!partner)return toast('Schlüsselwörter und Zusatzarbeit angeben',true);
+ const i=+el.dataset.i;
+ if(i>=0)S.apKombi[i]={keywords:kw,partner};else S.apKombi.push({keywords:kw,partner});
+ save();closeSheet();render();toast('Gespeichert')};
+ACT['apkombi-del']=el=>{const i=+el.dataset.i;
+ confirmBox('Regel löschen?','Dieser Kombi-Vorschlag wird entfernt.','Löschen',()=>{
+  S.apKombi.splice(i,1);save();closeSheet();render()})};
+
+/* ============ PAKET-VORLAGEN ============ */
+function vPakVorlagen(){
+ const list=S.pakVorlagen||[];
+ const inner=`<div style="font-size:11px;color:var(--ink3);margin:-2px 2px 12px;line-height:1.5">Ganze Paketvorlagen mit mehreren Positionen — im Auftrag über „Vorlage einfügen" mit einem Tipp übernehmbar.</div>
+  <div class="card stag">${list.length?list.map(t=>`
+   <div class="lrow" data-act="pvorlage-edit" data-id="${t.id}">
+    <div class="av" style="background:var(--blue-bg);color:var(--blue)">${IC.stack}</div>
+    <div class="lt"><b>${esc(t.name)}</b><span>${t.pos.length} Position${t.pos.length!==1?'en':''} · ${KLASS[t.klass][0]}</span></div>
+    <span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')
+   :'<div class="empty"><b>Noch keine Vorlagen</b></div>'}</div>`;
+ return shell(inner,{title:'Paket-Vorlagen',eyebrow:'Wiederverwendbar',back:1})+'<button class="fab" data-act="pvorlage-new">+</button>';
+}
+ACT['pvorlage-new']=()=>pvorlageSheet(null);
+ACT['pvorlage-edit']=el=>pvorlageSheet(S.pakVorlagen.find(t=>t.id===el.dataset.id));
+function pvorlageSheet(t){
+ const nw=!t;t=t||{id:null,name:'',klass:'kw',pos:[]};
+ const posRow=(p,i)=>`<div class="row2" data-pi="${i}" style="align-items:center;margin-bottom:6px">
+  <input class="priceinp" style="flex:1" placeholder="Bezeichnung" value="${esc(p.bez)}" data-pb>
+  <div style="display:flex;gap:6px;align-items:center">
+   ${p.typ==='teil'?`<input class="priceinp" style="width:70px" inputmode="decimal" placeholder="VK" value="${p.vkCt?fmtIn(p.vkCt):''}" data-pvk>`
+    :`<input class="priceinp" style="width:56px" inputmode="decimal" placeholder="AW" value="${p.aw?String(p.aw).replace('.',','):''}" data-paw>`}
+   <button style="color:var(--red);padding:8px" data-act="pvorlage-pos-del" data-i="${i}">✕</button></div></div>`;
+ sheet(nw?'Neue Vorlage':'Vorlage bearbeiten',`
+  <div class="fld"><label>Name *</label><input id="pv-n" value="${esc(t.name)}" placeholder="z. B. Große Inspektion"></div>
+  <div class="fld"><label>Klassifizierung</label><div class="selwrap"><select id="pv-k">
+   ${Object.entries(KLASS).map(([v,[l]])=>`<option value="${v}" ${t.klass===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
+  <div class="lbl" style="margin-top:2px">Arbeitspositionen (AW)</div>
+  <div id="pv-arbeiten">${t.pos.filter(p=>p.typ==='arbeit').map(p=>posRow(p,t.pos.indexOf(p))).join('')}</div>
+  <button class="btn-ghost" style="width:100%;margin-bottom:14px" data-act="pvorlage-pos-add" data-typ="arbeit">+ Arbeitsposition</button>
+  <div class="lbl">Teile (VK)</div>
+  <div id="pv-teile">${t.pos.filter(p=>p.typ==='teil').map(p=>posRow(p,t.pos.indexOf(p))).join('')}</div>
+  <button class="btn-ghost" style="width:100%;margin-bottom:14px" data-act="pvorlage-pos-add" data-typ="teil">+ Teil</button>
+  <div class="row2">
+   ${t.id?`<button class="btn btn-danger" data-act="pvorlage-del" data-id="${t.id}">Löschen</button>`:'<span></span>'}
+   <button class="btn btn-main" data-act="pvorlage-save" ${t.id?`data-id="${t.id}"`:''}>Speichern</button></div>`);
+ window._pvPos=t.pos.map(p=>({...p}));
+}
+ACT['pvorlage-pos-add']=el=>{
+ window._pvPos=window._pvPos||[];
+ window._pvPos.push(el.dataset.typ==='teil'?{bez:'',typ:'teil',vkCt:0}:{bez:'',typ:'arbeit',aw:0});
+ const i=window._pvPos.length-1,p=window._pvPos[i];
+ const wrap=$(el.dataset.typ==='teil'?'#pv-teile':'#pv-arbeiten');
+ const row=document.createElement('div');row.className='row2';row.dataset.pi=i;row.style.cssText='align-items:center;margin-bottom:6px';
+ row.innerHTML=`<input class="priceinp" style="flex:1" placeholder="Bezeichnung" data-pb>
+  <div style="display:flex;gap:6px;align-items:center">
+   ${el.dataset.typ==='teil'?'<input class="priceinp" style="width:70px" inputmode="decimal" placeholder="VK" data-pvk>':'<input class="priceinp" style="width:56px" inputmode="decimal" placeholder="AW" data-paw>'}
+   <button style="color:var(--red);padding:8px" data-act="pvorlage-pos-del" data-i="${i}">✕</button></div>`;
+ wrap.appendChild(row)};
+ACT['pvorlage-pos-del']=el=>{el.closest('[data-pi]').remove()};
+ACT['pvorlage-save']=el=>{
+ const name=$('#pv-n').value.trim();if(!name)return toast('Name fehlt',true);
+ const pos=[];
+ $$('#pv-arbeiten [data-pi]').forEach(row=>{const bez=row.querySelector('[data-pb]').value.trim();
+  const aw=parseFloat((row.querySelector('[data-paw]').value||'').replace(',','.'))||0;
+  if(bez)pos.push({bez,typ:'arbeit',aw})});
+ $$('#pv-teile [data-pi]').forEach(row=>{const bez=row.querySelector('[data-pb]').value.trim();
+  const vkCt=parseEuro(row.querySelector('[data-pvk]').value)||0;
+  if(bez)pos.push({bez,typ:'teil',vkCt,ekCt:0})});
+ if(!pos.length)return toast('Mindestens eine Position hinzufügen',true);
+ const vals={name,klass:$('#pv-k').value,pos};
+ if(el.dataset.id)Object.assign(S.pakVorlagen.find(t=>t.id===el.dataset.id),vals);
+ else S.pakVorlagen.push({id:'tpl'+uid(),...vals});
+ save();closeSheet();render();toast('Vorlage gespeichert')};
+ACT['pvorlage-del']=el=>{confirmBox('Vorlage löschen?','Diese Paketvorlage wird entfernt.','Löschen',()=>{
+ S.pakVorlagen=S.pakVorlagen.filter(t=>t.id!==el.dataset.id);save();closeSheet();render()})};
+/* Vorlage in laufenden Auftrag einfügen */
+ACT['pak-from-vorlage']=el=>{const a=auftrag(el.dataset.oid);
+ if(!S.pakVorlagen||!S.pakVorlagen.length)return toast('Noch keine Vorlagen angelegt — unter Mehr → Paket-Vorlagen',true);
+ sheet('Vorlage einfügen',`<div class="card stag">${S.pakVorlagen.map(t=>`
+   <div class="lrow" data-act="pak-from-vorlage-pick" data-oid="${a.id}" data-tid="${t.id}">
+    <div class="av" style="background:var(--blue-bg);color:var(--blue)">${IC.stack}</div>
+    <div class="lt"><b>${esc(t.name)}</b><span>${t.pos.length} Position${t.pos.length!==1?'en':''}</span></div></div>`).join('')}</div>`)};
+ACT['pak-from-vorlage-pick']=el=>{const a=auftrag(el.dataset.oid);const t=S.pakVorlagen.find(x=>x.id===el.dataset.tid);
+ if(!a||!t)return;
+ const f=fzg(a.fzgId);const awSatz=a.awCt||S.settings.awCt;
+ const pos=t.pos.map(p=>{
+  if(p.typ==='teil')return{id:'x'+uid(),typ:'teil',bez:p.bez,aw:0,menge:1,ekCt:p.ekCt||0,vkCt:p.vkCt||0,rab:null,ext:ordFreigegeben(a),best:null,eta:null,lagerId:null};
+  const aw=apAwFor(p.bez,f&&f.marke)??p.aw;
+  return{id:'x'+uid(),typ:'arbeit',bez:p.bez,aw,awSatz:null,menge:1,ekCt:0,vkCt:Math.round(aw*awSatz),rab:null,ext:ordFreigegeben(a),best:null,eta:null,lagerId:null}});
+ const pk={id:'p'+uid(),name:t.name,klass:t.klass,zahler:'kunde',status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:ordFreigegeben(a),pos};
+ a.pakete.push(pk);
+ if(ordFreigegeben(a))a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Paket „'+t.name+'" aus Vorlage eingefügt (Erweiterung, '+pos.length+' Positionen).',preisCt:pakNetto(pk),vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
+ save();closeSheet();render();toast('Vorlage „'+t.name+'" eingefügt')};
+
 function vTeam(){
  const hrs=teamHours();const cnt={};
  S.auftraege.forEach(a=>{if(a.mitarbeiterId&&a.status!=='abgeholt')cnt[a.mitarbeiterId]=(cnt[a.mitarbeiterId]||0)+1});
@@ -3772,7 +4001,7 @@ function renderInner(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
  const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
-  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz};
+  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz,apdb:vApDb,pakvorlagen:vPakVorlagen};
  if(!S.settings.onboarded&&!['buchen','impressum','datenschutz'].includes(route.v)){app.innerHTML=vOnboarding();return}
  app.innerHTML=(V[route.v]||vPlanung)();
  if(navSlideDir!==0&&!skipNextSlide){
@@ -3801,7 +4030,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('change',e=>{const el=e.target.closest('[data-f]');if(el){const fn=FSET[el.dataset.f];if(fn)fn(el)}});
 document.addEventListener('input',e=>{const el=e.target.closest('[data-input]');if(!el)return;
- const v=el.value;if(el.dataset.input==='ordQ')ordQ=v;if(el.dataset.input==='kQ')kQ=v;if(el.dataset.input==='lQ')lQ=v;
+ const v=el.value;if(el.dataset.input==='ordQ')ordQ=v;if(el.dataset.input==='kQ')kQ=v;if(el.dataset.input==='lQ')lQ=v;if(el.dataset.input==='apQ')apQ=v;
  clearTimeout(el._t);el._t=setTimeout(()=>{const pos=el.selectionStart;route._keepScroll=true;render();
   const n=$('[data-input="'+el.dataset.input+'"]');if(n){n.focus();try{n.setSelectionRange(pos,pos)}catch(x){}}},260)});
 window.addEventListener('hashchange',()=>{const h=location.hash.replace('#/','').split('/');
@@ -3940,7 +4169,7 @@ try{
  setTimeout(syncStartup,400);
  if(memOnly)setTimeout(()=>toast('Achtung: Speichern blockiert — Daten gehen beim Schließen verloren',true),600);
  const h0=location.hash.replace('#/','').split('/');
- if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen','impressum','datenschutz'].includes(h0[0]))route={v:h0[0],id:h0[1]};
+ if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen','impressum','datenschutz','apdb','pakvorlagen'].includes(h0[0]))route={v:h0[0],id:h0[1]};
  render();
 }catch(err){
  console.error('START-FEHLER:',err);
