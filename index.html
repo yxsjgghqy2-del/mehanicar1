@@ -961,6 +961,31 @@ function vPlanung(){
    return due?`<div class="warnrow" style="display:flex;align-items:center;gap:10px"><span style="flex:1">${syncBroken?'Cloud-Backup gestört — Daten evtl. ungesichert.':'Backup empfohlen — '+(m.lastBackup?'letzte Sicherung '+dLabel(new Date(m.lastBackup).toISOString().slice(0,10)):'noch keine Sicherung')+'.'}</span>
     <button class="btn btn-sm" style="background:var(--amber);color:#fff;flex-shrink:0" data-act="${syncBroken?'sync-now':'data-xlsx'}">${syncBroken?'Erneut sichern':'Excel-Backup'}</button>
     <button style="color:var(--amber);padding:6px;font-size:14px" data-act="bk-dismiss">✕</button></div>`:''})()}
+  ${(()=>{ /* „Jetzt wichtig" — priorisierte Tagesaufgaben */
+   const items=[];
+   const overOrds=heute.filter(a=>a.abgabe<t&&!['fertig','abgeholt'].includes(a.status));
+   if(overOrds.length){const f=fzg(overOrds[0].fzgId)||{};
+    items.push({c:'var(--red)',bg:'var(--red-bg)',t:overOrds.length===1?(f.kennz||overOrds[0].nr)+' fertigstellen':overOrds.length+' überfällige Aufträge fertigstellen',
+     s:overOrds.length===1?'Kunde wartet — Abgabe war '+dLabel(overOrds[0].abgabe):'Ältester: '+dLabel(overOrds.map(a=>a.abgabe).sort()[0]),
+     act:overOrds.length===1?`data-act="open" data-v="auftrag" data-id="${overOrds[0].id}"`:'data-act="nav" data-v="auftraege"'})}
+   const neuAnfr=(S.anfragen||[]).filter(q=>q.status==='neu');
+   if(neuAnfr.length){const hoch=neuAnfr.filter(q=>q.prio==='hoch').length;
+    items.push({c:'var(--blue)',bg:'var(--blue-bg)',t:neuAnfr.length+' neue Anfrage'+(neuAnfr.length>1?'n':'')+' beantworten',
+     s:hoch?hoch+'× Priorität hoch — Kunde nicht warten lassen':'Schnelle Antwort gewinnt den Auftrag',
+     act:'data-act="nav" data-v="anfragen"'})}
+   const mahnRe=S.rechnungen.filter(r=>!r.bezahlt&&(Date.parse(t)-Date.parse(r.datum))/86400000>(S.settings.mahnTage||14));
+   if(mahnRe.length){items.push({c:'var(--amber)',bg:'var(--amber-bg)',t:mahnRe.length+' Rechnung'+(mahnRe.length>1?'en':'')+' mahnen',
+    s:fmt(mahnRe.reduce((s,r)=>s+r.bruttoCt,0))+' offen seit über '+(S.settings.mahnTage||14)+' Tagen',
+    act:'data-act="open" data-v="finanzen"'})}
+   const rad=radarItems().filter(r=>r.prio<=1);
+   if(rad.length){items.push({c:'var(--violet)',bg:'var(--violet-bg)',t:rad.length+'× HU/Erinnerung überfällig',
+    s:'Kunden anschreiben — unter Anfragen → Wartung & HU',act:'data-act="nav" data-v="anfragen"'})}
+   return items.length?`<div class="card" style="padding:13px 15px;margin-bottom:12px">
+    <div class="lbl" style="margin-top:0">Jetzt wichtig</div>
+    ${items.slice(0,4).map((it,i)=>`<div class="lrow" style="padding:9px 0;border-bottom:${i<Math.min(items.length,4)-1?'1px solid var(--line2)':'none'}" ${it.act}>
+     <div class="av" style="width:26px;height:26px;border-radius:8px;background:${it.bg};color:${it.c};font-size:12px;font-weight:800">${i+1}</div>
+     <div class="lt"><b style="font-size:12.5px">${it.t}</b><span>${it.s}</span></div>
+     <span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')}</div>`:''})()}
   <div id="pinwrap" class="${pinned?'show':''}">${pin}</div>
   <div class="fix">
    <div class="fix-h"><span class="t">Heute · ${['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'][now.getDay()]}</span>
@@ -990,25 +1015,53 @@ ACT['row-done']=el=>{const a=auftrag(el.dataset.id);if(!a)return;
 
 /* -------- Aufträge Liste -------- */
 let ordFilter='alle',ordQ='';
+function ordRow(a,strip){
+ const f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{};const [,sl,sc]=statL(a.status);
+ const noteFlag=a.notiz?`<span class="dotmark" style="margin-left:5px"></span>`:'';
+ const aw=totalAW(a);
+ return `<div class="lrow" data-act="open" data-v="auftrag" data-id="${a.id}" ${strip?`style="box-shadow:inset 3px 0 0 ${strip}"`:''}>
+  <div class="av" style="background:${sc}14;color:${sc}">${IC.car}</div>
+  <div class="lt"><b>${esc(f.kennz||'—')} · ${esc((f.marke||'')+' '+(f.modell||''))}</b>
+  <span>${esc(k.name||'')} · ${a.nr}${noteFlag}</span></div>
+  <div class="lr"><b class="num">${fmt(ordNetto(a))}</b>
+  <span style="color:${sc};font-weight:700">${sl}${aw>0?` · <b class="num" style="color:var(--ink2)">${pct1(aw)} AW</b>`:''}</span></div></div>`;
+}
 function vAuftraege(){
  let list=S.auftraege.slice().sort((a,b)=>(a.abgabe||'9999').localeCompare(b.abgabe||'9999'));
  if(ordFilter!=='alle')list=list.filter(a=>a.status===ordFilter);
  if(ordQ){const q=ordQ.toLowerCase();list=list.filter(a=>{const f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{};
   return [a.nr,f.kennz,f.marke,f.modell,k.name].join(' ').toLowerCase().includes(q)})}
+ let listHtml;
+ if(ordFilter==='alle'&&!ordQ&&list.length){
+  /* Nach Dringlichkeit gruppieren */
+  const t=todayISO(),w=addDays(t,7);
+  const g={over:[],today:[],week:[],later:[],ready:[],done:[]};
+  list.forEach(a=>{
+   if(a.status==='abgeholt')g.done.push(a);
+   else if(a.status==='fertig')g.ready.push(a);
+   else if(a.abgabe&&a.abgabe<t)g.over.push(a);
+   else if(a.abgabe===t)g.today.push(a);
+   else if(a.abgabe&&a.abgabe<=w)g.week.push(a);
+   else g.later.push(a)});
+  g.done.sort((a,b)=>(b.abgabe||'').localeCompare(a.abgabe||''));
+  const GRP=[['over','Überfällig','var(--red)','#E0353B'],['today','Heute fällig','var(--blue)','#0A5FFF'],
+   ['week','Diese Woche','var(--ink2)',''],['later','Später / ohne Termin','var(--ink3)',''],
+   ['ready','Abholbereit','var(--green)','#0E8F4E'],['done','Abgeholt (Archiv)','var(--ink3)','']];
+  listHtml=GRP.map(([key,label,col,strip])=>{
+   const it=g[key];if(!it.length)return '';
+   const shown=key==='done'?it.slice(0,5):it;
+   return `<div class="lbl" style="color:${col}">${label} · ${it.length}</div>
+    <div class="card stag">${shown.map(a=>ordRow(a,strip)).join('')}
+    ${key==='done'&&it.length>5?`<div style="padding:9px 15px;font-size:11px;color:var(--ink3);border-top:1px solid var(--line2)">+ ${it.length-5} weitere — über Statusfilter „Abgeholt" oder Suche erreichbar</div>`:''}</div>`}).join('');
+ }else{
+  listHtml=`<div class="card stag">${list.length?list.map(a=>ordRow(a,'')).join('')
+   :'<div class="empty"><b>Keine Aufträge gefunden</b>Passe Suche oder Filter an.</div>'}</div>`;
+ }
  const inner=`
   <div class="searchbar">${IC.search}<input placeholder="Kennzeichen, Kunde, Nummer" value="${esc(ordQ)}" data-input="ordQ"></div>
   <div class="pills">${[['alle','Alle'],...STATI.map(s=>[s[0],s[1]])].map(([v,l])=>{const c=v==='alle'?'#0A5FFF':statL(v)[2];
    return `<button class="pill ${ordFilter===v?'on':''}" style="${ordFilter===v?`background:${c}14;border-color:${c};color:${c}`:''}" data-act="ord-filter" data-v="${v}">${l}</button>`}).join('')}</div>
-  <div class="card stag">${list.length?list.map(a=>{const f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{};const [,sl,sc]=statL(a.status);
-   const noteFlag=a.notiz?`<span class="dotmark" style="margin-left:5px"></span>`:'';
-   const aw=totalAW(a);
-   return `<div class="lrow" data-act="open" data-v="auftrag" data-id="${a.id}">
-    <div class="av" style="background:${sc}14;color:${sc}">${IC.car}</div>
-    <div class="lt"><b>${esc(f.kennz||'—')} · ${esc((f.marke||'')+' '+(f.modell||''))}</b>
-    <span>${esc(k.name||'')} · ${a.nr}${noteFlag}</span></div>
-    <div class="lr"><b class="num">${fmt(ordNetto(a))}</b>
-    <span style="color:${sc};font-weight:700">${sl}${aw>0?` · <b class="num" style="color:var(--ink2)">${pct1(aw)} AW</b>`:''}</span></div></div>`}).join('')
-   :'<div class="empty"><b>Keine Aufträge gefunden</b>Passe Suche oder Filter an.</div>'}</div>`;
+  ${listHtml}`;
  return shell(inner,{title:'Aufträge',eyebrow:S.auftraege.length+' gesamt'})+`<button class="fab" data-act="ord-new">+</button>`;
 }
 ACT['ord-filter']=el=>{ordFilter=el.dataset.v;render()};
@@ -1648,20 +1701,35 @@ function doBill(a,pakIds){
 
 /* ============ 7. KUNDEN / FAHRZEUGE / LAGER / MEHR ============ */
 let kQ='',lQ='';
+function kundeRow(k){
+ const fz=S.fahrzeuge.filter(f=>f.kundeId===k.id);
+ const ords=S.auftraege.filter(a=>a.kundeId===k.id);
+ const ini=k.name.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
+ const AVC=['#0A5FFF','#0E8F4E','#C2710A','#6B4DD6','#E0353B'];
+ const col=AVC[(k.name.charCodeAt(0)+(k.name.charCodeAt(1)||0))%AVC.length];
+ return `<div class="lrow" data-act="open" data-v="kunde" data-id="${k.id}">
+  <div class="av" style="background:${col}16;color:${col}">${ini}</div>
+  <div class="lt"><b>${esc(k.name)}${k.stamm?' <span class="tag t-green" style="font-size:8.5px;vertical-align:1px">Stamm</span>':''}</b>
+  <span>${fz.map(f=>f.kennz).join(', ')||'kein Fahrzeug'}</span></div>
+  <div class="lr"><b class="num">${ords.length}</b><span>Aufträge</span></div></div>`;
+}
 function vKunden(){
- let list=S.kunden.slice().sort((a,b)=>a.name.localeCompare(b.name));
- if(kQ){const q=kQ.toLowerCase();list=list.filter(k=>[k.name,k.tel,k.email].join(' ').toLowerCase().includes(q))}
- const inner=`<div class="searchbar">${IC.search}<input placeholder="Name, Telefon, E-Mail" value="${esc(kQ)}" data-input="kQ"></div>
-  <div class="card stag">${list.length?list.map(k=>{
-   const fz=S.fahrzeuge.filter(f=>f.kundeId===k.id);
-   const ords=S.auftraege.filter(a=>a.kundeId===k.id);
-   const ini=k.name.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
-   return `<div class="lrow" data-act="open" data-v="kunde" data-id="${k.id}">
-    <div class="av" style="background:var(--blue-bg);color:var(--blue)">${ini}</div>
-    <div class="lt"><b>${esc(k.name)}${k.stamm?' <span class="tag t-green" style="font-size:8.5px;vertical-align:1px">Stamm</span>':''}</b>
-    <span>${fz.map(f=>f.kennz).join(', ')||'kein Fahrzeug'}</span></div>
-    <div class="lr"><b class="num">${ords.length}</b><span>Aufträge</span></div></div>`}).join('')
-   :'<div class="empty"><b>Keine Kunden</b>Lege mit + den ersten an.</div>'}</div>`;
+ let list=S.kunden.slice().sort((a,b)=>a.name.localeCompare(b.name,'de'));
+ if(kQ){const q=kQ.toLowerCase();list=list.filter(k=>{
+  const kz=S.fahrzeuge.filter(f=>f.kundeId===k.id).map(f=>f.kennz).join(' ');
+  return [k.name,k.tel,k.email,kz].join(' ').toLowerCase().includes(q)})}
+ let listHtml;
+ if(!kQ&&list.length>8){
+  /* A–Z Register ab 9 Kunden */
+  const groups={};list.forEach(k=>{const L=(k.name[0]||'#').toUpperCase();(groups[L]=groups[L]||[]).push(k)});
+  listHtml=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'de')).map(L=>
+   `<div class="lbl">${L}</div><div class="card stag">${groups[L].map(kundeRow).join('')}</div>`).join('');
+ }else{
+  listHtml=`<div class="card stag">${list.length?list.map(kundeRow).join('')
+   :'<div class="empty"><b>Keine Kunden</b>'+(kQ?'Nichts gefunden — Suche anpassen.':'Lege mit + den ersten an.')+'</div>'}</div>`;
+ }
+ const inner=`<div class="searchbar">${IC.search}<input placeholder="Name, Telefon, Kennzeichen" value="${esc(kQ)}" data-input="kQ"></div>
+  ${listHtml}`;
  return shell(inner,{title:'Kunden',eyebrow:S.kunden.length+' gesamt'})+`<button class="fab" data-act="kunde-edit">+</button>`;
 }
 function vKunde(id){
@@ -2327,6 +2395,11 @@ function vAnfragen(){
     <span style="font-size:13px;font-weight:750;color:var(--ink);line-height:1">${chanCt[k]}</span>
     <span style="font-size:9px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.03em">${l.split(' ')[0]}</span></div>`}).join('');
   body=`
+  ${neu>0?`<button class="card" style="width:100%;display:flex;align-items:center;gap:12px;padding:13px 15px;margin-bottom:12px;text-align:left;border-color:rgba(10,95,255,.35);cursor:pointer" data-act="triage-start">
+   <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#0A5FFF,#5B8DEF);display:grid;place-items:center;color:#fff;font-size:17px;flex-shrink:0">⚡</div>
+   <div style="flex:1"><b style="font-size:13.5px">Triage starten</b>
+    <div style="font-size:11px;color:var(--ink3);margin-top:1px">${neu} neue Anfrage${neu>1?'n':''} nacheinander durchgehen — antworten, Termin, später</div></div>
+   <span class="chev" style="transform:rotate(-45deg)"></span></button>`:''}
   <div class="kpis stag">
    <div class="kpi"><b class="num" style="${neu?'color:var(--blue)':''}">${neu}</b><span>Neu</span></div>
    <div class="kpi"><b class="num">${offen}</b><span>Offen</span></div>
@@ -2505,6 +2578,61 @@ ACT['anfr-convert-quick']=el=>{const x=anfrage(el.dataset.id);if(!x)return;
   sig:null,sig2:null,pinned:false,reviewSent:false,created:Date.now()};
  S.auftraege.push(a);x.auftragId=a.id;if(x.status==='neu'||x.status==='beantwortet')x.status='termin';
  save();toast('Auftrag '+a.nr+' angelegt');nav('auftrag',a.id)};
+/* ---- Triage-Modus: neue Anfragen nacheinander ---- */
+let triageIds=[],triageIdx=0;
+ACT['triage-start']=()=>{
+ const prioOrd={hoch:0,mittel:1,niedrig:2};
+ triageIds=S.anfragen.filter(q=>q.status==='neu')
+  .sort((a,b)=>(prioOrd[a.prio]??3)-(prioOrd[b.prio]??3)||a.ts-b.ts).map(q=>q.id);
+ triageIdx=0;
+ if(!triageIds.length)return toast('Keine neuen Anfragen');
+ triageSheet()};
+function triageSheet(){
+ while(triageIdx<triageIds.length&&!anfrage(triageIds[triageIdx]))triageIdx++;
+ if(triageIdx>=triageIds.length){closeSheet();render();toast('Triage abgeschlossen — alle neuen Anfragen durchgesehen');return}
+ const x=anfrage(triageIds[triageIdx]);
+ const kc=KCOL[x.kanal]||'#6B6B73';
+ const[pl,pc]=PRIO[x.prio]||['—','var(--ink3)'];
+ const dots=triageIds.map((_,i)=>`<span style="width:6px;height:6px;border-radius:50%;background:${i===triageIdx?'var(--blue)':i<triageIdx?'var(--green)':'var(--line)'};display:inline-block"></span>`).join(' ');
+ sheet(`Triage · ${triageIdx+1} von ${triageIds.length}`,`
+  <div style="display:flex;justify-content:center;gap:4px;margin-bottom:13px">${dots}</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px">
+   <div style="width:40px;height:40px;border-radius:12px;background:${kc}18;display:grid;place-items:center;color:${kc};flex-shrink:0">${KICON[x.kanal]||KICON.tel}</div>
+   <div style="flex:1;min-width:0"><b style="font-size:14px">${esc(x.name||'Unbekannt')}</b>
+    <div style="font-size:11px;color:var(--ink3)">${QKANAL[x.kanal]||''} · ${relTime(x.ts)}</div></div>
+   ${x.prio?`<span class="tag" style="background:${pc}18;color:${pc}">${pl}</span>`:''}
+   ${x.wertCt?`<span class="tag t-green num">~${fmt(x.wertCt)}</span>`:''}</div>
+  ${x.betreff?`<b style="font-size:13px;display:block;margin-bottom:7px">${esc(x.betreff)}</b>`:''}
+  <div style="background:var(--bg);border:1px solid var(--line);border-left:3px solid ${kc};border-radius:11px;padding:11px 12px;margin-bottom:11px;max-height:180px;overflow-y:auto">
+   <div style="font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word">${esc(x.original||'—')}</div></div>
+  <div id="q-kibox">${x.grund?`<div style="font-size:11px;background:var(--bg);border:1px solid var(--line);border-left:2.5px solid ${pc};border-radius:10px;padding:9px 11px;margin-bottom:11px;color:var(--ink2)"><b style="color:var(--ink)">Einschätzung${x.kiQuelle==='ki'?' (KI)':''}:</b> ${esc(x.grund)}</div>`:''}</div>
+  ${!x.grund?`<button class="btn btn-2nd" style="width:100%;margin-bottom:11px" data-act="triage-ki" data-id="${x.id}"><span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Automatische Einschätzung (KI)</button>`:''}
+  ${x.antwort?`<div class="lbl" style="margin-top:0">Antwort-Entwurf</div><div style="font-size:12px;color:var(--ink2);background:var(--blue-bg);border-radius:10px;padding:9px 11px;margin-bottom:11px;line-height:1.5">${esc(x.antwort)}</div>`:''}
+  <div class="row2" style="margin-bottom:8px">
+   ${x.tel?`<button class="btn btn-soft-green" data-act="triage-wa" data-id="${x.id}">WhatsApp senden</button>`:`<button class="btn btn-2nd" data-act="triage-detail" data-id="${x.id}">Details öffnen</button>`}
+   <button class="btn btn-main" data-act="triage-convert" data-id="${x.id}">→ Auftrag anlegen</button></div>
+  <div class="row2">
+   <button class="btn btn-2nd" data-act="triage-skip">Später ›</button>
+   <button class="btn btn-danger" data-act="triage-lost" data-id="${x.id}">Absagen</button></div>`);
+}
+ACT['triage-skip']=()=>{triageIdx++;triageSheet()};
+ACT['triage-detail']=el=>{closeSheet();nav('anfrage',el.dataset.id)};
+ACT['triage-lost']=el=>{const x=anfrage(el.dataset.id);if(x){x.status='verloren';save()}triageIdx++;triageSheet()};
+ACT['triage-wa']=el=>{const x=anfrage(el.dataset.id);if(!x||!x.tel)return;
+ if(x.status==='neu')x.status='beantwortet';save();
+ const w=window.open('https://wa.me/'+x.tel.replace(/[^\d]/g,'')+(x.antwort?'?text='+encodeURIComponent(x.antwort):''),'_blank');
+ if(!w)location.href='https://wa.me/'+x.tel.replace(/[^\d]/g,'')+(x.antwort?'?text='+encodeURIComponent(x.antwort):'');
+ triageIdx++;triageSheet()};
+ACT['triage-convert']=el=>{closeSheet();
+ const btn=document.createElement('button');btn.dataset.id=el.dataset.id;
+ ACT['anfr-convert-quick'](btn)};
+ACT['triage-ki']=async el=>{const x=anfrage(el.dataset.id);if(!x)return;
+ el.disabled=true;el.textContent='Analysiere…';
+ const r=await kiAnalyze(x.original||'',x.kanal,x.name||'');
+ x.prio=x.prio||r.prio;x.grund=r.grund;x.kiQuelle=r.quelle;
+ if(!x.betreff)x.betreff=r.betreff||'';
+ if(!x.antwort)x.antwort=r.antwort;if(!x.wertCt)x.wertCt=r.wert;
+ save();triageSheet()};
 /* ---- Anfrage Vollansicht ---- */
 function vAnfrage(id){
  const x=anfrage(id);
@@ -3007,6 +3135,14 @@ function vTermine(){
    <button class="icon-btn" data-act="term-woche" data-d="-1" style="flex-shrink:0">‹</button>
    <b style="flex:1;text-align:center;font-size:13px">KW ${kw} · ${new Date(days[0]+'T12:00').getDate()}.${new Date(days[0]+'T12:00').getMonth()+1}. – ${new Date(days[6]+'T12:00').getDate()}.${new Date(days[6]+'T12:00').getMonth()+1}.</b>
    <button class="icon-btn" data-act="term-woche" data-d="1" style="flex-shrink:0">›</button></div>
+  ${(()=>{const tod=T.filter(t=>t.datum===today).sort((a,b)=>(a.von||'').localeCompare(b.von||''));
+   return tod.length?`<div class="lbl" style="margin-top:0">Heute · ${tod.length} Termin${tod.length!==1?'e':''}</div>
+   <div class="card stag" style="margin-bottom:12px">${tod.map(t=>{const k=t.kundeId?kunde(t.kundeId):null;
+    const [tl,tc]=(TTYP[t.typ]||TTYP.sonstiges);
+    return`<div class="lrow" data-act="termin-open" data-id="${t.id}" style="box-shadow:inset 3px 0 0 ${tc}">
+     <div style="flex-shrink:0;text-align:center;min-width:44px"><b class="num" style="font-size:14px;color:${tc}">${t.von||''}</b><div style="font-size:9px;color:var(--ink3)">${t.bis?'bis '+t.bis:''}</div></div>
+     <div class="lt"><b>${esc(t.titel)}</b><span>${k?esc(k.name):''}${t.notiz?' · '+esc(t.notiz.slice(0,40)):''}</span></div>
+     <span class="tag" style="background:${tc}18;color:${tc}">${tl}</span></div>`}).join('')}</div>`:''})()}
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
     <div style="min-width:420px">
