@@ -27,3 +27,7 @@
 ## Wichtige Regel
 
 Online-Terminbuchung: Anfragen IMMER mit status 'neu' — Inhaber bestätigt selbst. Nie auto-bestätigen. (Per QA-Test abgesichert.)
+
+## Nacht-Update (12./13.07.)
+
+Umgesetzt: Scan-first "Neuer Auftrag" (Segmente Bestehend/Neu + Privat/Firma, Ansprechpartner, volle Fahrzeugdaten optional aufklappbar), Galerie-Zugriff beim Schein-Scan, Layout-Shift-Fixes (Datum/Zeit-Inputs, Pills ohne Scale, Fahrzeugliste per Klassen-Toggle), Status als Dropdown + „Sonstiges" mit Freitext, Auftragsfreigabe ohne Unterschrift (tel/mail/wa/ig/pers + Link zur Originalnachricht, Anfrage-Verknüpfung), Auto-Erweiterung nach Freigabe (Checkbox entfernt), posSheet: kein EK bei Arbeit, AW-Satz je Auftrag/Position änderbar (VK=AW×Satz live), AP-Datenbank (20 Seeds + Lernen + Datalist + Kombi-Vorschläge via AP_KOMBI), Befund&Abhilfe-Positionen (auch auf Rechnung), Anfrage→Auftrag legt Beanstandung wörtlich als Befund an (Paket = Techn. Beanstandung), Kommunikations-Historie mit System-Einträgen (Anlage/Status/Rechnung/Freigabe/Unterschrift), Video-Guard 12MB, FSET-Hoisting-Bug behoben. SW v9.
