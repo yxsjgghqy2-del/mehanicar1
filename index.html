@@ -623,6 +623,8 @@ IC.book='<svg viewBox="0 0 24 24"><path d="M4 4.5A2 2 0 0 1 6 3h13v16H6a2 2 0 0 
 IC.stack='<svg viewBox="0 0 24 24"><path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/><path d="M3 17.5l9 5 9-5"/></svg>';
 IC.link='<svg viewBox="0 0 24 24"><path d="M10 14a4.5 4.5 0 0 0 6.4.3l2.5-2.5a4.5 4.5 0 0 0-6.4-6.4L11 6.9"/><path d="M14 10a4.5 4.5 0 0 0-6.4-.3L5.1 12.2a4.5 4.5 0 0 0 6.4 6.4L13 17.1"/></svg>';
 IC.chart='<svg viewBox="0 0 24 24"><path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/></svg>';
+IC.x='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+function xIco(px){return IC.x.replace('<svg ',`<svg style="width:${px||14}px;height:${px||14}px;stroke:currentColor;fill:none;stroke-width:2.3;stroke-linecap:round;display:block" `)}
 
 /* ============ 2. STORE ============ */
 const KEY='mehanicar_v2';
@@ -927,7 +929,7 @@ function sheet(title,body,foot=''){
  closeSheet();
  const w=document.createElement('div');w.className='sheet-bg';w.id='sheetbg';
  w.innerHTML=`<div class="sheet"><div class="sheet-h" style="position:relative"><div class="grab"></div><h2>${title}</h2>
-  <button class="sheet-x" data-act="sheet-close">✕</button></div><div class="sheet-b">${body}${foot}</div></div>`;
+  <button class="sheet-x" data-act="sheet-close">${xIco(13)}</button></div><div class="sheet-b">${body}${foot}</div></div>`;
  w.addEventListener('click',e=>{if(e.target===w)closeSheet()});
  document.body.appendChild(w);
  const sh=w.querySelector('.sheet'),grab=w.querySelector('.grab');
@@ -1058,7 +1060,7 @@ function vPlanung(){
  let pin='';
  if(pinned){const f=fzg(pinned.fzgId)||{},k=kunde(pinned.kundeId)||{},p1=pinned.pakete.find(p=>!p.abger)||pinned.pakete[0];
   pin=`<div class="pin-card">
-   <div class="pin-h"><span class="pin-tag">Angepinnt · In Bearbeitung</span><button class="pin-x" data-act="row-pin" data-id="${pinned.id}">✕</button></div>
+   <div class="pin-h"><span class="pin-tag">Angepinnt · In Bearbeitung</span><button class="pin-x" data-act="row-pin" data-id="${pinned.id}">${xIco(13)}</button></div>
    <div style="display:flex;justify-content:space-between;align-items:flex-start">
     <div><div class="kennz" style="font-size:18px;font-weight:800">${esc(f.kennz||'')}</div>
     <div style="font-size:12px;color:var(--ink3)">${esc((f.marke||'')+' '+(f.modell||''))} · ${esc(k.name||'')}</div></div>
@@ -1084,7 +1086,7 @@ function vPlanung(){
    const sc=S.settings.sync||{};const syncOk=sc.on&&!syncState.err;const syncBroken=sc.on&&syncState.err;const due=hasData&&!window._bkDismiss&&(syncBroken||(!sc.on&&((m.changes||0)>=15||(m.lastBackup&&Date.now()-m.lastBackup>7*86400000))));
    return due?`<div class="warnrow" style="display:flex;align-items:center;gap:10px"><span style="flex:1">${syncBroken?'Cloud-Backup gestört — Daten evtl. ungesichert.':'Backup empfohlen — '+(m.lastBackup?'letzte Sicherung '+dLabel(new Date(m.lastBackup).toISOString().slice(0,10)):'noch keine Sicherung')+'.'}</span>
     <button class="btn btn-sm" style="background:var(--amber);color:#fff;flex-shrink:0" data-act="${syncBroken?'sync-now':'data-xlsx'}">${syncBroken?'Erneut sichern':'Excel-Backup'}</button>
-    <button style="color:var(--amber);padding:6px;font-size:14px" data-act="bk-dismiss">✕</button></div>`:''})()}
+    <button style="color:var(--amber);padding:6px;font-size:14px" data-act="bk-dismiss">${xIco(13)}</button></div>`:''})()}
   ${(()=>{ /* „Jetzt wichtig" — priorisierte Tagesaufgaben */
    const items=[];
    const overOrds=heute.filter(a=>a.abgabe<t&&!['fertig','abgeholt'].includes(a.status));
@@ -1524,13 +1526,13 @@ function vAuftrag(id){
   <div class="lbl">Checkliste · ${clDone} von ${(a.check||[]).length}</div>
   ${(a.check||[]).map((c,i)=>`<div class="cl ${c.done?'done':''}" data-act="cl-tog" data-oid="${a.id}" data-i="${i}">
    <div class="cb"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><span class="ct">${esc(c.t)}</span>
-   <button style="color:var(--ink3);font-size:15px;padding:8px 10px;margin:-8px -6px" data-act="cl-del" data-oid="${a.id}" data-i="${i}">✕</button></div>`).join('')}
+   <button style="color:var(--ink3);font-size:15px;padding:8px 10px;margin:-8px -6px" data-act="cl-del" data-oid="${a.id}" data-i="${i}">${xIco(13)}</button></div>`).join('')}
   ${(a.check||[]).length?`<div class="prog"><i style="width:${(a.check.length?clDone/a.check.length*100:0)}%"></i></div>`:''}
   <button class="btn-ghost" style="width:100%;margin-top:10px" data-act="cl-add" data-oid="${a.id}">+ Prüfpunkt</button>
   <div class="lbl">Dokumente</div>
   ${(a.docs||[]).map((d,i)=>`<div class="doc-row"><div class="doc-ic">${esc(d.typ)}</div>
    <div style="flex:1">${esc(d.name)}</div>
-   <button style="color:var(--ink3);padding:4px" data-act="doc-del" data-oid="${a.id}" data-i="${i}">✕</button></div>`).join('')||'<div style="font-size:11.5px;color:var(--ink3);padding:4px 0">Keine Dokumente</div>'}
+   <button style="color:var(--ink3);padding:4px" data-act="doc-del" data-oid="${a.id}" data-i="${i}">${xIco(13)}</button></div>`).join('')||'<div style="font-size:11.5px;color:var(--ink3);padding:4px 0">Keine Dokumente</div>'}
   <button class="btn-ghost" style="width:100%;margin-top:8px" data-act="doc-add" data-oid="${a.id}">+ Dokument vermerken</button>`);
 
  /* --- Organisation --- */
@@ -1590,7 +1592,7 @@ function vAuftrag(id){
    <button class="bb bb-main" data-act="bill-all" data-oid="${a.id}">${offen>0?'Rechnung erstellen':'Alles abgerechnet'}</button></div></div>`;
 }
 function fotoTile(a,fo){return `<div class="foto">${fo.isVideo?`<video src="${fo.data}" muted playsinline style="width:100%;height:100%;object-fit:cover" controls></video>`:`<img src="${fo.data}" alt="">`}<span class="loc">${esc(fo.label)}</span>
- <button class="fx" data-act="foto-del" data-oid="${a.id}" data-fid="${fo.id}">✕</button></div>`}
+ <button class="fx" data-act="foto-del" data-oid="${a.id}" data-fid="${fo.id}">${xIco(13)}</button></div>`}
 function camTile(a,pid){return `<div class="foto cam" data-act="add-foto-btn" data-oid="${a.id}" data-pid="${pid}">+</div>`}
 
 /* ---- Auftrag: Handler ---- */
@@ -2330,7 +2332,7 @@ function vMehr(){
     <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#0A5FFF,#5B8DEF);display:grid;place-items:center;flex-shrink:0"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><rect x="4" y="15" width="16" height="6" rx="2"/></svg></div>
     <div style="flex:1"><b style="font-size:13px">Als App installieren</b>
      <div style="font-size:11px;color:var(--ink3);line-height:1.5;margin-top:2px">${isIOS?'Safari: Teilen-Symbol → „Zum Home-Bildschirm" — dann läuft mehanicar wie eine echte App, auch offline.':'Browser-Menü → „App installieren" bzw. „Zum Startbildschirm hinzufügen".'}</div></div>
-    <button style="color:var(--ink3);padding:6px;font-size:14px;flex-shrink:0" data-act="install-hint-done">✕</button></div></div>`:'';
+    <button style="color:var(--ink3);padding:6px;font-size:14px;flex-shrink:0" data-act="install-hint-done">${xIco(13)}</button></div></div>`:'';
  const inner=`${installHint}<div class="card stag">
   ${[['termine','Terminkalender',IC.plan,(S.termine||[]).filter(t=>t.datum>=todayISO()).length+' anstehende Termine'],['lager','Lager',IC.box,S.lager.length+' Artikel im Bestand'],['kalender','Kapazität',IC.grid,'10-Tage-Plan · Mitarbeiter'],['bestellungen','Bestellungen',IC.truck,(S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen').length||'Keine')+' offen'],['kampagnen','Kampagnen',IC.mega,S.kampagnen.length+' Kampagnen gesendet'],['apdb','Arbeitspositionen',IC.book,(S.apDb||[]).length+' Positionen · '+(S.apKombi||[]).length+' Kombis'],['pakvorlagen','Paket-Vorlagen',IC.stack,(S.pakVorlagen||[]).length+' Vorlagen'],['team','Team',IC.team,S.mitarbeiter.length+' Mitarbeiter'],['personal','Personalwesen',IC.team,(S.krankmeldungen||[]).filter(k=>k.von<=todayISO()&&k.bis>=todayISO()).length+' aktive Krankmeldungen'],['fahrzeuge','Fahrzeuge',IC.car,S.fahrzeuge.length+' Fahrzeuge'],['finanzen','Finanzen',IC.fin,S.rechnungen.length+' Rechnungen'],['einstellungen','Einstellungen',IC.gear,'Firma, Preise, Werkstatt, Daten']].map(([v,l,ic,sub])=>
    `<div class="lrow" data-act="open" data-v="${v}"><div class="av" style="background:var(--gray-bg);color:var(--ink2)">${ic}</div>
@@ -2464,7 +2466,7 @@ function vEinstellungen(){
     return tpls.map((t,i)=>`<div class="kv" style="align-items:flex-start;flex-direction:column;gap:4px">
      <div style="display:flex;align-items:center;gap:6px;width:100%"><input class="priceinp" style="width:90px;flex-shrink:0" value="${esc(t.l)}" data-f="watpl-l" data-i="${i}">
       <input class="priceinp" style="flex:1" value="${esc(t.m)}" data-f="watpl-m" data-i="${i}">
-      <button style="color:var(--red);padding:6px;font-size:14px;flex-shrink:0" data-act="watpl-del" data-i="${i}">✕</button></div></div>`).join('')})()}
+      <button style="color:var(--red);padding:6px;font-size:14px;flex-shrink:0" data-act="watpl-del" data-i="${i}">${xIco(13)}</button></div></div>`).join('')})()}
    <button class="btn-ghost" style="width:100%;margin-top:6px" data-act="watpl-add">+ Template hinzufügen</button></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Anfragen & KI</div>
    <div class="kv"><span class="k">Anfragen-Benachrichtigung</span><span class="v"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ${st.pushAnfragen?'checked':''} data-f="set-push-anfr" style="accent-color:var(--blue);width:18px;height:18px"><span>${st.pushAnfragen?'aktiviert':'deaktiviert'}</span></label></span></div>
@@ -3472,7 +3474,7 @@ function apdbSheet(e){
    <div id="ap-marken">${markeRows.map(([mk,aw],i)=>`<div class="row2" data-mi="${i}" style="align-items:center">
     <input class="priceinp" placeholder="Marke, z. B. BMW" value="${esc(mk)}" data-mk>
     <div style="display:flex;gap:6px"><input class="priceinp" style="flex:1" inputmode="decimal" value="${String(aw).replace('.',',')}" data-mv>
-     <button style="color:var(--red);padding:8px" data-act="apdb-marke-del" data-i="${i}">✕</button></div></div>`).join('')}</div>
+     <button style="color:var(--red);padding:8px" data-act="apdb-marke-del" data-i="${i}">${xIco(13)}</button></div></div>`).join('')}</div>
    <button class="btn-ghost" style="width:100%;margin-bottom:14px" data-act="apdb-marke-add">+ Marke hinzufügen</button>`:''}
   <div class="row2">
    ${e?`<button class="btn btn-danger" data-act="apdb-del" data-bez="${esc(e.bez)}">Löschen</button>`:'<span></span>'}
@@ -3482,7 +3484,7 @@ ACT['apdb-marke-add']=()=>{const wrap=$('#ap-marken');const i=wrap.children.leng
  const row=document.createElement('div');row.className='row2';row.dataset.mi=i;row.style.alignItems='center';
  row.innerHTML=`<input class="priceinp" placeholder="Marke, z. B. BMW" data-mk>
   <div style="display:flex;gap:6px"><input class="priceinp" style="flex:1" inputmode="decimal" placeholder="AW" data-mv>
-   <button style="color:var(--red);padding:8px" data-act="apdb-marke-del" data-i="${i}">✕</button></div>`;
+   <button style="color:var(--red);padding:8px" data-act="apdb-marke-del" data-i="${i}">${xIco(13)}</button></div>`;
  wrap.appendChild(row)};
 ACT['apdb-marke-del']=el=>{el.closest('[data-mi]').remove()};
 ACT['apdb-save']=el=>{
@@ -3541,7 +3543,7 @@ function pvorlageSheet(t){
   <div style="display:flex;gap:6px;align-items:center">
    ${p.typ==='teil'?`<input class="priceinp" style="width:70px" inputmode="decimal" placeholder="VK" value="${p.vkCt?fmtIn(p.vkCt):''}" data-pvk>`
     :`<input class="priceinp" style="width:56px" inputmode="decimal" placeholder="AW" value="${p.aw?String(p.aw).replace('.',','):''}" data-paw>`}
-   <button style="color:var(--red);padding:8px" data-act="pvorlage-pos-del" data-i="${i}">✕</button></div></div>`;
+   <button style="color:var(--red);padding:8px" data-act="pvorlage-pos-del" data-i="${i}">${xIco(13)}</button></div></div>`;
  sheet(nw?'Neue Vorlage':'Vorlage bearbeiten',`
   <div class="fld"><label>Name *</label><input id="pv-n" value="${esc(t.name)}" placeholder="z. B. Große Inspektion"></div>
   <div class="fld"><label>Klassifizierung</label><div class="selwrap"><select id="pv-k">
@@ -3566,7 +3568,7 @@ ACT['pvorlage-pos-add']=el=>{
  row.innerHTML=`<input class="priceinp" style="flex:1" placeholder="Bezeichnung" data-pb>
   <div style="display:flex;gap:6px;align-items:center">
    ${el.dataset.typ==='teil'?'<input class="priceinp" style="width:70px" inputmode="decimal" placeholder="VK" data-pvk>':'<input class="priceinp" style="width:56px" inputmode="decimal" placeholder="AW" data-paw>'}
-   <button style="color:var(--red);padding:8px" data-act="pvorlage-pos-del" data-i="${i}">✕</button></div>`;
+   <button style="color:var(--red);padding:8px" data-act="pvorlage-pos-del" data-i="${i}">${xIco(13)}</button></div>`;
  wrap.appendChild(row)};
 ACT['pvorlage-pos-del']=el=>{el.closest('[data-pi]').remove()};
 ACT['pvorlage-save']=el=>{
@@ -3673,7 +3675,7 @@ function vPersonal(){
   <div class="card">${km.slice().reverse().slice(0,30).map(k=>{const m=mita(k.mid);
    return `<div class="lrow" style="cursor:default"><div class="av" style="background:${m?m.farbe+'14':'var(--red-bg)'};color:${m?m.farbe:'var(--red)'}";font-weight:800>${m?esc(m.kuerzel):'?'}</div>
     <div class="lt"><b>${m?esc(m.name):'—'}</b><span>${k.von} – ${k.bis}${k.notiz?' · '+esc(k.notiz):''}</span></div>
-    <button style="color:var(--red);padding:8px;font-size:14px" data-act="km-del" data-id="${k.id}">✕</button></div>`}).join('')||
+    <button style="color:var(--red);padding:8px;font-size:14px" data-act="km-del" data-id="${k.id}">${xIco(13)}</button></div>`}).join('')||
    '<div class="empty" style="padding:16px"><b>Keine Einträge</b>Füge Krankmeldungen mit + hinzu.</div>'}</div>`;
  } else if(persSec==='urlaub'){
   body=`<div class="kpis stag" style="grid-template-columns:1fr 1fr">
@@ -3685,7 +3687,7 @@ function vPersonal(){
    return `<div class="lrow" style="cursor:default"><div class="av" style="background:${m?m.farbe+'14':'var(--gray-bg)'};color:${m?m.farbe:'var(--ink2)'}";font-weight:800>${m?esc(m.kuerzel):'?'}</div>
     <div class="lt"><b>${m?esc(m.name):'—'}</b><span>${u.von} – ${u.bis}${u.notiz?' · '+esc(u.notiz):''}</span></div>
     <span class="tag ${ok?'t-gray':aktiv?'t-amber':'t-blue'}">${ok?'vergangen':aktiv?'läuft':'geplant'}</span>
-    <button style="color:var(--red);padding:8px;font-size:14px;margin-left:4px" data-act="url-del" data-id="${u.id}">✕</button></div>`}).join('')||
+    <button style="color:var(--red);padding:8px;font-size:14px;margin-left:4px" data-act="url-del" data-id="${u.id}">${xIco(13)}</button></div>`}).join('')||
    '<div class="empty" style="padding:16px"><b>Keine Einträge</b>Füge Urlaub mit + hinzu.</div>'}</div>`;
  } else {
   body=`<div class="lbl">Stunden nach Mitarbeiter · ${yr}</div>
