@@ -1075,7 +1075,12 @@ ACT['ord-new']=()=>{
   <div id="no-newk"><div class="row2"><div class="fld"><label>Name *</label><input id="no-kn" placeholder="Max Mustermann"></div>
    <div class="fld"><label>Telefon</label><input id="no-kt" inputmode="tel" placeholder="+49 ..."></div></div></div>
   <div class="fld"><label>Fahrzeug</label><div class="selwrap"><select id="no-f"><option value="">— Neues Fahrzeug —</option></select></div></div>
-  <div id="no-newf"><div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="no-fk" placeholder="HU-XX 000" style="text-transform:uppercase"></div>
+  <div id="no-newf">
+   <button class="btn btn-2nd" style="width:100%;margin-bottom:11px" data-act="schein-scan" data-mode="ord">
+    <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Fahrzeugschein fotografieren — Daten automatisch übernehmen</button>
+   <input type="file" accept="image/*" capture="environment" id="scheininp" style="display:none">
+   <div id="schein-status"></div>
+   <div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="no-fk" placeholder="HU-XX 000" style="text-transform:uppercase"></div>
    <div class="fld"><label>Marke / Modell</label><input id="no-fm" placeholder="BMW 320d"></div></div>
   </div>
   <div class="row2"><div class="fld"><label>Voraussichtl. Fertigstellung</label><input type="date" id="no-d" value="${todayISO()}"></div>
@@ -1857,9 +1862,10 @@ ACT['fzg-save']=el=>{const kz=$('#fz-kz').value.trim().toUpperCase();if(!kz)retu
  if(el.dataset.id)Object.assign(fzg(el.dataset.id),vals);
  else S.fahrzeuge.push({id:'f'+uid(),notiz:'',...vals});
  save();closeSheet();render();toast('Gespeichert')};
-/* Fahrzeugschein-Scan: Foto → /api/scan → Felder ausfüllen */
-ACT['schein-scan']=()=>{
+/* Fahrzeugschein-Scan: Foto → /api/scan → Felder ausfüllen (mode: fzg-Sheet oder ord-Sheet) */
+ACT['schein-scan']=el=>{
  const inp=$('#scheininp');if(!inp)return;
+ inp.dataset.mode=el.dataset.mode||'fzg';
  if(!inp._b){inp._b=true;inp.addEventListener('change',e=>{
   const file=e.target.files[0];e.target.value='';if(!file)return;
   const st=$('#schein-status');
@@ -1881,11 +1887,16 @@ ACT['schein-scan']=()=>{
     if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||('HTTP '+r.status))}
     const {fields:fl={}}=await r.json();
     const setV=(id,v)=>{const n=$(id);if(n&&v&&!n.value)n.value=v};
-    setV('#fz-kz',(fl.kennzeichen||'').toUpperCase());
-    setV('#fz-ma',fl.marke||'');setV('#fz-mo',fl.modell||'');
-    setV('#fz-v',fl.vin||'');
-    setV('#fz-bj',fl.baujahr||(fl.erstzulassung||'').slice(0,4));
-    setV('#fz-hu',(fl.hu_datum||'').slice(0,7));
+    if(inp.dataset.mode==='ord'){
+     setV('#no-fk',(fl.kennzeichen||'').toUpperCase());
+     setV('#no-fm',((fl.marke||'')+' '+(fl.modell||'')).trim());
+    }else{
+     setV('#fz-kz',(fl.kennzeichen||'').toUpperCase());
+     setV('#fz-ma',fl.marke||'');setV('#fz-mo',fl.modell||'');
+     setV('#fz-v',fl.vin||'');
+     setV('#fz-bj',fl.baujahr||(fl.erstzulassung||'').slice(0,4));
+     setV('#fz-hu',(fl.hu_datum||'').slice(0,7));
+    }
     const got=['kennzeichen','marke','modell','vin','baujahr','hu_datum'].filter(k=>fl[k]).length;
     if(st)st.innerHTML=got?`<div style="font-size:11.5px;color:var(--green);background:var(--green-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">${got} Felder erkannt und eingetragen — bitte kurz prüfen.</div>`
      :'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Nichts erkannt — Foto näher, gerade und bei gutem Licht aufnehmen.</div>';
