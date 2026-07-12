@@ -1,4 +1,4 @@
-const CACHE='mehanicar-v1';
+const CACHE='mehanicar-v3';
 const SHELL=['./','./index.html','./icon.svg'];
 
 self.addEventListener('install',e=>{
