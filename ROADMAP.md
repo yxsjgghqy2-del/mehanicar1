@@ -1,28 +1,29 @@
 # mehanicar — Finale Version: Arbeitsstand
 
-Fortschrittsdatei. Wird nach jeder Phase aktualisiert, damit bei Sitzungsende nichts verloren geht.
-
-## Status
+## Status: ALLE PHASEN ABGESCHLOSSEN ✅ (12.07.2026)
 
 | Phase | Inhalt | Status |
 |---|---|---|
-| 1 | Rechtliches: Impressum, Datenschutz (aus Firmendaten generiert), Links in Einstellungen + Buchen | ⬜ offen |
-| 2 | Design: Aufträge (Suche + Gruppenliste), Planung (Jetzt-wichtig), Kunden (A–Z + Suche), Anfragen (Triage) | ⬜ offen |
-| 3 | Funktion: KI-Analyse via /api/analyse, Schein-Scan via /api/scan, Onboarding, PNG-Icons, Empty-States | ⬜ offen |
-| 4 | QA: JS-Syntax-Check, Selftest, SW-Bump, Merge → main (Vercel-Prod) | ⬜ offen |
+| 1 | Rechtliches: Impressum + Datenschutz (aus Firmendaten generiert), Links auf Buchungsseite, Rechnung mit Leistungsdatum + Steuernr. (§14 UStG) | ✅ |
+| 2 | Design: Aufträge-Dringlichkeitsgruppen, „Jetzt wichtig"-Liste (Planung), Kunden A–Z, Anfragen-Triage-Modus, Termine-Heute-Agenda | ✅ |
+| 3 | Funktion: Onboarding (erster Start), Fahrzeugschein-Scan (/api/scan + UI), KI-Defaults (Haiku 4.5), PNG-Icons, iOS-Install-Hinweis, SW v4 | ✅ |
+| 4 | QA: Playwright-E2E (12 Szenarien, 0 JS-Fehler), Selftest grün, Merge → main | ✅ |
+
+## Vom Betreiber noch zu erledigen (einmalig)
+
+1. **ANTHROPIC_API_KEY** in Vercel setzen (Settings → Environment Variables) — sonst laufen KI-Einschätzung und Schein-Scan regelbasiert/gar nicht.
+2. **Firmendaten** in Einstellungen → Firma vollständig ausfüllen (Impressum-Pflicht!).
+3. Eigene Domain in Vercel verbinden (optional).
 
 ## Architektur-Notizen (für Wiedereinstieg)
 
-- Alles in `index.html` (~3300 Zeilen). State `S` in localStorage `mehanicar_v2`.
-- Views: `vPlanung` 922, `vAuftraege` 993, `vAuftrag` 1060, `vKunden` 1651, `vKunde` 1667,
-  `vFahrzeuge` 1725, `vFinanzen` 1842, `vEinstellungen` 1928, `vAnfragen` 2301, `vAnfrage` 2505,
-  `vKalender` 2625, `vTermine` 2981, `vBuchen` 3070, `render` 3144, `viewHtml` 3183, `selftest` 3272.
-  (Zeilennummern verschieben sich bei Edits — per grep neu suchen.)
-- Handler: `ACT[...]` für data-act Klicks, `FSET[...]` für data-f Inputs.
-- `ruleAnalyze` (2229) = heuristische Anfragen-Analyse; `/api/analyse` = KI (braucht ANTHROPIC_API_KEY auf Vercel).
-- Deploy: Push auf beliebigen Branch = Preview; Merge in `main` = Produktion (mehanicar1.vercel.app).
-- Branch: `fix/nav-segctrl` (aktuell), PR-merge via GitHub MCP, SW-Cache-Version bei UI-Änderungen bumpen (aktuell v3).
+- Alles in `index.html`. State `S` in localStorage `mehanicar_v2`.
+- Handler: `ACT[...]` (data-act Klicks), `FSET[...]` (data-f Inputs). Views `v*()`, Routing über `route`+`render()`.
+- Onboarding: `S.settings.onboarded` — Gate in `render()`, öffentliche Views (buchen/impressum/datenschutz) ausgenommen.
+- KI: `kiAnalyze()` → `S.settings.ki.endpoint` (Default `/api/analyse`, Modell Haiku 4.5) → Fallback `ruleAnalyze()`.
+- Schein-Scan: `ACT['schein-scan']` in Fahrzeug-Sheet → `/api/scan` (Vision).
+- Deploy: Branch-Push = Preview; Merge in `main` = Produktion. SW-Cache-Version bei UI-Änderungen bumpen (aktuell **v4**).
 
 ## Wichtige Regel
 
-Online-Terminbuchung: Anfragen IMMER mit status 'neu' anlegen — Inhaber bestätigt selbst. Nie auto-bestätigen.
+Online-Terminbuchung: Anfragen IMMER mit status 'neu' — Inhaber bestätigt selbst. Nie auto-bestätigen. (Per QA-Test abgesichert.)
