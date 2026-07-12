@@ -10,7 +10,7 @@
 <title>mehanicar</title>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="apple-touch-icon" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
 /* ============ DESIGN TOKENS ============ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -691,7 +691,7 @@ function seed(){
   {id:'q3',ts:now-86400000*3,kanal:'ig',name:'markus.hu63',tel:'',betreff:'Klimaservice',original:'Hi, macht ihr auch Klimaservice? Golf 6, kühlt kaum noch. Was würde das kosten?',origUrl:'',notiz:'Über Instagram-DM',status:'gewonnen',prio:'niedrig',grund:'Standardanliegen.',kiQuelle:null,antwort:'',wertCt:15000,followUp:null,auftragId:null,wonTs:now-86400000*3}];
  const BU={a1:1,a2:2,a4:1,a5:3};A.forEach(a=>{a.buehne=BU[a.id]||null;a.reviewSent=false});
  return {version:2,demo:true,
-  settings:{awCt:12500,mwst:19,nextRe:101,nextAu:49,nextBe:1,buehnen:3,theme:'auto',ki:{endpoint:'/api/analyse',model:'claude-fable-5'},
+  settings:{awCt:12500,mwst:19,nextRe:101,nextAu:49,nextBe:1,buehnen:3,theme:'auto',onboarded:false,ki:{endpoint:'/api/analyse',model:'claude-haiku-4-5-20251001'},
    firma:{name:'mehanicar Kfz-Meisterwerkstatt',inhaber:'Samed',adresse:'Musterstraße 1, 63450 Hanau',tel:'+49 6181 000000',email:'info@mehanicar.de',iban:'DE00 0000 0000 0000 0000 00',ustid:'DE000000000',web:'mehanicar.de',reviewUrl:''}},
   kunden:K,fahrzeuge:F,lager:L,auftraege:A,rechnungen:[],anfragen:Q,radarDone:{},bestellungen:[],kampagnen:[],mitarbeiter:[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#0A5FFF',aktiv:true}],termine:[]};
 }
@@ -704,7 +704,9 @@ S.anfragen.forEach(q=>{if(q.kanal==='anruf')q.kanal='tel';if(!QKANAL[q.kanal])q.
  if(!q.fotos)q.fotos=[];if(!q.antworten)q.antworten=[];if(!q.kiSugg)q.kiSugg=[]});
 S.customReplies=S.customReplies||[];
 S.settings.buehnen=S.settings.buehnen||3;
-S.settings.ki=S.settings.ki||{endpoint:'/api/analyse',model:'claude-fable-5'};
+S.settings.ki=S.settings.ki||{endpoint:'/api/analyse',model:'claude-haiku-4-5-20251001'};
+if(S.settings.ki.model==='claude-fable-5')S.settings.ki.model='claude-haiku-4-5-20251001';
+if(S.settings.onboarded===undefined)S.settings.onboarded=true;
 S.settings.firma.reviewUrl=S.settings.firma.reviewUrl||'';
 (S.rechnungen||[]).forEach(r=>{if(r.bezahlt===undefined)r.bezahlt=false});
 (S.auftraege||[]).forEach(a=>{if(a.buehne===undefined)a.buehne=null;if(a.reviewSent===undefined)a.reviewSent=false;
@@ -795,7 +797,7 @@ function shell(inner,{title,eyebrow,back,side='',hideNav=false,bar='',ctx=''}={}
   <div class="hdr-side">${side}</div>
  </div>${bar}</div>
  <div class="main" id="main">${inner}</div>
- ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>{const isOn=route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen','kalender','buchen'].includes(route.v));const badge=v==='anfragen'&&(S.anfragen||[]).filter(q=>q.status==='neu').length>0?'<i class="nav-badge"></i>':'';return`<button data-act="nav" data-v="${v}" class="${isOn?'on':''}" style="position:relative"><span class="nic">${ic}</span>${l}${badge}</button>`}).join('')}</div>`}`;
+ ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>{const isOn=route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen','kalender','buchen','lager','bestellungen','kampagnen','team','personal','impressum','datenschutz'].includes(route.v));const badge=v==='anfragen'&&(S.anfragen||[]).filter(q=>q.status==='neu').length>0?'<i class="nav-badge"></i>':'';return`<button data-act="nav" data-v="${v}" class="${isOn?'on':''}" style="position:relative"><span class="nic">${ic}</span>${l}${badge}</button>`}).join('')}</div>`}`;
 }
 function toast(msg,err){const old=$('.toast');if(old)old.remove();const t=document.createElement('div');t.className='toast'+(err?' err':'');t.textContent=msg;
  document.body.appendChild(t);setTimeout(()=>{t.style.transition='opacity .3s';t.style.opacity='0';setTimeout(()=>t.remove(),320)},2200)}
@@ -961,6 +963,31 @@ function vPlanung(){
    return due?`<div class="warnrow" style="display:flex;align-items:center;gap:10px"><span style="flex:1">${syncBroken?'Cloud-Backup gestört — Daten evtl. ungesichert.':'Backup empfohlen — '+(m.lastBackup?'letzte Sicherung '+dLabel(new Date(m.lastBackup).toISOString().slice(0,10)):'noch keine Sicherung')+'.'}</span>
     <button class="btn btn-sm" style="background:var(--amber);color:#fff;flex-shrink:0" data-act="${syncBroken?'sync-now':'data-xlsx'}">${syncBroken?'Erneut sichern':'Excel-Backup'}</button>
     <button style="color:var(--amber);padding:6px;font-size:14px" data-act="bk-dismiss">✕</button></div>`:''})()}
+  ${(()=>{ /* „Jetzt wichtig" — priorisierte Tagesaufgaben */
+   const items=[];
+   const overOrds=heute.filter(a=>a.abgabe<t&&!['fertig','abgeholt'].includes(a.status));
+   if(overOrds.length){const f=fzg(overOrds[0].fzgId)||{};
+    items.push({c:'var(--red)',bg:'var(--red-bg)',t:overOrds.length===1?(f.kennz||overOrds[0].nr)+' fertigstellen':overOrds.length+' überfällige Aufträge fertigstellen',
+     s:overOrds.length===1?'Kunde wartet — Abgabe war '+dLabel(overOrds[0].abgabe):'Ältester: '+dLabel(overOrds.map(a=>a.abgabe).sort()[0]),
+     act:overOrds.length===1?`data-act="open" data-v="auftrag" data-id="${overOrds[0].id}"`:'data-act="nav" data-v="auftraege"'})}
+   const neuAnfr=(S.anfragen||[]).filter(q=>q.status==='neu');
+   if(neuAnfr.length){const hoch=neuAnfr.filter(q=>q.prio==='hoch').length;
+    items.push({c:'var(--blue)',bg:'var(--blue-bg)',t:neuAnfr.length+' neue Anfrage'+(neuAnfr.length>1?'n':'')+' beantworten',
+     s:hoch?hoch+'× Priorität hoch — Kunde nicht warten lassen':'Schnelle Antwort gewinnt den Auftrag',
+     act:'data-act="nav" data-v="anfragen"'})}
+   const mahnRe=S.rechnungen.filter(r=>!r.bezahlt&&(Date.parse(t)-Date.parse(r.datum))/86400000>(S.settings.mahnTage||14));
+   if(mahnRe.length){items.push({c:'var(--amber)',bg:'var(--amber-bg)',t:mahnRe.length+' Rechnung'+(mahnRe.length>1?'en':'')+' mahnen',
+    s:fmt(mahnRe.reduce((s,r)=>s+r.bruttoCt,0))+' offen seit über '+(S.settings.mahnTage||14)+' Tagen',
+    act:'data-act="open" data-v="finanzen"'})}
+   const rad=radarItems().filter(r=>r.prio<=1);
+   if(rad.length){items.push({c:'var(--violet)',bg:'var(--violet-bg)',t:rad.length+'× HU/Erinnerung überfällig',
+    s:'Kunden anschreiben — unter Anfragen → Wartung & HU',act:'data-act="nav" data-v="anfragen"'})}
+   return items.length?`<div class="card" style="padding:13px 15px;margin-bottom:12px">
+    <div class="lbl" style="margin-top:0">Jetzt wichtig</div>
+    ${items.slice(0,4).map((it,i)=>`<div class="lrow" style="padding:9px 0;border-bottom:${i<Math.min(items.length,4)-1?'1px solid var(--line2)':'none'}" ${it.act}>
+     <div class="av" style="width:26px;height:26px;border-radius:8px;background:${it.bg};color:${it.c};font-size:12px;font-weight:800">${i+1}</div>
+     <div class="lt"><b style="font-size:12.5px">${it.t}</b><span>${it.s}</span></div>
+     <span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')}</div>`:''})()}
   <div id="pinwrap" class="${pinned?'show':''}">${pin}</div>
   <div class="fix">
    <div class="fix-h"><span class="t">Heute · ${['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'][now.getDay()]}</span>
@@ -990,25 +1017,53 @@ ACT['row-done']=el=>{const a=auftrag(el.dataset.id);if(!a)return;
 
 /* -------- Aufträge Liste -------- */
 let ordFilter='alle',ordQ='';
+function ordRow(a,strip){
+ const f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{};const [,sl,sc]=statL(a.status);
+ const noteFlag=a.notiz?`<span class="dotmark" style="margin-left:5px"></span>`:'';
+ const aw=totalAW(a);
+ return `<div class="lrow" data-act="open" data-v="auftrag" data-id="${a.id}" ${strip?`style="box-shadow:inset 3px 0 0 ${strip}"`:''}>
+  <div class="av" style="background:${sc}14;color:${sc}">${IC.car}</div>
+  <div class="lt"><b>${esc(f.kennz||'—')} · ${esc((f.marke||'')+' '+(f.modell||''))}</b>
+  <span>${esc(k.name||'')} · ${a.nr}${noteFlag}</span></div>
+  <div class="lr"><b class="num">${fmt(ordNetto(a))}</b>
+  <span style="color:${sc};font-weight:700">${sl}${aw>0?` · <b class="num" style="color:var(--ink2)">${pct1(aw)} AW</b>`:''}</span></div></div>`;
+}
 function vAuftraege(){
  let list=S.auftraege.slice().sort((a,b)=>(a.abgabe||'9999').localeCompare(b.abgabe||'9999'));
  if(ordFilter!=='alle')list=list.filter(a=>a.status===ordFilter);
  if(ordQ){const q=ordQ.toLowerCase();list=list.filter(a=>{const f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{};
   return [a.nr,f.kennz,f.marke,f.modell,k.name].join(' ').toLowerCase().includes(q)})}
+ let listHtml;
+ if(ordFilter==='alle'&&!ordQ&&list.length){
+  /* Nach Dringlichkeit gruppieren */
+  const t=todayISO(),w=addDays(t,7);
+  const g={over:[],today:[],week:[],later:[],ready:[],done:[]};
+  list.forEach(a=>{
+   if(a.status==='abgeholt')g.done.push(a);
+   else if(a.status==='fertig')g.ready.push(a);
+   else if(a.abgabe&&a.abgabe<t)g.over.push(a);
+   else if(a.abgabe===t)g.today.push(a);
+   else if(a.abgabe&&a.abgabe<=w)g.week.push(a);
+   else g.later.push(a)});
+  g.done.sort((a,b)=>(b.abgabe||'').localeCompare(a.abgabe||''));
+  const GRP=[['over','Überfällig','var(--red)','#E0353B'],['today','Heute fällig','var(--blue)','#0A5FFF'],
+   ['week','Diese Woche','var(--ink2)',''],['later','Später / ohne Termin','var(--ink3)',''],
+   ['ready','Abholbereit','var(--green)','#0E8F4E'],['done','Abgeholt (Archiv)','var(--ink3)','']];
+  listHtml=GRP.map(([key,label,col,strip])=>{
+   const it=g[key];if(!it.length)return '';
+   const shown=key==='done'?it.slice(0,5):it;
+   return `<div class="lbl" style="color:${col}">${label} · ${it.length}</div>
+    <div class="card stag">${shown.map(a=>ordRow(a,strip)).join('')}
+    ${key==='done'&&it.length>5?`<div style="padding:9px 15px;font-size:11px;color:var(--ink3);border-top:1px solid var(--line2)">+ ${it.length-5} weitere — über Statusfilter „Abgeholt" oder Suche erreichbar</div>`:''}</div>`}).join('');
+ }else{
+  listHtml=`<div class="card stag">${list.length?list.map(a=>ordRow(a,'')).join('')
+   :'<div class="empty"><b>Keine Aufträge gefunden</b>Passe Suche oder Filter an.</div>'}</div>`;
+ }
  const inner=`
   <div class="searchbar">${IC.search}<input placeholder="Kennzeichen, Kunde, Nummer" value="${esc(ordQ)}" data-input="ordQ"></div>
   <div class="pills">${[['alle','Alle'],...STATI.map(s=>[s[0],s[1]])].map(([v,l])=>{const c=v==='alle'?'#0A5FFF':statL(v)[2];
    return `<button class="pill ${ordFilter===v?'on':''}" style="${ordFilter===v?`background:${c}14;border-color:${c};color:${c}`:''}" data-act="ord-filter" data-v="${v}">${l}</button>`}).join('')}</div>
-  <div class="card stag">${list.length?list.map(a=>{const f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{};const [,sl,sc]=statL(a.status);
-   const noteFlag=a.notiz?`<span class="dotmark" style="margin-left:5px"></span>`:'';
-   const aw=totalAW(a);
-   return `<div class="lrow" data-act="open" data-v="auftrag" data-id="${a.id}">
-    <div class="av" style="background:${sc}14;color:${sc}">${IC.car}</div>
-    <div class="lt"><b>${esc(f.kennz||'—')} · ${esc((f.marke||'')+' '+(f.modell||''))}</b>
-    <span>${esc(k.name||'')} · ${a.nr}${noteFlag}</span></div>
-    <div class="lr"><b class="num">${fmt(ordNetto(a))}</b>
-    <span style="color:${sc};font-weight:700">${sl}${aw>0?` · <b class="num" style="color:var(--ink2)">${pct1(aw)} AW</b>`:''}</span></div></div>`}).join('')
-   :'<div class="empty"><b>Keine Aufträge gefunden</b>Passe Suche oder Filter an.</div>'}</div>`;
+  ${listHtml}`;
  return shell(inner,{title:'Aufträge',eyebrow:S.auftraege.length+' gesamt'})+`<button class="fab" data-act="ord-new">+</button>`;
 }
 ACT['ord-filter']=el=>{ordFilter=el.dataset.v;render()};
@@ -1608,9 +1663,9 @@ function buildInvoiceHtml(a,pakIds,reNr){
    <td class="tr">${fmt(p.vkCt)}</td><td class="tr">${fmt(posNetto(p))}</td></tr>`).join('')+
   (prab?`<tr><td colspan="3">Rabatt Paket</td><td class="tr">– ${fmt(prab)}</td></tr>`:'')}).join('');
  return {netto,mwst,brutto,anz,html:`
-  <div class="ph"><div><h1>${esc(fi.name)}</h1><div class="small">${esc(fi.adresse)}<br>${esc(fi.tel)} · ${esc(fi.email)}${fi.ustid?'<br>USt-ID: '+esc(fi.ustid):''}</div></div>
+  <div class="ph"><div><h1>${esc(fi.name)}</h1><div class="small">${esc(fi.adresse)}<br>${esc(fi.tel)} · ${esc(fi.email)}${fi.ustid?'<br>USt-IdNr.: '+esc(fi.ustid):fi.steuernr?'<br>Steuernr.: '+esc(fi.steuernr):''}</div></div>
    <div class="small" style="text-align:right"><b style="font-size:14px;color:#111">${reNr?'Rechnung '+reNr:'Auftragsübersicht'}</b><br>
-    Datum: ${new Date().toLocaleDateString('de-DE')}<br>Auftrag: ${a.nr}<br>Fahrzeug: ${esc(f.kennz||'')} · ${esc((f.marke||'')+' '+(f.modell||''))}<br>
+    Rechnungsdatum: ${new Date().toLocaleDateString('de-DE')}<br>Leistungsdatum: ${new Date((a.abgabe||todayISO())+'T00:00').toLocaleDateString('de-DE')}<br>Auftrag: ${a.nr}<br>Fahrzeug: ${esc(f.kennz||'')} · ${esc((f.marke||'')+' '+(f.modell||''))}<br>
     ${a.kmAn!=null?'KM: '+a.kmAn.toLocaleString('de-DE'):''}</div></div>
   <div class="small" style="margin-bottom:4px">Kunde</div>
   <div><b>${esc(k.name||'')}</b><br><span class="small">${esc(k.adresse||'')}</span></div>
@@ -1648,20 +1703,35 @@ function doBill(a,pakIds){
 
 /* ============ 7. KUNDEN / FAHRZEUGE / LAGER / MEHR ============ */
 let kQ='',lQ='';
+function kundeRow(k){
+ const fz=S.fahrzeuge.filter(f=>f.kundeId===k.id);
+ const ords=S.auftraege.filter(a=>a.kundeId===k.id);
+ const ini=k.name.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
+ const AVC=['#0A5FFF','#0E8F4E','#C2710A','#6B4DD6','#E0353B'];
+ const col=AVC[(k.name.charCodeAt(0)+(k.name.charCodeAt(1)||0))%AVC.length];
+ return `<div class="lrow" data-act="open" data-v="kunde" data-id="${k.id}">
+  <div class="av" style="background:${col}16;color:${col}">${ini}</div>
+  <div class="lt"><b>${esc(k.name)}${k.stamm?' <span class="tag t-green" style="font-size:8.5px;vertical-align:1px">Stamm</span>':''}</b>
+  <span>${fz.map(f=>f.kennz).join(', ')||'kein Fahrzeug'}</span></div>
+  <div class="lr"><b class="num">${ords.length}</b><span>Aufträge</span></div></div>`;
+}
 function vKunden(){
- let list=S.kunden.slice().sort((a,b)=>a.name.localeCompare(b.name));
- if(kQ){const q=kQ.toLowerCase();list=list.filter(k=>[k.name,k.tel,k.email].join(' ').toLowerCase().includes(q))}
- const inner=`<div class="searchbar">${IC.search}<input placeholder="Name, Telefon, E-Mail" value="${esc(kQ)}" data-input="kQ"></div>
-  <div class="card stag">${list.length?list.map(k=>{
-   const fz=S.fahrzeuge.filter(f=>f.kundeId===k.id);
-   const ords=S.auftraege.filter(a=>a.kundeId===k.id);
-   const ini=k.name.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
-   return `<div class="lrow" data-act="open" data-v="kunde" data-id="${k.id}">
-    <div class="av" style="background:var(--blue-bg);color:var(--blue)">${ini}</div>
-    <div class="lt"><b>${esc(k.name)}${k.stamm?' <span class="tag t-green" style="font-size:8.5px;vertical-align:1px">Stamm</span>':''}</b>
-    <span>${fz.map(f=>f.kennz).join(', ')||'kein Fahrzeug'}</span></div>
-    <div class="lr"><b class="num">${ords.length}</b><span>Aufträge</span></div></div>`}).join('')
-   :'<div class="empty"><b>Keine Kunden</b>Lege mit + den ersten an.</div>'}</div>`;
+ let list=S.kunden.slice().sort((a,b)=>a.name.localeCompare(b.name,'de'));
+ if(kQ){const q=kQ.toLowerCase();list=list.filter(k=>{
+  const kz=S.fahrzeuge.filter(f=>f.kundeId===k.id).map(f=>f.kennz).join(' ');
+  return [k.name,k.tel,k.email,kz].join(' ').toLowerCase().includes(q)})}
+ let listHtml;
+ if(!kQ&&list.length>8){
+  /* A–Z Register ab 9 Kunden */
+  const groups={};list.forEach(k=>{const L=(k.name[0]||'#').toUpperCase();(groups[L]=groups[L]||[]).push(k)});
+  listHtml=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'de')).map(L=>
+   `<div class="lbl">${L}</div><div class="card stag">${groups[L].map(kundeRow).join('')}</div>`).join('');
+ }else{
+  listHtml=`<div class="card stag">${list.length?list.map(kundeRow).join('')
+   :'<div class="empty"><b>Keine Kunden</b>'+(kQ?'Nichts gefunden — Suche anpassen.':'Lege mit + den ersten an.')+'</div>'}</div>`;
+ }
+ const inner=`<div class="searchbar">${IC.search}<input placeholder="Name, Telefon, Kennzeichen" value="${esc(kQ)}" data-input="kQ"></div>
+  ${listHtml}`;
  return shell(inner,{title:'Kunden',eyebrow:S.kunden.length+' gesamt'})+`<button class="fab" data-act="kunde-edit">+</button>`;
 }
 function vKunde(id){
@@ -1757,6 +1827,10 @@ function vFahrzeug(id){
 }
 ACT['fzg-edit']=el=>{const f=el.dataset.id?fzg(el.dataset.id):null;
  sheet(f?'Fahrzeug bearbeiten':'Neues Fahrzeug',`
+  <button class="btn btn-2nd" style="width:100%;margin-bottom:13px" data-act="schein-scan">
+   <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Fahrzeugschein fotografieren — Daten automatisch übernehmen</button>
+  <input type="file" accept="image/*" capture="environment" id="scheininp" style="display:none">
+  <div id="schein-status"></div>
   <div class="fld"><label>Halter *</label><div class="selwrap"><select id="fz-k">
    ${S.kunden.map(k=>`<option value="${k.id}" ${f&&f.kundeId===k.id?'selected':''}>${esc(k.name)}</option>`).join('')}</select></div></div>
   <div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="fz-kz" style="text-transform:uppercase" value="${f?esc(f.kennz):''}"></div>
@@ -1783,6 +1857,43 @@ ACT['fzg-save']=el=>{const kz=$('#fz-kz').value.trim().toUpperCase();if(!kz)retu
  if(el.dataset.id)Object.assign(fzg(el.dataset.id),vals);
  else S.fahrzeuge.push({id:'f'+uid(),notiz:'',...vals});
  save();closeSheet();render();toast('Gespeichert')};
+/* Fahrzeugschein-Scan: Foto → /api/scan → Felder ausfüllen */
+ACT['schein-scan']=()=>{
+ const inp=$('#scheininp');if(!inp)return;
+ if(!inp._b){inp._b=true;inp.addEventListener('change',e=>{
+  const file=e.target.files[0];e.target.value='';if(!file)return;
+  const st=$('#schein-status');
+  if(st)st.innerHTML='<div style="font-size:11.5px;color:var(--blue);background:var(--blue-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Bild wird analysiert — einen Moment …</div>';
+  /* Bild verkleinern (max 1600px) und als Base64 senden */
+  const img=new Image();const url=URL.createObjectURL(file);
+  img.onload=async()=>{
+   URL.revokeObjectURL(url);
+   const max=1600,sc=Math.min(1,max/Math.max(img.width,img.height));
+   const cv=document.createElement('canvas');cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);
+   cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+   const dataUrl=cv.toDataURL('image/jpeg',0.85);
+   const b64=dataUrl.split(',')[1];
+   try{
+    const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),30000);
+    const r=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({media_type:'image/jpeg',data:b64}),signal:ctl.signal});
+    clearTimeout(to);
+    if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||('HTTP '+r.status))}
+    const {fields:fl={}}=await r.json();
+    const setV=(id,v)=>{const n=$(id);if(n&&v&&!n.value)n.value=v};
+    setV('#fz-kz',(fl.kennzeichen||'').toUpperCase());
+    setV('#fz-ma',fl.marke||'');setV('#fz-mo',fl.modell||'');
+    setV('#fz-v',fl.vin||'');
+    setV('#fz-bj',fl.baujahr||(fl.erstzulassung||'').slice(0,4));
+    setV('#fz-hu',(fl.hu_datum||'').slice(0,7));
+    const got=['kennzeichen','marke','modell','vin','baujahr','hu_datum'].filter(k=>fl[k]).length;
+    if(st)st.innerHTML=got?`<div style="font-size:11.5px;color:var(--green);background:var(--green-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">${got} Felder erkannt und eingetragen — bitte kurz prüfen.</div>`
+     :'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Nichts erkannt — Foto näher, gerade und bei gutem Licht aufnehmen.</div>';
+   }catch(err){
+    if(st)st.innerHTML=`<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Scan nicht möglich (${esc(err.name==='AbortError'?'Zeitüberschreitung':String(err.message||err))}). Auf Vercel muss ANTHROPIC_API_KEY gesetzt sein — Daten bitte von Hand eintragen.</div>`;
+   }};
+  img.src=url})}
+ inp.click()};
 ACT['fzg-del']=el=>{const f=fzg(el.dataset.id);
  const ords=S.auftraege.filter(a=>a.fzgId===f.id);
  if(ords.length)return toast('Fahrzeug hat '+ords.length+' Aufträge — erst diese löschen',true);
@@ -1831,7 +1942,16 @@ ACT['lager-del']=el=>{const l=lagerT(el.dataset.id);
 
 /* Mehr / Finanzen / Einstellungen */
 function vMehr(){
- const inner=`<div class="card stag">
+ const isStandalone=window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches||navigator.standalone;
+ const isIOS=/iPhone|iPad|iPod/.test(navigator.userAgent);
+ const installHint=!isStandalone&&!S.settings.installHintDone?`
+  <div class="card" style="padding:13px 15px;border-color:rgba(10,95,255,.3)">
+   <div style="display:flex;align-items:center;gap:11px">
+    <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#0A5FFF,#5B8DEF);display:grid;place-items:center;flex-shrink:0"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><rect x="4" y="15" width="16" height="6" rx="2"/></svg></div>
+    <div style="flex:1"><b style="font-size:13px">Als App installieren</b>
+     <div style="font-size:11px;color:var(--ink3);line-height:1.5;margin-top:2px">${isIOS?'Safari: Teilen-Symbol → „Zum Home-Bildschirm" — dann läuft mehanicar wie eine echte App, auch offline.':'Browser-Menü → „App installieren" bzw. „Zum Startbildschirm hinzufügen".'}</div></div>
+    <button style="color:var(--ink3);padding:6px;font-size:14px;flex-shrink:0" data-act="install-hint-done">✕</button></div></div>`:'';
+ const inner=`${installHint}<div class="card stag">
   ${[['termine','Terminkalender',IC.plan,(S.termine||[]).filter(t=>t.datum>=todayISO()).length+' anstehende Termine'],['lager','Lager',IC.box,S.lager.length+' Artikel im Bestand'],['kalender','Kapazität',IC.grid,'10-Tage-Plan · Mitarbeiter'],['bestellungen','Bestellungen',IC.truck,(S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen').length||'Keine')+' offen'],['kampagnen','Kampagnen',IC.mega,S.kampagnen.length+' Kampagnen gesendet'],['team','Team',IC.team,S.mitarbeiter.length+' Mitarbeiter'],['personal','Personalwesen',IC.team,(S.krankmeldungen||[]).filter(k=>k.von<=todayISO()&&k.bis>=todayISO()).length+' aktive Krankmeldungen'],['fahrzeuge','Fahrzeuge',IC.car,S.fahrzeuge.length+' Fahrzeuge'],['finanzen','Finanzen',IC.fin,S.rechnungen.length+' Rechnungen'],['einstellungen','Einstellungen',IC.gear,'Firma, Preise, Werkstatt, Daten']].map(([v,l,ic,sub])=>
    `<div class="lrow" data-act="open" data-v="${v}"><div class="av" style="background:var(--gray-bg);color:var(--ink2)">${ic}</div>
     <div class="lt"><b>${l}</b><span>${sub}</span></div><span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')}</div>
@@ -1924,6 +2044,7 @@ function vFinanzen(){
  return shell(inner,{title:'Finanzen',eyebrow:'Übersicht',back:1});
 }
 ACT['fin-tog']=el=>{finSec[el.dataset.k]=!finSec[el.dataset.k];render()};
+ACT['install-hint-done']=()=>{S.settings.installHintDone=true;save();render()};
 ACT['theme-set']=el=>{S.settings.theme=el.dataset.v;applyTheme(el.dataset.v);save();render()};
 function vEinstellungen(){
  const fi=S.settings.firma;
@@ -1969,10 +2090,10 @@ function vEinstellungen(){
    <div class="kv"><span class="k">Anfragen-Benachrichtigung</span><span class="v"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ${st.pushAnfragen?'checked':''} data-f="set-push-anfr" style="accent-color:var(--blue);width:18px;height:18px"><span>${st.pushAnfragen?'aktiviert':'deaktiviert'}</span></label></span></div>
    <div class="kv"><span class="k">Automatische Priorisierung</span><span class="v"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ${(st.autoPrio!==false)?'checked':''} data-f="set-auto-prio" style="accent-color:var(--blue);width:18px;height:18px"><span>${(st.autoPrio!==false)?'an':'aus'}</span></label></span></div>
    <div class="fld"><label>KI-Endpoint</label><input value="${esc((st.ki||{}).endpoint||'')}" data-f="set-ki-ep" placeholder="/api/analyse"></div>
-   <div class="fld" style="margin-bottom:6px"><label>KI-Modell</label><input value="${esc((st.ki||{}).model||'claude-fable-5')}" data-f="set-ki-model"></div>
+   <div class="fld" style="margin-bottom:6px"><label>KI-Modell</label><input value="${esc((st.ki||{}).model||'claude-haiku-4-5-20251001')}" data-f="set-ki-model"></div>
    <div style="font-size:10.5px;color:var(--ink3);line-height:1.55">Datei <b>api/analyse.js</b> ins GitHub-Repo — <b>ANTHROPIC_API_KEY</b> als Vercel-Env-Variable. Ohne Endpoint läuft die App regelbasiert weiter.</div></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Firma (für Rechnungen & Nachrichten)</div>
-   ${[['name','Name'],['inhaber','Inhaber / Meister'],['adresse','Adresse'],['tel','Telefon'],['email','E-Mail'],['iban','IBAN'],['ustid','USt-ID'],['web','Website'],['reviewUrl','Google-Bewertungslink']].map(([f,l])=>
+   ${[['name','Name'],['inhaber','Inhaber / Meister'],['adresse','Adresse'],['tel','Telefon'],['email','E-Mail'],['iban','IBAN'],['ustid','USt-ID'],['steuernr','Steuernummer (falls keine USt-ID)'],['web','Website'],['reviewUrl','Google-Bewertungslink']].map(([f,l])=>
     `<div class="fld"><label>${l}</label><input value="${esc(fi[f]||'')}" data-f="set-firma" data-k="${f}"></div>`).join('')}</div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Cloud-Backup — automatisch</div>
    <div class="kv"><span class="k">Status</span><span class="v" id="sync-status"></span></div>
@@ -2000,6 +2121,10 @@ create policy "backup_all" on backup for all using (true) with check (true);</te
    <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:11px;font-family:ui-monospace,monospace;word-break:break-all;color:var(--ink2);margin-bottom:10px">${esc(typeof location!=='undefined'?location.origin+location.pathname+'#/buchen':'https://deine-domain.de/#/buchen')}</div>
    <div class="row2"><button class="btn btn-2nd btn-sm" data-act="buchen-link-share">Link teilen</button>
     <button class="btn btn-main btn-sm" data-act="open" data-v="buchen">Vorschau öffnen</button></div></div>
+  <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Rechtliches</div>
+   <div style="font-size:11px;color:var(--ink3);margin-bottom:10px;line-height:1.5">Impressum und Datenschutzerklärung werden automatisch aus deinen Firmendaten erzeugt und sind auf der öffentlichen Buchungsseite verlinkt${legalMissing().length?' — <b style="color:var(--amber)">bitte erst Firmendaten vervollständigen ('+legalMissing().join(', ')+')</b>':''}.</div>
+   <div class="row2"><button class="btn btn-2nd btn-sm" data-act="open" data-v="impressum">Impressum ansehen</button>
+    <button class="btn btn-2nd btn-sm" data-act="open" data-v="datenschutz">Datenschutz ansehen</button></div></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Daten</div>
    <button class="btn btn-main" style="width:100%" data-act="data-xlsx">Excel-Backup erstellen (.xlsx)</button>
    <div style="font-size:10.5px;color:var(--ink3);margin:6px 2px 10px;line-height:1.5">Lesbares Archiv: Aufträge, Positionen, Kunden, Fahrzeuge, Lager, Rechnungen, Kommunikation — je ein Tabellenblatt.</div>
@@ -2255,7 +2380,7 @@ async function kiAnalyze(txt,kanal,name){
  try{
   const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),14000);
   const r=await fetch(cfg.endpoint,{method:'POST',headers:{'Content-Type':'application/json'},
-   body:JSON.stringify({text:txt,kanal,name,model:cfg.model||'claude-fable-5'}),signal:ctl.signal});
+   body:JSON.stringify({text:txt,kanal,name,model:cfg.model||'claude-haiku-4-5-20251001'}),signal:ctl.signal});
   clearTimeout(to);
   if(!r.ok)throw new Error('HTTP '+r.status);
   const d=await r.json();
@@ -2323,6 +2448,11 @@ function vAnfragen(){
     <span style="font-size:13px;font-weight:750;color:var(--ink);line-height:1">${chanCt[k]}</span>
     <span style="font-size:9px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.03em">${l.split(' ')[0]}</span></div>`}).join('');
   body=`
+  ${neu>0?`<button class="card" style="width:100%;display:flex;align-items:center;gap:12px;padding:13px 15px;margin-bottom:12px;text-align:left;border-color:rgba(10,95,255,.35);cursor:pointer" data-act="triage-start">
+   <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#0A5FFF,#5B8DEF);display:grid;place-items:center;color:#fff;font-size:17px;flex-shrink:0">⚡</div>
+   <div style="flex:1"><b style="font-size:13.5px">Triage starten</b>
+    <div style="font-size:11px;color:var(--ink3);margin-top:1px">${neu} neue Anfrage${neu>1?'n':''} nacheinander durchgehen — antworten, Termin, später</div></div>
+   <span class="chev" style="transform:rotate(-45deg)"></span></button>`:''}
   <div class="kpis stag">
    <div class="kpi"><b class="num" style="${neu?'color:var(--blue)':''}">${neu}</b><span>Neu</span></div>
    <div class="kpi"><b class="num">${offen}</b><span>Offen</span></div>
@@ -2501,6 +2631,61 @@ ACT['anfr-convert-quick']=el=>{const x=anfrage(el.dataset.id);if(!x)return;
   sig:null,sig2:null,pinned:false,reviewSent:false,created:Date.now()};
  S.auftraege.push(a);x.auftragId=a.id;if(x.status==='neu'||x.status==='beantwortet')x.status='termin';
  save();toast('Auftrag '+a.nr+' angelegt');nav('auftrag',a.id)};
+/* ---- Triage-Modus: neue Anfragen nacheinander ---- */
+let triageIds=[],triageIdx=0;
+ACT['triage-start']=()=>{
+ const prioOrd={hoch:0,mittel:1,niedrig:2};
+ triageIds=S.anfragen.filter(q=>q.status==='neu')
+  .sort((a,b)=>(prioOrd[a.prio]??3)-(prioOrd[b.prio]??3)||a.ts-b.ts).map(q=>q.id);
+ triageIdx=0;
+ if(!triageIds.length)return toast('Keine neuen Anfragen');
+ triageSheet()};
+function triageSheet(){
+ while(triageIdx<triageIds.length&&!anfrage(triageIds[triageIdx]))triageIdx++;
+ if(triageIdx>=triageIds.length){closeSheet();render();toast('Triage abgeschlossen — alle neuen Anfragen durchgesehen');return}
+ const x=anfrage(triageIds[triageIdx]);
+ const kc=KCOL[x.kanal]||'#6B6B73';
+ const[pl,pc]=PRIO[x.prio]||['—','var(--ink3)'];
+ const dots=triageIds.map((_,i)=>`<span style="width:6px;height:6px;border-radius:50%;background:${i===triageIdx?'var(--blue)':i<triageIdx?'var(--green)':'var(--line)'};display:inline-block"></span>`).join(' ');
+ sheet(`Triage · ${triageIdx+1} von ${triageIds.length}`,`
+  <div style="display:flex;justify-content:center;gap:4px;margin-bottom:13px">${dots}</div>
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:11px">
+   <div style="width:40px;height:40px;border-radius:12px;background:${kc}18;display:grid;place-items:center;color:${kc};flex-shrink:0">${KICON[x.kanal]||KICON.tel}</div>
+   <div style="flex:1;min-width:0"><b style="font-size:14px">${esc(x.name||'Unbekannt')}</b>
+    <div style="font-size:11px;color:var(--ink3)">${QKANAL[x.kanal]||''} · ${relTime(x.ts)}</div></div>
+   ${x.prio?`<span class="tag" style="background:${pc}18;color:${pc}">${pl}</span>`:''}
+   ${x.wertCt?`<span class="tag t-green num">~${fmt(x.wertCt)}</span>`:''}</div>
+  ${x.betreff?`<b style="font-size:13px;display:block;margin-bottom:7px">${esc(x.betreff)}</b>`:''}
+  <div style="background:var(--bg);border:1px solid var(--line);border-left:3px solid ${kc};border-radius:11px;padding:11px 12px;margin-bottom:11px;max-height:180px;overflow-y:auto">
+   <div style="font-size:12.5px;line-height:1.55;white-space:pre-wrap;word-break:break-word">${esc(x.original||'—')}</div></div>
+  <div id="q-kibox">${x.grund?`<div style="font-size:11px;background:var(--bg);border:1px solid var(--line);border-left:2.5px solid ${pc};border-radius:10px;padding:9px 11px;margin-bottom:11px;color:var(--ink2)"><b style="color:var(--ink)">Einschätzung${x.kiQuelle==='ki'?' (KI)':''}:</b> ${esc(x.grund)}</div>`:''}</div>
+  ${!x.grund?`<button class="btn btn-2nd" style="width:100%;margin-bottom:11px" data-act="triage-ki" data-id="${x.id}"><span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Automatische Einschätzung (KI)</button>`:''}
+  ${x.antwort?`<div class="lbl" style="margin-top:0">Antwort-Entwurf</div><div style="font-size:12px;color:var(--ink2);background:var(--blue-bg);border-radius:10px;padding:9px 11px;margin-bottom:11px;line-height:1.5">${esc(x.antwort)}</div>`:''}
+  <div class="row2" style="margin-bottom:8px">
+   ${x.tel?`<button class="btn btn-soft-green" data-act="triage-wa" data-id="${x.id}">WhatsApp senden</button>`:`<button class="btn btn-2nd" data-act="triage-detail" data-id="${x.id}">Details öffnen</button>`}
+   <button class="btn btn-main" data-act="triage-convert" data-id="${x.id}">→ Auftrag anlegen</button></div>
+  <div class="row2">
+   <button class="btn btn-2nd" data-act="triage-skip">Später ›</button>
+   <button class="btn btn-danger" data-act="triage-lost" data-id="${x.id}">Absagen</button></div>`);
+}
+ACT['triage-skip']=()=>{triageIdx++;triageSheet()};
+ACT['triage-detail']=el=>{closeSheet();nav('anfrage',el.dataset.id)};
+ACT['triage-lost']=el=>{const x=anfrage(el.dataset.id);if(x){x.status='verloren';save()}triageIdx++;triageSheet()};
+ACT['triage-wa']=el=>{const x=anfrage(el.dataset.id);if(!x||!x.tel)return;
+ if(x.status==='neu')x.status='beantwortet';save();
+ const w=window.open('https://wa.me/'+x.tel.replace(/[^\d]/g,'')+(x.antwort?'?text='+encodeURIComponent(x.antwort):''),'_blank');
+ if(!w)location.href='https://wa.me/'+x.tel.replace(/[^\d]/g,'')+(x.antwort?'?text='+encodeURIComponent(x.antwort):'');
+ triageIdx++;triageSheet()};
+ACT['triage-convert']=el=>{closeSheet();
+ const btn=document.createElement('button');btn.dataset.id=el.dataset.id;
+ ACT['anfr-convert-quick'](btn)};
+ACT['triage-ki']=async el=>{const x=anfrage(el.dataset.id);if(!x)return;
+ el.disabled=true;el.textContent='Analysiere…';
+ const r=await kiAnalyze(x.original||'',x.kanal,x.name||'');
+ x.prio=x.prio||r.prio;x.grund=r.grund;x.kiQuelle=r.quelle;
+ if(!x.betreff)x.betreff=r.betreff||'';
+ if(!x.antwort)x.antwort=r.antwort;if(!x.wertCt)x.wertCt=r.wert;
+ save();triageSheet()};
 /* ---- Anfrage Vollansicht ---- */
 function vAnfrage(id){
  const x=anfrage(id);
@@ -3003,6 +3188,14 @@ function vTermine(){
    <button class="icon-btn" data-act="term-woche" data-d="-1" style="flex-shrink:0">‹</button>
    <b style="flex:1;text-align:center;font-size:13px">KW ${kw} · ${new Date(days[0]+'T12:00').getDate()}.${new Date(days[0]+'T12:00').getMonth()+1}. – ${new Date(days[6]+'T12:00').getDate()}.${new Date(days[6]+'T12:00').getMonth()+1}.</b>
    <button class="icon-btn" data-act="term-woche" data-d="1" style="flex-shrink:0">›</button></div>
+  ${(()=>{const tod=T.filter(t=>t.datum===today).sort((a,b)=>(a.von||'').localeCompare(b.von||''));
+   return tod.length?`<div class="lbl" style="margin-top:0">Heute · ${tod.length} Termin${tod.length!==1?'e':''}</div>
+   <div class="card stag" style="margin-bottom:12px">${tod.map(t=>{const k=t.kundeId?kunde(t.kundeId):null;
+    const [tl,tc]=(TTYP[t.typ]||TTYP.sonstiges);
+    return`<div class="lrow" data-act="termin-open" data-id="${t.id}" style="box-shadow:inset 3px 0 0 ${tc}">
+     <div style="flex-shrink:0;text-align:center;min-width:44px"><b class="num" style="font-size:14px;color:${tc}">${t.von||''}</b><div style="font-size:9px;color:var(--ink3)">${t.bis?'bis '+t.bis:''}</div></div>
+     <div class="lt"><b>${esc(t.titel)}</b><span>${k?esc(k.name):''}${t.notiz?' · '+esc(t.notiz.slice(0,40)):''}</span></div>
+     <span class="tag" style="background:${tc}18;color:${tc}">${tl}</span></div>`}).join('')}</div>`:''})()}
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
     <div style="min-width:420px">
@@ -3090,8 +3283,97 @@ function vBuchen(){
     <div style="font-size:11px;color:var(--ink3);background:rgba(194,113,10,.08);border:1px solid rgba(194,113,10,.25);border-radius:9px;padding:9px 11px;margin-bottom:13px;line-height:1.55">Hinweis: Terminwünsche werden persönlich von unserem Team geprüft und bestätigt. Sie erhalten Rückmeldung per Telefon oder WhatsApp.</div>
     <button class="btn btn-main" style="width:100%" data-act="buchen-send">Terminanfrage absenden</button>
    </div>
-   <div style="text-align:center;font-size:10px;color:var(--ink3);margin-top:14px;line-height:1.6">${fi.web?esc(fi.web)+' · ':''}Powered by mehanicar</div>
+   <div style="text-align:center;font-size:10px;color:var(--ink3);margin-top:14px;line-height:1.6">${fi.web?esc(fi.web)+' · ':''}Powered by mehanicar<br>
+    <button style="font-size:10px;color:var(--ink3);text-decoration:underline;padding:4px 6px" data-act="open" data-v="impressum">Impressum</button>·<button style="font-size:10px;color:var(--ink3);text-decoration:underline;padding:4px 6px" data-act="open" data-v="datenschutz">Datenschutz</button></div>
   </div></div>`;
+}
+/* ============ ONBOARDING (erster Start) ============ */
+function vOnboarding(){
+ return`<div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;background:var(--bg);padding:calc(var(--sat,0px) + 30px) 22px calc(30px + var(--sab,0px))">
+  <div style="max-width:400px;margin:0 auto;width:100%">
+   <div style="text-align:center;margin-bottom:26px">
+    <div style="width:76px;height:76px;border-radius:22px;background:linear-gradient(135deg,#0A5FFF,#5B8DEF);display:grid;place-items:center;margin:0 auto 16px;box-shadow:0 10px 30px rgba(10,95,255,.35)">
+     <svg viewBox="0 0 24 24" style="width:42px;height:42px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11"/><path d="M4 11h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1a2 2 0 1 1-4 0H9a2 2 0 1 1-4 0H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z"/></svg></div>
+    <div style="font-size:26px;font-weight:800;letter-spacing:-.03em">mehanicar</div>
+    <div style="font-size:13px;color:var(--ink2);margin-top:5px;line-height:1.5">Die komplette Werkstatt in einer App.<br>Aufträge · Kunden · Rechnungen · KI-Anfragen</div>
+   </div>
+   <div class="card" style="padding:17px">
+    <div class="fld"><label>Name deiner Werkstatt</label><input id="ob-name" placeholder="z. B. Kfz-Meisterwerkstatt Müller" value="${esc(S.settings.firma.name==='mehanicar Kfz-Meisterwerkstatt'?'':S.settings.firma.name||'')}"></div>
+    <div class="fld"><label>Inhaber / Meister</label><input id="ob-inh" placeholder="Vor- und Nachname"></div>
+    <button class="btn btn-main" style="width:100%;margin-top:4px" data-act="ob-fresh">Loslegen — leer starten</button>
+    <button class="btn btn-2nd" style="width:100%;margin-top:8px" data-act="ob-demo">Erst mit Beispieldaten erkunden</button>
+    <div style="font-size:10.5px;color:var(--ink3);margin-top:12px;line-height:1.55;text-align:center">Alle Daten bleiben auf diesem Gerät. Beispieldaten lassen sich später unter Einstellungen → Daten jederzeit entfernen.</div>
+   </div>
+  </div></div>`;
+}
+ACT['ob-demo']=()=>{obApply(false)};
+ACT['ob-fresh']=()=>{obApply(true)};
+function obApply(fresh){
+ const n=($('#ob-name').value||'').trim(),i=($('#ob-inh').value||'').trim();
+ if(n)S.settings.firma.name=n;
+ if(i)S.settings.firma.inhaber=i;
+ if(fresh){
+  S.demo=false;
+  Object.assign(S,{kunden:[],fahrzeuge:[],lager:[],auftraege:[],rechnungen:[],anfragen:[],bestellungen:[],kampagnen:[],termine:[],krankmeldungen:[],urlaub:[],radarDone:{}});
+  S.mitarbeiter=[{id:'m1',name:i||'Inhaber',kuerzel:(i||'IN').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase(),farbe:'#0A5FFF',aktiv:true}];
+  S.settings.nextAu=1;S.settings.nextRe=1;S.settings.nextBe=1;
+ }
+ S.settings.onboarded=true;save();render();
+ toast(fresh?'Los geht’s — lege deinen ersten Auftrag an':'Beispieldaten geladen — schau dich um');
+}
+/* ============ RECHTLICHES ============ */
+function legalMissing(){
+ const fi=S.settings.firma;
+ return['name','inhaber','adresse','tel','email'].filter(f=>!(fi[f]||'').trim());
+}
+function vImpressum(){
+ const fi=S.settings.firma;
+ const miss=legalMissing();
+ const inner=`<div class="stag">
+  ${miss.length?`<div class="warnrow">Unvollständig: Bitte in Einstellungen → Firma noch ausfüllen: ${miss.join(', ')}. Ein Impressum ist für die öffentliche Buchungsseite gesetzlich vorgeschrieben (§ 5 DDG).</div>`:''}
+  <div class="card" style="padding:16px">
+   <div class="lbl" style="margin-top:0">Angaben gemäß § 5 DDG</div>
+   <div style="font-size:13px;line-height:1.75">
+    <b>${esc(fi.name||'[Werkstattname]')}</b><br>
+    Inhaber: ${esc(fi.inhaber||'[Inhaber]')}<br>
+    ${esc(fi.adresse||'[Anschrift]').replace(/,\s*/,'<br>')}
+   </div>
+   <div class="lbl">Kontakt</div>
+   <div style="font-size:13px;line-height:1.75">
+    Telefon: ${esc(fi.tel||'[Telefon]')}<br>
+    E-Mail: ${esc(fi.email||'[E-Mail]')}
+    ${fi.web?'<br>Web: '+esc(fi.web):''}
+   </div>
+   ${fi.ustid?`<div class="lbl">Umsatzsteuer</div>
+   <div style="font-size:13px;line-height:1.75">Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG:<br>${esc(fi.ustid)}</div>`:''}
+   <div class="lbl">Verantwortlich für den Inhalt (§ 18 Abs. 2 MStV)</div>
+   <div style="font-size:13px;line-height:1.75">${esc(fi.inhaber||'[Inhaber]')}<br>${esc(fi.adresse||'[Anschrift]')}</div>
+   <div class="lbl">Handwerksbetrieb</div>
+   <div style="font-size:12.5px;line-height:1.7;color:var(--ink2)">Kfz-Techniker-Handwerk. Zuständige Kammer: Handwerkskammer am Betriebssitz. Es gelten die berufsrechtlichen Regelungen der Handwerksordnung (HwO), einsehbar unter gesetze-im-internet.de.</div>
+   <div class="lbl">Streitbeilegung</div>
+   <div style="font-size:12.5px;line-height:1.7;color:var(--ink2)">Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen (§ 36 VSBG).</div>
+  </div></div>`;
+ return shell(inner,{title:'Impressum',eyebrow:'Rechtliches',back:1,hideNav:route._from&&route._from.v==='buchen'});
+}
+function vDatenschutz(){
+ const fi=S.settings.firma;
+ const sync=S.settings.sync&&S.settings.sync.on;
+ const ki=(S.settings.ki||{}).endpoint;
+ const sec=(t,b)=>`<div class="lbl">${t}</div><div style="font-size:12.5px;line-height:1.7;color:var(--ink2)">${b}</div>`;
+ const inner=`<div class="stag">
+  <div class="card" style="padding:16px">
+   <div class="lbl" style="margin-top:0">Verantwortlicher</div>
+   <div style="font-size:13px;line-height:1.75"><b>${esc(fi.name||'[Werkstattname]')}</b>, ${esc(fi.inhaber||'[Inhaber]')}<br>${esc(fi.adresse||'[Anschrift]')}<br>${esc(fi.tel||'')} · ${esc(fi.email||'')}</div>
+   ${sec('1. Grundsatz: Lokale Datenhaltung','Diese Anwendung speichert alle Werkstattdaten (Kunden, Fahrzeuge, Aufträge, Rechnungen, Anfragen) ausschließlich lokal auf dem verwendeten Gerät (Browser-Speicher). Es findet keine automatische Übertragung an Dritte statt. Für die Richtigkeit und Sicherung der Daten ist der Betreiber der Werkstatt verantwortlich.')}
+   ${sec('2. Online-Terminanfrage','Wenn Sie über unser Buchungsformular eine Terminanfrage stellen, verarbeiten wir die von Ihnen angegebenen Daten (Name, Telefonnummer, ggf. Kennzeichen, Fahrzeug und Anliegen) ausschließlich zur Bearbeitung Ihrer Anfrage und Terminvereinbarung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertragsanbahnung). Die Daten werden gelöscht, sobald sie für diesen Zweck nicht mehr erforderlich sind und keine gesetzlichen Aufbewahrungspflichten (z. B. § 147 AO für Rechnungsdaten: 10 Jahre) entgegenstehen.')}
+   ${sec('3. Hosting','Die Anwendung wird bei Vercel Inc. (USA) gehostet. Beim Aufruf werden technisch notwendige Daten (IP-Adresse, Zeitpunkt, abgerufene Datei) in Server-Logs verarbeitet. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der sicheren Bereitstellung). Vercel ist nach dem EU-US Data Privacy Framework zertifiziert.')}
+   ${sync?sec('4. Cloud-Sicherung (aktiviert)','Der Betreiber nutzt eine automatische Datensicherung über Supabase. Dabei werden die Werkstattdaten verschlüsselt übertragen und in einer Datenbank gespeichert. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Datensicherung). Mit Supabase besteht ein Auftragsverarbeitungsverhältnis.'):sec('4. Cloud-Sicherung','Eine optionale Cloud-Sicherung (Supabase) ist derzeit nicht aktiviert. Alle Daten verbleiben lokal.')}
+   ${ki?sec('5. KI-gestützte Anfragen-Einschätzung','Zur Priorisierung von Kundenanfragen kann der Text einer Anfrage an die Anthropic-API (Claude) übermittelt werden. Übermittelt werden nur der Anfragetext, der Kanal und ggf. der Vorname — keine weiteren Kundendaten. Anthropic verwendet API-Daten nicht zum Training. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (effiziente Anfragenbearbeitung).'):''}
+   ${sec((ki?'6':'5')+'. Keine Cookies, kein Tracking','Diese Anwendung verwendet keine Cookies, keine Analyse-Tools und kein Tracking. Der lokale Browser-Speicher dient ausschließlich der Funktion der Anwendung.')}
+   ${sec((ki?'7':'6')+'. Ihre Rechte','Sie haben das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung (Art. 18), Datenübertragbarkeit (Art. 20) und Widerspruch (Art. 21). Wenden Sie sich dazu an die oben genannten Kontaktdaten. Außerdem besteht ein Beschwerderecht bei der zuständigen Datenschutz-Aufsichtsbehörde Ihres Bundeslandes.')}
+   <div style="font-size:10.5px;color:var(--ink3);margin-top:14px">Stand: ${dLabel(todayISO())}</div>
+  </div></div>`;
+ return shell(inner,{title:'Datenschutz',eyebrow:'Rechtliches',back:1,hideNav:route._from&&route._from.v==='buchen'});
 }
 ACT['buchen-send']=()=>{
  const name=($('#bk-name').value||'').trim(),tel=($('#bk-tel').value||'').trim();
@@ -3145,7 +3427,8 @@ function render(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
  const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
-  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen};
+  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz};
+ if(!S.settings.onboarded&&!['buchen','impressum','datenschutz'].includes(route.v)){app.innerHTML=vOnboarding();return}
  app.innerHTML=(V[route.v]||vPlanung)();
  if(navSlideDir!==0&&!skipNextSlide){
   app.classList.add(navSlideDir>0?'tsR':'tsL');
@@ -3311,7 +3594,7 @@ try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}ca
 setTimeout(syncStartup,400);
 if(memOnly)setTimeout(()=>toast('Achtung: Speichern blockiert — Daten gehen beim Schließen verloren',true),600);
 const h0=location.hash.replace('#/','').split('/');
-if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen'].includes(h0[0]))route={v:h0[0],id:h0[1]};
+if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen','impressum','datenschutz'].includes(h0[0]))route={v:h0[0],id:h0[1]};
 render();
 </script>
 </body>
