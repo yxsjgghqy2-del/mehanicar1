@@ -513,6 +513,26 @@ body.theme-light{
  background:var(--red);border-radius:50%;
  border:1.5px solid var(--bg)
 }
+/* ============ KUNDEN-SUCHFELD (Picker) ============ */
+.kpick-res{border:1px solid var(--line);border-radius:11px;overflow:hidden;margin:-6px 0 12px;background:var(--card)}
+.kpick-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid var(--line2);cursor:pointer;transition:background .12s}
+.kpick-row:last-child{border-bottom:none}
+.kpick-row:active{background:var(--bg)}
+.kpick-row .kav{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:800;flex-shrink:0}
+.kpick-row b{font-size:13px;display:block}
+.kpick-row span{font-size:11px;color:var(--ink3)}
+.kpick-sel{display:flex;align-items:center;gap:10px;padding:11px 12px;border:1.5px solid var(--blue);border-radius:12px;background:var(--blue-bg);margin-bottom:12px}
+.kpick-sel .kav{width:32px;height:32px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:800;flex-shrink:0}
+.kpick-sel b{font-size:13.5px;display:block}
+.kpick-sel span{font-size:11px;color:var(--ink2)}
+.kpick-x{margin-left:auto;flex-shrink:0;font-size:11.5px;font-weight:700;color:var(--blue);padding:7px 10px;background:var(--card);border-radius:9px;border:1px solid var(--line)}
+.fzpick-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:11px;margin-bottom:8px;cursor:pointer;transition:border-color .15s,background .15s}
+.fzpick-row.on{border-color:var(--blue);background:var(--blue-bg)}
+.fzpick-row b{font-size:13px;display:block}
+.fzpick-row span{font-size:11px;color:var(--ink3)}
+.fzpick-radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--ink3);flex-shrink:0;display:grid;place-items:center}
+.fzpick-row.on .fzpick-radio{border-color:var(--blue)}
+.fzpick-row.on .fzpick-radio::after{content:"";width:9px;height:9px;border-radius:50%;background:var(--blue)}
 /* ============ SEGMENTED CONTROL ============ */
 .seg-ctrl{display:flex;background:rgba(118,118,128,.12);border-radius:9px;padding:2px;gap:0}
 .seg-ctrl button{flex:1;padding:7px 10px;border-radius:7px;font-size:13px;font-weight:500;color:var(--ink2);transition:color .15s,background .2s var(--spring);white-space:nowrap;text-align:center}
@@ -584,6 +604,9 @@ const IC={
  check:'<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>',
  pin:'<svg viewBox="0 0 24 24"><path d="M12 17v5M7 4h10l-1.5 6.5L18 13H6l2.5-2.5z"/></svg>',
  search:'<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.5-4.5"/></svg>',
+ bolt:'<svg viewBox="0 0 24 24"><path d="M13 2L4.5 13.5H11L9.5 22 19 10h-6.5z"/></svg>',
+ clip:'<svg viewBox="0 0 24 24"><path d="M21 11.5l-8.5 8.5a5.66 5.66 0 0 1-8-8L13 3.5a3.77 3.77 0 0 1 5.3 5.3L9.8 17.3a1.89 1.89 0 0 1-2.7-2.7l7.8-7.8"/></svg>',
+ share:'<svg viewBox="0 0 24 24"><path d="M12 3v12M8 6.5L12 3l4 3.5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>',
  car:'<svg viewBox="0 0 24 24"><path d="M4 15l1.6-5A2 2 0 0 1 7.5 8.5h9a2 2 0 0 1 1.9 1.5L20 15v4h-2.2a1.8 1.8 0 0 1-3.6 0H9.8a1.8 1.8 0 0 1-3.6 0H4z"/><path d="M6 12h12"/></svg>',
  fin:'<svg viewBox="0 0 24 24"><path d="M4 20V9M10 20V4M16 20v-7M22 20H2"/></svg>',
  gear:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M21.5 12h-3M5.5 12h-3M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1M18.7 18.7l-2.1-2.1M7.4 7.4L5.3 5.3"/></svg>'
@@ -695,6 +718,26 @@ function seed(){
    firma:{name:'mehanicar Kfz-Meisterwerkstatt',inhaber:'Samed',adresse:'Musterstraße 1, 63450 Hanau',tel:'+49 6181 000000',email:'info@mehanicar.de',iban:'DE00 0000 0000 0000 0000 00',ustid:'DE000000000',web:'mehanicar.de',reviewUrl:''}},
   kunden:K,fahrzeuge:F,lager:L,auftraege:A,rechnungen:[],anfragen:Q,radarDone:{},bestellungen:[],kampagnen:[],mitarbeiter:[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#0A5FFF',aktiv:true}],termine:[]};
 }
+/* Kunden-Normalisierung: name → vorname/nachname/firma, adresse → strasse/plz/ort */
+function kunNorm(){
+ (S.kunden||[]).forEach(k=>{
+  if(k.vorname===undefined){
+   const nm=(k.name||'').trim();
+   if(/\b(GmbH|UG|AG|KG|OHG|GbR|e\.\s?K\.|e\.\s?V\.|Inc|Ltd)\b/i.test(nm)){k.firma=nm;k.vorname='';k.nachname=''}
+   else{const parts=nm.split(/\s+/);k.nachname=parts.length>1?parts.pop():nm;k.vorname=parts.length>1||parts[0]!==k.nachname?parts.join(' '):'';if(parts.length===0)k.vorname='';k.firma=''}
+   if(k.vorname===k.nachname)k.vorname='';
+  }
+  k.firma=k.firma||'';
+  if(k.strasse===undefined){
+   const ad=(k.adresse||'').split(',');
+   k.strasse=(ad[0]||'').trim();
+   const m=(ad.slice(1).join(',')||'').trim().match(/^(\d{4,5})\s+(.*)$/);
+   k.plz=m?m[1]:'';k.ort=m?m[2]:(ad.slice(1).join(',')||'').trim();
+  }
+ });
+}
+function kunName(vn,nn,fa){return([vn,nn].filter(Boolean).join(' ').trim())||fa||''}
+function kunAdresse(str,plz,ort){return[str,(plz+' '+ort).trim()].filter(Boolean).join(', ')}
 function load(){
  try{const raw=localStorage.getItem(KEY);if(raw){S=JSON.parse(raw);if(!S.version)throw 0;S.meta=S.meta||{changes:0,lastBackup:null};
 S.anfragen=S.anfragen||[];S.radarDone=S.radarDone||{};
@@ -725,8 +768,9 @@ S.settings.startseite=S.settings.startseite||'planung';
 S.settings.mahnTage=S.settings.mahnTage||14;
 if(S.settings.autoPrio===undefined)S.settings.autoPrio=true;
 S.settings.theme=S.settings.theme||'auto';
+kunNorm();
 return}}catch(e){memOnly=(typeof localStorage==='undefined')}
- S=seed();save();
+ S=seed();kunNorm();save();
 }
 let saveT=null;
 function save(){
@@ -1067,42 +1111,107 @@ function vAuftraege(){
  return shell(inner,{title:'Aufträge',eyebrow:S.auftraege.length+' gesamt'})+`<button class="fab" data-act="ord-new">+</button>`;
 }
 ACT['ord-filter']=el=>{ordFilter=el.dataset.v;render()};
+/* ---- Kunden-Picker: Suche statt Dropdown ---- */
+const _kpick={};
+function kPickIni(k){return((k.name||k.firma||'?').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase())}
+function kPickSelHtml(id,k){
+ const fz=S.fahrzeuge.filter(f=>f.kundeId===k.id);
+ return `<div class="kpick-sel"><div class="kav">${kPickIni(k)}</div>
+  <div style="min-width:0"><b>${esc(k.name)}</b><span>${esc(k.tel||'—')}${fz.length?' · '+fz.map(f=>f.kennz).join(', '):''}</span></div>
+  <button class="kpick-x" data-kpick-clear="${id}">Ändern</button></div>`;
+}
+function kPickerHtml(id,preK){
+ return `<div id="${id}-sel">${preK?kPickSelHtml(id,preK):''}</div>
+  <div id="${id}-search" style="display:${preK?'none':'block'}">
+   <div class="fld"><label>Bestehenden Kunden suchen</label>
+    <input id="${id}-q" placeholder="Name, Telefon oder Kennzeichen tippen …" autocomplete="off"></div>
+   <div id="${id}-res"></div></div>`;
+}
+function bindKPicker(id,onChange,preK){
+ _kpick[id]=preK?preK.id:null;
+ const q=$('#'+id+'-q'),res=$('#'+id+'-res'),selBox=$('#'+id+'-sel'),searchBox=$('#'+id+'-search');
+ function select(k){_kpick[id]=k?k.id:null;
+  selBox.innerHTML=k?kPickSelHtml(id,k):'';
+  searchBox.style.display=k?'none':'block';
+  if(!k&&q){q.value='';res.innerHTML='';setTimeout(()=>q.focus(),60)}
+  if(onChange)onChange(k)}
+ selBox.addEventListener('click',e=>{const b=e.target.closest('[data-kpick-clear]');if(b){e.preventDefault();select(null)}});
+ res.addEventListener('click',e=>{const r=e.target.closest('[data-kid]');if(r)select(kunde(r.dataset.kid))});
+ q.addEventListener('input',()=>{
+  const v=q.value.trim().toLowerCase();
+  if(!v){res.innerHTML='';return}
+  const hits=S.kunden.filter(k=>{
+   const kz=S.fahrzeuge.filter(f=>f.kundeId===k.id).map(f=>f.kennz).join(' ');
+   return[k.name,k.firma,k.tel,kz].join(' ').toLowerCase().includes(v)}).slice(0,6);
+  res.innerHTML=hits.length?`<div class="kpick-res">${hits.map(k=>{
+   const fz=S.fahrzeuge.filter(f=>f.kundeId===k.id);
+   return `<div class="kpick-row" data-kid="${k.id}"><div class="kav" style="background:var(--blue-bg);color:var(--blue)">${kPickIni(k)}</div>
+    <div style="min-width:0;flex:1"><b>${esc(k.name)}</b><span>${esc(k.tel||'—')}${fz.length?' · '+fz.map(f=>f.kennz).join(', '):''}</span></div></div>`}).join('')}</div>`
+   :`<div style="font-size:11.5px;color:var(--ink3);margin:-2px 2px 12px">Kein Treffer — unten einfach neu anlegen.</div>`;
+ });
+ return{get:()=>_kpick[id]?kunde(_kpick[id]):null,set:select};
+}
+let ordNewPick=null;
 ACT['ord-new']=()=>{
  sheet('Neuer Auftrag',`
-  <div class="fld"><label>Kunde</label><div class="selwrap"><select id="no-k">
-   <option value="">— Neuer Kunde —</option>
-   ${S.kunden.map(k=>`<option value="${k.id}">${esc(k.name)}</option>`).join('')}</select></div></div>
-  <div id="no-newk"><div class="row2"><div class="fld"><label>Name *</label><input id="no-kn" placeholder="Max Mustermann"></div>
-   <div class="fld"><label>Telefon</label><input id="no-kt" inputmode="tel" placeholder="+49 ..."></div></div></div>
-  <div class="fld"><label>Fahrzeug</label><div class="selwrap"><select id="no-f"><option value="">— Neues Fahrzeug —</option></select></div></div>
+  <div class="lbl" style="margin-top:0">Kunde</div>
+  ${kPickerHtml('ck',null)}
+  <div id="no-newk">
+   <div style="font-size:11px;font-weight:600;color:var(--ink3);margin:-2px 2px 8px">… oder neuen Kunden anlegen:</div>
+   <div class="row2"><div class="fld"><label>Vorname</label><input id="no-kvn" placeholder="Max" autocomplete="off"></div>
+    <div class="fld"><label>Nachname *</label><input id="no-knn" placeholder="Mustermann" autocomplete="off"></div></div>
+   <div class="fld"><label>Telefon (für WhatsApp & Rückrufe)</label><input id="no-kt" inputmode="tel" placeholder="+49 170 1234567"></div>
+  </div>
+  <div class="lbl">Fahrzeug</div>
+  <div id="cf-list"></div>
   <div id="no-newf">
    <button class="btn btn-2nd" style="width:100%;margin-bottom:11px" data-act="schein-scan" data-mode="ord">
     <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Fahrzeugschein fotografieren — Daten automatisch übernehmen</button>
    <input type="file" accept="image/*" capture="environment" id="scheininp" style="display:none">
    <div id="schein-status"></div>
-   <div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="no-fk" placeholder="HU-XX 000" style="text-transform:uppercase"></div>
-   <div class="fld"><label>Marke / Modell</label><input id="no-fm" placeholder="BMW 320d"></div></div>
+   <input type="hidden" id="no-fvin"><input type="hidden" id="no-fhu">
+   <div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="no-fk" placeholder="HU-XX 000" style="text-transform:uppercase" autocomplete="off"></div>
+    <div class="fld"><label>Marke</label><input id="no-fma" placeholder="BMW" autocomplete="off"></div></div>
+   <div class="fld"><label>Modell</label><input id="no-fmo" placeholder="320d" autocomplete="off"></div>
   </div>
+  <div class="lbl">Termin</div>
   <div class="row2"><div class="fld"><label>Voraussichtl. Fertigstellung</label><input type="date" id="no-d" value="${todayISO()}"></div>
-   <div class="fld"><label>Uhrzeit</label><input type="time" id="no-z" value="17:00"></div></div>
+   <div class="fld"><label>Uhrzeit</label><input type="time" id="no-z" value="${S.settings.defaultAbgabeZeit||'17:00'}"></div></div>
   <div class="fld"><label>Erstes Paket (optional)</label><input id="no-p" placeholder="z. B. Inspektion, Bremsen VA"></div>
   <button class="btn btn-main" style="width:100%" data-act="ord-create">Auftrag anlegen</button>`);
- const kSel=$('#no-k'),fSel=$('#no-f');
- const syncF=()=>{const kid=kSel.value;const fs=S.fahrzeuge.filter(f=>f.kundeId===kid);
-  fSel.innerHTML='<option value="">— Neues Fahrzeug —</option>'+fs.map(f=>`<option value="${f.id}">${esc(f.kennz+' · '+f.marke+' '+f.modell)}</option>`).join('');
-  $('#no-newk').style.display=kid?'none':'block';$('#no-newf').style.display='block'};
- kSel.addEventListener('change',()=>{syncF();$('#no-newf').style.display=fSel.value?'none':'block'});
- fSel.addEventListener('change',()=>{$('#no-newf').style.display=fSel.value?'none':'block'});
- syncF();
+ const newK=$('#no-newk'),cfList=$('#cf-list'),newF=$('#no-newf');
+ function refreshFz(){
+  const k=ordNewPick?ordNewPick.get():null;
+  const fs=k?S.fahrzeuge.filter(f=>f.kundeId===k.id):[];
+  const sel=cfList.dataset.sel||'';
+  cfList.innerHTML=fs.map(f=>`<div class="fzpick-row ${sel===f.id?'on':''}" data-fzid="${f.id}">
+    <div class="fzpick-radio"></div>
+    <div style="flex:1;min-width:0"><b>${esc(f.kennz)}</b><span>${esc((f.marke+' '+f.modell).trim()||'—')}</span></div></div>`).join('')
+   +(fs.length?`<div class="fzpick-row ${sel===''?'on':''}" data-fzid=""><div class="fzpick-radio"></div><div><b>Neues Fahrzeug anlegen</b></div></div>`:'');
+  newF.style.display=sel===''?'block':'none';
+ }
+ cfList.addEventListener('click',e=>{const r=e.target.closest('[data-fzid]');if(!r)return;
+  cfList.dataset.sel=r.dataset.fzid;refreshFz()});
+ ordNewPick=bindKPicker('ck',k=>{
+  newK.style.display=k?'none':'block';
+  const fs=k?S.fahrzeuge.filter(f=>f.kundeId===k.id):[];
+  cfList.dataset.sel=fs.length===1?fs[0].id:'';
+  refreshFz()},null);
+ cfList.dataset.sel='';refreshFz();
 };
 ACT['ord-create']=()=>{
- let kid=$('#no-k').value;
- if(!kid){const n=$('#no-kn').value.trim();if(!n)return toast('Kundenname fehlt',true);
-  kid='k'+uid();S.kunden.push({id:kid,name:n,tel:$('#no-kt').value.trim(),wa:true,email:'',adresse:'',stamm:false,moral:'Gut',notiz:'',created:Date.now()})}
- let fid=$('#no-f').value;
+ const selK=ordNewPick?ordNewPick.get():null;
+ let kid;
+ if(selK)kid=selK.id;
+ else{const vn=$('#no-kvn').value.trim(),nn=$('#no-knn').value.trim();
+  if(!nn&&!vn)return toast('Kunden wählen oder Namen eintragen',true);
+  kid='k'+uid();S.kunden.push({id:kid,name:kunName(vn,nn,''),vorname:vn,nachname:nn,firma:'',
+   tel:$('#no-kt').value.trim(),wa:true,email:'',adresse:'',strasse:'',plz:'',ort:'',
+   stamm:false,moral:'Gut',notiz:'',created:Date.now()})}
+ let fid=$('#cf-list').dataset.sel||'';
  if(!fid){const kz=$('#no-fk').value.trim().toUpperCase();if(!kz)return toast('Kennzeichen fehlt',true);
-  const mm=$('#no-fm').value.trim().split(' ');
-  fid='f'+uid();S.fahrzeuge.push({id:fid,kundeId:kid,kennz:kz,marke:mm[0]||'',modell:mm.slice(1).join(' '),bj:null,vin:'',km:null,hu:'',notiz:''})}
+  fid='f'+uid();S.fahrzeuge.push({id:fid,kundeId:kid,kennz:kz,marke:$('#no-fma').value.trim(),modell:$('#no-fmo').value.trim(),
+   bj:null,vin:$('#no-fvin').value||'',km:null,hu:$('#no-fhu').value||'',notiz:''})}
  const y=new Date().getFullYear();
  const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:kid,fzgId:fid,status:'offen',
   annahme:todayISO(),abgabe:$('#no-d').value||todayISO(),abgabeZeit:$('#no-z').value||'',kmAn:null,kmAb:null,tank:'50',
@@ -1717,18 +1826,19 @@ function kundeRow(k){
  return `<div class="lrow" data-act="open" data-v="kunde" data-id="${k.id}">
   <div class="av" style="background:${col}16;color:${col}">${ini}</div>
   <div class="lt"><b>${esc(k.name)}${k.stamm?' <span class="tag t-green" style="font-size:8.5px;vertical-align:1px">Stamm</span>':''}</b>
-  <span>${fz.map(f=>f.kennz).join(', ')||'kein Fahrzeug'}</span></div>
+  <span>${k.firma&&k.firma!==k.name?esc(k.firma)+' · ':''}${fz.map(f=>f.kennz).join(', ')||'kein Fahrzeug'}</span></div>
   <div class="lr"><b class="num">${ords.length}</b><span>Aufträge</span></div></div>`;
 }
 function vKunden(){
- let list=S.kunden.slice().sort((a,b)=>a.name.localeCompare(b.name,'de'));
+ const sortKey=k=>(k.nachname||k.firma||k.name||'');
+ let list=S.kunden.slice().sort((a,b)=>sortKey(a).localeCompare(sortKey(b),'de'));
  if(kQ){const q=kQ.toLowerCase();list=list.filter(k=>{
   const kz=S.fahrzeuge.filter(f=>f.kundeId===k.id).map(f=>f.kennz).join(' ');
-  return [k.name,k.tel,k.email,kz].join(' ').toLowerCase().includes(q)})}
+  return [k.name,k.firma,k.tel,k.email,kz].join(' ').toLowerCase().includes(q)})}
  let listHtml;
  if(!kQ&&list.length>8){
-  /* A–Z Register ab 9 Kunden */
-  const groups={};list.forEach(k=>{const L=(k.name[0]||'#').toUpperCase();(groups[L]=groups[L]||[]).push(k)});
+  /* A–Z Register (nach Nachname) ab 9 Kunden */
+  const groups={};list.forEach(k=>{const L=(sortKey(k)[0]||'#').toUpperCase();(groups[L]=groups[L]||[]).push(k)});
   listHtml=Object.keys(groups).sort((a,b)=>a.localeCompare(b,'de')).map(L=>
    `<div class="lbl">${L}</div><div class="card stag">${groups[L].map(kundeRow).join('')}</div>`).join('');
  }else{
@@ -1746,6 +1856,7 @@ function vKunde(id){
  const umsatz=S.rechnungen.filter(r=>{const a=auftrag(r.auftragId);return a&&a.kundeId===k.id}).reduce((s,r)=>s+r.bruttoCt,0);
  const inner=`<div class="stag">
   <div class="card" style="padding:15px">
+   ${k.firma&&k.firma!==k.name?`<div class="kv"><span class="k">Firma</span><span class="v">${esc(k.firma)}</span></div>`:''}
    <div class="kv"><span class="k">Telefon</span><span class="v num">${esc(k.tel||'—')}</span></div>
    <div class="kv"><span class="k">WhatsApp</span><span class="v">${k.wa?'<span class="tag t-green">verknüpft</span>':'<span class="tag t-gray">nein</span>'}</span></div>
    <div class="kv"><span class="k">E-Mail</span><span class="v">${esc(k.email||'—')}</span></div>
@@ -1770,21 +1881,34 @@ function vKunde(id){
    <button class="btn btn-danger" data-act="kunde-del" data-id="${k.id}">Löschen</button></div></div>`;
  return shell(inner,{title:k.name,eyebrow:'Kunde',back:1,hideNav:false,ctx:'kunde'});
 }
-ACT['kunde-edit']=el=>{const k=el.dataset.id?kunde(el.dataset.id):null;
+ACT['kunde-edit']=el=>{kunNorm();const k=el.dataset.id?kunde(el.dataset.id):null;
  sheet(k?'Kunde bearbeiten':'Neuer Kunde',`
-  <div class="fld"><label>Name *</label><input id="ku-n" value="${k?esc(k.name):''}"></div>
-  <div class="row2"><div class="fld"><label>Telefon</label><input id="ku-t" inputmode="tel" value="${k?esc(k.tel):''}"></div>
-   <div class="fld"><label>E-Mail</label><input id="ku-e" inputmode="email" value="${k?esc(k.email):''}"></div></div>
-  <div class="fld"><label>Adresse</label><input id="ku-a" value="${k?esc(k.adresse):''}"></div>
+  <div class="lbl" style="margin-top:0">Person</div>
+  <div class="row2"><div class="fld"><label>Vorname</label><input id="ku-vn" value="${k?esc(k.vorname||''):''}" placeholder="Max" autocomplete="off"></div>
+   <div class="fld"><label>Nachname *</label><input id="ku-nn" value="${k?esc(k.nachname||''):''}" placeholder="Mustermann" autocomplete="off"></div></div>
+  <div class="fld"><label>Firma (optional)</label><input id="ku-fa" value="${k?esc(k.firma||''):''}" placeholder="z. B. Autohaus Schmidt GmbH"></div>
+  <div class="lbl">Kontakt</div>
+  <div class="row2"><div class="fld"><label>Telefon</label><input id="ku-t" inputmode="tel" value="${k?esc(k.tel):''}" placeholder="+49 170 1234567"></div>
+   <div class="fld"><label>E-Mail</label><input id="ku-e" inputmode="email" value="${k?esc(k.email):''}" placeholder="name@mail.de"></div></div>
+  <div class="lbl">Adresse (für Rechnungen)</div>
+  <div class="fld"><label>Straße und Hausnummer</label><input id="ku-str" value="${k?esc(k.strasse||''):''}" placeholder="Hauptstraße 12"></div>
+  <div class="row2" style="grid-template-columns:110px 1fr"><div class="fld"><label>PLZ</label><input id="ku-plz" inputmode="numeric" value="${k?esc(k.plz||''):''}" placeholder="63450"></div>
+   <div class="fld"><label>Ort</label><input id="ku-ort" value="${k?esc(k.ort||''):''}" placeholder="Hanau"></div></div>
+  <div class="lbl">Sonstiges</div>
   <div class="row2"><div class="fld"><label>Zahlungsmoral</label><div class="selwrap"><select id="ku-m">
     ${['Gut','Mittel','Schlecht'].map(m=>`<option ${k&&k.moral===m?'selected':''}>${m}</option>`).join('')}</select></div></div>
    <div class="fld"><label>Optionen</label><div style="display:flex;gap:12px;padding:11px 2px">
     <label style="display:flex;gap:6px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--ink)"><input type="checkbox" id="ku-s" ${k&&k.stamm?'checked':''}> Stammkunde</label>
     <label style="display:flex;gap:6px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--ink)"><input type="checkbox" id="ku-w" ${!k||k.wa?'checked':''}> WhatsApp</label></div></div></div>
-  <div class="fld"><label>Notiz</label><textarea id="ku-no" rows="2">${k?esc(k.notiz):''}</textarea></div>
+  <div class="fld"><label>Notiz</label><textarea id="ku-no" rows="2" placeholder="z. B. möchte alte Teile sehen">${k?esc(k.notiz):''}</textarea></div>
   <button class="btn btn-main" style="width:100%" data-act="kunde-save" ${k?`data-id="${k.id}"`:''}>Speichern</button>`)};
-ACT['kunde-save']=el=>{const n=$('#ku-n').value.trim();if(!n)return toast('Name fehlt',true);
- const vals={name:n,tel:$('#ku-t').value.trim(),email:$('#ku-e').value.trim(),adresse:$('#ku-a').value.trim(),
+ACT['kunde-save']=el=>{
+ const vn=$('#ku-vn').value.trim(),nn=$('#ku-nn').value.trim(),fa=$('#ku-fa').value.trim();
+ if(!nn&&!vn&&!fa)return toast('Nachname oder Firma eintragen',true);
+ const str=$('#ku-str').value.trim(),plz=$('#ku-plz').value.trim(),ort=$('#ku-ort').value.trim();
+ const vals={vorname:vn,nachname:nn,firma:fa,name:kunName(vn,nn,fa),
+  tel:$('#ku-t').value.trim(),email:$('#ku-e').value.trim(),
+  strasse:str,plz:plz,ort:ort,adresse:kunAdresse(str,plz,ort),
   moral:$('#ku-m').value,stamm:$('#ku-s').checked,wa:$('#ku-w').checked,notiz:$('#ku-no').value.trim()};
  if(el.dataset.id)Object.assign(kunde(el.dataset.id),vals);
  else S.kunden.push({id:'k'+uid(),created:Date.now(),...vals});
@@ -1830,14 +1954,17 @@ function vFahrzeug(id){
    <button class="btn btn-danger" data-act="fzg-del" data-id="${f.id}">Löschen</button></div></div>`;
  return shell(inner,{title:f.kennz,eyebrow:'Fahrzeug',back:1,ctx:'fahrzeug'});
 }
+let fzgPick=null;
 ACT['fzg-edit']=el=>{const f=el.dataset.id?fzg(el.dataset.id):null;
+ const preK=f?kunde(f.kundeId):null;
  sheet(f?'Fahrzeug bearbeiten':'Neues Fahrzeug',`
   <button class="btn btn-2nd" style="width:100%;margin-bottom:13px" data-act="schein-scan">
    <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Fahrzeugschein fotografieren — Daten automatisch übernehmen</button>
   <input type="file" accept="image/*" capture="environment" id="scheininp" style="display:none">
   <div id="schein-status"></div>
-  <div class="fld"><label>Halter *</label><div class="selwrap"><select id="fz-k">
-   ${S.kunden.map(k=>`<option value="${k.id}" ${f&&f.kundeId===k.id?'selected':''}>${esc(k.name)}</option>`).join('')}</select></div></div>
+  <div class="lbl" style="margin-top:0">Halter *</div>
+  ${S.kunden.length?kPickerHtml('fzk',preK):'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Noch keine Kunden vorhanden — bitte zuerst unter Kunden anlegen.</div>'}
+  <div class="lbl">Fahrzeug</div>
   <div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="fz-kz" style="text-transform:uppercase" value="${f?esc(f.kennz):''}"></div>
    <div class="fld"><label>Baujahr</label><input id="fz-bj" inputmode="numeric" value="${f&&f.bj?f.bj:''}"></div></div>
   <div class="row2"><div class="fld"><label>Marke</label><input id="fz-ma" value="${f?esc(f.marke):''}"></div>
@@ -1853,10 +1980,13 @@ ACT['fzg-edit']=el=>{const f=el.dataset.id?fzg(el.dataset.id):null;
    <option value="son" ${f&&f.zustand==='son'?'selected':''}>Sonstiges</option>
   </select></div></div>
   <div id="fz-ztxt-wrap" style="display:${f&&f.zustand==='son'?'block':'none'}"><div class="fld"><label>Sonstiges Zustand — was?</label><input id="fz-ztxt" value="${f?esc(f.zustandTxt||''):''}"></div></div>
-  <button class="btn btn-main" style="width:100%" data-act="fzg-save" ${f?`data-id="${f.id}"`:''}>Speichern</button>`)};
+  <button class="btn btn-main" style="width:100%" data-act="fzg-save" ${f?`data-id="${f.id}"`:''}>Speichern</button>`);
+ fzgPick=S.kunden.length?bindKPicker('fzk',null,preK):null};
 ACT['fzg-save']=el=>{const kz=$('#fz-kz').value.trim().toUpperCase();if(!kz)return toast('Kennzeichen fehlt',true);
+ const halter=fzgPick?fzgPick.get():null;
+ if(!halter)return toast('Halter wählen — oben Kunden suchen',true);
  const zst=$('#fz-zustand').value;
- const vals={kundeId:$('#fz-k').value,kennz:kz,marke:$('#fz-ma').value.trim(),modell:$('#fz-mo').value.trim(),
+ const vals={kundeId:halter.id,kennz:kz,marke:$('#fz-ma').value.trim(),modell:$('#fz-mo').value.trim(),
   bj:parseInt($('#fz-bj').value)||null,vin:$('#fz-v').value.trim(),km:parseInt($('#fz-km').value.replace(/\D/g,''))||null,hu:$('#fz-hu').value||'',
   zustand:zst,zustandTxt:zst==='son'?($('#fz-ztxt').value.trim()):''};
  if(el.dataset.id)Object.assign(fzg(el.dataset.id),vals);
@@ -1889,7 +2019,8 @@ ACT['schein-scan']=el=>{
     const setV=(id,v)=>{const n=$(id);if(n&&v&&!n.value)n.value=v};
     if(inp.dataset.mode==='ord'){
      setV('#no-fk',(fl.kennzeichen||'').toUpperCase());
-     setV('#no-fm',((fl.marke||'')+' '+(fl.modell||'')).trim());
+     setV('#no-fma',fl.marke||'');setV('#no-fmo',fl.modell||'');
+     setV('#no-fvin',fl.vin||'');setV('#no-fhu',(fl.hu_datum||'').slice(0,7));
     }else{
      setV('#fz-kz',(fl.kennzeichen||'').toUpperCase());
      setV('#fz-ma',fl.marke||'');setV('#fz-mo',fl.modell||'');
@@ -2460,7 +2591,7 @@ function vAnfragen(){
     <span style="font-size:9px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.03em">${l.split(' ')[0]}</span></div>`}).join('');
   body=`
   ${neu>0?`<button class="card" style="width:100%;display:flex;align-items:center;gap:12px;padding:13px 15px;margin-bottom:12px;text-align:left;border-color:rgba(10,95,255,.35);cursor:pointer" data-act="triage-start">
-   <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#0A5FFF,#5B8DEF);display:grid;place-items:center;color:#fff;font-size:17px;flex-shrink:0">⚡</div>
+   <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#0A5FFF,#5B8DEF);display:grid;place-items:center;color:#fff;flex-shrink:0"><span style="width:19px;height:19px;display:block">${IC.bolt.replace('<svg ','<svg style="stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;width:100%;height:100%" ')}</span></div>
    <div style="flex:1"><b style="font-size:13.5px">Triage starten</b>
     <div style="font-size:11px;color:var(--ink3);margin-top:1px">${neu} neue Anfrage${neu>1?'n':''} nacheinander durchgehen — antworten, Termin, später</div></div>
    <span class="chev" style="transform:rotate(-45deg)"></span></button>`:''}
@@ -2720,7 +2851,7 @@ function vAnfrage(id){
  const fotosBlock=`<div class="lbl">Kundenanhänge</div>
   <div class="fgrid" style="margin-bottom:14px">
    ${fots.map((f,i)=>`<div class="foto"><img src="${esc(f.dataUrl)}" alt="Anhang ${i+1}"><button class="foto fx" data-act="anfr-foto-del" data-id="${x.id}" data-i="${i}">×</button></div>`).join('')}
-   <label class="foto cam" for="anfrinp" style="font-size:18px">📎<input type="file" id="anfrinp" accept="image/*" style="display:none" data-anfid="${x.id}"></label>
+   <label class="foto cam" for="anfrinp"><span style="width:20px;height:20px;display:block">${IC.clip.replace('<svg ','<svg style="stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;width:100%;height:100%" ')}</span><input type="file" id="anfrinp" accept="image/*" style="display:none" data-anfid="${x.id}"></label>
   </div>`;
  // KI-Vorschläge
  const suggs=x.kiSugg||[];
@@ -2767,7 +2898,7 @@ function vAnfrage(id){
   <button class="btn btn-sm" style="background:${sc}18;color:${sc};border:1px solid ${sc}40" data-act="anfrage-edit" data-id="${x.id}">Bearbeiten</button>
  </div>
  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-  <span class="tag" style="background:${over?'var(--red-bg)':sc+'18'};color:${over?'var(--red)':sc};font-size:10.5px">${over?'⚠ Nachfassen überfällig!':sl}</span>
+  <span class="tag" style="background:${over?'var(--red-bg)':sc+'18'};color:${over?'var(--red)':sc};font-size:10.5px">${over?'Nachfassen überfällig!':sl}</span>
   ${x.wertCt?`<span style="font-size:12px;font-weight:700;color:var(--green)">~${fmt(x.wertCt)}</span>`:''}
  </div>`;
  const side=`<span class="tag" style="background:${kc}18;color:${kc};font-size:10px">${QKANAL[x.kanal]||''}</span>`;
@@ -3225,7 +3356,7 @@ function vTermine(){
    <div style="font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Online-Terminbuchungslink</div>
    <div style="display:flex;align-items:center;gap:8px">
     <code style="flex:1;font-size:10px;color:var(--ink2);word-break:break-all;background:var(--bg);border-radius:7px;padding:6px 8px">${esc(bookUrl)}</code>
-    <button class="icon-btn" data-act="buchen-link-share" style="flex-shrink:0" title="Link teilen">⎋</button></div>
+    <button class="icon-btn" data-act="buchen-link-share" style="flex-shrink:0" title="Link teilen"><span style="width:17px;height:17px;display:block">${IC.share.replace('<svg ','<svg style="stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;width:100%;height:100%" ')}</span></button></div>
    <div style="font-size:10px;color:var(--ink3);margin-top:5px;line-height:1.5">Kunden öffnen diesen Link im Browser — Terminwünsche landen automatisch als Anfragen bei dir.</div>
   </div>`;
  return shell(inner,{title:'Terminkalender',eyebrow:'Wochenplanung',back:1})+`<button class="fab" data-act="termin-new">+</button>`;
