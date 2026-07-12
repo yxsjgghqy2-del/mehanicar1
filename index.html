@@ -769,7 +769,7 @@ S.settings.mahnTage=S.settings.mahnTage||14;
 if(S.settings.autoPrio===undefined)S.settings.autoPrio=true;
 S.settings.theme=S.settings.theme||'auto';
 kunNorm();
-return}}catch(e){memOnly=(typeof localStorage==='undefined')}
+return}}catch(e){memOnly=true}
  S=seed();kunNorm();save();
 }
 let saveT=null;
@@ -3731,8 +3731,8 @@ ACT['buehne-set']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;a.buehne=+el
 load();
 applyTheme(S.settings.theme||'auto');
 selftest();
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
-try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+try{if('serviceWorker' in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{})}catch(e){}
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
 setTimeout(syncStartup,400);
 if(memOnly)setTimeout(()=>toast('Achtung: Speichern blockiert — Daten gehen beim Schließen verloren',true),600);
 const h0=location.hash.replace('#/','').split('/');
