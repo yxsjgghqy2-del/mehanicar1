@@ -829,6 +829,7 @@ function migrate2(){
   if(a.freigabe===undefined)a.freigabe=a.sig?{ts:a.created||Date.now(),art:'sig',notiz:'Unterschrift',origUrl:''}:null;
   if(a.statusTxt===undefined)a.statusTxt='';
   if(a.awCt===undefined)a.awCt=null;
+  if(a.anzVerrCt===undefined){a.anzVerrCt=a.anzVerr?(a.anzahlungCt||0):0;delete a.anzVerr}
  });
 }
 function apLearn(bez,aw,marke){
@@ -1480,7 +1481,7 @@ function vAuftrag(id){
    :calcHtml()}
   <div class="card" style="margin-top:10px;padding:12px"><div style="font-weight:600;font-size:12px;margin-bottom:6px">Anzahlung</div>
    <input class="priceinp" style="width:100%" inputmode="decimal" value="${fmtIn(a.anzahlungCt)}" data-f="o-anz" data-oid="${a.id}">
-   <div style="font-size:10px;color:var(--ink3);margin-top:4px">wird auf der Rechnung abgezogen</div></div>`);
+   <div style="font-size:10px;color:var(--ink3);margin-top:4px">${a.anzVerrCt?fmt(a.anzVerrCt)+' bereits mit Rechnungen verrechnet · ':''}wird auf der nächsten Rechnung abgezogen — noch verfügbar: ${fmt(Math.max(0,(a.anzahlungCt||0)-(a.anzVerrCt||0)))}</div></div>`);
 
  /* --- Kommunikation --- */
  const kanalName={wa:'WhatsApp',call:'Anruf',mail:'E-Mail',pers:'Persönlich',diag:'Diagnose',man:'Notiz',sys:'System',ig:'Instagram'};
@@ -1670,13 +1671,15 @@ FSET['o-notiz']=el=>{auftrag(el.dataset.oid).notiz=el.value.trim();save();render
 FSET['p-klass']=el=>{const a=auftrag(el.dataset.oid);a.pakete.find(p=>p.id===el.dataset.pid).klass=el.value;save();render()};
 FSET['p-zahler']=el=>{const a=auftrag(el.dataset.oid);a.pakete.find(p=>p.id===el.dataset.pid).zahler=el.value;save()};
 FSET['pos-vk']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),x=pk.pos.find(p=>p.id===el.dataset.xid);
- x.vkCt=parseEuro(el.value);save();render()};
+ x.vkCt=Math.max(0,parseEuro(el.value));save();render()};
 FSET['pos-menge']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),x=pk.pos.find(p=>p.id===el.dataset.xid);
- x.menge=Math.max(1,parseInt(el.value)||1);save();render()};
+ const neu=Math.max(1,parseInt(el.value)||1);
+ if(x.lagerId&&x.best==='lager'){const l=lagerT(x.lagerId);if(l)l.bestand+=(x.menge||1)-neu}
+ x.menge=neu;save();render()};
 FSET['prab-w']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
- pk.rabatt=pk.rabatt||{typ:'eur',wert:0};pk.rabatt.wert=pk.rabatt.typ==='pct'?parseFloat(String(el.value).replace(',','.'))||0:parseEuro(el.value);save();render()};
+ pk.rabatt=pk.rabatt||{typ:'eur',wert:0};pk.rabatt.wert=Math.max(0,pk.rabatt.typ==='pct'?parseFloat(String(el.value).replace(',','.'))||0:parseEuro(el.value));save();render()};
 FSET['orab-w']=el=>{const a=auftrag(el.dataset.oid);a.rabatt=a.rabatt||{typ:'eur',wert:0};
- a.rabatt.wert=a.rabatt.typ==='pct'?parseFloat(String(el.value).replace(',','.'))||0:parseEuro(el.value);save();render()};
+ a.rabatt.wert=Math.max(0,a.rabatt.typ==='pct'?parseFloat(String(el.value).replace(',','.'))||0:parseEuro(el.value));save();render()};
 ACT['prab-t']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  pk.rabatt=pk.rabatt||{typ:'eur',wert:0};if(pk.rabatt.typ!==el.dataset.t){pk.rabatt.typ=el.dataset.t;pk.rabatt.wert=0}save();render()};
 ACT['orab-t']=el=>{const a=auftrag(el.dataset.oid);a.rabatt=a.rabatt||{typ:'eur',wert:0};
@@ -1696,8 +1699,10 @@ ACT['pak-create']=el=>{const a=auftrag(el.dataset.oid);const n=$('#pk-n').value.
  const pk={id:'p'+uid(),name:n,klass:$('#pk-k').value,zahler:$('#pk-z').value,status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,pos:[]};
  a.pakete.push(pk);pakOpen[a.id].add(pk.id);save();closeSheet();render();toast('Paket angelegt')};
 ACT['pak-del']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
- confirmBox('Paket löschen?','„'+esc(pk.name)+'" mit '+pk.pos.length+' Positionen wird entfernt. Lagerteile werden zurückgebucht.','Löschen',()=>{
+ const fotoCt=a.fotos.filter(x=>x.paketId===pk.id).length;
+ confirmBox('Paket löschen?','„'+esc(pk.name)+'" mit '+pk.pos.length+' Positionen wird entfernt. Lagerteile werden zurückgebucht.'+(fotoCt?' '+fotoCt+' Foto(s) werden zu „Annahme / Allgemein" verschoben.':''),'Löschen',()=>{
   pk.pos.forEach(p=>{if(p.lagerId&&p.best==='lager'){const l=lagerT(p.lagerId);if(l)l.bestand+=(p.menge||1)}});
+  a.fotos.forEach(fo=>{if(fo.paketId===pk.id)fo.paketId=''});
   a.pakete=a.pakete.filter(p=>p.id!==pk.id);save();render();toast('Paket gelöscht')})};
 
 /* Positionen */
@@ -1774,7 +1779,7 @@ ACT['teil-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id==
  const lid=$('#pt-l').value||null,menge=Math.max(1,parseInt($('#pt-m').value)||1);
  const ext=ordFreigegeben(a);
  const vorher=ordNetto(a);
- const x={id:'x'+uid(),typ:'teil',bez,aw:0,menge,ekCt:parseEuro($('#pt-ek').value),vkCt:parseEuro($('#pt-vk').value),
+ const x={id:'x'+uid(),typ:'teil',bez,aw:0,menge,ekCt:Math.max(0,parseEuro($('#pt-ek').value)),vkCt:Math.max(0,parseEuro($('#pt-vk').value)),
   best:lid?'lager':null,eta:null,lagerId:lid,ext};
  if(lid){const l=lagerT(lid);
   if(l.bestand>=menge){l.bestand-=menge;x.best='lager'}
@@ -1805,9 +1810,9 @@ ACT['pos-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
  const isArbeit=(x?x.typ:el.dataset.typ)==='arbeit';
  const rw=$('#ps-rw').value.trim();
  const rab=rw?{typ:$('#ps-rp').classList.contains('on')?'pct':'eur',
-  wert:$('#ps-rp').classList.contains('on')?parseFloat(rw.replace(',','.'))||0:parseEuro(rw)}:null;
- const vals={bez,vkCt:parseEuro($('#ps-vk').value),
-  ekCt:isArbeit?0:parseEuro($('#ps-ek')?$('#ps-ek').value:'0'),
+  wert:Math.max(0,$('#ps-rp').classList.contains('on')?parseFloat(rw.replace(',','.'))||0:parseEuro(rw))}:null;
+ const vals={bez,vkCt:Math.max(0,parseEuro($('#ps-vk').value)),
+  ekCt:isArbeit?0:Math.max(0,parseEuro($('#ps-ek')?$('#ps-ek').value:'0')),
   aw:$('#ps-aw')?parseFloat(($('#ps-aw').value||'0').replace(',','.'))||0:(x?x.aw:0),
   awSatz:$('#ps-aws')?(parseEuro($('#ps-aws').value)||null):(x?x.awSatz:null),
   menge:$('#ps-m')?Math.max(1,parseInt($('#ps-m').value)||1):(x?x.menge||1:1),
@@ -1995,7 +2000,8 @@ function buildInvoiceHtml(a,pakIds,reNr){
  const ordRabAnteil=ordSub(a)>0?Math.round(rabCt(ordSub(a),a.rabatt)*sub/ordSub(a)):0;
  const netto=Math.max(0,sub-ordRabAnteil);
  const mwst=Math.round(netto*S.settings.mwst/100),brutto=netto+mwst;
- const anz=(!a.anzVerr&&a.anzahlungCt)?Math.min(a.anzahlungCt,brutto):0;
+ const restAnz=Math.max(0,(a.anzahlungCt||0)-(a.anzVerrCt||0));
+ const anz=Math.min(restAnz,brutto);
  const rows=paks.map(pk=>{
   const prab=rabCt(pakBrutto(pk),pk.rabatt);
   return `<tr class="paksep"><td colspan="4">${esc(pk.name)} · ${KLASS[pk.klass][0]}${pk.zahler!=='kunde'?' · zahlt: '+ZAHLER[pk.zahler]:''}</td></tr>`+
@@ -2040,7 +2046,7 @@ function doBill(a,pakIds){
   S.rechnungen.push({id:'r'+uid(),nr:reNr,auftragId:a.id,datum:todayISO(),nettoCt:inv.netto,mwstCt:inv.mwst,bruttoCt:inv.brutto,gewinnCt:gewinn,paketIds:pakIds});
   a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Rechnung '+reNr+' erstellt — '+fmt(inv.brutto)+' brutto.',preisCt:inv.brutto,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
   paks.forEach(p=>{p.abger=true;if(p.status!=='fertig')p.status='fertig'});
-  if(inv.anz)a.anzVerr=true;
+  if(inv.anz)a.anzVerrCt=(a.anzVerrCt||0)+inv.anz;
   if(a.pakete.every(p=>p.abger)&&a.status!=='abgeholt')a.status='fertig';
   save();render();toast(reNr+' erstellt');
   $('#printarea').innerHTML=inv.html;setTimeout(()=>window.print(),120)},false)}
@@ -2110,7 +2116,7 @@ function vKunde(id){
     <div class="lr"><b class="num">${fmt(ordNetto(a))}</b><span style="color:${sc};font-weight:700">${sl}</span></div></div>`}).join('')||'<div style="padding:0 15px 14px;font-size:12px;color:var(--ink3)">Keine Aufträge</div>'}</div>
   <div class="row2"><button class="btn btn-2nd" data-act="kunde-edit" data-id="${k.id}">Bearbeiten</button>
    <button class="btn btn-danger" data-act="kunde-del" data-id="${k.id}">Löschen</button></div></div>`;
- return shell(inner,{title:k.name,eyebrow:'Kunde',back:1,hideNav:false,ctx:'kunde'});
+ return shell(inner,{title:esc(k.name),eyebrow:'Kunde',back:1,hideNav:false,ctx:'kunde'});
 }
 ACT['kunde-edit']=el=>{kunNorm();const k=el.dataset.id?kunde(el.dataset.id):null;
  sheet(k?'Kunde bearbeiten':'Neuer Kunde',`
@@ -2186,7 +2192,7 @@ function vFahrzeug(id){
     <div class="lr"><b class="num">${fmt(ordNetto(a))}</b><span style="color:${sc};font-weight:700">${sl}</span></div></div>`}).join('')||'<div style="padding:0 15px 14px;font-size:12px;color:var(--ink3)">Noch keine Aufträge</div>'}</div>
   <div class="row2"><button class="btn btn-2nd" data-act="fzg-edit" data-id="${f.id}">Bearbeiten</button>
    <button class="btn btn-danger" data-act="fzg-del" data-id="${f.id}">Löschen</button></div></div>`;
- return shell(inner,{title:f.kennz,eyebrow:'Fahrzeug',back:1,ctx:'fahrzeug'});
+ return shell(inner,{title:esc(f.kennz),eyebrow:'Fahrzeug',back:1,ctx:'fahrzeug'});
 }
 let fzgPick=null;
 ACT['fzg-edit']=el=>{const f=el.dataset.id?fzg(el.dataset.id):null;
@@ -2322,6 +2328,10 @@ ACT['lager-save']=el=>{const t=$('#lg-t').value.trim();if(!t)return toast('Bezei
  else S.lager.push({id:'l'+uid(),kat:'Sonstige',...vals});
  save();closeSheet();render();toast('Gespeichert')};
 ACT['lager-del']=el=>{const l=lagerT(el.dataset.id);
+ const inOffenerBe=S.bestellungen.some(b=>b.pos.some(p=>p.lagerId===l.id&&(p.da||0)<p.menge));
+ const inOffenemAuftrag=S.auftraege.some(a=>a.status!=='abgeholt'&&a.pakete.some(pk=>pk.pos.some(p=>p.lagerId===l.id)));
+ if(inOffenerBe)return toast('Teil steckt in einer offenen Bestellung — erst dort entfernen',true);
+ if(inOffenemAuftrag)return toast('Teil ist in einem laufenden Auftrag verbaut — dort erst entfernen',true);
  confirmBox('Teil löschen?',esc(l.teil)+' wird aus dem Lager entfernt.','Löschen',()=>{
   S.lager=S.lager.filter(x=>x.id!==l.id);save();closeSheet();render()})};
 
@@ -2686,6 +2696,7 @@ async function cloudPull(code){const c=syncCfg();
 function cloudAdopt(row,code){const keep={...syncCfg()};if(code)keep.id=code;keep.on=true;
  S=row.payload;S.settings=S.settings||{};S.settings.sync=keep;
  S.meta=S.meta||{};S.meta.savedAt=Date.parse(row.updated_at)||Date.now();
+ kunNorm();migrate2();
  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function syncUi(){const el=$('#sync-status');if(!el)return;
  const c=syncCfg();
@@ -2951,7 +2962,7 @@ ACT['anfrage-save']=el=>{const v=readQSheet();
  save();closeSheet();render();toast('Anfrage gespeichert')};
 function nwOrig(){const el=$('#q-orig');return el?el.value.trim():''}
 ACT['anfrage-del']=el=>{const x=anfrage(el.dataset.id);
- confirmBox('Anfrage löschen?',(x.name||'Der Eintrag')+' wird entfernt — inklusive Original.','Löschen',()=>{
+ confirmBox('Anfrage löschen?',esc(x.name||'Der Eintrag')+' wird entfernt — inklusive Original.','Löschen',()=>{
   S.anfragen=S.anfragen.filter(q=>q.id!==x.id);save();closeSheet();render()})};
 ACT['anfrage-analyse']=async el=>{
  const txt=el.dataset.id?(anfrage(el.dataset.id).original||''):nwOrig();
@@ -3645,9 +3656,9 @@ ACT['pak-from-vorlage-pick']=el=>{const a=auftrag(el.dataset.oid);const t=S.pakV
  if(!a||!t)return;
  const f=fzg(a.fzgId);const awSatz=a.awCt||S.settings.awCt;
  const pos=t.pos.map(p=>{
-  if(p.typ==='teil')return{id:'x'+uid(),typ:'teil',bez:p.bez,aw:0,menge:1,ekCt:p.ekCt||0,vkCt:p.vkCt||0,rab:null,ext:ordFreigegeben(a),best:null,eta:null,lagerId:null};
-  const aw=apAwFor(p.bez,f&&f.marke)??p.aw;
-  return{id:'x'+uid(),typ:'arbeit',bez:p.bez,aw,awSatz:null,menge:1,ekCt:0,vkCt:Math.round(aw*awSatz),rab:null,ext:ordFreigegeben(a),best:null,eta:null,lagerId:null}});
+  if(p.typ==='teil')return{id:'x'+uid(),typ:'teil',bez:p.bez||'Teil',aw:0,menge:1,ekCt:Number(p.ekCt)||0,vkCt:Number(p.vkCt)||0,rab:null,ext:ordFreigegeben(a),best:null,eta:null,lagerId:null};
+  const aw=Number(apAwFor(p.bez,f&&f.marke)??p.aw)||0;
+  return{id:'x'+uid(),typ:'arbeit',bez:p.bez||'Position',aw,awSatz:null,menge:1,ekCt:0,vkCt:Math.round(aw*awSatz),rab:null,ext:ordFreigegeben(a),best:null,eta:null,lagerId:null}});
  const pk={id:'p'+uid(),name:t.name,klass:t.klass,zahler:'kunde',status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:ordFreigegeben(a),pos};
  a.pakete.push(pk);
  if(ordFreigegeben(a))a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Paket „'+t.name+'" aus Vorlage eingefügt (Erweiterung, '+pos.length+' Positionen).',preisCt:pakNetto(pk),vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
@@ -3693,7 +3704,7 @@ ACT['team-save']=el=>{const name=$('#tm-name').value.trim();
  else S.mitarbeiter.push({id:'ma'+uid(),...v});
  save();closeSheet();render();toast('Gespeichert')};
 ACT['team-del']=el=>{const m=mita(el.dataset.id);
- confirmBox('Mitarbeiter löschen?',m.name+' wird entfernt. Gestempelte Zeiten bleiben erhalten.','Löschen',
+ confirmBox('Mitarbeiter löschen?',esc(m.name)+' wird entfernt. Gestempelte Zeiten bleiben erhalten.','Löschen',
   ()=>{S.mitarbeiter=S.mitarbeiter.filter(x=>x.id!==m.id);if(curMid===m.id)curMid=null;save();closeSheet();render()})};
 
 /* ============ PERSONALWESEN ============ */
@@ -4020,10 +4031,12 @@ ACT['datev-export']=()=>{
  const rows=[['Belegdatum','Belegnummer','Buchungstext','Umsatz-Netto EUR','MwSt EUR','Umsatz-Brutto EUR','Skonto','Gegenkonto']];
  S.rechnungen.slice().sort((a,b)=>a.datum.localeCompare(b.datum)).forEach(r=>{
   const a=auftrag(r.auftragId),k=a?kunde(a.kundeId):null;
-  const netto=Math.round(r.bruttoCt/(1+(S.settings.mwst||19)/100));
+  /* Immer die zum Rechnungsdatum tatsächlich fakturierten Beträge nehmen — niemals mit dem AKTUELLEN MwSt-Satz neu berechnen (der kann sich seither geändert haben) */
+  const netto=r.nettoCt!=null?r.nettoCt:Math.round(r.bruttoCt/(1+(S.settings.mwst||19)/100));
+  const mwst=r.mwstCt!=null?r.mwstCt:r.bruttoCt-netto;
   rows.push([r.datum,r.nr,k?k.name:'Kunde',
    (netto/100).toFixed(2).replace('.',','),
-   ((r.bruttoCt-netto)/100).toFixed(2).replace('.',','),
+   (mwst/100).toFixed(2).replace('.',','),
    (r.bruttoCt/100).toFixed(2).replace('.',','),
    '0,00','8400'])});
  const csv='﻿'+rows.map(r=>r.map(c=>'"'+String(c??'').replace(/"/g,'""')+'"').join(';')).join('\r\n');
@@ -4069,7 +4082,7 @@ function renderInner(){
   files.forEach(f=>{const rd=new FileReader();rd.onload=ev=>{x.fotos=x.fotos||[];x.fotos.push({dataUrl:ev.target.result,name:f.name});save();render()};rd.readAsDataURL(f)})})};
  const ii=$('#importinp');if(ii&&!ii._b){ii._b=true;ii.addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;
   const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);if(!d.version||!Array.isArray(d.auftraege))throw 0;
-   S=d;save();render();toast('Sicherung geladen')}catch(x){toast('Datei ungültig',true)}};r.readAsText(f)})}
+   S=d;kunNorm();migrate2();save();render();toast('Sicherung geladen')}catch(x){toast('Datei ungültig',true)}};r.readAsText(f)})}
 }
 document.addEventListener('click',e=>{
  const el=e.target.closest('[data-act]');if(!el)return;
