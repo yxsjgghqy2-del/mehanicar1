@@ -2384,7 +2384,7 @@ function vFinanzen(){
  S.auftraege.forEach(a=>{if(!a.mitarbeiterId)return;
   const re=S.rechnungen.filter(r=>r.auftragId===a.id&&Date.parse(r.datum)>=t90);
   re.forEach(r=>{maUms[a.mitarbeiterId]=(maUms[a.mitarbeiterId]||0)+r.bruttoCt})});
- /* Top-Kunden (letzte 12 Monate) */
+ /* Top-Kunden (alle Zeit — kein Zeitfenster, UI zeigt bewusst keine Monatsangabe) */
  const kunUms={};S.rechnungen.forEach(r=>{const a=auftrag(r.auftragId);if(!a)return;kunUms[a.kundeId]=(kunUms[a.kundeId]||0)+r.bruttoCt});
  const topKun=Object.entries(kunUms).sort((a,b)=>b[1]-a[1]).slice(0,5);
  /* Statusverteilung */
