@@ -102,3 +102,9 @@ Neue Felder von letzter Nacht wurden nur in den Formularen und der Kundenakte an
 Zusätzlich verifiziert (kein Bug gefunden): Doppelklick-Schutz bei Rechnungserstellung — `confirmBox` entfernt sich synchron aus dem DOM vor Ausführung, ein zweiter Klick trifft ins Leere. Per hartem synchronem Doppel-Dispatch-Test bestätigt.
 
 SW v16.
+
+## Runde 4 (Fortsetzung): pak-create respektierte die Freigabe-Regel nicht
+
+Einzelne Positionen (Arbeit/Teil) markieren sich nach Auftragsfreigabe automatisch als Erweiterung — ein komplett NEUES Paket (`pak-create`) tat das nicht, sondern setzte immer `ext:false`. Ein Mechaniker, der nach Freigabe ein völlig neues Problem entdeckt (eigenes Paket statt einzelne Position), hätte das ohne Protokoll-Eintrag und ohne „Erweiterung"-Kennzeichnung durchrutschen lassen können — genau die Transparenz, die die Freigabe-Funktion eigentlich garantieren soll. Jetzt konsistent: `pak-create` prüft `ordFreigegeben(a)`, markiert entsprechend und protokolliert in der Kommunikations-Historie. Nebenbei: leeres frisches Erweiterungs-Paket zeigte fälschlich „0 Erweiterungen" statt eines sinnvollen Labels — jetzt „Neu · Erweiterung". Per vollständigem Vorher/Nachher-Test verifiziert.
+
+SW v17.
