@@ -2382,7 +2382,7 @@ function vFinanzen(){
  /* Umsatz nach Mitarbeiter (letzte 90 Tage) */
  const maUms={};const t90=Date.now()-90*86400000;
  S.auftraege.forEach(a=>{if(!a.mitarbeiterId)return;
-  const re=S.rechnungen.filter(r=>r.auftragId===a.id&&Date.parse(r.datum)*86400000>t90-86400000);
+  const re=S.rechnungen.filter(r=>r.auftragId===a.id&&Date.parse(r.datum)>=t90);
   re.forEach(r=>{maUms[a.mitarbeiterId]=(maUms[a.mitarbeiterId]||0)+r.bruttoCt})});
  /* Top-Kunden (letzte 12 Monate) */
  const kunUms={};S.rechnungen.forEach(r=>{const a=auftrag(r.auftragId);if(!a)return;kunUms[a.kundeId]=(kunUms[a.kundeId]||0)+r.bruttoCt});
