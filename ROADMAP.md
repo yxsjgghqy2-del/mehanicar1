@@ -65,3 +65,9 @@ Alle vier per echtem `<img onerror>`-Payload in Playwright verifiziert — vorhe
 - **Kritischer Fund**: Sowohl der JSON-Backup-Import (`data-import`) als auch die Cloud-Wiederherstellung (`cloudAdopt`) übersprangen `migrate2()`/`kunNorm()` komplett — ein Import eines alten Backups (vor heute Nacht) hätte denselben Personalwesen-Absturz reproduziert, der gestern Nacht bereits gefixt wurde. Jetzt rufen beide Pfade `kunNorm()`+`migrate2()` auf. Per echtem File-Upload-Test verifiziert.
 
 SW v13.
+
+## Runde 2 abgeschlossen: Performance-Test bei großer Datenmenge
+
+Simuliert: 500 Kunden, 600 Fahrzeuge, 1000 Aufträge, 300 Anfragen, 400 Rechnungen (weit über realistischer Größe einer einzelnen Meisterwerkstatt). Ergebnis: alle Render-Zeiten unter 510ms (Planung 508ms, Aufträge 397ms, Kunden 66ms, Anfragen 143ms, Finanzen 57ms), keine JS-Fehler, Live-Suche liefert bei 500 Kunden korrekt exakt 1 Treffer. Kein Performance-Bug — App bleibt auch weit jenseits normaler Nutzung benutzbar.
+
+**Alle 4 Aufgaben aus Runde 2 (XSS, Geldberechnung, Datenintegrität, Backup/Performance) abgeschlossen und deployed.**
