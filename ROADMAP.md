@@ -110,3 +110,12 @@ SW v16.
 Einzelne Positionen (Arbeit/Teil) markieren sich nach Auftragsfreigabe automatisch als Erweiterung — ein komplett NEUES Paket (`pak-create`) tat das nicht, sondern setzte immer `ext:false`. Ein Mechaniker, der nach Freigabe ein völlig neues Problem entdeckt (eigenes Paket statt einzelne Position), hätte das ohne Protokoll-Eintrag und ohne „Erweiterung"-Kennzeichnung durchrutschen lassen können — genau die Transparenz, die die Freigabe-Funktion eigentlich garantieren soll. Jetzt konsistent: `pak-create` prüft `ordFreigegeben(a)`, markiert entsprechend und protokolliert in der Kommunikations-Historie. Nebenbei: leeres frisches Erweiterungs-Paket zeigte fälschlich „0 Erweiterungen" statt eines sinnvollen Labels — jetzt „Neu · Erweiterung". Per vollständigem Vorher/Nachher-Test verifiziert.
 
 SW v17.
+
+## Runde 5: Dunkelmodus-Verifikation + Kapazitätsplan-Audit
+
+- **Dunkelmodus**: alle heute Nacht neu gebauten UI-Bereiche (Kunden-/Fahrzeug-Picker, AP-Verwaltung, Paket-Vorlagen, Freigabe-Block) per Screenshot in `colorScheme:'dark'` geprüft — durchweg korrekt, keine hellen Aussetzer, guter Kontrast, CSS-Variablen konsequent genutzt.
+- **Kapazitätsplan (10-Tage-Bühnenplan)**: bisher unangetasteter, älterer Code-Bereich gezielt geprüft (Datums-Range-Logik, AW-Aggregation, Effizienzberechnung, Status-Filterung inkl. neuem „Sonstiges"-Status). Sauberer Befund — kein praktisch erreichbarer Bug gefunden. Ein rein theoretischer Randfall (Auftrag ganz ohne `annahme` UND `abgabe`) ist über keinen UI-Pfad erreichbar, da jede Auftragsanlage `annahme` immer setzt.
+
+## Abschließender Regressionslauf
+
+9 Test-Suiten erneut komplett durchlaufen (Nacht-Kernfunktionen, AP-Datenbank, Bestellungen/Kampagnen, XSS-Fixes, Lager-Sync, Anzahlung-Restbetrag, Backup-Roundtrip, Demo-Reset/Wipe, Leerzustände) — **alle grün, 0 JS-Fehler.** Die App ist nach fünf vollständigen Prüfrunden in einem soliden, verifizierten Zustand.
