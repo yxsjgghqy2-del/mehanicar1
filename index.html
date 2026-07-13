@@ -1369,6 +1369,7 @@ function vAuftrag(id){
 
  /* --- Kunde --- */
  const secKunde=sec('kunde',esc(k.name||'Kunde'),k.stamm?'Stammkunde':'',`
+  ${k.ansprechpartner?`<div class="kv"><span class="k">Ansprechpartner</span><span class="v">${esc(k.ansprechpartner)}</span></div>`:''}
   <div class="kv"><span class="k">Telefon</span><span class="v num">${esc(k.tel||'—')}</span></div>
   <div class="kv"><span class="k">WhatsApp</span><span class="v">${k.wa?'<span class="tag t-green">verknüpft</span>':'<span class="tag t-gray">nein</span>'}</span></div>
   <div class="kv"><span class="k">E-Mail</span><span class="v">${esc(k.email||'—')}</span></div>
@@ -1386,6 +1387,7 @@ function vAuftrag(id){
 
  /* --- Fahrzeug --- */
  const secFzg=sec('fzg',esc(f.kennz||'Fahrzeug'),esc((f.marke||'')+' '+(f.modell||'')+(f.bj?' · '+f.bj:'')),`
+  ${f.kraftstoff||f.farbe?`<div class="kv"><span class="k">${f.kraftstoff&&f.farbe?'Kraftstoff / Farbe':f.kraftstoff?'Kraftstoff':'Farbe'}</span><span class="v">${[f.kraftstoff,f.farbe].filter(Boolean).map(esc).join(' · ')}</span></div>`:''}
   <div class="kv"><span class="k">VIN</span><span class="v num" style="font-family:ui-monospace,monospace;font-size:11px">${esc(f.vin||'—')}</span></div>
   <div class="kv"><span class="k">KM Annahme</span><span class="v num">${a.kmAn!=null?a.kmAn.toLocaleString('de-DE')+' km':'—'}</span></div>
   <div class="kv"><span class="k">KM Abgabe</span><span class="v"><input class="priceinp" style="width:96px" inputmode="numeric" placeholder="eintragen" value="${a.kmAb??''}" data-f="o-kmab" data-oid="${a.id}"></span></div>
@@ -2018,7 +2020,7 @@ function buildInvoiceHtml(a,pakIds,reNr){
     Rechnungsdatum: ${new Date().toLocaleDateString('de-DE')}<br>Leistungsdatum: ${new Date((a.abgabe||todayISO())+'T00:00').toLocaleDateString('de-DE')}<br>Auftrag: ${a.nr}<br>Fahrzeug: ${esc(f.kennz||'')} · ${esc((f.marke||'')+' '+(f.modell||''))}<br>
     ${a.kmAn!=null?'KM: '+a.kmAn.toLocaleString('de-DE'):''}</div></div>
   <div class="small" style="margin-bottom:4px">Kunde</div>
-  <div><b>${esc(k.name||'')}</b><br><span class="small">${esc(k.adresse||'')}</span></div>
+  <div><b>${esc(k.name||'')}</b>${k.ansprechpartner?'<br>z. Hd. '+esc(k.ansprechpartner):''}<br><span class="small">${esc(k.adresse||'')}</span></div>
   <table><tr><th>Position</th><th class="tr">Menge</th><th class="tr">Einzel</th><th class="tr">Gesamt</th></tr>${rows}</table>
   <div class="tots">
    ${ordRabAnteil?`<div><span>Rabatt Auftrag</span><span>– ${fmt(ordRabAnteil)}</span></div>`:''}

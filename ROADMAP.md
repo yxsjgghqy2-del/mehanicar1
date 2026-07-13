@@ -92,3 +92,13 @@ Alle `ACT[...]`/`FSET[...]`-Definitionen gegen alle im Code referenzierten `data
 - **`anfr-mail`**: fertig implementierter Handler, aber nie mit einem Button verbunden. In der Anfragen-Liste blieb die Aktionsleiste für Anfragen ohne Telefonnummer (nur E-Mail — z. B. Web-/Mail-Kanal) komplett leer, obwohl `anfr-wa`/`anfr-call` für Telefon-Anfragen längst da waren. Jetzt: „Per E-Mail"-Button erscheint als dritte Variante. Guard-Bedingung war zudem unsauber formuliert (prüfte `antwort` statt `email`) — korrigiert, plus Betreffzeile ergänzt zur Angleichung an das Pendant `anfr-repl-mail` in der Detailansicht.
 
 SW v15.
+
+## Runde 4: Feld-Konsistenz-Audit (Ansprechpartner, Kraftstoff, Farbe)
+
+Neue Felder von letzter Nacht wurden nur in den Formularen und der Kundenakte angezeigt, fehlten aber an den Stellen, wo sie im Alltag am meisten zählen:
+- **Ansprechpartner**: fehlte im Auftrag (Kunde-Karte — genau dort, wo ein Mitarbeiter nachschaut, wen er bei einer Firma anrufen soll) und auf der gedruckten Rechnung/Übersicht (kein „z. Hd."). Beides ergänzt.
+- **Kraftstoff/Farbe**: fehlten im Auftrag (Fahrzeug-Karte). Ergänzt als kompakte Zeile.
+
+Zusätzlich verifiziert (kein Bug gefunden): Doppelklick-Schutz bei Rechnungserstellung — `confirmBox` entfernt sich synchron aus dem DOM vor Ausführung, ein zweiter Klick trifft ins Leere. Per hartem synchronem Doppel-Dispatch-Test bestätigt.
+
+SW v16.
