@@ -1,6 +1,8 @@
 # mehanicar — Finale Version: Arbeitsstand
 
-## Status: ALLE PHASEN ABGESCHLOSSEN ✅ (12.07.2026)
+## Status: ALLE PHASEN + 5 NACHT-PRÜFRUNDEN ABGESCHLOSSEN ✅ (13.07.2026)
+
+**Zusammenfassung der Nacht (Fable-Sitzung):** Nach den 5 Ursprungs-Phasen liefen zusätzlich ein Nacht-Feature-Paket (5 Teile) und 4 adversariale Prüfrunden (XSS, Geldberechnung, Datenintegrität, Feld-/Logik-Konsistenz). Gefunden und behoben: **~16 echte Bugs**, darunter 3× derselbe Absturzklasse (Import/Cloud-Restore/Demo-Reset übersprangen die Datenmigration), 4× XSS, mehrere Geld-Korrektheitsfehler (Anzahlung-Restbetrag, DATEV-Drift, Lagerbestand-Sync, negative Rabatte), sowie Konsistenzlücken (fehlender Ansprechpartner auf Rechnung, pak-create ignorierte Freigabe-Regel). Abschließender Regressionslauf: 9 Test-Suiten, 40+ Einzelprüfungen, 0 Fehler. Aktuell **SW v17**, Branch `fix/nav-segctrl-2`, laufend in `main` gemerged und auf Vercel live.
 
 | Phase | Inhalt | Status |
 |---|---|---|
