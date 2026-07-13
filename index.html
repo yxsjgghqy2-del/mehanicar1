@@ -834,6 +834,7 @@ function migrate2(){
 }
 function apLearn(bez,aw,marke){
  if(!bez||!(aw>0))return;
+ S.apDb=S.apDb||[];
  const key=bez.trim().toLowerCase();
  let hit=S.apDb.find(e=>e.bez.toLowerCase()===key);
  if(!hit){hit={bez:bez.trim(),aw,byMarke:{}};S.apDb.push(hit);if(S.apDb.length>300)S.apDb.shift()}
@@ -2562,10 +2563,10 @@ ACT['data-export']=()=>{const blob=new Blob([JSON.stringify(S,null,1)],{type:'ap
  a.download='mehanicar-sicherung-'+todayISO()+'.json';a.click();toast('Sicherung erstellt')};
 ACT['data-import']=()=>$('#importinp').click();
 ACT['demo-reset']=()=>confirmBox('Demo-Daten laden?','Aktuelle Daten werden durch die Beispieldaten ersetzt.','Neu laden',()=>{
- S=seed();save();render();toast('Demo-Daten geladen')});
+ S=seed();S.settings.onboarded=true;kunNorm();migrate2();save();route={v:'planung',id:null};render();toast('Demo-Daten geladen')});
 ACT['data-wipe']=()=>confirmBox('Wirklich alles löschen?','Alle Kunden, Fahrzeuge, Aufträge, Rechnungen und Anfragen werden entfernt. Das kann nicht rückgängig gemacht werden.','Alles löschen',()=>{
  S={version:2,demo:false,settings:S.settings,kunden:[],fahrzeuge:[],lager:[],auftraege:[],rechnungen:[],anfragen:[],bestellungen:[],kampagnen:[],termine:[],mitarbeiter:[{id:'m1',name:S.settings.firma&&S.settings.firma.inhaber||'Inhaber',kuerzel:'IN',farbe:'#0A5FFF',aktiv:true}],krankmeldungen:[],urlaub:[],radarDone:{},meta:{changes:0,lastBackup:null}};
- S.settings.nextAu=1;S.settings.nextRe=1;S.settings.nextBe=1;save();render();toast('Alle Daten gelöscht')});
+ S.settings.nextAu=1;S.settings.nextRe=1;S.settings.nextBe=1;kunNorm();migrate2();save();render();toast('Alle Daten gelöscht')});
 
 /* ============ 9. EXCEL-EXPORT (.xlsx, ohne Bibliotheken) ============ */
 const CRC_T=(()=>{const t=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c}return t})();

@@ -71,3 +71,16 @@ SW v13.
 Simuliert: 500 Kunden, 600 Fahrzeuge, 1000 Aufträge, 300 Anfragen, 400 Rechnungen (weit über realistischer Größe einer einzelnen Meisterwerkstatt). Ergebnis: alle Render-Zeiten unter 510ms (Planung 508ms, Aufträge 397ms, Kunden 66ms, Anfragen 143ms, Finanzen 57ms), keine JS-Fehler, Live-Suche liefert bei 500 Kunden korrekt exakt 1 Treffer. Kein Performance-Bug — App bleibt auch weit jenseits normaler Nutzung benutzbar.
 
 **Alle 4 Aufgaben aus Runde 2 (XSS, Geldberechnung, Datenintegrität, Backup/Performance) abgeschlossen und deployed.**
+
+## Runde 3: Weiterer kritischer Fund — Demo-Reset & Alles-löschen
+
+Beim systematischen Durchklicken jeder Einstellungs-Aktion gefunden:
+- **`demo-reset`** (Einstellungen → „Demo-Daten neu laden") übersprang ebenfalls `migrate2()` — dritter unabhängiger Fundort desselben Musters (nach Import und Cloud-Restore letzte Nacht). Nach einem Reset war `S.apDb` undefined; das nächste Speichern einer Arbeitsposition (`apLearn`) crashte mit „Cannot read properties of undefined (reading 'find')".
+- Zusätzlich entdeckt: `demo-reset` setzte `onboarded` nie zurück auf `true` (weil `seed()` es für den Erstinstallations-Fall bewusst auf `false` setzt) — ein bereits aktiver Nutzer landete nach „Demo-Daten neu laden" fälschlich wieder im Willkommensbildschirm statt in der App. Kein Absturz, aber ein handfester UX-Bug, der die Funktion für jeden Nutzer unbrauchbar machte.
+- `data-wipe` („Alles löschen") hatte dieselbe migrate2-Lücke.
+- Fix: beide Handler rufen jetzt `kunNorm()`+`migrate2()`; `demo-reset` setzt zusätzlich `onboarded=true` und die Route zurück auf Planung. `apLearn` bekam zusätzlich eine defensive `S.apDb=S.apDb||[]`-Absicherung als zweite Verteidigungslinie.
+- Alle Fixes per vollständigem End-to-End-Test verifiziert (6/6 Prüfungen grün, inkl. Absturz-Reproduktion vorher/nachher).
+
+**Erkenntnis**: `migrate2()` wird jetzt an sechs Stellen aufgerufen (load, JSON-Import, Cloud-Restore, demo-reset, data-wipe, initiale seed()-Erstellung). Jeder Pfad, der `S` komplett neu zuweist, MUSS migrate2() aufrufen — als Regel für zukünftige Erweiterungen festgehalten.
+
+SW v14.
