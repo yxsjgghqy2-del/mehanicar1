@@ -125,3 +125,7 @@ SW v17.
 Beim gezielten Blick auf bisher unangetastete Bereiche (Finanzen-Statistiken, nicht Teil der heutigen Nacht-Features) gefunden — ein **Einheiten-Bug, der vermutlich schon lange in der App steckt**: „Umsatz nach Mitarbeiter · 90 Tage" filterte mit `Date.parse(r.datum)*86400000>t90-86400000` — `Date.parse()` liefert bereits Millisekunden, die Multiplikation mit weiteren 86.400.000 (ms/Tag) macht daraus eine astronomisch große Zahl (~1,36×10²⁰ statt ~1,6×10¹²), wodurch der Vergleich für **jedes gültige Rechnungsdatum immer wahr** war. Die „90 Tage"-Statistik zeigte in Wahrheit seit jeher den Umsatz aller Zeiten — nur falsch beschriftet. Fix: korrekter direkter Millisekunden-Vergleich `Date.parse(r.datum)>=t90`. Codebase auf identisches Bug-Muster durchsucht — alle anderen Datums-Differenzen im Code sind korrekt (dividieren statt multiplizieren), Bug war isoliert. Per echtem Zahlenbeispiel verifiziert (alte Rechnung 2020 fließt jetzt korrekt nicht mehr ein).
 
 SW v18.
+
+## Runde 6 (Fortsetzung): Termine-Modul geprüft — sauber
+
+Terminanlage (Validierung Endzeit>Startzeit, Pflichtfelder), Wochennavigation (`wkMon`) inkl. Jahreswechsel-Randfall per echter Datumssimulation getestet (31.12.→04.01. korrekt). Kein Bug gefunden — Modul nutzt durchgehend native `Date`-Objektmethoden statt fehleranfälliger manueller String-Arithmetik.
