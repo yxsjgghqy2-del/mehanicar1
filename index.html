@@ -1423,7 +1423,7 @@ function vAuftrag(id){
   return `<div class="pak ${pk.ext?'ext-pak':''} ${open}">
    <div class="pak-h" data-act="pak-tog" data-oid="${a.id}" data-pid="${pk.id}">
     <span class="tag ${kc}">${kl}</span><span class="pt">${esc(pk.name)}</span>
-    ${pk.ext?`<span class="tag t-amber">${extPos.length} Erweiterung${extPos.length>1?'en':''}</span>`:''}
+    ${pk.ext?(extPos.length?`<span class="tag t-amber">${extPos.length} Erweiterung${extPos.length>1?'en':''}</span>`:`<span class="tag t-amber">Neu · Erweiterung</span>`):''}
     ${pk.abger?'<span class="tag t-green">abgerechnet</span>':''}
     <span class="chev"></span></div>
    <div class="pak-b"><div class="pak-in">
@@ -1699,8 +1699,11 @@ ACT['pak-new']=el=>{const a=auftrag(el.dataset.oid);
  setTimeout(()=>$('#pk-n').focus(),150)};
 ACT['pak-create']=el=>{const a=auftrag(el.dataset.oid);const n=$('#pk-n').value.trim();
  if(!n)return toast('Bezeichnung fehlt',true);
- const pk={id:'p'+uid(),name:n,klass:$('#pk-k').value,zahler:$('#pk-z').value,status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,pos:[]};
- a.pakete.push(pk);pakOpen[a.id].add(pk.id);save();closeSheet();render();toast('Paket angelegt')};
+ const ext=ordFreigegeben(a);
+ const pk={id:'p'+uid(),name:n,klass:$('#pk-k').value,zahler:$('#pk-z').value,status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext,pos:[]};
+ a.pakete.push(pk);pakOpen[a.id].add(pk.id);
+ if(ext)a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Neues Paket „'+n+'" nach Freigabe angelegt — gilt als Erweiterung.',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
+ save();closeSheet();render();toast(ext?'Paket als Erweiterung angelegt':'Paket angelegt')};
 ACT['pak-del']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const fotoCt=a.fotos.filter(x=>x.paketId===pk.id).length;
  confirmBox('Paket löschen?','„'+esc(pk.name)+'" mit '+pk.pos.length+' Positionen wird entfernt. Lagerteile werden zurückgebucht.'+(fotoCt?' '+fotoCt+' Foto(s) werden zu „Annahme / Allgemein" verschoben.':''),'Löschen',()=>{
