@@ -39,3 +39,29 @@ Umgesetzt: Scan-first "Neuer Auftrag" (Segmente Bestehend/Neu + Privat/Firma, An
 - Bestellungen: manuelle Bestellung (Lieferant, ETA, freie Positionen) unabhängig von Mindestbestand-Liste; Überfällig-Warnung wenn ETA verstrichen.
 - Kampagnen: E-Mail-Fallback für Kunden ohne Telefonnummer aber mit E-Mail-Adresse (mailto: statt WhatsApp).
 - SW v12.
+
+## Runde 2: Kritische Audits (XSS, Geldberechnung, Datenintegrität)
+
+Drei parallele Audit-Agenten durchsuchten die App adversarial. Alle folgenden echten Bugs wurden gefunden, verifiziert (Exploit-Payload bzw. Zahlenbeispiel) und behoben:
+
+**XSS (4 Lücken, alle über esc() geschlossen):**
+- Kunde-Detailseite: `title:k.name` ungeescaped im Seitentitel
+- Fahrzeug-Detailseite: `title:f.kennz` ungeescaped
+- Anfrage-Löschen-Dialog: `x.name` (kommt von der öffentlichen Buchungsseite — höchstes Risiko!) ungeescaped in confirmBox
+- Mitarbeiter-Löschen-Dialog: `m.name` ungeescaped in confirmBox
+Alle vier per echtem `<img onerror>`-Payload in Playwright verifiziert — vorher/nachher.
+
+**Geldberechnung (mehrere echte Bugs):**
+- Negative Rabatte (Position/Paket/Auftrag) erhöhten den Preis statt ihn zu senken → jetzt auf `Math.max(0,…)` geklemmt
+- Negativer EK bei Teilen täuschte künstlich hohen Gewinn vor → geklemmt
+- **Anzahlung bei Teil-Rechnungen**: Bool-Flag `anzVerr` verlor den Restbetrag bei mehreren Teilrechnungen (Beispiel: 500€ Anzahlung, 1. Teilrechnung 141,61€ verrechnet, Rest 358,39€ wäre bei 2. Teilrechnung komplett verloren gegangen). Umgebaut auf `anzVerrCt`-Zähler mit korrekter Restbetrag-Fortschreibung; Migration für Bestandsdaten; Restbetrag jetzt auch sichtbar im Auftrag.
+- **DATEV-Export** berechnete Netto/MwSt live mit dem AKTUELLEN Steuersatz neu statt die zum Rechnungsdatum tatsächlich fakturierten Werte zu nehmen → driftete nach jeder MwSt-Satz-Änderung für alle Altrechnungen. Jetzt: gespeicherte `nettoCt`/`mwstCt` der Rechnung werden verwendet.
+- **Lagerbestand-Drift**: Mengenänderung einer lagergebundenen Teile-Position in der Kalkulationsansicht zog den Lagerbestand nie nach (nur Anlegen/Löschen buchten). Jetzt: Mengenänderung bucht die Differenz korrekt um. Verifiziert: Menge 1→5 auf Lagerartikel mit Bestand 14 → korrekt 10.
+- NaN-Schutz beim Einfügen einer (potenziell korrupten/importierten) Paket-Vorlage.
+
+**Datenintegrität:**
+- `pak-del` machte zugehörige Fotos dauerhaft unsichtbar (Base64-Daten blieben, aber keine UI-Zuordnung mehr) → Fotos werden jetzt beim Paket-Löschen zu „Annahme/Allgemein" verschoben statt verwaist.
+- `lager-del` hatte keine Sperre — Löschen eines Teils, das noch in offener Bestellung oder laufendem Auftrag steckt, führte zu stillem Bestandsverlust beim späteren Einbuchen. Jetzt gesperrt mit klarer Fehlermeldung.
+- **Kritischer Fund**: Sowohl der JSON-Backup-Import (`data-import`) als auch die Cloud-Wiederherstellung (`cloudAdopt`) übersprangen `migrate2()`/`kunNorm()` komplett — ein Import eines alten Backups (vor heute Nacht) hätte denselben Personalwesen-Absturz reproduziert, der gestern Nacht bereits gefixt wurde. Jetzt rufen beide Pfade `kunNorm()`+`migrate2()` auf. Per echtem File-Upload-Test verifiziert.
+
+SW v13.
