@@ -2879,8 +2879,9 @@ function vAnfragen(){
       <span style="font-size:10px;font-weight:700;color:${(()=>{const h=Math.floor((Date.now()-x.ts)/3600000);return h>48?'var(--red)':h>8?'var(--amber)':'var(--ink3)'})()}">${(()=>{const m=Math.floor((Date.now()-x.ts)/60000);if(m<60)return m+' Min.';const h=Math.floor(m/60);if(h<24)return h+' Std.';return Math.floor(h/24)+' Tage'})()}</span>
      </div></div>
     <div style="display:flex;gap:6px;padding:0 12px 11px">
-     ${x.tel?`<button class="btn btn-sm btn-soft-green" data-act="anfr-wa" data-id="${x.id}" style="flex:1">WhatsApp</button>`:''}
-     ${x.tel?`<button class="btn btn-sm btn-2nd" data-act="anfr-call" data-id="${x.id}" style="flex:1">Anrufen</button>`:''}
+     ${x.tel?`<button class="btn btn-sm btn-soft-green" data-act="anfr-wa" data-id="${x.id}" style="flex:1">WhatsApp</button>
+     <button class="btn btn-sm btn-2nd" data-act="anfr-call" data-id="${x.id}" style="flex:1">Anrufen</button>`
+     :x.email?`<button class="btn btn-sm btn-2nd" data-act="anfr-mail" data-id="${x.id}" style="flex:1">Per E-Mail</button>`:''}
      ${!x.auftragId?`<button class="btn btn-sm btn-2nd" data-act="anfr-convert-quick" data-id="${x.id}" style="flex:1">→ Auftrag</button>`:`<button class="btn btn-sm btn-2nd" data-act="open" data-v="auftrag" data-id="${x.auftragId}" style="flex:1">Auftrag</button>`}
     </div></div>`}).join('')
    :'<div class="card"><div class="empty"><b>Keine Einträge</b>Neue Kundenanfragen erscheinen hier.</div></div>'}</div>`;
@@ -3011,8 +3012,9 @@ ACT['anfrage-convert']=el=>{const v=readQSheet();
  save();closeSheet();toast('Auftrag '+a.nr+' angelegt — Fahrzeug noch zuordnen');nav('auftrag',a.id)};
 ACT['anfr-wa']=el=>{const x=anfrage(el.dataset.id);if(!x||!x.tel)return toast('Keine Telefonnummer hinterlegt',true);
  const msg=x.antwort||'';location.href='https://wa.me/'+x.tel.replace(/[^\d]/g,'')+(msg?'?text='+encodeURIComponent(msg):'')};
-ACT['anfr-mail']=el=>{const x=anfrage(el.dataset.id);if(!x||(!x.email&&!x.antwort))return toast('Keine E-Mail vorhanden',true);
- const email=x.email||'';location.href='mailto:'+email+(x.antwort?'?body='+encodeURIComponent(x.antwort):'')};
+ACT['anfr-mail']=el=>{const x=anfrage(el.dataset.id);if(!x||!x.email)return toast('Keine E-Mail hinterlegt',true);
+ const msg=x.antwort||'';
+ location.href='mailto:'+x.email+'?subject='+encodeURIComponent('Re: '+(x.betreff||'Ihre Anfrage'))+(msg?'&body='+encodeURIComponent(msg):'')};
 ACT['anfr-convert-quick']=el=>{const x=anfrage(el.dataset.id);if(!x)return;
  const digits=t=>String(t||'').replace(/[^\d]/g,'').slice(-9);
  let k=S.kunden.find(kk=>x.tel&&digits(kk.tel)===digits(x.tel)&&digits(x.tel).length>5);
