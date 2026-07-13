@@ -725,7 +725,7 @@ function seed(){
  return {version:2,demo:true,
   settings:{awCt:12500,mwst:19,nextRe:101,nextAu:49,nextBe:1,buehnen:3,theme:'auto',onboarded:false,ki:{endpoint:'/api/analyse',model:'claude-haiku-4-5-20251001'},
    firma:{name:'mehanicar Kfz-Meisterwerkstatt',inhaber:'Samed',adresse:'Musterstraße 1, 63450 Hanau',tel:'+49 6181 000000',email:'info@mehanicar.de',iban:'DE00 0000 0000 0000 0000 00',ustid:'DE000000000',web:'mehanicar.de',reviewUrl:''}},
-  kunden:K,fahrzeuge:F,lager:L,auftraege:A,rechnungen:[],anfragen:Q,radarDone:{},bestellungen:[],kampagnen:[],mitarbeiter:[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#0A5FFF',aktiv:true}],termine:[]};
+  kunden:K,fahrzeuge:F,lager:L,auftraege:A,rechnungen:[],anfragen:Q,radarDone:{},bestellungen:[],kampagnen:[],mitarbeiter:[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#0A5FFF',aktiv:true}],termine:[],krankmeldungen:[],urlaub:[],meta:{changes:0,lastBackup:null}};
 }
 /* Kunden-Normalisierung: name → vorname/nachname/firma, adresse → strasse/plz/ort */
 function kunNorm(){
@@ -816,6 +816,9 @@ const PAK_VORLAGEN_SEED=[
   {bez:'Achsvermessung',aw:1.0,typ:'arbeit'}]},
 ];
 function migrate2(){
+ S.krankmeldungen=S.krankmeldungen||[];S.urlaub=S.urlaub||[];S.termine=S.termine||[];
+ S.bestellungen=S.bestellungen||[];S.kampagnen=S.kampagnen||[];
+ S.meta=S.meta||{changes:0,lastBackup:null};
  if(!S.apDb||!S.apDb.length)S.apDb=AP_SEED.map(([bez,aw])=>({bez,aw}));
  (S.apDb||[]).forEach(e=>{if(e.byMarke===undefined)e.byMarke={}});
  if(!S.apKombi)S.apKombi=AP_KOMBI_SEED.map(([kws,partner])=>({keywords:kws,partner}));
@@ -3319,15 +3322,21 @@ function beVerbuche(b,p){if(p.da>=p.menge)return 0;
 function vBestellungen(){
  const off=S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen');
  const wertCt=off.reduce((s,b)=>s+b.pos.reduce((x,p)=>x+p.ekCt*(p.menge-(p.da||0)),0),0);
+ const overdue=off.filter(b=>b.eta&&b.eta<todayISO());
  const inner=`
  <div class="kpis stag" style="grid-template-columns:1fr 1fr">
   <div class="kpi"><b class="num" style="${off.length?'color:var(--amber)':''}">${off.length}</b><span>Offene Bestellungen</span></div>
   <div class="kpi"><b class="num">${fmt(wertCt)}</b><span>Warenwert unterwegs (EK)</span></div></div>
+ ${overdue.length?`<div class="warnrow">${overdue.length} Bestellung${overdue.length>1?'en':''} über dem erwarteten Liefertermin — beim Lieferanten nachfragen.</div>`:''}
+ <button class="btn btn-2nd" style="width:100%;margin-bottom:12px" data-act="be-manual-new">Bestellung manuell anlegen</button>
  ${S.bestellungen.length?S.bestellungen.slice().reverse().map(b=>{const[sl,sc]=BSTAT(b);
+  const isOverdue=b.eta&&b.eta<todayISO()&&sl!=='eingetroffen';
   return `<div class="card stag" style="margin-bottom:10px;padding:13px">
-   <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+   <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap">
     <b style="font-size:13px">${b.nr}</b><span class="tag ${sc}">${sl}</span>
+    ${isOverdue?'<span class="tag t-red">überfällig</span>':''}
     <span style="margin-left:auto;font-size:10.5px;color:var(--ink3)">${dLabel(new Date(b.ts).toISOString().slice(0,10))}</span></div>
+   ${b.lieferant||b.eta?`<div style="font-size:11px;color:var(--ink3);margin-bottom:8px">${b.lieferant?esc(b.lieferant):''}${b.lieferant&&b.eta?' · ':''}${b.eta?'ETA '+dLabel(b.eta):''}</div>`:''}
    ${b.pos.map(p=>`<div class="kv"><span class="k">${esc(p.teil)}${p.artnr?`<br><span style="font-size:10px">${esc(p.artnr)}</span>`:''}</span>
     <span class="v" style="display:flex;gap:8px;align-items:center">
      <span class="num" style="font-size:11px;color:var(--ink3)">${p.menge} × ${fmt(p.ekCt)}</span>
@@ -3337,10 +3346,42 @@ function vBestellungen(){
     <button class="btn btn-danger" data-act="be-del" data-id="${b.id}">Löschen</button>
     ${BSTAT(b)[0]!=='eingetroffen'?`<button class="btn btn-soft-green" data-act="be-all-in" data-id="${b.id}">Alles eingetroffen</button>`:'<span></span>'}</div>
   </div>`}).join('')
-  :'<div class="card"><div class="empty"><b>Keine Bestellungen</b>Im Lager: „Bestellliste" → „Als Bestellung anlegen".</div></div>'}
+  :'<div class="card"><div class="empty"><b>Keine Bestellungen</b>Im Lager: „Bestellliste" → „Als Bestellung anlegen" — oder oben manuell anlegen.</div></div>'}
  <div style="font-size:11px;color:var(--ink3);margin-top:10px;text-align:center;line-height:1.6">Einbuchen erhöht den Lagerbestand automatisch — einmalig, doppeltes Antippen bucht nichts doppelt.</div>`;
  return shell(inner,{title:'Bestellungen',eyebrow:'Wareneingang',back:1});
 }
+ACT['be-manual-new']=()=>{
+ sheet('Bestellung anlegen',`
+  <div class="row2"><div class="fld"><label>Lieferant</label><input id="bm-lief" placeholder="z. B. Stahlgruber"></div>
+   <div class="fld"><label>Erwartete Lieferung</label><input type="date" id="bm-eta" value="${addDays(todayISO(),3)}"></div></div>
+  <div class="lbl" style="margin-top:2px">Positionen</div>
+  <div id="bm-pos"></div>
+  <button class="btn-ghost" style="width:100%;margin-bottom:14px" data-act="bm-pos-add">+ Position</button>
+  <button class="btn btn-main" style="width:100%" data-act="bm-save">Bestellung anlegen</button>`);
+ window._bmPos=[];
+ ACT['bm-pos-add']();
+};
+ACT['bm-pos-add']=()=>{
+ window._bmPos=window._bmPos||[];
+ const i=window._bmPos.length;window._bmPos.push({});
+ const wrap=$('#bm-pos');
+ const row=document.createElement('div');row.className='row3';row.dataset.pi=i;row.style.cssText='align-items:center;margin-bottom:6px';
+ row.innerHTML=`<input class="priceinp" placeholder="Teil" data-bmb style="grid-column:1/3">
+  <div style="display:flex;gap:6px"><input class="priceinp" style="width:44px" inputmode="numeric" placeholder="Menge" value="1" data-bmm>
+   <input class="priceinp" style="flex:1" inputmode="decimal" placeholder="EK/Stk" data-bmek></div>`;
+ wrap.appendChild(row)};
+ACT['bm-save']=()=>{
+ const rows=$$('#bm-pos [data-pi]');
+ const pos=[];
+ rows.forEach(row=>{const teil=row.querySelector('[data-bmb]').value.trim();
+  const menge=Math.max(1,parseInt(row.querySelector('[data-bmm]').value)||1);
+  const ekCt=parseEuro(row.querySelector('[data-bmek]').value)||0;
+  if(teil)pos.push({lagerId:null,teil,artnr:'',menge,ekCt,da:0})});
+ if(!pos.length)return toast('Mindestens eine Position eintragen',true);
+ const y=new Date().getFullYear();S.settings.nextBe=S.settings.nextBe||1;
+ const b={id:'b'+uid(),nr:'BE-'+y+'-'+String(S.settings.nextBe++).padStart(4,'0'),ts:Date.now(),
+  lieferant:$('#bm-lief').value.trim(),eta:$('#bm-eta').value||null,pos};
+ S.bestellungen.push(b);save();closeSheet();render();toast('Bestellung '+b.nr+' angelegt')};
 ACT['be-new']=()=>{const it=orderListItems();
  if(!it.length)return toast('Nichts unter Mindestbestand');
  const y=new Date().getFullYear();
@@ -3378,7 +3419,7 @@ const KAMP_TPL={
  inaktiv:'Guten Tag {name}, wir vermissen Sie in unserer Werkstatt! Gibt es etwas, das wir für Sie und Ihr Fahrzeug {kennz} tun können? Wir freuen uns auf Ihren Besuch. Ihre mehanicar Meisterwerkstatt',
  offen:'Guten Tag {name}, wir haben Ihre Anfrage erhalten und melden uns umgehend. Bitte haben Sie noch etwas Geduld — wir kommen gerne auf Sie zu. Ihre mehanicar Meisterwerkstatt'};
 function kampEmpf(){const fn=KFILTER[kampFilter][1];
- return S.kunden.filter(k=>k.tel&&fn(k,S.fahrzeuge.filter(f=>f.kundeId===k.id)))
+ return S.kunden.filter(k=>(k.tel||k.email)&&fn(k,S.fahrzeuge.filter(f=>f.kundeId===k.id)))
   .map(k=>({k,f:S.fahrzeuge.find(f=>f.kundeId===k.id)}))}
 function kampDefault(){return KAMP_TPL[kampFilter]||KAMP_TPL.alle}
 function kampFill(t,k,f){return(t||'').replace(/{name}/g,k.name).replace(/{kennz}/g,f?f.kennz:'Ihres Fahrzeugs')}
@@ -3390,8 +3431,8 @@ function vKampagnen(){
  <div class="kpis stag" style="grid-template-columns:1fr 1fr 1fr">
   <div class="kpi"><b class="num">${S.kampagnen.length}</b><span>Kampagnen</span></div>
   <div class="kpi"><b class="num">${totalSent}</b><span>Nachrichten gesamt</span></div>
-  <div class="kpi"><b class="num">${S.kunden.filter(k=>k.tel).length}</b><span>Kunden mit Tel.</span></div></div>
- <div class="pills" style="margin-bottom:12px">${Object.entries(KFILTER).map(([v,[l]])=>{const cnt=S.kunden.filter(k=>k.tel&&KFILTER[v][1](k,S.fahrzeuge.filter(f=>f.kundeId===k.id))).length;
+  <div class="kpi"><b class="num">${S.kunden.filter(k=>k.tel||k.email).length}</b><span>Erreichbare Kunden</span></div></div>
+ <div class="pills" style="margin-bottom:12px">${Object.entries(KFILTER).map(([v,[l]])=>{const cnt=S.kunden.filter(k=>(k.tel||k.email)&&KFILTER[v][1](k,S.fahrzeuge.filter(f=>f.kundeId===k.id))).length;
   return `<button class="pill ${kampFilter===v?'on':''}" style="${kampFilter===v?'background:rgba(10,95,255,.08);border-color:var(--blue);color:var(--blue)':''}" data-act="kamp-filter" data-v="${v}">${l}${cnt?' · '+cnt:''}</button>`}).join('')}</div>
  <div class="card" style="padding:13px;margin-bottom:12px">
   <div style="font-size:10.5px;font-weight:600;color:var(--ink2);margin-bottom:6px">Nachrichtenvorlage — <span style="color:var(--ink3);font-weight:400">{name} und {kennz} werden je Empfänger ersetzt</span></div>
@@ -3406,10 +3447,11 @@ function vKampagnen(){
  <div class="card stag">${emp.length?emp.map(({k,f})=>`
   <div class="lrow" style="cursor:default">
    <div class="av" style="background:var(--blue-bg);color:var(--blue);font-weight:800">${esc(k.name.slice(0,2).toUpperCase())}</div>
-   <div class="lt"><b>${esc(k.name)}</b><span>${f?esc(f.kennz)+' · ':''}${esc(k.tel)}</span></div>
+   <div class="lt"><b>${esc(k.name)}</b><span>${f?esc(f.kennz)+' · ':''}${esc(k.tel||k.email)}${!k.tel&&k.email?' · E-Mail':''}</span></div>
    ${kampSent[k.id]?'<span class="tag t-green">gesendet</span>'
-    :`<button class="btn btn-sm" style="background:var(--green);color:#fff;flex-shrink:0" data-act="kamp-wa" data-id="${k.id}">Senden</button>`}</div>`).join('')
-  :'<div class="empty"><b>Keine Treffer</b>Für diesen Filter gibt es aktuell keine Kunden mit Telefonnummer.</div>'}</div>
+    :k.tel?`<button class="btn btn-sm" style="background:var(--green);color:#fff;flex-shrink:0" data-act="kamp-wa" data-id="${k.id}">Senden</button>`
+    :`<button class="btn btn-sm btn-2nd" style="flex-shrink:0" data-act="kamp-mail" data-id="${k.id}">Per E-Mail</button>`}</div>`).join('')
+  :'<div class="empty"><b>Keine Treffer</b>Für diesen Filter gibt es aktuell keine erreichbaren Kunden.</div>'}</div>
  ${sent===emp.length&&sent>0?`<button class="btn btn-main" style="width:100%;margin-top:12px" data-act="kamp-done">Kampagne abschließen &amp; speichern (${sent})</button>`:''}
  ${S.kampagnen.length?`<div class="lbl">Verlauf · ${S.kampagnen.length} Kampagnen</div><div class="card">${S.kampagnen.slice().reverse().slice(0,10).map(x=>
   `<div class="kv"><span class="k">${esc(x.name)}${x.filter?' · '+esc(x.filter):''}</span><span class="v num" style="color:var(--ink2)">${x.anz} Nachrichten · ${dLabel(new Date(x.ts).toISOString().slice(0,10))}</span></div>`).join('')}</div>`:''}`;
@@ -3423,6 +3465,11 @@ ACT['kamp-wa']=el=>{const k=kunde(el.dataset.id);if(!k||!k.tel)return;
  const cur=$('#kamp-txt');if(cur)kampTxt=cur.value;
  kampSent[k.id]=1;render();
  location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(kampFill(kampTxt??kampDefault(),k,f))};
+ACT['kamp-mail']=el=>{const k=kunde(el.dataset.id);if(!k||!k.email)return;
+ const f=S.fahrzeuge.find(x=>x.kundeId===k.id);
+ const cur=$('#kamp-txt');if(cur)kampTxt=cur.value;
+ kampSent[k.id]=1;render();
+ location.href='mailto:'+k.email+'?subject='+encodeURIComponent(S.settings.firma.name||'Werkstatt')+'&body='+encodeURIComponent(kampFill(kampTxt??kampDefault(),k,f))};
 ACT['kamp-done']=()=>{const n=Object.keys(kampSent).length;if(!n)return;
  S.kampagnen.push({id:'kp'+uid(),ts:Date.now(),name:KFILTER[kampFilter][0],filter:kampFilter,anz:n});
  kampSent={};kampTxt=null;save();render();toast('Kampagne protokolliert')};
@@ -3673,7 +3720,7 @@ function vPersonal(){
    <div class="kpi"><b class="num">${kmThisYr.reduce((s,k)=>s+((Date.parse(k.bis)-Date.parse(k.von))/86400000+1),0)}</b><span>Krankheitstage ${yr}</span></div></div>
   <div class="lbl">Einträge · ${km.length}</div>
   <div class="card">${km.slice().reverse().slice(0,30).map(k=>{const m=mita(k.mid);
-   return `<div class="lrow" style="cursor:default"><div class="av" style="background:${m?m.farbe+'14':'var(--red-bg)'};color:${m?m.farbe:'var(--red)'}";font-weight:800>${m?esc(m.kuerzel):'?'}</div>
+   return `<div class="lrow" style="cursor:default"><div class="av" style="background:${m?m.farbe+'14':'var(--red-bg)'};color:${m?m.farbe:'var(--red)'};font-weight:800">${m?esc(m.kuerzel):'?'}</div>
     <div class="lt"><b>${m?esc(m.name):'—'}</b><span>${k.von} – ${k.bis}${k.notiz?' · '+esc(k.notiz):''}</span></div>
     <button style="color:var(--red);padding:8px;font-size:14px" data-act="km-del" data-id="${k.id}">${xIco(13)}</button></div>`}).join('')||
    '<div class="empty" style="padding:16px"><b>Keine Einträge</b>Füge Krankmeldungen mit + hinzu.</div>'}</div>`;
@@ -3684,7 +3731,7 @@ function vPersonal(){
   <div class="lbl">Urlaub · ${urlaub.length}</div>
   <div class="card">${urlaub.slice().reverse().slice(0,30).map(u=>{const m=mita(u.mid);
    const ok=u.bis<now,aktiv=u.von<=now&&u.bis>=now;
-   return `<div class="lrow" style="cursor:default"><div class="av" style="background:${m?m.farbe+'14':'var(--gray-bg)'};color:${m?m.farbe:'var(--ink2)'}";font-weight:800>${m?esc(m.kuerzel):'?'}</div>
+   return `<div class="lrow" style="cursor:default"><div class="av" style="background:${m?m.farbe+'14':'var(--gray-bg)'};color:${m?m.farbe:'var(--ink2)'};font-weight:800">${m?esc(m.kuerzel):'?'}</div>
     <div class="lt"><b>${m?esc(m.name):'—'}</b><span>${u.von} – ${u.bis}${u.notiz?' · '+esc(u.notiz):''}</span></div>
     <span class="tag ${ok?'t-gray':aktiv?'t-amber':'t-blue'}">${ok?'vergangen':aktiv?'läuft':'geplant'}</span>
     <button style="color:var(--red);padding:8px;font-size:14px;margin-left:4px" data-act="url-del" data-id="${u.id}">${xIco(13)}</button></div>`}).join('')||
