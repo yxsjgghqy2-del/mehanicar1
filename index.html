@@ -723,7 +723,7 @@ function seed(){
   {id:'q3',ts:now-86400000*3,kanal:'ig',name:'markus.hu63',tel:'',betreff:'Klimaservice',original:'Hi, macht ihr auch Klimaservice? Golf 6, kühlt kaum noch. Was würde das kosten?',origUrl:'',notiz:'Über Instagram-DM',status:'gewonnen',prio:'niedrig',grund:'Standardanliegen.',kiQuelle:null,antwort:'',wertCt:15000,followUp:null,auftragId:null,wonTs:now-86400000*3}];
  const BU={a1:1,a2:2,a4:1,a5:3};A.forEach(a=>{a.buehne=BU[a.id]||null;a.reviewSent=false});
  return {version:2,demo:true,
-  settings:{awCt:12500,mwst:19,nextRe:101,nextAu:49,nextBe:1,buehnen:3,theme:'auto',onboarded:false,ki:{endpoint:'/api/analyse',model:'claude-haiku-4-5-20251001'},
+  settings:{awCt:12500,stundensatzCt:12500,awTeiler:1,mwst:19,nextRe:101,nextAu:49,nextBe:1,buehnen:3,theme:'auto',onboarded:false,ki:{endpoint:'/api/analyse',model:'claude-haiku-4-5-20251001'},
    firma:{name:'mehanicar Kfz-Meisterwerkstatt',inhaber:'Samed',adresse:'Musterstraße 1, 63450 Hanau',tel:'+49 6181 000000',email:'info@mehanicar.de',iban:'DE00 0000 0000 0000 0000 00',ustid:'DE000000000',web:'mehanicar.de',reviewUrl:''}},
   kunden:K,fahrzeuge:F,lager:L,auftraege:A,rechnungen:[],anfragen:Q,radarDone:{},bestellungen:[],kampagnen:[],mitarbeiter:[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#0A5FFF',aktiv:true}],termine:[],krankmeldungen:[],urlaub:[],meta:{changes:0,lastBackup:null}};
 }
@@ -821,6 +821,8 @@ function migrate2(){
  S.meta=S.meta||{changes:0,lastBackup:null};
  if(!S.apDb||!S.apDb.length)S.apDb=AP_SEED.map(([bez,aw])=>({bez,aw}));
  (S.apDb||[]).forEach(e=>{if(e.byMarke===undefined)e.byMarke={}});
+ if(S.settings.awTeiler===undefined)S.settings.awTeiler=1;
+ if(S.settings.stundensatzCt===undefined)S.settings.stundensatzCt=S.settings.awCt||12500;
  if(!S.apKombi)S.apKombi=AP_KOMBI_SEED.map(([kws,partner])=>({keywords:kws,partner}));
  if(!S.pakVorlagen)S.pakVorlagen=PAK_VORLAGEN_SEED.map(t=>({...t,pos:t.pos.map(p=>({...p}))}));
  (S.kunden||[]).forEach(k=>{if(k.ansprechpartner===undefined)k.ansprechpartner=''});
@@ -829,6 +831,7 @@ function migrate2(){
   if(a.freigabe===undefined)a.freigabe=a.sig?{ts:a.created||Date.now(),art:'sig',notiz:'Unterschrift',origUrl:''}:null;
   if(a.statusTxt===undefined)a.statusTxt='';
   if(a.awCt===undefined)a.awCt=null;
+  if(a.awTeiler===undefined)a.awTeiler=null;
   if(a.anzVerrCt===undefined){a.anzVerrCt=a.anzVerr?(a.anzahlungCt||0):0;delete a.anzVerr}
  });
 }
@@ -1465,6 +1468,9 @@ function vAuftrag(id){
    <div class="disc"><span class="dl">Rabatt auf Paket</span>${discTog('prab',pk.id,pk.rabatt||{typ:'eur',wert:0})}</div>
    <div class="calc-tot"><span>Paket netto</span><span class="num">${fmt(pakNetto(pk))}<span class="gn">DB ${fmt(pakGewinn(pk))}</span></span></div></div>`).join('')+
   `<div class="card" style="padding:12px">
+   <div class="disc" style="border:none;background:none;padding:0 0 10px"><span class="dl" style="color:var(--ink)">AW-Teiler dieses Auftrags</span>
+    <input class="priceinp" style="width:64px" inputmode="decimal" value="${pct1(a.awTeiler||S.settings.awTeiler||1)}" data-f="o-teiler" data-oid="${a.id}">
+    <span style="font-size:10px;color:var(--ink3)">Std. ${pct1(S.settings.awTeiler||1)}</span></div>
    <div class="disc" style="border:none;background:none;padding:0 0 10px"><span class="dl" style="color:var(--ink)">AW-Satz dieses Auftrags</span>
     <input class="priceinp" style="width:80px" inputmode="decimal" value="${fmtIn(a.awCt||S.settings.awCt)}" data-f="o-awsatz" data-oid="${a.id}">
     <span style="font-size:10px;color:var(--ink3)">Std. ${fmt(S.settings.awCt)}</span></div>
@@ -1667,7 +1673,9 @@ FSET['o-kmab']=el=>{const a=auftrag(el.dataset.oid);const v=parseInt(String(el.v
 FSET['o-tank']=el=>{auftrag(el.dataset.oid).tank=el.value;save()};
 FSET['o-anz']=el=>{auftrag(el.dataset.oid).anzahlungCt=parseEuro(el.value);save();render()};
 FSET['o-awsatz']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;const v=parseEuro(el.value);
- a.awCt=(v&&v!==S.settings.awCt)?v:null;save();toast('AW-Satz für diesen Auftrag: '+fmt(a.awCt||S.settings.awCt)+' — gilt für neue Positionen')};
+ a.awCt=(v&&v!==S.settings.awCt)?v:null;a.awTeiler=null;save();render();toast('AW-Satz für diesen Auftrag: '+fmt(a.awCt||S.settings.awCt)+' — gilt für neue Positionen')};
+FSET['o-teiler']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;let t=parseFloat(String(el.value||'').replace(',','.'));const g=S.settings.awTeiler||1;if(!(t>0))t=g;
+ a.awTeiler=(t!==g)?t:null;const nw=Math.round((S.settings.stundensatzCt||0)/t);a.awCt=(nw&&nw!==S.settings.awCt)?nw:null;save();render();toast('AW-Teiler für diesen Auftrag: '+pct1(t)+' → '+fmt(a.awCt||S.settings.awCt)+'/AW — gilt für neue Positionen')};
 FSET['o-erinn']=el=>{auftrag(el.dataset.oid).erinnerung=el.value;save()};
 FSET['o-erinnd']=el=>{auftrag(el.dataset.oid).erinnerungDat=el.value||null;save()};
 FSET['o-notiz']=el=>{auftrag(el.dataset.oid).notiz=el.value.trim();save();render()};
@@ -2460,7 +2468,9 @@ function vEinstellungen(){
      <button class="${thm==='dark'?'on':''}" data-act="theme-set" data-v="dark">Dunkel</button>
     </div></span></div></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Kalkulation & Preise</div>
-   <div class="kv"><span class="k">Preis pro AW (Arbeitswert)</span><span class="v"><input class="priceinp" value="${fmtIn(st.awCt)}" data-f="set-aw"></span></div>
+   <div class="kv"><span class="k">Stundensatz €</span><span class="v"><input class="priceinp" inputmode="decimal" value="${fmtIn(st.stundensatzCt)}" data-f="set-stundensatz"></span></div>
+   <div class="kv"><span class="k">AW-Teiler (AW pro Stunde)</span><span class="v"><input class="priceinp" style="width:64px" inputmode="decimal" value="${pct1(st.awTeiler||1)}" data-f="set-teiler"></span></div>
+   <div class="kv"><span class="k">Preis pro AW (Arbeitswert)</span><span class="v num" style="color:var(--green);font-weight:700">${fmt(st.awCt)} <span style="font-size:10px;color:var(--ink3);font-weight:400">1 AW = ${pct1(60/(st.awTeiler||1))} Min</span></span></div>
    <div class="kv"><span class="k">MwSt-Satz %</span><span class="v"><input class="priceinp" style="width:56px" inputmode="numeric" value="${st.mwst}" data-f="set-mwst"></span></div>
    <div class="kv"><span class="k">Standard-Abgabe-Uhrzeit</span><span class="v"><input type="time" class="priceinp" style="width:96px" value="${st.defaultAbgabeZeit||'17:00'}" data-f="set-abgabe-zeit"></span></div>
    <div class="kv"><span class="k">Standard-Paket-Name</span><span class="v"><input class="priceinp" style="width:140px" value="${esc(st.defaultPaketName||'')}" placeholder="z. B. Inspektion" data-f="set-pak-name"></span></div>
@@ -2538,6 +2548,8 @@ create policy "backup_all" on backup for all using (true) with check (true);</te
  return shell(inner,{title:'Einstellungen',eyebrow:'mehanicar',back:1});
 }
 FSET['set-aw']=el=>{S.settings.awCt=parseEuro(el.value);save()};
+FSET['set-stundensatz']=el=>{S.settings.stundensatzCt=parseEuro(el.value);S.settings.awCt=Math.round(S.settings.stundensatzCt/(S.settings.awTeiler||1));save();render()};
+FSET['set-teiler']=el=>{let t=parseFloat(String(el.value||'').replace(',','.'));if(!(t>0))t=1;S.settings.awTeiler=t;S.settings.awCt=Math.round((S.settings.stundensatzCt||0)/t);save();render()};
 FSET['set-mwst']=el=>{S.settings.mwst=Math.max(0,Math.min(30,parseInt(el.value)||19));save()};
 FSET['set-firma']=el=>{S.settings.firma[el.dataset.k]=el.value.trim();save()};
 FSET['set-abgabe-zeit']=el=>{S.settings.defaultAbgabeZeit=el.value;save()};
