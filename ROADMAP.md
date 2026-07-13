@@ -31,3 +31,11 @@ Online-Terminbuchung: Anfragen IMMER mit status 'neu' — Inhaber bestätigt sel
 ## Nacht-Update (12./13.07.)
 
 Umgesetzt: Scan-first "Neuer Auftrag" (Segmente Bestehend/Neu + Privat/Firma, Ansprechpartner, volle Fahrzeugdaten optional aufklappbar), Galerie-Zugriff beim Schein-Scan, Layout-Shift-Fixes (Datum/Zeit-Inputs, Pills ohne Scale, Fahrzeugliste per Klassen-Toggle), Status als Dropdown + „Sonstiges" mit Freitext, Auftragsfreigabe ohne Unterschrift (tel/mail/wa/ig/pers + Link zur Originalnachricht, Anfrage-Verknüpfung), Auto-Erweiterung nach Freigabe (Checkbox entfernt), posSheet: kein EK bei Arbeit, AW-Satz je Auftrag/Position änderbar (VK=AW×Satz live), AP-Datenbank (20 Seeds + Lernen + Datalist + Kombi-Vorschläge via AP_KOMBI), Befund&Abhilfe-Positionen (auch auf Rechnung), Anfrage→Auftrag legt Beanstandung wörtlich als Befund an (Paket = Techn. Beanstandung), Kommunikations-Historie mit System-Einträgen (Anlage/Status/Rechnung/Freigabe/Unterschrift), Video-Guard 12MB, FSET-Hoisting-Bug behoben. SW v9.
+
+## Nacht-Paket 5 (Ausbau dünner Bereiche) + kritischer Bugfix
+
+- **Kritischer Bug behoben**: `seed()` (Demo-Start-Pfad) initialisierte `krankmeldungen`/`urlaub`/`meta` nicht — jeder frische Demo-Start crashte beim ersten Öffnen von Personalwesen → Krankmeldung/Urlaub speichern (`Cannot read properties of undefined (reading 'push')`). Jetzt in `seed()` UND defensiv in `migrate2()` abgesichert.
+- Kaputtes `style`-Attribut in Personalwesen (Krankmeldung/Urlaub-Zeilen) repariert — `;font-weight:800` landete außerhalb der Anführungszeichen und wirkte nie.
+- Bestellungen: manuelle Bestellung (Lieferant, ETA, freie Positionen) unabhängig von Mindestbestand-Liste; Überfällig-Warnung wenn ETA verstrichen.
+- Kampagnen: E-Mail-Fallback für Kunden ohne Telefonnummer aber mit E-Mail-Adresse (mailto: statt WhatsApp).
+- SW v12.
