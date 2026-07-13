@@ -84,3 +84,11 @@ Beim systematischen Durchklicken jeder Einstellungs-Aktion gefunden:
 **Erkenntnis**: `migrate2()` wird jetzt an sechs Stellen aufgerufen (load, JSON-Import, Cloud-Restore, demo-reset, data-wipe, initiale seed()-Erstellung). Jeder Pfad, der `S` komplett neu zuweist, MUSS migrate2() aufrufen — als Regel für zukünftige Erweiterungen festgehalten.
 
 SW v14.
+
+## Runde 3 (Fortsetzung): Statischer Handler-Abgleich
+
+Alle `ACT[...]`/`FSET[...]`-Definitionen gegen alle im Code referenzierten `data-act`/`data-f`-Werte kreuzgeprüft (Python-Skript). Ergebnis: sechs vermeintliche „Bugs" waren False-Positives (Handler über `ACT.name=` Punktnotation oder `data-act="${var}"` dynamisch zusammengesetzt — beides korrekt verdrahtet). Ein echter Fund:
+
+- **`anfr-mail`**: fertig implementierter Handler, aber nie mit einem Button verbunden. In der Anfragen-Liste blieb die Aktionsleiste für Anfragen ohne Telefonnummer (nur E-Mail — z. B. Web-/Mail-Kanal) komplett leer, obwohl `anfr-wa`/`anfr-call` für Telefon-Anfragen längst da waren. Jetzt: „Per E-Mail"-Button erscheint als dritte Variante. Guard-Bedingung war zudem unsauber formuliert (prüfte `antwort` statt `email`) — korrigiert, plus Betreffzeile ergänzt zur Angleichung an das Pendant `anfr-repl-mail` in der Detailansicht.
+
+SW v15.
