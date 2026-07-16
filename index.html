@@ -20,6 +20,7 @@
  --blue:#0A5FFF;--green:#0E8F4E;--amber:#C2710A;--red:#E0353B;--violet:#6B4DD6;
  --blue-bg:rgba(10,95,255,.09);--green-bg:rgba(14,143,78,.10);--amber-bg:rgba(194,113,10,.11);
  --red-bg:rgba(224,53,59,.09);--violet-bg:rgba(107,77,214,.10);--gray-bg:rgba(22,22,26,.06);
+ --acc:#0A5FFF;--acc-ink:#FFFFFF;--acc-bg:rgba(10,95,255,.09);
  --rad:16px;--spring:cubic-bezier(.32,1.3,.5,1);--ease:cubic-bezier(.4,0,.2,1);
  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
 }
@@ -101,7 +102,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 /* Block-für-Block Auftragserstellung */
 .stepblock{border:1.5px solid var(--line);border-radius:14px;padding:13px 13px 4px;margin-bottom:14px;background:var(--card)}
 .step-h{display:flex;align-items:center;gap:9px;margin-bottom:11px}
-.step-n{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:11.5px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
+.step-n{width:22px;height:22px;border-radius:50%;background:var(--acc);color:var(--acc-ink);font-size:11.5px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
 .step-t{font-size:13px;font-weight:750;letter-spacing:-.01em}
 /* Übergang Auftragserstellung → Auftragsmaske: Inhalte rutschen nach oben */
 @keyframes riseIn{from{transform:translateY(42px);opacity:.3}to{transform:none;opacity:1}}
@@ -496,37 +497,70 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
  #printarea .tots .big{border-top:1.5px solid #111;font-weight:800;font-size:13px;padding-top:6px;margin-top:3px}
  #printarea .foot{margin-top:28px;font-size:9.5px;color:#666;line-height:1.6;border-top:1px solid #ddd;padding-top:10px}
 }
+/* ============ DESIGN 3.0 — Referenz-Look (Dashboard-Ästhetik) ============ */
+/* Grosse dünne Messwert-Zahlen mit kleinen Einheiten */
+.kpi b{font-weight:330;font-size:20px;letter-spacing:-.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.kpi span{display:flex;align-items:center;gap:6px}
+.kpi span::before{content:"";width:3px;height:10px;border-radius:2px;background:var(--acc);flex-shrink:0}
+.calc b{font-weight:380}
+/* Akzentstrich vor Sektionstiteln (wie | HbA1c in der Referenz) */
+.sec-h .t{display:flex;align-items:center;gap:8px;min-width:0}
+.sec-h .t::before{content:"";width:3px;height:13px;border-radius:2px;background:var(--acc);flex-shrink:0}
+/* Pill-Segmente: aktiver Zustand in Akzentfarbe */
+.seg{border-radius:999px}
+.seg button{border-radius:999px!important}
+.seg button.on{background:var(--acc)!important;color:var(--acc-ink)!important;box-shadow:none!important}
+/* Primäraktionen in Akzentfarbe (hell: Blau, dunkel: Lime) */
+.btn-main{background:var(--acc)!important;color:var(--acc-ink)!important}
+.bb-main{background:var(--acc)!important;color:var(--acc-ink)!important}
+.fab{background:var(--acc)!important;color:var(--acc-ink)!important;box-shadow:0 10px 26px rgba(0,0,0,.35)!important}
+.nav button.on{color:var(--acc);background:var(--acc-bg);border-radius:10px}
+/* Mehr Rundung, ruhigere Flächen */
+.card,.sec,.pak{border-radius:20px}
+.sheet{border-radius:26px 26px 0 0}
+.tag{border-radius:999px}
+.hdr h1{font-weight:760}
+/* Trend-/Status-Pills wie in der Referenz */
+.gain{background:var(--green-bg);color:var(--green);border-radius:999px;padding:1px 7px;font-weight:650}
+
 /* ============ DARK MODE ============ */
 @media (prefers-color-scheme:dark){
  :root{
-  --bg:#111113;--card:#1C1C1E;--ink:#F5F5F7;--ink2:#AEAEB2;--ink3:#636366;
-  --line:rgba(255,255,255,.09);--line2:rgba(255,255,255,.05);
-  --blue:#3B82FF;--green:#34C759;--amber:#FF9F0A;--red:#FF453A;--violet:#BF5AF2;
-  --blue-bg:rgba(59,130,255,.15);--green-bg:rgba(52,199,89,.13);--amber-bg:rgba(255,159,10,.14);
-  --red-bg:rgba(255,69,58,.14);--violet-bg:rgba(191,90,242,.13);--gray-bg:rgba(255,255,255,.08)
+  --bg:#0A0A0C;--card:#151519;--ink:#F4F4F6;--ink2:#A2A2AA;--ink3:#6A6A72;
+  --line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.045);
+  --blue:#5B8DEF;--green:#4ADE80;--amber:#F0B34C;--red:#FF5D5D;--violet:#A78BFA;
+  --blue-bg:rgba(91,141,239,.14);--green-bg:rgba(74,222,128,.12);--amber-bg:rgba(240,179,76,.13);
+  --red-bg:rgba(255,93,93,.13);--violet-bg:rgba(167,139,250,.13);--gray-bg:rgba(255,255,255,.07);
+  --acc:#D9E97A;--acc-ink:#15180A;--acc-bg:rgba(217,233,122,.13)
  }
- .nav{background:rgba(17,17,19,.97)!important;border-top-color:rgba(255,255,255,.08)!important}
- .hdr{background:rgba(17,17,19,.94)!important;border-bottom-color:rgba(255,255,255,.08)!important}
- .calcbar{background:rgba(17,17,19,.96)!important;border-top-color:rgba(255,255,255,.08)!important}
- .fix{background:#242428}
- .pin-card{border-color:rgba(59,130,255,.4)}
- .sw-row.dark{background:#28282C}
- .back-btn{background:var(--card)!important}
+ body:not(.theme-light) .nav{background:rgba(10,10,12,.92)!important;border-top-color:rgba(255,255,255,.06)!important}
+ body:not(.theme-light) .hdr{background:rgba(10,10,12,.88)!important;border-bottom-color:rgba(255,255,255,.06)!important}
+ body:not(.theme-light) .calcbar{background:rgba(10,10,12,.92)!important;border-top-color:rgba(255,255,255,.06)!important}
+ body:not(.theme-light) .fix{background:#1E1E23}
+ body:not(.theme-light) .pin-card{border-color:rgba(217,233,122,.35)}
+ body:not(.theme-light) .sw-row.dark{background:#222227}
+ body:not(.theme-light) .back-btn{background:var(--card)!important}
+ body:not(.theme-light) .card,body:not(.theme-light) .sec,body:not(.theme-light) .pak{background:#151519;border-color:rgba(255,255,255,.06)}
+ body:not(.theme-light) .sheet{background:#131317}
 }
+/* OS dunkel + App-Einstellung hell: Light-Variablen gelten (body.theme-light), Karten hell */
 body.theme-dark{
- --bg:#111113;--card:#1C1C1E;--ink:#F5F5F7;--ink2:#AEAEB2;--ink3:#636366;
- --line:rgba(255,255,255,.09);--line2:rgba(255,255,255,.05);
- --blue:#3B82FF;--green:#34C759;--amber:#FF9F0A;--red:#FF453A;--violet:#BF5AF2;
- --blue-bg:rgba(59,130,255,.15);--green-bg:rgba(52,199,89,.13);--amber-bg:rgba(255,159,10,.14);
- --red-bg:rgba(255,69,58,.14);--violet-bg:rgba(191,90,242,.13);--gray-bg:rgba(255,255,255,.08)
+ --bg:#0A0A0C;--card:#151519;--ink:#F4F4F6;--ink2:#A2A2AA;--ink3:#6A6A72;
+ --line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.045);
+ --blue:#5B8DEF;--green:#4ADE80;--amber:#F0B34C;--red:#FF5D5D;--violet:#A78BFA;
+ --blue-bg:rgba(91,141,239,.14);--green-bg:rgba(74,222,128,.12);--amber-bg:rgba(240,179,76,.13);
+ --red-bg:rgba(255,93,93,.13);--violet-bg:rgba(167,139,250,.13);--gray-bg:rgba(255,255,255,.07);
+ --acc:#D9E97A;--acc-ink:#15180A;--acc-bg:rgba(217,233,122,.13)
 }
-body.theme-dark .nav{background:rgba(17,17,19,.97)!important;border-top-color:rgba(255,255,255,.08)!important}
-body.theme-dark .hdr{background:rgba(17,17,19,.94)!important;border-bottom-color:rgba(255,255,255,.08)!important}
-body.theme-dark .calcbar{background:rgba(17,17,19,.96)!important;border-top-color:rgba(255,255,255,.08)!important}
-body.theme-dark .fix{background:#242428}
-body.theme-dark .pin-card{border-color:rgba(59,130,255,.4)}
-body.theme-dark .sw-row.dark{background:#28282C}
+body.theme-dark .nav{background:rgba(10,10,12,.92)!important;border-top-color:rgba(255,255,255,.06)!important}
+body.theme-dark .hdr{background:rgba(10,10,12,.88)!important;border-bottom-color:rgba(255,255,255,.06)!important}
+body.theme-dark .calcbar{background:rgba(10,10,12,.92)!important;border-top-color:rgba(255,255,255,.06)!important}
+body.theme-dark .fix{background:#1E1E23}
+body.theme-dark .pin-card{border-color:rgba(217,233,122,.35)}
+body.theme-dark .sw-row.dark{background:#222227}
 body.theme-dark .back-btn{background:var(--card)!important}
+body.theme-dark .card,body.theme-dark .sec,body.theme-dark .pak{background:#151519;border-color:rgba(255,255,255,.06)}
+body.theme-dark .sheet{background:#131317}
 body.theme-light{
  --bg:#F2F2F7;--card:#FFFFFF;--ink:#16161A;--ink2:#6B6B73;--ink3:#A6A6AE;
  --line:rgba(22,22,26,.09);--line2:rgba(22,22,26,.06);
@@ -849,6 +883,7 @@ function migrate2(){
  if(!S.apDb||!S.apDb.length)S.apDb=AP_SEED.map(([bez,aw])=>({bez,aw}));
  (S.apDb||[]).forEach(e=>{if(e.byMarke===undefined)e.byMarke={}});
  if(S.settings.awTeiler===undefined)S.settings.awTeiler=1;
+ if(S.settings.designV3===undefined){S.settings.designV3=true;S.settings.theme='dark'}
  if(S.settings.stundensatzCt===undefined)S.settings.stundensatzCt=S.settings.awCt||12500;
  if(!S.apKombi)S.apKombi=AP_KOMBI_SEED.map(([kws,partner])=>({keywords:kws,partner}));
  if(!S.pakVorlagen)S.pakVorlagen=PAK_VORLAGEN_SEED.map(t=>({...t,pos:t.pos.map(p=>({...p}))}));
@@ -910,7 +945,7 @@ function applyTheme(t){
  const meta=document.querySelector('meta[name="theme-color"]');
  if(meta){
   const dark=t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
-  meta.content=dark?'#111113':'#F2F2F7';
+  meta.content=dark?'#0A0A0C':'#F2F2F7';
  }
 }
 /* Lookups */
@@ -918,7 +953,7 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.20';
+const APP_VER='2.21';
 const KLASS={tb:['Techn. Beanstandung','t-red'],kw:['Kundenwunsch','t-blue'],so:['Sonstige','t-gray']};
 const ZAHLER={kunde:'Kunde',vers:'Versicherung',gar:'Garantie',intern:'Intern / Kulanz',son:'Sonstiges'};
 const ZAHLER_KURZ={kunde:'K',vers:'V',gar:'G',intern:'I',son:'S'};
