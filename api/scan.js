@@ -33,7 +33,9 @@ module.exports = async (req, res) => {
         messages: [{
           role: "user",
           content: [
-            { type: "image", source: { type: "base64", media_type: media_type || "image/jpeg", data } },
+            media_type === "application/pdf"
+              ? { type: "document", source: { type: "base64", media_type: "application/pdf", data } }
+              : { type: "image", source: { type: "base64", media_type: media_type || "image/jpeg", data } },
             { type: "text", text: "Das ist ein deutscher Fahrzeugschein / Zulassungsbescheinigung Teil I. Lies die Daten und gib NUR reines JSON zurück mit den Feldern: kennzeichen, vin, marke, modell, baujahr, erstzulassung (YYYY-MM-DD), hu_datum (YYYY-MM-DD), kraftstoff, hubraum, kw, farbe, farb_code. Nicht lesbare Felder weglassen. Keine Erklärungen." }
           ]
         }]

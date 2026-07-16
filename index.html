@@ -98,6 +98,33 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
  transform:rotate(45deg);transition:transform .3s var(--spring);flex-shrink:0;margin-top:-3px}
 .open>.sec-h .chev,.open>.pak-h .chev{transform:rotate(-135deg);margin-top:2px}
 .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+/* Block-für-Block Auftragserstellung */
+.stepblock{border:1.5px solid var(--line);border-radius:14px;padding:13px 13px 4px;margin-bottom:14px;background:var(--card)}
+.step-h{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.step-n{width:22px;height:22px;border-radius:50%;background:var(--blue);color:#fff;font-size:11.5px;font-weight:800;display:grid;place-items:center;flex-shrink:0}
+.step-t{font-size:13px;font-weight:750;letter-spacing:-.01em}
+/* Übergang Auftragserstellung → Auftragsmaske: Inhalte rutschen nach oben */
+@keyframes riseIn{from{transform:translateY(42px);opacity:.3}to{transform:none;opacity:1}}
+.tsUp #main{animation:riseIn .38s var(--spring) both}
+/* Header schrumpft beim Scrollen */
+.hdr{transition:background .3s,border-color .3s,padding .28s var(--ease)}
+.hdr .eyebrow,.hdr h1{transition:font-size .28s var(--ease),margin .28s var(--ease),opacity .25s}
+.hdr .hdr-bar-wrap{overflow:hidden;max-height:64px;transition:max-height .3s var(--ease),opacity .25s}
+.hdr.hmin{padding-top:calc(var(--sat) + 7px);padding-bottom:8px}
+.hdr.hmin .eyebrow{font-size:0;opacity:0;margin:0}
+.hdr.hmin h1{font-size:15.5px}
+.hdr.hmin .hdr-bar-wrap{max-height:0;opacity:0}
+/* Positions-Nummern */
+.pos-nr{font-size:9px;font-weight:700;color:var(--ink3);background:var(--gray-bg);border-radius:5px;padding:1.5px 5px;margin-right:5px;vertical-align:1px;white-space:nowrap}
+.pak-nr{font-size:10px;font-weight:800;color:var(--ink3);margin-right:1px;flex-shrink:0}
+/* Kommunikation & Auftragshistorie: kompakte System-Zeilen */
+.te-sys{display:flex;align-items:baseline;gap:8px;padding:6.5px 2px;border-bottom:1px solid var(--line2);cursor:pointer;font-size:11.5px;line-height:1.45}
+.te-sys:last-child{border-bottom:none}
+.te-sys .dt{color:var(--ink3);font-size:10px;flex-shrink:0;white-space:nowrap;font-variant-numeric:tabular-nums}
+.te-sys .tx{color:var(--ink2);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
+.te-sys.x .tx{white-space:normal;overflow:visible;color:var(--ink)}
+.te-sys .inf{width:15px;height:15px;border-radius:50%;border:1.2px solid var(--ink3);color:var(--ink3);font-size:9.5px;font-weight:700;display:grid;place-items:center;flex-shrink:0;align-self:center}
+.te-sys.x .inf{background:var(--blue);border-color:var(--blue);color:#fff}
 .gain{color:var(--green);font-weight:650}
 .empty{text-align:center;padding:52px 20px;color:var(--ink3);font-size:13px;line-height:1.65}
 .empty b{color:var(--ink2);font-size:15px;display:block;margin-bottom:6px}
@@ -826,13 +853,26 @@ function migrate2(){
  if(!S.apKombi)S.apKombi=AP_KOMBI_SEED.map(([kws,partner])=>({keywords:kws,partner}));
  if(!S.pakVorlagen)S.pakVorlagen=PAK_VORLAGEN_SEED.map(t=>({...t,pos:t.pos.map(p=>({...p}))}));
  (S.kunden||[]).forEach(k=>{if(k.ansprechpartner===undefined)k.ansprechpartner=''});
- (S.fahrzeuge||[]).forEach(f=>{if(f.kraftstoff===undefined)f.kraftstoff='';if(f.farbe===undefined)f.farbe=''});
+ (S.fahrzeuge||[]).forEach(f=>{if(f.kraftstoff===undefined)f.kraftstoff='';if(f.farbe===undefined)f.farbe='';if(f.wartung===undefined)f.wartung=''});
  (S.auftraege||[]).forEach(a=>{
   if(a.freigabe===undefined)a.freigabe=a.sig?{ts:a.created||Date.now(),art:'sig',notiz:'Unterschrift',origUrl:''}:null;
   if(a.statusTxt===undefined)a.statusTxt='';
   if(a.awCt===undefined)a.awCt=null;
   if(a.awTeiler===undefined)a.awTeiler=null;
   if(a.anzVerrCt===undefined){a.anzVerrCt=a.anzVerr?(a.anzahlungCt||0):0;delete a.anzVerr}
+  /* Positions-Nummern & Erstelldatum nachrüsten; Paket-Felder für Entsperren & Sonstiges-Texte */
+  let _mx=0;(a.pakete||[]).forEach(pk=>(pk.pos||[]).forEach(p=>{if(p.nr)_mx=Math.max(_mx,p.nr)}));
+  (a.pakete||[]).forEach(pk=>{
+   if(pk.entsperrt===undefined)pk.entsperrt=false;
+   if(pk.klassTxt===undefined)pk.klassTxt='';
+   if(pk.zahlerTxt===undefined)pk.zahlerTxt='';
+   (pk.pos||[]).forEach(p=>{
+    if(!p.nr)p.nr=++_mx;
+    if(p.created===undefined)p.created=null;
+    if(p.zahler===undefined)p.zahler=null;
+    if(p.zahlerTxt===undefined)p.zahlerTxt='';
+    if(p.notizIntern===undefined)p.notizIntern='';
+    if(p.notizKunde===undefined)p.notizKunde=''})});
  });
 }
 function apLearn(bez,aw,marke){
@@ -878,8 +918,14 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
+const APP_VER='2.20';
 const KLASS={tb:['Techn. Beanstandung','t-red'],kw:['Kundenwunsch','t-blue'],so:['Sonstige','t-gray']};
 const ZAHLER={kunde:'Kunde',vers:'Versicherung',gar:'Garantie',intern:'Intern / Kulanz',son:'Sonstiges'};
+const ZAHLER_KURZ={kunde:'K',vers:'V',gar:'G',intern:'I',son:'S'};
+const posZahler=(p,pk)=>p.zahler||pk.zahler||'kunde';
+const pakZahlerKurz=pk=>{const set=[...new Set((pk.pos||[]).filter(p=>p.typ==='arbeit'||p.typ==='teil').map(p=>posZahler(p,pk)))];
+ if(!set.length)set.push(pk.zahler||'kunde');return set.map(z=>ZAHLER_KURZ[z]||'?').join('+')};
+const nextPosNr=a=>1+a.pakete.reduce((m,pk)=>pk.pos.reduce((m2,p)=>Math.max(m2,p.nr||0),m),0);
 const STATI=[['offen','Offen','#C2710A'],['arbeit','In Arbeit','#0A5FFF'],['teile','Wartet auf Teile','#C2710A'],['fertig','Fertig','#0E8F4E'],['abgeholt','Abgeholt','#6B6B73'],['sonst','Sonstiges','#6B4DD6']];
 const statL=s=>(STATI.find(x=>x[0]===s)||STATI[0]);
 const ordStatusLabel=a=>a.status==='sonst'&&(a.statusTxt||'').trim()?a.statusTxt.trim():statL(a.status)[1];
@@ -912,7 +958,7 @@ const ordProg=a=>{if(a.status==='fertig'||a.status==='abgeholt')return 100;
 /*TEST-END*/
 
 /* ============ 4. SHELL, ROUTER, KOMPONENTEN ============ */
-let route={v:'planung'},navSlideDir=0,skipNextSlide=false;
+let route={v:'planung'},navSlideDir=0,skipNextSlide=false,riseNext=false;
 function nav(v,id){
  const prev={v:route.v,id:route.id};
  const tabs=NAVITEMS.map(n=>n[0]);
@@ -927,7 +973,7 @@ function shell(inner,{title,eyebrow,back,side='',hideNav=false,bar='',ctx=''}={}
   ${back?`<button class="back-btn" data-act="back" aria-label="Zurück"></button>`:''}
   <div>${eyebrow?`<div class="eyebrow">${eyebrow}</div>`:''}<h1>${title}</h1></div>
   <div class="hdr-side">${side}</div>
- </div>${bar}</div>
+ </div>${bar?`<div class="hdr-bar-wrap">${bar}</div>`:''}</div>
  <div class="main" id="main">${inner}</div>
  ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>{const isOn=route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen','kalender','buchen','lager','bestellungen','kampagnen','team','personal','impressum','datenschutz','apdb','pakvorlagen'].includes(route.v));const badge=v==='anfragen'&&(S.anfragen||[]).filter(q=>q.status==='neu').length>0?'<i class="nav-badge"></i>':'';return`<button data-act="nav" data-v="${v}" class="${isOn?'on':''}" style="position:relative"><span class="nic">${ic}</span>${l}${badge}</button>`}).join('')}</div>`}`;
 }
@@ -1242,11 +1288,7 @@ function bindKPicker(id,onChange,preK){
 let ordNewPick=null;
 ACT['ord-new']=()=>{
  sheet('Neuer Auftrag',`
-  <button class="btn" style="width:100%;margin-bottom:14px;background:linear-gradient(135deg,#0A5FFF,#3D7CFF);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px" data-act="schein-scan" data-mode="ord">
-   <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>Am schnellsten: Fahrzeugschein fotografieren</button>
-  <input type="file" accept="image/*" id="scheininp" style="display:none">
-  <div id="schein-status"></div>
-  <div class="lbl" style="margin-top:0">Kunde</div>
+  <div class="stepblock"><div class="step-h"><span class="step-n">1</span><span class="step-t">Kunde</span></div>
   <div class="seg" style="margin-bottom:12px">
    <button type="button" id="km-best" class="on">Bestehender Kunde</button>
    <button type="button" id="km-neu">Neuer Kunde</button></div>
@@ -1265,26 +1307,34 @@ ACT['ord-new']=()=>{
    </div>
    <div class="fld"><label>Telefon (für WhatsApp & Rückrufe)</label><input id="no-kt" inputmode="tel" placeholder="+49 170 1234567"></div>
   </div>
-  <div class="lbl">Fahrzeug</div>
+  </div>
+  <div class="stepblock"><div class="step-h"><span class="step-n">2</span><span class="step-t">Fahrzeug</span></div>
+  <button class="btn" style="width:100%;margin-bottom:13px;background:linear-gradient(135deg,#0A5FFF,#3D7CFF);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px" data-act="schein-scan" data-mode="ord">
+   <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>Fahrzeugschein-Scan</button>
+  <input type="file" accept="image/*,.pdf,application/pdf,.heic,.heif" id="scheininp" style="display:none">
+  <div id="schein-status"></div>
   <div id="cf-list"></div>
   <div id="no-newf">
    <div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="no-fk" placeholder="HU-XX 000" style="text-transform:uppercase" autocomplete="off"></div>
     <div class="fld"><label>Marke</label><input id="no-fma" placeholder="BMW" autocomplete="off"></div></div>
-   <div class="fld"><label>Modell</label><input id="no-fmo" placeholder="320d" autocomplete="off"></div>
+   <div class="row2"><div class="fld"><label>Modell</label><input id="no-fmo" placeholder="320d" autocomplete="off"></div>
+    <div class="fld"><label>FIN / Fahrgestellnummer</label><input id="no-fvin" autocomplete="off" style="font-family:ui-monospace,monospace;font-size:12px"></div></div>
+   <div class="row2"><div class="fld"><label>Baujahr / EZ</label><input id="no-fbj" inputmode="numeric" placeholder="2019"></div>
+    <div class="fld"><label>Kilometerstand</label><input id="no-fkm" inputmode="numeric" placeholder="87450"></div></div>
+   <div class="row2"><div class="fld"><label>HU fällig</label><input type="month" id="no-fhu"></div>
+    <div class="fld"><label>Kraftstoff</label><div class="selwrap"><select id="no-fkr"><option value="">—</option>${['Benzin','Diesel','Hybrid','Elektro','LPG/CNG'].map(v=>`<option>${v}</option>`).join('')}</select></div></div></div>
+   <div class="fld"><label>Letzte Wartung (optional)</label><input type="date" id="no-fwart"></div>
    <div class="sec" style="animation:none;margin:0 0 11px">
     <div class="sec-h" data-act="sec-plain" style="padding:10px 12px"><span class="t" style="font-size:12px">Weitere Fahrzeugdaten (optional)</span><span class="chev"></span></div>
     <div class="sec-b"><div class="sec-in" style="padding:0 12px 12px">
-     <div class="row2"><div class="fld"><label>VIN / Fahrgestellnummer</label><input id="no-fvin" autocomplete="off" style="font-family:ui-monospace,monospace;font-size:12px"></div>
-      <div class="fld"><label>Baujahr / EZ</label><input id="no-fbj" inputmode="numeric" placeholder="2019"></div></div>
-     <div class="row2"><div class="fld"><label>Kilometerstand</label><input id="no-fkm" inputmode="numeric" placeholder="87450"></div>
-      <div class="fld"><label>HU fällig</label><input type="month" id="no-fhu"></div></div>
-     <div class="row2"><div class="fld"><label>Kraftstoff</label><div class="selwrap"><select id="no-fkr"><option value="">—</option>${['Benzin','Diesel','Hybrid','Elektro','LPG/CNG'].map(v=>`<option>${v}</option>`).join('')}</select></div></div>
-      <div class="fld"><label>Farbe</label><input id="no-ffa" placeholder="z. B. Alpinweiß" autocomplete="off"></div></div>
+     <div class="fld"><label>Farbe</label><input id="no-ffa" placeholder="z. B. Alpinweiß" autocomplete="off"></div>
     </div></div></div>
   </div>
-  <div class="lbl">Termin</div>
-  <div class="row2"><div class="fld"><label>Fertig am</label><input type="date" id="no-d" value="${todayISO()}"></div>
+  </div>
+  <div class="stepblock"><div class="step-h"><span class="step-n">3</span><span class="step-t">Termin</span></div>
+  <div class="row2"><div class="fld"><label>Vsl. Fertigstellungsdatum</label><input type="date" id="no-d" value="${todayISO()}"></div>
    <div class="fld"><label>Uhrzeit</label><input type="time" id="no-z" value="${S.settings.defaultAbgabeZeit||'17:00'}"></div></div>
+  </div>
   <div style="font-size:10.5px;color:var(--ink3);margin:-3px 2px 12px;line-height:1.5">Pakete und Arbeitspositionen legst du direkt danach im Auftrag an.</div>
   <button class="btn btn-main" style="width:100%" data-act="ord-create">Auftrag anlegen</button>`);
  const newK=$('#no-newk'),bestK=$('#no-bestk'),cfList=$('#cf-list'),newF=$('#no-newf');
@@ -1320,34 +1370,46 @@ ACT['ord-new']=()=>{
 ACT['ord-create']=()=>{
  const useBest=$('#km-best').classList.contains('on');
  const selK=useBest&&ordNewPick?ordNewPick.get():null;
- let kid;
- if(useBest){
-  if(!selK)return toast('Kunden auswählen — oder auf „Neuer Kunde" wechseln',true);
-  kid=selK.id;
- }else{
+ /* Kunde bestimmen — bewusst auch „ohne Kunde" möglich, aber nur nach Rückfrage */
+ let kid=null,mkKunde=null;
+ if(useBest&&selK)kid=selK.id;
+ else if(!useBest){
   const isFirma=$('#kt-firma').classList.contains('on');
   const vn=isFirma?'':$('#no-kvn').value.trim(),nn=isFirma?'':$('#no-knn').value.trim();
   const fa=isFirma?$('#no-kfa').value.trim():'';
   const ap=isFirma?$('#no-kap').value.trim():'';
-  if(isFirma&&!fa)return toast('Firmenname fehlt',true);
-  if(!isFirma&&!nn&&!vn)return toast('Name des Kunden fehlt',true);
-  kid='k'+uid();S.kunden.push({id:kid,name:kunName(vn,nn,fa),vorname:vn,nachname:nn,firma:fa,ansprechpartner:ap,
-   tel:$('#no-kt').value.trim(),wa:true,email:'',adresse:'',strasse:'',plz:'',ort:'',
-   stamm:false,moral:'Gut',notiz:'',created:Date.now()})}
- let fid=$('#cf-list').dataset.sel||'';
- if(!fid){const kz=$('#no-fk').value.trim().toUpperCase();if(!kz)return toast('Kennzeichen fehlt',true);
-  fid='f'+uid();S.fahrzeuge.push({id:fid,kundeId:kid,kennz:kz,marke:$('#no-fma').value.trim(),modell:$('#no-fmo').value.trim(),
+  if((isFirma&&fa)||(!isFirma&&(nn||vn))){
+   mkKunde=()=>{kid='k'+uid();S.kunden.push({id:kid,name:kunName(vn,nn,fa),vorname:vn,nachname:nn,firma:fa,ansprechpartner:ap,
+    tel:$('#no-kt').value.trim(),wa:true,email:'',adresse:'',strasse:'',plz:'',ort:'',
+    stamm:false,moral:'Gut',notiz:'',created:Date.now()})}}}
+ const hatKunde=!!(kid||mkKunde);
+ const selFz=$('#cf-list').dataset.sel||'';
+ const kz=$('#no-fk').value.trim().toUpperCase();
+ const hatFzg=!!(selFz||kz);
+ const finish=()=>{
+  if(mkKunde)mkKunde();
+  let fid=selFz;
+  if(!fid&&kz){fid='f'+uid();S.fahrzeuge.push({id:fid,kundeId:kid,kennz:kz,marke:$('#no-fma').value.trim(),modell:$('#no-fmo').value.trim(),
    bj:parseInt($('#no-fbj').value)||null,vin:$('#no-fvin').value.trim(),km:parseInt(($('#no-fkm').value||'').replace(/\D/g,''))||null,
-   hu:$('#no-fhu').value||'',kraftstoff:$('#no-fkr').value||'',farbe:$('#no-ffa').value.trim(),notiz:''})}
+   hu:$('#no-fhu').value||'',kraftstoff:$('#no-fkr').value||'',farbe:$('#no-ffa').value.trim(),
+   wartung:($('#no-fwart')&&$('#no-fwart').value)||'',notiz:''})}
+  ordCreateFinish(kid,fid)};
+ if(!hatKunde&&!hatFzg)return confirmBox('Ohne Kunde und Fahrzeug fortfahren?','Der Auftrag wird ohne Kunden und ohne Fahrzeug angelegt — beides lässt sich später nachtragen.','Ohne beides anlegen',finish,false);
+ if(!hatKunde)return confirmBox('Wirklich ohne Kunde fortfahren?','Der Auftrag wird ohne Kunden angelegt — der Kunde lässt sich später nachtragen.','Ohne Kunde anlegen',finish,false);
+ if(!hatFzg)return confirmBox('Wirklich ohne Fahrzeug fortfahren?','Der Auftrag wird ohne Fahrzeug angelegt — das Fahrzeug lässt sich später nachtragen.','Ohne Fahrzeug anlegen',finish,false);
+ finish();
+};
+function ordCreateFinish(kid,fid){
  const y=new Date().getFullYear();
- const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:kid,fzgId:fid,status:'offen',statusTxt:'',
+ const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:kid||null,fzgId:fid||null,status:'offen',statusTxt:'',
   annahme:todayISO(),abgabe:$('#no-d').value||todayISO(),abgabeZeit:$('#no-z').value||'',kmAn:null,kmAb:null,tank:'50',
-  anzahlungCt:0,rabatt:{typ:'eur',wert:0},awCt:null,freigabe:null,pakete:[],
+  anzahlungCt:0,rabatt:{typ:'eur',wert:0},awCt:null,awTeiler:null,freigabe:null,pakete:[],
   komm:[{id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Auftrag angelegt.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null}],
   fotos:[],check:[],docs:[],zeiten:[],timerStart:null,
   notiz:'',erinnerung:'',erinnerungDat:null,sig:null,sig2:null,pinned:false,created:Date.now()};
- S.auftraege.push(a);save();closeSheet();toast(a.nr+' angelegt — jetzt Pakete anlegen');nav('auftrag',a.id);
-};
+ S.auftraege.push(a);save();closeSheet();toast(a.nr+' angelegt — jetzt Pakete anlegen');
+ riseNext=true;nav('auftrag',a.id);
+}
 
 /* ============ 6. AUFTRAGSMASKE ============ */
 const secOpen={},pakOpen={},calcMode={};
@@ -1386,7 +1448,7 @@ function vAuftrag(id){
   <div class="chips">${(()=>{const dflt=[{l:'Fahrzeug fertig',m:'Ihr Fahrzeug ist fertig und kann abgeholt werden.'},{l:'Angebot bereit',m:'Das Angebot liegt bereit — melden Sie sich bei Fragen.'},{l:'Teile verzögert',m:'Die bestellten Teile verzögern sich leider etwas.'},{l:'Termin morgen',m:'Freundliche Erinnerung: Ihr Termin bei uns ist morgen. Bitte melden Sie sich bei Fragen.'}];
    const tpls=S.settings.waTemplates&&S.settings.waTemplates.length?S.settings.waTemplates:dflt;
    return tpls.map((t,i)=>`<button class="chip" data-act="chip-wa" data-oid="${a.id}" data-m="${esc(t.m)}">${esc(t.l)}</button>`).join('')})()}</div>
-  <button class="btn btn-2nd btn-sm" style="width:100%;margin-top:12px" data-act="open" data-v="kunde" data-id="${k.id}">Kundenakte öffnen</button>`);
+  ${k.id?`<button class="btn btn-2nd btn-sm" style="width:100%;margin-top:12px" data-act="open" data-v="kunde" data-id="${k.id}">Kundenakte öffnen</button>`:'<div style="font-size:11.5px;color:var(--ink3);margin-top:8px">Kein Kunde hinterlegt.</div>'}`);
 
  /* --- Fahrzeug --- */
  const secFzg=sec('fzg',esc(f.kennz||'Fahrzeug'),esc((f.marke||'')+' '+(f.modell||'')+(f.bj?' · '+f.bj:'')),`
@@ -1401,40 +1463,55 @@ function vAuftrag(id){
   <div class="kv"><span class="k">Garantie</span><span class="v"><span class="tag t-blue">12 Monate auf alle Arbeiten</span></span></div>
   ${histAll.length?`<div class="lbl">Fahrzeug-Historie · ${histAll.length} Aufträge</div>
    ${histAll.map(h=>`<div class="kv" data-act="open" data-v="auftrag" data-id="${h.id}" style="cursor:pointer"><span class="k">${dLabel(h.abgabe)} · ${h.nr}</span><span class="v num">${esc(h.pakete[0]?h.pakete[0].name:'')} · ${fmt(ordNetto(h))}</span></div>`).join('')}`:''}
-  <button class="btn btn-2nd btn-sm" style="width:100%;margin-top:12px" data-act="open" data-v="fahrzeug" data-id="${f.id}">Fahrzeugakte öffnen</button>`);
+  ${f.id?`<button class="btn btn-2nd btn-sm" style="width:100%;margin-top:12px" data-act="open" data-v="fahrzeug" data-id="${f.id}">Fahrzeugakte öffnen</button>`:'<div style="font-size:11.5px;color:var(--ink3);margin-top:8px">Kein Fahrzeug hinterlegt.</div>'}`);
 
  /* --- Pakete --- */
- const pakHtml=pk=>{
+ const pakHtml=(pk,pi)=>{
   const [kl,kc]=KLASS[pk.klass]||KLASS.so;
+  const klLbl=pk.klass==='so'&&pk.klassTxt?esc(pk.klassTxt):kl;
+  const locked=pk.abger&&!pk.entsperrt;
   const open=pakOpen[a.id].has(pk.id)?'open':'';
   const arbeiten=pk.pos.filter(p=>p.typ==='arbeit'),teile=pk.pos.filter(p=>p.typ==='teil'),texte=pk.pos.filter(p=>p.typ==='text'),befunde=pk.pos.filter(p=>p.typ==='befund');
+  const act=locked?'':`data-act="pos-edit" data-oid="${a.id}" data-pid="${pk.id}"`;
+  const curs=locked?'':'cursor:pointer;';
+  const posNr=p=>p.nr?`<span class="pos-nr">#${p.nr}</span>`:'';
   const posRow=p=>{const meta=[];
-   if(p.typ==='befund'){return `<div class="pos" data-act="pos-edit" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${p.id}" style="cursor:pointer;flex-direction:column;align-items:stretch;gap:5px;border-left:3px solid var(--amber)">
-    <div><span style="font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--amber)">BEFUND</span><div class="pn" style="margin-top:2px;white-space:pre-wrap">${esc(p.bez)}</div></div>
+   if(p.typ==='befund'){return `<div class="pos" ${act} data-xid="${p.id}" style="${curs}flex-direction:column;align-items:stretch;gap:5px;border-left:3px solid var(--amber)">
+    <div><span style="font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--amber)">${posNr(p)}BEFUND</span><div class="pn" style="margin-top:2px;white-space:pre-wrap">${esc(p.bez)}</div></div>
     ${p.abhilfe?`<div><span style="font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--green)">ABHILFE</span><div class="pn" style="margin-top:2px;white-space:pre-wrap">${esc(p.abhilfe)}</div></div>`:''}</div>`}
-   if(p.typ==='text'){return `<div class="pos text-pos" data-act="pos-edit" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${p.id}" style="cursor:pointer"><div class="pn">${esc(p.bez)}</div></div>`}
+   if(p.typ==='text'){return `<div class="pos text-pos" ${act} data-xid="${p.id}" style="${curs}"><div class="pn">${posNr(p)}${esc(p.bez)}</div></div>`}
    if(p.typ==='arbeit'&&p.aw)meta.push(pct1(p.aw)+' AW'+(p.awSatz&&p.awSatz!==S.settings.awCt?' à '+fmt(p.awSatz):''));
    if(p.typ==='teil'){if((p.menge||1)!==1)meta.push(p.menge+' ×');meta.push('EK '+fmt(p.ekCt)+' → VK '+fmt(p.vkCt));
     meta.push(`<span class="gain">+${fmt((p.vkCt-p.ekCt)*(p.menge||1))}</span>`)}
    if(p.best&&BEST[p.best])meta.push(`<span class="tag ${BEST[p.best][1]}" style="font-size:9px">${BEST[p.best][0]}${p.best==='bestellt'&&p.eta?', ETA '+dLabel(p.eta):''}</span>`);
    if(p.rab&&p.rab.wert)meta.push('Rabatt –'+(p.rab.typ==='pct'?p.rab.wert+' %':fmt(p.rab.wert)));
+   if(p.zahler&&p.zahler!==(pk.zahler||'kunde'))meta.push('zahlt: '+(p.zahler==='son'&&p.zahlerTxt?esc(p.zahlerTxt):ZAHLER[p.zahler]||p.zahler));
+   if(p.notizIntern)meta.push('<span class="tag t-gray" style="font-size:9px">int. Notiz</span>');
+   if(p.notizKunde)meta.push('<span class="tag t-blue" style="font-size:9px">Kundenhinweis</span>');
    if(p.ext)meta.push('nachträglich');
-   return `<div class="pos ${p.ext?'ext':''}" data-act="pos-edit" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${p.id}" style="cursor:pointer">
-    <div class="pn">${esc(p.bez)}${p.ext?' <span class="tag t-amber" style="margin-left:4px">Erweiterung</span>':''}
+   return `<div class="pos ${p.ext?'ext':''}" ${act} data-xid="${p.id}" style="${curs}">
+    <div class="pn">${posNr(p)}${esc(p.bez)}${p.ext?' <span class="tag t-amber" style="margin-left:4px">Erweiterung</span>':''}
     <div class="pmeta">${meta.join(' · ')}</div></div><span class="pp num">${fmt(posNetto(p))}</span></div>`};
   const extPos=pk.pos.filter(p=>p.ext);
   return `<div class="pak ${pk.ext?'ext-pak':''} ${open}">
    <div class="pak-h" data-act="pak-tog" data-oid="${a.id}" data-pid="${pk.id}">
-    <span class="tag ${kc}">${kl}</span><span class="pt">${esc(pk.name)}</span>
+    <span class="pak-nr">${pi+1}.</span><span class="tag ${kc}">${klLbl}</span><span class="pt">${esc(pk.name)}</span>
+    <span class="tag t-gray" style="font-size:9px" title="Rechnungskennzeichen">${pakZahlerKurz(pk)}</span>
     ${pk.ext?(extPos.length?`<span class="tag t-amber">${extPos.length} Erweiterung${extPos.length>1?'en':''}</span>`:`<span class="tag t-amber">Neu · Erweiterung</span>`):''}
-    ${pk.abger?'<span class="tag t-green">abgerechnet</span>':''}
+    ${pk.abger?(locked?'<span class="tag t-green">abgerechnet · gesperrt</span>':'<span class="tag t-amber">abgerechnet · entsperrt</span>'):''}
     <span class="chev"></span></div>
    <div class="pak-b"><div class="pak-in">
+    ${locked?`<div style="background:var(--green-bg);border:1px solid rgba(14,143,78,.3);border-radius:11px;padding:10px 12px;margin-bottom:11px;display:flex;align-items:center;gap:10px">
+     <span style="flex:1;font-size:11.5px;color:var(--green);font-weight:600">Abgerechnet — Positionen sind gesperrt.</span>
+     <button class="btn btn-2nd btn-sm" style="flex-shrink:0" data-act="pak-unlock" data-oid="${a.id}" data-pid="${pk.id}">Entsperren</button></div>`
+    :pk.entsperrt?`<div style="background:var(--amber-bg);border:1px solid rgba(194,113,10,.3);border-radius:11px;padding:9px 12px;margin-bottom:11px;font-size:11px;color:var(--amber)">Nach Abrechnung entsperrt — jede Änderung wird in der Auftragshistorie protokolliert.</div>`:''}
     <div class="pak-kz">
-     <div class="fld" style="margin:0"><label>Klassifizierung</label><div class="selwrap"><select data-f="p-klass" data-oid="${a.id}" data-pid="${pk.id}">
+     <div class="fld" style="margin:0"><label>Klassifizierung</label><div class="selwrap"><select data-f="p-klass" data-oid="${a.id}" data-pid="${pk.id}" ${locked?'disabled':''}>
       ${Object.entries(KLASS).map(([v,[l]])=>`<option value="${v}" ${pk.klass===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
-     <div class="fld" style="margin:0"><label>Wer zahlt</label><div class="selwrap"><select data-f="p-zahler" data-oid="${a.id}" data-pid="${pk.id}">
+     <div class="fld" style="margin:0"><label>Wer zahlt</label><div class="selwrap"><select data-f="p-zahler" data-oid="${a.id}" data-pid="${pk.id}" ${locked?'disabled':''}>
       ${Object.entries(ZAHLER).map(([v,l])=>`<option value="${v}" ${pk.zahler===v?'selected':''}>${l}</option>`).join('')}</select></div></div></div>
+    ${pk.klass==='so'?`<div class="fld"><label>Sonstige — was genau?</label><input value="${esc(pk.klassTxt||'')}" placeholder="z. B. Gutachten" data-f="p-klass-txt" data-oid="${a.id}" data-pid="${pk.id}" ${locked?'disabled':''}></div>`:''}
+    ${pk.zahler==='son'?`<div class="fld"><label>Sonstiges — wer zahlt?</label><input value="${esc(pk.zahlerTxt||'')}" placeholder="z. B. Versicherung Huk24" data-f="p-zahler-txt" data-oid="${a.id}" data-pid="${pk.id}" ${locked?'disabled':''}></div>`:''}
     ${befunde.length?'<div class="lbl">Befund & Abhilfe</div>'+befunde.map(posRow).join(''):''}
     ${arbeiten.length?'<div class="lbl">Arbeiten</div>'+arbeiten.map(posRow).join(''):''}
     ${teile.length?'<div class="lbl">Teile</div>'+teile.map(posRow).join(''):''}
@@ -1445,14 +1522,14 @@ function vAuftrag(id){
      <div class="fgrid">${pf.map(fo=>fotoTile(a,fo)).join('')}${camTile(a,pk.id)}</div>`:''})()}
     ${pk.rabatt&&pk.rabatt.wert?`<div class="kv" style="border:none"><span class="k">Rabatt Paket</span><span class="v" style="color:var(--blue)">– ${pk.rabatt.typ==='pct'?pk.rabatt.wert+' %':fmt(pk.rabatt.wert)}</span></div>`:''}
     <div class="sum"><span class="sl">Paket netto · Gewinn <span class="gain"${pakGewinn(pk)<0?' style="color:var(--red)"':''}>${fmt(pakGewinn(pk))}</span></span><b class="num">${fmt(pakNetto(pk))}</b></div>
-    <div style="display:flex;gap:7px;flex-wrap:wrap">
+    ${locked?'':`<div style="display:flex;gap:7px;flex-wrap:wrap">
      <button class="btn-ghost" data-act="add-arbeit" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">${ordFreigegeben(a)?'+ Arbeit (Erw.)':'+ Arbeit'}</button>
      <button class="btn-ghost" data-act="add-teil" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">${ordFreigegeben(a)?'+ Teil (Erw.)':'+ Teil'}</button>
      <button class="btn-ghost" data-act="add-befund" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Befund</button>
      <button class="btn-ghost" data-act="add-text" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Text</button>
-     <button class="btn-ghost" data-act="add-foto-btn" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Foto/Video</button></div>
+     <button class="btn-ghost" data-act="add-foto-btn" data-oid="${a.id}" data-pid="${pk.id}" style="flex:1;min-width:80px">+ Foto/Video</button></div>`}
     ${!pk.abger?`<button class="btn btn-soft-green" style="width:100%;margin-top:10px" data-act="bill-pak" data-oid="${a.id}" data-pid="${pk.id}">Nur dieses Paket abrechnen</button>`:''}
-    <button class="btn-ghost" style="width:100%;margin-top:8px;color:var(--red);border-color:rgba(224,53,59,.3)" data-act="pak-del" data-oid="${a.id}" data-pid="${pk.id}">Paket löschen</button>
+    ${locked?'':`<button class="btn-ghost" style="width:100%;margin-top:8px;color:var(--red);border-color:rgba(224,53,59,.3)" data-act="pak-del" data-oid="${a.id}" data-pid="${pk.id}">Paket löschen</button>`}
    </div></div></div>`};
  /* Kalkulationsmodus */
  const calcHtml=()=>{
@@ -1496,6 +1573,11 @@ function vAuftrag(id){
  const kanalName={wa:'WhatsApp',call:'Anruf',mail:'E-Mail',pers:'Persönlich',diag:'Diagnose',man:'Notiz',sys:'System',ig:'Instagram'};
  const teHtml=m=>{const pend=m.status==='ki';const just=lastConf===m.id;
   const bezug=m.bezug?a.pakete.find(p=>p.id===m.bezug):null;
+  /* System-Einträge: platzsparende Einzeiler — Info-Knopf klappt Details auf */
+  if(m.kanal==='sys'&&!pend){
+   return `<div class="te-sys" data-act="te-tog">
+    <span class="dt">${dtLabel(m.ts)}</span><span class="tx">${esc(m.txt)}${bezug?' <span class="tag t-blue" style="font-size:9px">'+esc(bezug.name)+'</span>':''}</span>
+    <span class="inf">i</span></div>`}
   const src=m.kanal==='wa'?['Originalnachricht ansehen','wa']:m.kanal==='call'?['Aufnahme / Transkript','rec']:m.kanal==='mail'?['E-Mail öffnen','mail']:['Eintrag bearbeiten','edit'];
   return `<div class="te ${m.kanal} ${pend?'pend':''} ${just?'just-conf':''}">
    <div class="te-h"><span class="ch">${kanalName[m.kanal]||m.kanal}</span><span class="sep">·</span><span>${dtLabel(m.ts)}</span>
@@ -1507,17 +1589,22 @@ function vAuftrag(id){
     <button class="te-btn" style="background:var(--green);color:#fff" data-act="komm-ok" data-oid="${a.id}" data-mid="${m.id}">Bestätigen</button>
     <button class="te-btn" style="background:var(--bg);border:1px solid var(--line)" data-act="komm-edit" data-oid="${a.id}" data-mid="${m.id}">Korrigieren</button></div>`:''}
   </div>`};
- const secKomm=sec('komm','Kommunikation',kiCount?`<span style="color:var(--amber);font-weight:600">${kiCount} zu bestätigen</span>`:`<span style="color:var(--green);font-weight:600">alle bestätigt</span>`,`
+ const kommSorted=a.komm.slice().sort((x,y)=>y.ts-x.ts);
+ const kommGespr=kommSorted.filter(m=>m.kanal!=='sys'||m.status==='ki');
+ const kommSys=kommSorted.filter(m=>m.kanal==='sys'&&m.status!=='ki');
+ const secKomm=sec('komm','Kommunikation & Auftragshistorie',kiCount?`<span style="color:var(--amber);font-weight:600">${kiCount} zu bestätigen</span>`:`<span style="color:var(--green);font-weight:600">alle bestätigt</span>`,`
   <div class="ai-bar"><span class="ai-dot ${kiCount?'':'ok'}"></span>
    <span><b>Assistent aktiv.</b> Liest WhatsApp, E-Mail und Telefonate mit und legt Einträge an — du bestätigst nur noch.</span></div>
-  ${a.komm.length?`<div class="tl">${a.komm.slice().sort((x,y)=>y.ts-x.ts).map(teHtml).join('')}</div>`:'<div class="empty" style="padding:20px"><b>Noch keine Einträge</b>Gespräche und Nachrichten erscheinen hier.</div>'}
+  ${kommGespr.length?`<div class="tl">${kommGespr.map(teHtml).join('')}</div>`:'<div class="empty" style="padding:20px"><b>Noch keine Einträge</b>Gespräche und Nachrichten erscheinen hier.</div>'}
+  ${kommSys.length?`<div class="lbl">Auftragshistorie · ${kommSys.length} Einträge</div>
+   <div style="background:var(--bg);border:1px solid var(--line2);border-radius:11px;padding:2px 10px">${kommSys.map(teHtml).join('')}</div>`:''}
   <button class="man-btn btn-ghost" style="width:100%;margin-top:14px" data-act="komm-new" data-oid="${a.id}">Eintrag manuell hinzufügen</button>`);
  route._kommSec='sec-komm';
 
  /* --- Fotos --- */
  const globalF=a.fotos.filter(x=>!x.paketId);
  const pakWithF=a.pakete.filter(p=>a.fotos.some(x=>x.paketId===p.id));
- const secFoto=sec('foto','Foto-Dokumentation',a.fotos.length+' Foto'+(a.fotos.length!==1?'s':''),`
+ const secFoto=sec('foto','Service',a.fotos.length+' Foto'+(a.fotos.length!==1?'s':''),`
   <div class="lbl" style="margin-top:2px">Annahme / Allgemein</div>
   <div class="fgrid">${globalF.map(fo=>fotoTile(a,fo)).join('')}${camTile(a,'')}</div>
   ${pakWithF.map(p=>`<div class="lbl">Paket „${esc(p.name)}"</div>
@@ -1555,9 +1642,22 @@ function vAuftrag(id){
    return hasRe&&!a.reviewSent?`<div style="background:var(--green-bg);border:1px solid rgba(14,143,78,.3);border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:650;font-size:12.5px;margin-bottom:8px">Zufriedener Kunde? Jetzt um Bewertung bitten.</div><button class="btn btn-soft-green btn-sm" style="width:100%" data-act="review-ask" data-oid="${a.id}">Google-Bewertung anfragen (WhatsApp)</button></div>`
    :hasRe&&a.reviewSent?`<div style="font-size:11px;color:var(--green);margin-bottom:12px">Bewertungsanfrage wurde gesendet.</div>`:''})()}
   ${a.notiz?'<div class="hd-note" style="margin-bottom:12px"><span class="nb">!</span>Interne Notiz hinterlegt — auch oben am Auftrag markiert.</div>':''}
-  <div class="card" style="margin:0;padding:12px"><div style="font-weight:600;font-size:12px;margin-bottom:3px">Erinnerung</div>
+  ${(()=>{/* Automatische Erinnerungen aus Fahrzeugdaten — HU und Wartung, ohne manuelles Zutun */
+   const autos=[];
+   if(f.hu){const[hy,hm]=f.hu.split('-').map(Number);const hd=(hy-new Date().getFullYear())*12+(hm-1-new Date().getMonth());
+    autos.push({t:'HU fällig',d:String(hm).padStart(2,'0')+'/'+hy,warn:hd<=2})}
+   const lastW=f.wartung||S.auftraege.filter(x2=>x2.fzgId===a.fzgId&&x2.id!==a.id&&x2.status==='abgeholt').map(x2=>x2.abgabe||x2.annahme).sort().pop();
+   if(lastW){const nx=addDays(lastW,365);
+    autos.push({t:'Nächste Wartung (12 Mon. nach letzter)',d:dLabel(nx),warn:nx<=todayISO()})}
+   return `<div class="lbl" style="margin-top:2px">Automatische Erinnerungen</div>
+    ${autos.length?autos.map(x2=>`<div class="kv"><span class="k">${x2.t}</span><span class="v">${x2.warn?'<span class="tag t-amber">'+x2.d+'</span>':x2.d}</span></div>`).join('')
+     :'<div style="font-size:11px;color:var(--ink3);padding:2px 0 6px">Sobald HU-Termin oder letzte Wartung im Fahrzeug hinterlegt sind, erscheinen Erinnerungen hier und unter Anfragen → Wartung & HU von selbst.</div>'}`})()}
+  <div class="lbl">Individuelle Erinnerung</div>
+  <div class="card" style="margin:0;padding:12px">
+    <div style="font-weight:600;font-size:11px;color:var(--ink3);margin-bottom:3px;letter-spacing:.05em;text-transform:uppercase">Anlass</div>
     <input style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12px" placeholder="z. B. Ölwechsel" value="${esc(a.erinnerung||'')}" data-f="o-erinn" data-oid="${a.id}">
-    <input type="date" style="width:100%;margin-top:6px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px" value="${a.erinnerungDat||''}" data-f="o-erinnd" data-oid="${a.id}"></div>
+    <div style="font-weight:600;font-size:11px;color:var(--ink3);margin:8px 0 3px;letter-spacing:.05em;text-transform:uppercase">Datum</div>
+    <input type="date" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px" value="${a.erinnerungDat||''}" data-f="o-erinnd" data-oid="${a.id}"></div>
   <div class="lbl">Interne Notiz — erscheint nicht auf der Rechnung</div>
   <textarea rows="2" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 12px" data-f="o-notiz" data-oid="${a.id}" placeholder="Notiz...">${esc(a.notiz||'')}</textarea>
   <button class="btn btn-danger" style="width:100%;margin-top:14px" data-act="ord-del" data-oid="${a.id}">Auftrag löschen</button>`);
@@ -1595,7 +1695,7 @@ function vAuftrag(id){
  </div>`;
  const inner=`<div class="stag">${secKunde}${secFzg}${secPak}${secKomm}${secFoto}${secZeit}${secOrga}${secSig}</div>
   <div style="height:96px"></div>
-  <input type="file" accept="image/*,video/*" multiple id="photoinp" style="display:none">`;
+  <input type="file" accept="image/*,video/*,.pdf,application/pdf,.heic,.heif" multiple id="photoinp" style="display:none">`;
  const side=a.notiz?`<button class="hd-note" data-act="goto-orga" data-oid="${a.id}"><span class="nb">!</span>Notiz</button>`:'';
  return shell(inner,{title:a.nr,eyebrow:'Auftrag · '+esc(f.kennz||''),back:1,side,bar,hideNav:true,ctx:'auftrag'})+
   `<div class="calcbar"><div class="calc">
@@ -1610,6 +1710,7 @@ function camTile(a,pid){return `<div class="foto cam" data-act="add-foto-btn" da
 
 /* ---- Auftrag: Handler ---- */
 ACT['sec-plain']=el=>el.parentElement.classList.toggle('open');
+ACT['te-tog']=el=>el.classList.toggle('x');
 ACT['sec-tog']=el=>{const s=secOpen[el.dataset.oid];s.has(el.dataset.s)?s.delete(el.dataset.s):s.add(el.dataset.s);
  el.parentElement.classList.toggle('open')};
 ACT['pak-tog']=el=>{const s=pakOpen[el.dataset.oid];s.has(el.dataset.pid)?s.delete(el.dataset.pid):s.add(el.dataset.pid);
@@ -1680,7 +1781,17 @@ FSET['o-erinn']=el=>{auftrag(el.dataset.oid).erinnerung=el.value;save()};
 FSET['o-erinnd']=el=>{auftrag(el.dataset.oid).erinnerungDat=el.value||null;save()};
 FSET['o-notiz']=el=>{auftrag(el.dataset.oid).notiz=el.value.trim();save();render()};
 FSET['p-klass']=el=>{const a=auftrag(el.dataset.oid);a.pakete.find(p=>p.id===el.dataset.pid).klass=el.value;save();render()};
-FSET['p-zahler']=el=>{const a=auftrag(el.dataset.oid);a.pakete.find(p=>p.id===el.dataset.pid).zahler=el.value;save()};
+FSET['p-zahler']=el=>{const a=auftrag(el.dataset.oid);a.pakete.find(p=>p.id===el.dataset.pid).zahler=el.value;save();render()};
+FSET['p-klass-txt']=el=>{const a=auftrag(el.dataset.oid);a.pakete.find(p=>p.id===el.dataset.pid).klassTxt=el.value.trim();save()};
+FSET['p-zahler-txt']=el=>{const a=auftrag(el.dataset.oid);a.pakete.find(p=>p.id===el.dataset.pid).zahlerTxt=el.value.trim();save()};
+/* Abgerechnetes Paket wieder entsperren — bleibt dauerhaft in der Historie vermerkt */
+ACT['pak-unlock']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
+ confirmBox('Paket entsperren?','„'+esc(pk.name)+'" ist bereits abgerechnet. Nach dem Entsperren sind Änderungen wieder möglich — das Entsperren und jede weitere Änderung werden dauerhaft in der Auftragshistorie protokolliert.','Entsperren',()=>{
+  pk.entsperrt=true;
+  a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Abgerechnetes Paket „'+pk.name+'" wurde wieder entsperrt.',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
+  save();render();toast('Paket entsperrt — Änderungen werden protokolliert')})};
+function logUnlockEdit(a,pk,txt){if(!pk||!pk.entsperrt)return;
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Änderung im entsperrten Paket „'+pk.name+'": '+txt,preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null})}
 FSET['pos-vk']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),x=pk.pos.find(p=>p.id===el.dataset.xid);
  x.vkCt=Math.max(0,parseEuro(el.value));save();render()};
 FSET['pos-menge']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),x=pk.pos.find(p=>p.id===el.dataset.xid);
@@ -1743,6 +1854,13 @@ function posSheet(a,pk,x,prefillBez){
   ${isT?`<div class="row2"><div class="fld"><label>Bestellstatus</label><div class="selwrap"><select id="ps-best">
     <option value="">—</option>${Object.entries(BEST).map(([v,[l]])=>`<option value="${v}" ${x&&x.best===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
    <div class="fld"><label>ETA</label><input type="date" id="ps-eta" value="${x&&x.eta?x.eta:''}"></div></div>`:''}
+  <div class="fld"><label>Wer zahlt diese Position?</label><div class="selwrap"><select id="ps-z" onchange="document.getElementById('ps-zt-wrap').style.display=this.value==='son'?'block':'none'">
+   <option value="">Wie Paket (${ZAHLER[pk.zahler||'kunde']||'Kunde'})</option>
+   ${Object.entries(ZAHLER).map(([v,l])=>`<option value="${v}" ${x&&x.zahler===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
+  <div id="ps-zt-wrap" style="display:${x&&x.zahler==='son'?'block':'none'}"><div class="fld"><label>Sonstiges — wer zahlt?</label><input id="ps-zt" value="${x?esc(x.zahlerTxt||''):''}" placeholder="z. B. Versicherung, Kulanz …"></div></div>
+  <div class="fld"><label>Interne Notiz — nur für die Werkstatt, nie auf der Rechnung</label><textarea id="ps-ni" rows="2" placeholder="z. B. Spezialwerkzeug nötig …">${x?esc(x.notizIntern||''):''}</textarea></div>
+  <div class="fld"><label>Hinweis für den Kunden — erscheint auf der Rechnung</label><textarea id="ps-nk" rows="2" placeholder="z. B. Verschleiß altersbedingt, Nachkontrolle in 1.000 km …">${x?esc(x.notizKunde||''):''}</textarea></div>
+  ${x?`<div style="font-size:10px;color:var(--ink3);margin:-4px 2px 10px">Position ${x.nr?'#'+x.nr:''}${x.created?' · angelegt '+dtLabel(x.created):''}</div>`:''}
   <div class="row2">
    ${x?`<button class="btn btn-danger" data-act="pos-del" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Löschen</button>`:'<span></span>'}
    <button class="btn btn-main" data-act="pos-save" data-oid="${a.id}" data-pid="${pk.id}" ${x?`data-xid="${x.id}"`:''} data-typ="${x?x.typ:'arbeit'}">Speichern</button></div>`);
@@ -1772,7 +1890,8 @@ ACT['text-upd']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
  if(!bez)return toast('Text fehlt',true);x.bez=bez;save();closeSheet();render();toast('Gespeichert')};
 ACT['text-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const bez=$('#tx-t').value.trim();if(!bez)return toast('Text fehlt',true);
- pk.pos.push({id:'x'+uid(),typ:'text',bez,vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null});
+ pk.pos.push({id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'text',bez,vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null});
+ logUnlockEdit(a,pk,'Textposition „'+bez+'" hinzugefügt.');
  save();closeSheet();render();toast('Textposition hinzugefügt')};
 ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  sheet('Teil hinzufügen',`
@@ -1793,13 +1912,14 @@ ACT['teil-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id==
  const lid=$('#pt-l').value||null,menge=Math.max(1,parseInt($('#pt-m').value)||1);
  const ext=ordFreigegeben(a);
  const vorher=ordNetto(a);
- const x={id:'x'+uid(),typ:'teil',bez,aw:0,menge,ekCt:Math.max(0,parseEuro($('#pt-ek').value)),vkCt:Math.max(0,parseEuro($('#pt-vk').value)),
+ const x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'teil',bez,aw:0,menge,ekCt:Math.max(0,parseEuro($('#pt-ek').value)),vkCt:Math.max(0,parseEuro($('#pt-vk').value)),
   best:lid?'lager':null,eta:null,lagerId:lid,ext};
  if(lid){const l=lagerT(lid);
   if(l.bestand>=menge){l.bestand-=menge;x.best='lager'}
   else{x.best='bestellt';x.eta=addDays(todayISO(),1);toast('Bestand reicht nicht — als „bestellt" markiert',true)}}
  pk.pos.push(x);
  if(ext)logExtension(a,pk,x,vorher);
+ logUnlockEdit(a,pk,'Teil „'+bez+'" hinzugefügt ('+fmt(x.vkCt*(x.menge||1))+').');
  save();closeSheet();render();toast('Teil hinzugefügt')};
 ACT['pos-edit']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const x=pk.pos.find(p=>p.id===el.dataset.xid);
@@ -1832,12 +1952,18 @@ ACT['pos-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
   menge:$('#ps-m')?Math.max(1,parseInt($('#ps-m').value)||1):(x?x.menge||1:1),
   rab,
   best:$('#ps-best')?($('#ps-best').value||null):(x?x.best:null),
-  eta:$('#ps-eta')?($('#ps-eta').value||null):(x?x.eta:null)};
+  eta:$('#ps-eta')?($('#ps-eta').value||null):(x?x.eta:null),
+  zahler:$('#ps-z')?($('#ps-z').value||null):(x?x.zahler:null),
+  zahlerTxt:$('#ps-zt')?$('#ps-zt').value.trim():(x?x.zahlerTxt||'':''),
+  notizIntern:$('#ps-ni')?$('#ps-ni').value.trim():(x?x.notizIntern||'':''),
+  notizKunde:$('#ps-nk')?$('#ps-nk').value.trim():(x?x.notizKunde||'':'')};
  /* Nach Freigabe: jede NEUE Position ist automatisch eine Erweiterung */
  vals.ext=x?x.ext:ordFreigegeben(a);
+ const altPreis=x?posNetto(x):null;
  if(x)Object.assign(x,vals);
- else{x={id:'x'+uid(),typ:el.dataset.typ,lagerId:null,...vals};pk.pos.push(x)}
+ else{x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:el.dataset.typ,lagerId:null,...vals};pk.pos.push(x)}
  if(isNew&&vals.ext)logExtension(a,pk,x,vorher);
+ logUnlockEdit(a,pk,isNew?'Position „'+bez+'" hinzugefügt ('+fmt(posNetto(x))+').':'Position „'+bez+'" geändert ('+fmt(altPreis)+' → '+fmt(posNetto(x))+').');
  if(isArbeit&&vals.aw>0){const f=fzg(a.fzgId);apLearn(bez,vals.aw,f&&f.marke)}
  save();closeSheet();render();toast(isNew&&vals.ext?'Erweiterung hinzugefügt und protokolliert':'Gespeichert')};
 /* Befund & Abhilfe */
@@ -1849,7 +1975,7 @@ ACT['add-befund']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id=
  setTimeout(()=>$('#bf-b').focus(),150)};
 ACT['befund-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const b=$('#bf-b').value.trim();if(!b)return toast('Befund fehlt',true);
- pk.pos.push({id:'x'+uid(),typ:'befund',bez:b,abhilfe:$('#bf-a').value.trim(),vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null});
+ pk.pos.push({id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'befund',bez:b,abhilfe:$('#bf-a').value.trim(),vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null});
  save();closeSheet();render();toast('Befund dokumentiert')};
 ACT['befund-upd']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const x=pk.pos.find(p=>p.id===el.dataset.xid);const b=$('#bf-b').value.trim();
@@ -1863,7 +1989,9 @@ ACT['add-kombi']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id==
 ACT['pos-del']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),x=pk.pos.find(p=>p.id===el.dataset.xid);
  confirmBox('Position löschen?','„'+esc(x.bez)+'" wird entfernt.'+(x.lagerId&&x.best==='lager'?' Der Lagerbestand wird zurückgebucht.':''),'Löschen',()=>{
   if(x.lagerId&&x.best==='lager'){const l=lagerT(x.lagerId);if(l)l.bestand+=(x.menge||1)}
-  pk.pos=pk.pos.filter(p=>p.id!==x.id);save();closeSheet();render();toast('Gelöscht')})};
+  pk.pos=pk.pos.filter(p=>p.id!==x.id);
+  logUnlockEdit(a,pk,'Position „'+x.bez+'" gelöscht ('+fmt(posNetto(x))+').');
+  save();closeSheet();render();toast('Gelöscht')})};
 function logExtension(a,pk,x,vorherCt){
  pk.ext=true;const kid='m'+uid();x.extKommId=kid;
  a.komm.push({id:kid,kanal:'man',ts:Date.now(),
@@ -1912,6 +2040,9 @@ function handlePhotos(files){const t=photoTarget;if(!t)return;const a=auftrag(t.
  const pk=t.pid?a.pakete.find(p=>p.id===t.pid):null;
  [...files].forEach(file=>{
   if(file.type.startsWith('video/')&&file.size>12*1024*1024)return toast('Video zu groß (max. 12 MB) — bitte kürzer aufnehmen',true);
+  if(file.type==='application/pdf'||/\.pdf$/i.test(file.name||'')){
+   a.docs=a.docs||[];a.docs.push({name:file.name||'Dokument.pdf',typ:'PDF'});
+   save();render();toast('PDF unter „Dokumente" vermerkt');return}
   const r=new FileReader();r.onload=()=>{
   if(file.type.startsWith('video/')){
    a.fotos.push({id:'fo'+uid(),paketId:t.pid,label:pk?pk.name:'Annahme',data:r.result,isVideo:true});
@@ -1921,7 +2052,9 @@ function handlePhotos(files){const t=photoTarget;if(!t)return;const a=auftrag(t.
    const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
    a.fotos.push({id:'fo'+uid(),paketId:t.pid,label:pk?pk.name:'Annahme',data:c.toDataURL('image/jpeg',.72)});
-   save();render();toast('Foto gespeichert')};img.src=r.result};r.readAsDataURL(file)})}
+   save();render();toast('Foto gespeichert')};
+  img.onerror=()=>toast('Bildformat wird nicht unterstützt — bitte als JPG/Foto wählen',true);
+  img.src=r.result};r.readAsDataURL(file)})}
 ACT['foto-del']=el=>{const a=auftrag(el.dataset.oid);
  confirmBox('Foto löschen?','Das Foto wird dauerhaft entfernt.','Löschen',()=>{
   a.fotos=a.fotos.filter(f=>f.id!==el.dataset.fid);save();render()})};
@@ -1964,11 +2097,18 @@ function initSig(){$$('.sigc').forEach(cv=>{if(cv._init)return;cv._init=true;
  cv.addEventListener('mousedown',st);cv.addEventListener('mousemove',mv);
  cv.addEventListener('mouseup',end);cv.addEventListener('mouseleave',end);
  cv.addEventListener('touchstart',st,{passive:false});cv.addEventListener('touchmove',mv,{passive:false});cv.addEventListener('touchend',end);cv.addEventListener('touchcancel',end)})}
-ACT['sig-clear']=el=>{const sk=el.dataset.sk||'sig';const cvId=sk==='sig'?'sig-'+el.dataset.oid:'sig2-'+el.dataset.oid;
- const cv=$('#'+cvId);if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);cv._drawn=false}};
-ACT['sig-save']=el=>{const sk=el.dataset.sk||'sig';const cvId=sk==='sig'?'sig-'+el.dataset.oid:'sig2-'+el.dataset.oid;
- const cv=$('#'+cvId);if(!cv||!cv._drawn)return toast('Bitte erst unterschreiben',true);
+/* Canvas immer relativ zum geklickten Button suchen — behebt „Unterschrift lässt sich nicht speichern"
+   in der Kundenansicht (dort heißen die Canvas-IDs sigk-/sigk2-, nicht sig-/sig2-) */
+function sigCanvasFor(el,sk){
+ const foot=el.closest('.sig-foot');
+ if(foot&&foot.previousElementSibling&&foot.previousElementSibling.classList&&foot.previousElementSibling.classList.contains('sigc'))return foot.previousElementSibling;
+ return $('#'+(sk==='sig'?'sig-':'sig2-')+el.dataset.oid)||$('#'+(sk==='sig'?'sigk-':'sigk2-')+el.dataset.oid)}
+ACT['sig-clear']=el=>{const sk=el.dataset.sk||'sig';
+ const cv=sigCanvasFor(el,sk);if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);cv._drawn=false}};
+ACT['sig-save']=el=>{const sk=el.dataset.sk||'sig';
+ const cv=sigCanvasFor(el,sk);if(!cv||!cv._drawn)return toast('Bitte erst unterschreiben',true);
  const a=auftrag(el.dataset.oid);a[sk]=cv.toDataURL('image/png');
+ const ka=$('.kansicht-bg');if(ka)ka.remove();
  if(sk==='sig'){
   if(!a.freigabe)a.freigabe={ts:Date.now(),art:'sig',notiz:'Unterschrift Auftragserteilung',origUrl:''};
   a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Auftragserteilung unterschrieben — Summe: '+fmt(ordNetto(a))+' netto.',preisCt:ordNetto(a),vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
@@ -1983,6 +2123,18 @@ ACT['kansicht']=el=>{const a=auftrag(el.dataset.oid),f=fzg(a.fzgId)||{},k=kunde(
    <div style="font-weight:700;font-size:15px;margin-bottom:10px">Auftrag ${esc(a.nr)}</div>
    <div class="kv"><span class="k">Fahrzeug</span><span class="v">${esc(f.kennz||'—')} · ${esc((f.marke||'')+' '+(f.modell||''))}</span></div>
    <div class="kv"><span class="k">Kunde</span><span class="v">${esc(k.name||'—')}</span></div></div>
+  <div class="card" style="padding:16px;margin-bottom:12px">
+   <div style="font-weight:600;font-size:13px;margin-bottom:10px">Vereinbarte Arbeiten — das wird unterschrieben</div>
+   ${a.pakete.length?a.pakete.map((pk,pi)=>`
+    <div style="border-top:1px solid var(--line2);padding:9px 0 4px${pi===0?';border-top:none;padding-top:0':''}">
+     <div style="display:flex;justify-content:space-between;gap:8px;font-size:12.5px;font-weight:700"><span>${pi+1}. ${esc(pk.name)}</span><span class="num">${fmt(pakNetto(pk))}</span></div>
+     ${pk.pos.filter(p=>p.typ!=='befund').map(p=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:11.5px;color:var(--ink2);padding:2px 0"><span>${esc(p.bez)}${p.typ==='teil'&&(p.menge||1)!==1?' · '+p.menge+' ×':''}${p.notizKunde?'<br><span style="font-size:10px;color:var(--ink3)">'+esc(p.notizKunde)+'</span>':''}</span><span class="num" style="flex-shrink:0">${p.typ==='text'?'':fmt(posNetto(p))}</span></div>`).join('')}
+    </div>`).join('')
+   :'<div style="font-size:11.5px;color:var(--ink3)">Noch keine Positionen erfasst.</div>'}
+   <div style="border-top:1.5px solid var(--line);margin-top:8px;padding-top:8px">
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink2)"><span>Netto</span><span class="num">${fmt(ordNetto(a))}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--ink2)"><span>MwSt ${S.settings.mwst} %</span><span class="num">${fmt(ordMwst(a))}</span></div>
+    <div style="display:flex;justify-content:space-between;font-size:13px;font-weight:800;margin-top:3px"><span>Brutto</span><span class="num">${fmt(ordBrutto(a))}</span></div></div></div>
   <div class="card" style="padding:16px;margin-bottom:12px">
    <div style="font-weight:600;font-size:13px;margin-bottom:10px">Auftragserteilung</div>
    ${a.sig?`<img src="${a.sig}" style="width:100%;max-height:120px;object-fit:contain;background:var(--bg2);border-radius:8px">`
@@ -2018,10 +2170,10 @@ function buildInvoiceHtml(a,pakIds,reNr){
  const anz=Math.min(restAnz,brutto);
  const rows=paks.map(pk=>{
   const prab=rabCt(pakBrutto(pk),pk.rabatt);
-  return `<tr class="paksep"><td colspan="4">${esc(pk.name)} · ${KLASS[pk.klass][0]}${pk.zahler!=='kunde'?' · zahlt: '+ZAHLER[pk.zahler]:''}</td></tr>`+
+  return `<tr class="paksep"><td colspan="4">${esc(pk.name)} · ${pk.klass==='so'&&pk.klassTxt?esc(pk.klassTxt):KLASS[pk.klass][0]}${pk.zahler!=='kunde'?' · zahlt: '+(pk.zahler==='son'&&pk.zahlerTxt?esc(pk.zahlerTxt):ZAHLER[pk.zahler]):''}</td></tr>`+
   pk.pos.map(p=>(p.typ==='text'||p.typ==='befund')?
    `<tr><td colspan="4" style="font-size:10px;color:#444">${esc(p.bez)}${p.abhilfe?' — Abhilfe: '+esc(p.abhilfe):''}</td></tr>`
-  :`<tr><td>${esc(p.bez)}${p.ext?' (Erweiterung)':''}</td>
+  :`<tr><td>${esc(p.bez)}${p.ext?' (Erweiterung)':''}${p.zahler&&p.zahler!==(pk.zahler||'kunde')?' <span style="font-size:9px;color:#555">· zahlt: '+(p.zahler==='son'&&p.zahlerTxt?esc(p.zahlerTxt):ZAHLER[p.zahler]||'')+'</span>':''}${p.notizKunde?'<br><span style="font-size:9px;color:#555">'+esc(p.notizKunde)+'</span>':''}</td>
    <td class="tr">${p.typ==='teil'?(p.menge||1)+' ×':(p.aw?String(p.aw).replace('.',',')+' AW':'')}</td>
    <td class="tr">${fmt(p.vkCt)}</td><td class="tr">${fmt(posNetto(p))}</td></tr>`).join('')+
   (prab?`<tr><td colspan="3">Rabatt Paket</td><td class="tr">– ${fmt(prab)}</td></tr>`:'')}).join('');
@@ -2213,29 +2365,34 @@ ACT['fzg-edit']=el=>{const f=el.dataset.id?fzg(el.dataset.id):null;
  const preK=f?kunde(f.kundeId):null;
  sheet(f?'Fahrzeug bearbeiten':'Neues Fahrzeug',`
   <button class="btn btn-2nd" style="width:100%;margin-bottom:13px" data-act="schein-scan">
-   <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Fahrzeugschein scannen (Kamera oder Galerie)</button>
-  <input type="file" accept="image/*" id="scheininp" style="display:none">
+   <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Fahrzeugschein-Scan</button>
+  <input type="file" accept="image/*,.pdf,application/pdf,.heic,.heif" id="scheininp" style="display:none">
   <div id="schein-status"></div>
   <div class="lbl" style="margin-top:0">Halter *</div>
   ${S.kunden.length?kPickerHtml('fzk',preK):'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Noch keine Kunden vorhanden — bitte zuerst unter Kunden anlegen.</div>'}
   <div class="lbl">Fahrzeug</div>
   <div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="fz-kz" style="text-transform:uppercase" value="${f?esc(f.kennz):''}"></div>
-   <div class="fld"><label>Baujahr</label><input id="fz-bj" inputmode="numeric" value="${f&&f.bj?f.bj:''}"></div></div>
-  <div class="row2"><div class="fld"><label>Marke</label><input id="fz-ma" value="${f?esc(f.marke):''}"></div>
-   <div class="fld"><label>Modell</label><input id="fz-mo" value="${f?esc(f.modell):''}"></div></div>
-  <div class="fld"><label>VIN</label><input id="fz-v" value="${f?esc(f.vin):''}"></div>
-  <div class="row2"><div class="fld"><label>Kilometerstand</label><input id="fz-km" inputmode="numeric" value="${f&&f.km!=null?f.km:''}"></div>
-   <div class="fld"><label>HU fällig</label><input type="month" id="fz-hu" value="${f?f.hu:''}"></div></div>
-  <div class="row2"><div class="fld"><label>Kraftstoff</label><div class="selwrap"><select id="fz-kr"><option value="">—</option>${['Benzin','Diesel','Hybrid','Elektro','LPG/CNG'].map(v=>`<option ${f&&f.kraftstoff===v?'selected':''}>${v}</option>`).join('')}</select></div></div>
-   <div class="fld"><label>Farbe</label><input id="fz-fa" value="${f?esc(f.farbe||''):''}" placeholder="z. B. Alpinweiß"></div></div>
-  <div class="fld"><label>Fahrzeugzustand</label><div class="selwrap"><select id="fz-zustand" onchange="document.getElementById('fz-ztxt-wrap').style.display=this.value==='son'?'block':'none'">
-   <option value="">—</option>
-   <option value="gut" ${f&&f.zustand==='gut'?'selected':''}>Gut</option>
-   <option value="rep" ${f&&f.zustand==='rep'?'selected':''}>Reparaturbedürftig</option>
-   <option value="totalschaden" ${f&&f.zustand==='totalschaden'?'selected':''}>Totalschaden</option>
-   <option value="son" ${f&&f.zustand==='son'?'selected':''}>Sonstiges</option>
-  </select></div></div>
-  <div id="fz-ztxt-wrap" style="display:${f&&f.zustand==='son'?'block':'none'}"><div class="fld"><label>Sonstiges Zustand — was?</label><input id="fz-ztxt" value="${f?esc(f.zustandTxt||''):''}"></div></div>
+   <div class="fld"><label>Marke</label><input id="fz-ma" value="${f?esc(f.marke):''}"></div></div>
+  <div class="row2"><div class="fld"><label>Modell</label><input id="fz-mo" value="${f?esc(f.modell):''}"></div>
+   <div class="fld"><label>FIN / Fahrgestellnummer</label><input id="fz-v" value="${f?esc(f.vin):''}" style="font-family:ui-monospace,monospace;font-size:12px"></div></div>
+  <div class="row2"><div class="fld"><label>Baujahr</label><input id="fz-bj" inputmode="numeric" value="${f&&f.bj?f.bj:''}"></div>
+   <div class="fld"><label>Kilometerstand</label><input id="fz-km" inputmode="numeric" value="${f&&f.km!=null?f.km:''}"></div></div>
+  <div class="row2"><div class="fld"><label>HU fällig</label><input type="month" id="fz-hu" value="${f?f.hu:''}"></div>
+   <div class="fld"><label>Kraftstoff</label><div class="selwrap"><select id="fz-kr"><option value="">—</option>${['Benzin','Diesel','Hybrid','Elektro','LPG/CNG'].map(v=>`<option ${f&&f.kraftstoff===v?'selected':''}>${v}</option>`).join('')}</select></div></div></div>
+  <div class="fld"><label>Letzte Wartung (optional)</label><input type="date" id="fz-wart" value="${f?(f.wartung||''):''}"></div>
+  <div class="sec" style="animation:none;margin:0 0 11px">
+   <div class="sec-h" data-act="sec-plain" style="padding:10px 12px"><span class="t" style="font-size:12px">Weitere Fahrzeugdaten (optional)</span><span class="chev"></span></div>
+   <div class="sec-b"><div class="sec-in" style="padding:0 12px 12px">
+    <div class="fld"><label>Farbe</label><input id="fz-fa" value="${f?esc(f.farbe||''):''}" placeholder="z. B. Alpinweiß"></div>
+    <div class="fld"><label>Fahrzeugzustand</label><div class="selwrap"><select id="fz-zustand" onchange="document.getElementById('fz-ztxt-wrap').style.display=this.value==='son'?'block':'none'">
+     <option value="">—</option>
+     <option value="gut" ${f&&f.zustand==='gut'?'selected':''}>Gut</option>
+     <option value="rep" ${f&&f.zustand==='rep'?'selected':''}>Reparaturbedürftig</option>
+     <option value="totalschaden" ${f&&f.zustand==='totalschaden'?'selected':''}>Totalschaden</option>
+     <option value="son" ${f&&f.zustand==='son'?'selected':''}>Sonstiges</option>
+    </select></div></div>
+    <div id="fz-ztxt-wrap" style="display:${f&&f.zustand==='son'?'block':'none'}"><div class="fld"><label>Sonstiges Zustand — was?</label><input id="fz-ztxt" value="${f?esc(f.zustandTxt||''):''}"></div></div>
+   </div></div></div>
   <button class="btn btn-main" style="width:100%" data-act="fzg-save" ${f?`data-id="${f.id}"`:''}>Speichern</button>`);
  fzgPick=S.kunden.length?bindKPicker('fzk',null,preK):null};
 ACT['fzg-save']=el=>{const kz=$('#fz-kz').value.trim().toUpperCase();if(!kz)return toast('Kennzeichen fehlt',true);
@@ -2244,7 +2401,7 @@ ACT['fzg-save']=el=>{const kz=$('#fz-kz').value.trim().toUpperCase();if(!kz)retu
  const zst=$('#fz-zustand').value;
  const vals={kundeId:halter.id,kennz:kz,marke:$('#fz-ma').value.trim(),modell:$('#fz-mo').value.trim(),
   bj:parseInt($('#fz-bj').value)||null,vin:$('#fz-v').value.trim(),km:parseInt($('#fz-km').value.replace(/\D/g,''))||null,hu:$('#fz-hu').value||'',
-  kraftstoff:$('#fz-kr').value||'',farbe:$('#fz-fa').value.trim(),
+  kraftstoff:$('#fz-kr').value||'',farbe:$('#fz-fa').value.trim(),wartung:$('#fz-wart').value||'',
   zustand:zst,zustandTxt:zst==='son'?($('#fz-ztxt').value.trim()):''};
  if(el.dataset.id)Object.assign(fzg(el.dataset.id),vals);
  else S.fahrzeuge.push({id:'f'+uid(),notiz:'',...vals});
@@ -2256,48 +2413,55 @@ ACT['schein-scan']=el=>{
  if(!inp._b){inp._b=true;inp.addEventListener('change',e=>{
   const file=e.target.files[0];e.target.value='';if(!file)return;
   const st=$('#schein-status');
-  if(st)st.innerHTML='<div style="font-size:11.5px;color:var(--blue);background:var(--blue-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Bild wird analysiert — einen Moment …</div>';
+  if(st)st.innerHTML='<div style="font-size:11.5px;color:var(--blue);background:var(--blue-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Wird analysiert — einen Moment …</div>';
+  /* PDF (z. B. Fahrzeugschein als Datei auf dem iPhone): direkt als Base64 senden */
+  if(file.type==='application/pdf'||/\.pdf$/i.test(file.name||'')){
+   const rd=new FileReader();
+   rd.onload=()=>{const b64=String(rd.result).split(',')[1];inp._send('application/pdf',b64)};
+   rd.readAsDataURL(file);return}
   /* Bild verkleinern (max 1600px) und als Base64 senden */
   const img=new Image();const url=URL.createObjectURL(file);
-  img.onload=async()=>{
+  img.onerror=()=>{URL.revokeObjectURL(url);
+   if(st)st.innerHTML='<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Dateiformat wird auf diesem Gerät nicht unterstützt — bitte als Foto (JPG) oder PDF wählen.</div>'};
+  img.onload=()=>{
    URL.revokeObjectURL(url);
    const max=1600,sc=Math.min(1,max/Math.max(img.width,img.height));
    const cv=document.createElement('canvas');cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);
    cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
-   const dataUrl=cv.toDataURL('image/jpeg',0.85);
-   const b64=dataUrl.split(',')[1];
-   try{
-    const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),30000);
-    const r=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},
-     body:JSON.stringify({media_type:'image/jpeg',data:b64}),signal:ctl.signal});
-    clearTimeout(to);
-    if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||('HTTP '+r.status))}
-    const {fields:fl={}}=await r.json();
-    const setV=(id,v)=>{const n=$(id);if(n&&v&&!n.value)n.value=v};
-    if(inp.dataset.mode==='ord'){
-     setV('#no-fk',(fl.kennzeichen||'').toUpperCase());
-     setV('#no-fma',fl.marke||'');setV('#no-fmo',fl.modell||'');
-     setV('#no-fvin',fl.vin||'');
-     setV('#no-fbj',fl.baujahr||(fl.erstzulassung||'').slice(0,4));
-     setV('#no-fhu',(fl.hu_datum||'').slice(0,7));
-     setV('#no-ffa',fl.farbe||'');
-     const kr=$('#no-fkr');if(kr&&fl.kraftstoff&&!kr.value){const opt=[...kr.options].find(o=>o.value.toLowerCase().startsWith(String(fl.kraftstoff).toLowerCase().slice(0,4)));if(opt)kr.value=opt.value}
-     const det=$('#no-newf .sec');if(det&&(fl.vin||fl.baujahr||fl.hu_datum))det.classList.add('open');
-    }else{
-     setV('#fz-kz',(fl.kennzeichen||'').toUpperCase());
-     setV('#fz-ma',fl.marke||'');setV('#fz-mo',fl.modell||'');
-     setV('#fz-v',fl.vin||'');
-     setV('#fz-bj',fl.baujahr||(fl.erstzulassung||'').slice(0,4));
-     setV('#fz-hu',(fl.hu_datum||'').slice(0,7));
-     setV('#fz-kr',fl.kraftstoff||'');setV('#fz-fa',fl.farbe||'');
-    }
-    const got=['kennzeichen','marke','modell','vin','baujahr','hu_datum'].filter(k=>fl[k]).length;
-    if(st)st.innerHTML=got?`<div style="font-size:11.5px;color:var(--green);background:var(--green-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">${got} Felder erkannt und eingetragen — bitte kurz prüfen.</div>`
-     :'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Nichts erkannt — Foto näher, gerade und bei gutem Licht aufnehmen.</div>';
-   }catch(err){
-    if(st)st.innerHTML=`<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Scan nicht möglich (${esc(err.name==='AbortError'?'Zeitüberschreitung':String(err.message||err))}). Auf Vercel muss ANTHROPIC_API_KEY gesetzt sein — Daten bitte von Hand eintragen.</div>`;
-   }};
+   inp._send('image/jpeg',cv.toDataURL('image/jpeg',0.85).split(',')[1])};
   img.src=url})}
+ inp._send=async(mediaType,b64)=>{
+  const st=$('#schein-status');
+  try{
+   const ctl=new AbortController();const to=setTimeout(()=>ctl.abort(),30000);
+   const r=await fetch('/api/scan',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({media_type:mediaType,data:b64}),signal:ctl.signal});
+   clearTimeout(to);
+   if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||('HTTP '+r.status))}
+   const {fields:fl={}}=await r.json();
+   const setV=(id,v)=>{const n=$(id);if(n&&v&&!n.value)n.value=v};
+   if(inp.dataset.mode==='ord'){
+    setV('#no-fk',(fl.kennzeichen||'').toUpperCase());
+    setV('#no-fma',fl.marke||'');setV('#no-fmo',fl.modell||'');
+    setV('#no-fvin',fl.vin||'');
+    setV('#no-fbj',fl.baujahr||(fl.erstzulassung||'').slice(0,4));
+    setV('#no-fhu',(fl.hu_datum||'').slice(0,7));
+    setV('#no-ffa',fl.farbe||'');
+    const kr=$('#no-fkr');if(kr&&fl.kraftstoff&&!kr.value){const opt=[...kr.options].find(o=>o.value.toLowerCase().startsWith(String(fl.kraftstoff).toLowerCase().slice(0,4)));if(opt)kr.value=opt.value}
+   }else{
+    setV('#fz-kz',(fl.kennzeichen||'').toUpperCase());
+    setV('#fz-ma',fl.marke||'');setV('#fz-mo',fl.modell||'');
+    setV('#fz-v',fl.vin||'');
+    setV('#fz-bj',fl.baujahr||(fl.erstzulassung||'').slice(0,4));
+    setV('#fz-hu',(fl.hu_datum||'').slice(0,7));
+    setV('#fz-kr',fl.kraftstoff||'');setV('#fz-fa',fl.farbe||'');
+   }
+   const got=['kennzeichen','marke','modell','vin','baujahr','hu_datum'].filter(k=>fl[k]).length;
+   if(st)st.innerHTML=got?`<div style="font-size:11.5px;color:var(--green);background:var(--green-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">${got} Felder erkannt und eingetragen — bitte kurz prüfen.</div>`
+    :'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Nichts erkannt — Foto näher, gerade und bei gutem Licht aufnehmen.</div>';
+  }catch(err){
+   if(st)st.innerHTML=`<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Scan nicht möglich (${esc(err.name==='AbortError'?'Zeitüberschreitung':String(err.message||err))}). Auf Vercel muss ANTHROPIC_API_KEY gesetzt sein — Daten bitte von Hand eintragen.</div>`;
+  }};
  inp.click()};
 ACT['fzg-del']=el=>{const f=fzg(el.dataset.id);
  const ords=S.auftraege.filter(a=>a.fzgId===f.id);
@@ -2364,7 +2528,7 @@ function vMehr(){
   ${[['termine','Terminkalender',IC.plan,(S.termine||[]).filter(t=>t.datum>=todayISO()).length+' anstehende Termine'],['lager','Lager',IC.box,S.lager.length+' Artikel im Bestand'],['kalender','Kapazität',IC.grid,'10-Tage-Plan · Mitarbeiter'],['bestellungen','Bestellungen',IC.truck,(S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen').length||'Keine')+' offen'],['kampagnen','Kampagnen',IC.mega,S.kampagnen.length+' Kampagnen gesendet'],['apdb','Arbeitspositionen',IC.book,(S.apDb||[]).length+' Positionen · '+(S.apKombi||[]).length+' Kombis'],['pakvorlagen','Paket-Vorlagen',IC.stack,(S.pakVorlagen||[]).length+' Vorlagen'],['team','Team',IC.team,S.mitarbeiter.length+' Mitarbeiter'],['personal','Personalwesen',IC.team,(S.krankmeldungen||[]).filter(k=>k.von<=todayISO()&&k.bis>=todayISO()).length+' aktive Krankmeldungen'],['fahrzeuge','Fahrzeuge',IC.car,S.fahrzeuge.length+' Fahrzeuge'],['finanzen','Finanzen',IC.fin,S.rechnungen.length+' Rechnungen'],['einstellungen','Einstellungen',IC.gear,'Firma, Preise, Werkstatt, Daten']].map(([v,l,ic,sub])=>
    `<div class="lrow" data-act="open" data-v="${v}"><div class="av" style="background:var(--gray-bg);color:var(--ink2)">${ic}</div>
     <div class="lt"><b>${l}</b><span>${sub}</span></div><span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')}</div>
-  <div style="text-align:center;font-size:10.5px;color:var(--ink3);margin-top:18px;line-height:1.7">mehanicar 2.0 · Werkstatt-Management<br>${memOnly?'<span style="color:var(--red)">Achtung: Speicher blockiert — Daten gehen beim Schließen verloren</span>':((S.settings.sync&&S.settings.sync.on)?'Cloud-Backup aktiv — jede Änderung wird automatisch gesichert':'Daten nur lokal — Cloud-Backup in den Einstellungen aktivierbar')}</div>`;
+  <div style="text-align:center;font-size:10.5px;color:var(--ink3);margin-top:18px;line-height:1.7">mehanicar · Version ${APP_VER}<br>${memOnly?'<span style="color:var(--red)">Achtung: Speicher blockiert — Daten gehen beim Schließen verloren</span>':((S.settings.sync&&S.settings.sync.on)?'Cloud-Backup aktiv — jede Änderung wird automatisch gesichert':'Daten nur lokal — Cloud-Backup in den Einstellungen aktivierbar')}</div>`;
  return shell(inner,{title:'Mehr',eyebrow:'mehanicar'});
 }
 let finSec={umsatz:true,gewinn:true,offen:true,mitarb:true,kunden:true,status:true,rechnung:true};
@@ -2824,8 +2988,8 @@ function radarItems(){
    if(diff<=3&&diff>=-1)out.push({key:'hu:'+f.id,typKey:'hu',typ:'HU fällig',tag:diff<=0?'überfällig':'in '+diff+' Mon.',
     tcls:diff<=1?'t-red':'t-amber',f,k,prio:diff<=0?0:diff,
     msg:'Guten Tag '+k.name+', die Hauptuntersuchung Ihres '+f.marke+' '+f.modell+' ('+f.kennz+') ist im '+String(m).padStart(2,'0')+'/'+y+' fällig. Wir bereiten vor und führen vor — passt Ihnen ein Termin in der kommenden Woche? Ihre mehanicar Meisterwerkstatt'})}
-  if(fresh('sv:'+f.id)){const last=S.auftraege.filter(a=>a.fzgId===f.id&&a.status==='abgeholt')
-    .map(a=>a.abgabe||a.annahme).sort().pop();
+  if(fresh('sv:'+f.id)){const last=[f.wartung||'',...S.auftraege.filter(a=>a.fzgId===f.id&&a.status==='abgeholt')
+    .map(a=>a.abgabe||a.annahme)].filter(Boolean).sort().pop();
    if(last&&(Date.parse(t)-Date.parse(last))/86400000>330)
     out.push({key:'sv:'+f.id,typKey:'sv',typ:'Service fällig',tag:'letzter Besuch vor '+Math.round((Date.parse(t)-Date.parse(last))/86400000/30)+' Mon.',
      tcls:'t-blue',f,k,prio:9,
@@ -3018,7 +3182,7 @@ ACT['anfrage-convert']=el=>{const v=readQSheet();
   anzahlungCt:0,rabatt:{typ:'eur',wert:0},buehne:null,
   pakete:[{id:'p'+uid(),name:x.betreff||((x.original||'Anfrage').slice(0,40)),klass:'tb',zahler:'kunde',
    status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,
-   pos:x.original?[{id:'x'+uid(),typ:'befund',bez:'Kundenbeanstandung (wörtlich): „'+x.original+'"',abhilfe:'',vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null}]:[]}],
+   pos:x.original?[{id:'x'+uid(),nr:1,created:Date.now(),typ:'befund',bez:'Kundenbeanstandung (wörtlich): „'+x.original+'"',abhilfe:'',vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null}]:[]}],
   komm:[{id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Auftrag angelegt aus Kundenanfrage.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null},
    {id:'m'+uid(),kanal:kMap[v.kanal]||'man',ts:x.ts,
    txt:'Erstanfrage ('+(QKANAL[v.kanal]||'')+'), Original wortgetreu: „'+(x.original||'—')+'"',
@@ -3044,7 +3208,7 @@ ACT['anfr-convert-quick']=el=>{const x=anfrage(el.dataset.id);if(!x)return;
   anzahlungCt:0,rabatt:{typ:'eur',wert:0},buehne:null,
   pakete:[{id:'p'+uid(),name:x.betreff||((x.original||'Anfrage').slice(0,40)),klass:'tb',zahler:'kunde',
    status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,
-   pos:x.original?[{id:'x'+uid(),typ:'befund',bez:'Kundenbeanstandung (wörtlich): „'+x.original+'"',abhilfe:'',vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null}]:[]}],
+   pos:x.original?[{id:'x'+uid(),nr:1,created:Date.now(),typ:'befund',bez:'Kundenbeanstandung (wörtlich): „'+x.original+'"',abhilfe:'',vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null}]:[]}],
   komm:[{id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Auftrag angelegt aus Kundenanfrage.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null},
    {id:'m'+uid(),kanal:kMap[x.kanal]||'man',ts:x.ts,
    txt:'Erstanfrage ('+(QKANAL[x.kanal]||'')+'), Original: „'+(x.original||'—')+'"',
@@ -3675,10 +3839,11 @@ ACT['pak-from-vorlage']=el=>{const a=auftrag(el.dataset.oid);
 ACT['pak-from-vorlage-pick']=el=>{const a=auftrag(el.dataset.oid);const t=S.pakVorlagen.find(x=>x.id===el.dataset.tid);
  if(!a||!t)return;
  const f=fzg(a.fzgId);const awSatz=a.awCt||S.settings.awCt;
+ let _pn=nextPosNr(a);
  const pos=t.pos.map(p=>{
-  if(p.typ==='teil')return{id:'x'+uid(),typ:'teil',bez:p.bez||'Teil',aw:0,menge:1,ekCt:Number(p.ekCt)||0,vkCt:Number(p.vkCt)||0,rab:null,ext:ordFreigegeben(a),best:null,eta:null,lagerId:null};
+  if(p.typ==='teil')return{id:'x'+uid(),nr:_pn++,created:Date.now(),typ:'teil',bez:p.bez||'Teil',aw:0,menge:1,ekCt:Number(p.ekCt)||0,vkCt:Number(p.vkCt)||0,rab:null,ext:ordFreigegeben(a),best:null,eta:null,lagerId:null};
   const aw=Number(apAwFor(p.bez,f&&f.marke)??p.aw)||0;
-  return{id:'x'+uid(),typ:'arbeit',bez:p.bez||'Position',aw,awSatz:null,menge:1,ekCt:0,vkCt:Math.round(aw*awSatz),rab:null,ext:ordFreigegeben(a),best:null,eta:null,lagerId:null}});
+  return{id:'x'+uid(),nr:_pn++,created:Date.now(),typ:'arbeit',bez:p.bez||'Position',aw,awSatz:null,menge:1,ekCt:0,vkCt:Math.round(aw*awSatz),rab:null,ext:ordFreigegeben(a),best:null,eta:null,lagerId:null}});
  const pk={id:'p'+uid(),name:t.name,klass:t.klass,zahler:'kunde',status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:ordFreigegeben(a),pos};
  a.pakete.push(pk);
  if(ordFreigegeben(a))a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Paket „'+t.name+'" aus Vorlage eingefügt (Erweiterung, '+pos.length+' Positionen).',preisCt:pakNetto(pk),vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
@@ -4086,11 +4251,18 @@ function renderInner(){
   fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz,apdb:vApDb,pakvorlagen:vPakVorlagen};
  if(!S.settings.onboarded&&!['buchen','impressum','datenschutz'].includes(route.v)){app.innerHTML=vOnboarding();return}
  app.innerHTML=(V[route.v]||vPlanung)();
- if(navSlideDir!==0&&!skipNextSlide){
+ if(riseNext){
+  app.classList.add('tsUp');
+  setTimeout(()=>app.classList.remove('tsUp'),420);
+ }else if(navSlideDir!==0&&!skipNextSlide){
   app.classList.add(navSlideDir>0?'tsR':'tsL');
   setTimeout(()=>app.classList.remove('tsR','tsL'),300);
  }
- navSlideDir=0;skipNextSlide=false;
+ navSlideDir=0;skipNextSlide=false;riseNext=false;
+ /* Header schrumpft beim Scrollen */
+ (()=>{const m=$('#main'),h=$('.hdr');if(!m||!h)return;
+  m.addEventListener('scroll',()=>{const min=m.scrollTop>44;
+   if(min!==h.classList.contains('hmin')){h.classList.toggle('hmin',min)}},{passive:true})})();
  const nm=$('#main');if(nm&&route._keepScroll){nm.scrollTop=sTop}
  route._keepScroll=true;
  attachSwipe(app);initSig();syncUi();
@@ -4111,6 +4283,21 @@ document.addEventListener('click',e=>{
  const fn=ACT[el.dataset.act];if(fn){e.preventDefault();fn(el)}
 });
 document.addEventListener('change',e=>{const el=e.target.closest('[data-f]');if(el){const fn=FSET[el.dataset.f];if(fn)fn(el)}});
+/* Wisch-Geste von links nach rechts = Zurück (wie der Zurück-Button) */
+let _egSwipe=null;
+document.addEventListener('touchstart',e=>{
+ const t=e.touches[0];
+ if(t.clientX>32){_egSwipe=null;return}
+ if(e.target.closest('.sw-row,.sheet,.sigc,input,textarea,select')){_egSwipe=null;return}
+ _egSwipe={x:t.clientX,y:t.clientY,fired:false}},{passive:true});
+document.addEventListener('touchmove',e=>{
+ if(!_egSwipe||_egSwipe.fired)return;
+ const t=e.touches[0],dx=t.clientX-_egSwipe.x,dy=Math.abs(t.clientY-_egSwipe.y);
+ if(dx>70&&dy<60){_egSwipe.fired=true;
+  const sh=$('#sheetbg');if(sh){closeSheet();return}
+  const ka=$('.kansicht-bg');if(ka){ka.remove();return}
+  if($('.back-btn'))ACT.back()}},{passive:true});
+document.addEventListener('touchend',()=>{_egSwipe=null},{passive:true});
 document.addEventListener('input',e=>{const el=e.target.closest('[data-input]');if(!el)return;
  const v=el.value;if(el.dataset.input==='ordQ')ordQ=v;if(el.dataset.input==='kQ')kQ=v;if(el.dataset.input==='lQ')lQ=v;if(el.dataset.input==='apQ')apQ=v;
  clearTimeout(el._t);el._t=setTimeout(()=>{const pos=el.selectionStart;route._keepScroll=true;render();
