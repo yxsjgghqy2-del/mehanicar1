@@ -62,7 +62,7 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 .back-btn:active{transform:scale(.88)}
 .back-btn::before{content:"";width:8px;height:8px;border-left:2px solid var(--blue);border-bottom:2px solid var(--blue);
  transform:rotate(45deg);margin-left:3px;transition:border-color .3s}
-.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:20px 16px calc(96px + env(safe-area-inset-bottom,0px))}
+.main{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:22px 18px calc(100px + env(safe-area-inset-bottom,0px))}
 .nav{position:fixed;left:12px;right:12px;bottom:calc(var(--sab) + 10px);display:flex;background:rgba(255,255,255,.88);
  backdrop-filter:blur(30px) saturate(1.3);-webkit-backdrop-filter:blur(30px) saturate(1.3);border:1px solid var(--line);
  border-radius:30px;padding:7px 6px;z-index:40;box-shadow:0 14px 38px rgba(0,0,0,.18)}
@@ -165,7 +165,7 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 .seg button{flex:1;padding:8px;border-radius:8px;font-size:12.5px;font-weight:600;color:var(--ink2);transition:all .2s}
 .seg button.on{background:var(--card);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .searchbar{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);
- border-radius:12px;padding:10px 12px;margin-bottom:12px}
+ border-radius:999px;padding:11px 15px;margin-bottom:13px}
 .searchbar input{flex:1;background:none;border:none;font-size:14px}
 .searchbar svg{width:16px;height:16px;stroke:var(--ink3);fill:none;stroke-width:2;flex-shrink:0}
 
@@ -237,7 +237,7 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 .pbar i{display:block;height:100%;border-radius:3px;background:linear-gradient(90deg,#0A5FFF,#5E97FF);width:0;
  transition:width .8s cubic-bezier(.25,.8,.3,1) .25s}
 .pin-foot{display:flex;align-items:center;gap:10px;margin-top:4px}
-.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:12px}
+.kpis{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:14px}
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:13px 14px 12px;text-align:left;
  display:flex;flex-direction:column;gap:6px;min-height:88px;overflow:hidden}
 .kpi span{order:0;font-size:10px;color:var(--ink2);font-weight:600;letter-spacing:.03em}
@@ -507,6 +507,11 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
  #printarea .tots .big{border-top:1.5px solid #111;font-weight:800;font-size:13px;padding-top:6px;margin-top:3px}
  #printarea .foot{margin-top:28px;font-size:9.5px;color:#666;line-height:1.6;border-top:1px solid #ddd;padding-top:10px}
 }
+/* ============ DESIGN 3.2 — Premium-Interaktionen ============ */
+@media (hover:hover){
+ .card,.sec,.pak,.kpi{transition:transform .3s var(--ease),box-shadow .3s var(--ease),background .3s,border-color .3s}
+ .card:hover,.sec:hover,.pak:hover,.kpi:hover{transform:translateY(-2px);box-shadow:0 14px 40px rgba(0,0,0,.28)}
+}
 /* ============ DESIGN 3.0 — Referenz-Look (Dashboard-Ästhetik) ============ */
 /* Grosse dünne Messwert-Zahlen mit kleinen Einheiten */
 .kpi span{display:flex;align-items:center;gap:6px}
@@ -541,14 +546,15 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
  :root{
   --bg:#0A0A0C;--card:#151519;--ink:#F4F4F6;--ink2:#A2A2AA;--ink3:#6A6A72;
   --line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.045);
-  --blue:#5B8DEF;--green:#4ADE80;--amber:#F0B34C;--red:#FF5D5D;--violet:#A78BFA;
-  --blue-bg:rgba(91,141,239,.14);--green-bg:rgba(74,222,128,.12);--amber-bg:rgba(240,179,76,.13);
+  --blue:#45D6C3;--green:#4ADE80;--amber:#F0B34C;--red:#FF5D5D;--violet:#A78BFA;
+  --blue-bg:rgba(69,214,195,.12);--green-bg:rgba(74,222,128,.12);--amber-bg:rgba(240,179,76,.13);
   --red-bg:rgba(255,93,93,.13);--violet-bg:rgba(167,139,250,.13);--gray-bg:rgba(255,255,255,.07);
   --acc:#D9E97A;--acc-ink:#15180A;--acc-bg:rgba(217,233,122,.13)
  }
- body:not(.theme-light){background:radial-gradient(75% 44% at 88% -10%,rgba(255,70,38,.16),transparent 62%),
-  radial-gradient(60% 40% at -10% 106%,rgba(255,166,54,.07),transparent 60%),#07070A}
- body:not(.theme-light) .main{background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1.4px);background-size:26px 26px}
+ body:not(.theme-light){background:radial-gradient(70% 42% at 85% -12%,rgba(120,225,200,.055),transparent 60%),
+  radial-gradient(55% 38% at -12% 108%,rgba(217,233,122,.04),transparent 58%),#0B0B0D}
+ body:not(.theme-light) .main{background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:44px 44px}
  body:not(.theme-light) .nav{background:rgba(15,15,20,.66)!important;border-color:rgba(255,255,255,.09)!important;box-shadow:0 14px 38px rgba(0,0,0,.5)!important}
  body:not(.theme-light) .hdr{background:rgba(7,7,10,.55)!important;border-bottom-color:rgba(255,255,255,.05)!important}
  body:not(.theme-light) .calcbar{background:rgba(15,15,20,.7)!important;border-color:rgba(255,255,255,.09)!important;box-shadow:0 14px 38px rgba(0,0,0,.5)!important}
@@ -557,22 +563,26 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
  body:not(.theme-light) .sw-row.dark{background:#222227}
  body:not(.theme-light) .back-btn{background:rgba(255,255,255,.06)!important}
  body:not(.theme-light) .card,body:not(.theme-light) .sec,body:not(.theme-light) .pak,body:not(.theme-light) .kpi{
-  background:rgba(22,22,28,.58);border-color:rgba(255,255,255,.075);
-  backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2)}
+  background:rgba(23,23,28,.55);border-color:rgba(255,255,255,.045);
+  box-shadow:0 10px 34px rgba(0,0,0,.3);
+  backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2)}
+ body:not(.theme-light) .searchbar{background:rgba(23,23,28,.55);border-color:rgba(255,255,255,.045);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
  body:not(.theme-light) .sheet{background:rgba(16,16,21,.88);backdrop-filter:blur(34px) saturate(1.3);-webkit-backdrop-filter:blur(34px) saturate(1.3)}
 }
 /* OS dunkel + App-Einstellung hell: Light-Variablen gelten (body.theme-light), Karten hell */
 body.theme-dark{
  --bg:#0A0A0C;--card:#151519;--ink:#F4F4F6;--ink2:#A2A2AA;--ink3:#6A6A72;
  --line:rgba(255,255,255,.07);--line2:rgba(255,255,255,.045);
- --blue:#5B8DEF;--green:#4ADE80;--amber:#F0B34C;--red:#FF5D5D;--violet:#A78BFA;
- --blue-bg:rgba(91,141,239,.14);--green-bg:rgba(74,222,128,.12);--amber-bg:rgba(240,179,76,.13);
+ --blue:#45D6C3;--green:#4ADE80;--amber:#F0B34C;--red:#FF5D5D;--violet:#A78BFA;
+ --blue-bg:rgba(69,214,195,.12);--green-bg:rgba(74,222,128,.12);--amber-bg:rgba(240,179,76,.13);
  --red-bg:rgba(255,93,93,.13);--violet-bg:rgba(167,139,250,.13);--gray-bg:rgba(255,255,255,.07);
  --acc:#D9E97A;--acc-ink:#15180A;--acc-bg:rgba(217,233,122,.13)
 }
-body.theme-dark{background:radial-gradient(75% 44% at 88% -10%,rgba(255,70,38,.16),transparent 62%),
- radial-gradient(60% 40% at -10% 106%,rgba(255,166,54,.07),transparent 60%),#07070A}
-body.theme-dark .main{background-image:radial-gradient(rgba(255,255,255,.05) 1px,transparent 1.4px);background-size:26px 26px}
+body.theme-dark{background:radial-gradient(70% 42% at 85% -12%,rgba(120,225,200,.055),transparent 60%),
+ radial-gradient(55% 38% at -12% 108%,rgba(217,233,122,.04),transparent 58%),#0B0B0D}
+body.theme-dark .main{background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),
+ linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:44px 44px}
 body.theme-dark .nav{background:rgba(15,15,20,.66)!important;border-color:rgba(255,255,255,.09)!important;box-shadow:0 14px 38px rgba(0,0,0,.5)!important}
 body.theme-dark .hdr{background:rgba(7,7,10,.55)!important;border-bottom-color:rgba(255,255,255,.05)!important}
 body.theme-dark .calcbar{background:rgba(15,15,20,.7)!important;border-color:rgba(255,255,255,.09)!important;box-shadow:0 14px 38px rgba(0,0,0,.5)!important}
@@ -581,8 +591,11 @@ body.theme-dark .pin-card{border-color:rgba(217,233,122,.35)}
 body.theme-dark .sw-row.dark{background:#222227}
 body.theme-dark .back-btn{background:rgba(255,255,255,.06)!important}
 body.theme-dark .card,body.theme-dark .sec,body.theme-dark .pak,body.theme-dark .kpi{
- background:rgba(22,22,28,.58);border-color:rgba(255,255,255,.075);
- backdrop-filter:blur(22px) saturate(1.2);-webkit-backdrop-filter:blur(22px) saturate(1.2)}
+ background:rgba(23,23,28,.55);border-color:rgba(255,255,255,.045);
+ box-shadow:0 10px 34px rgba(0,0,0,.3);
+ backdrop-filter:blur(24px) saturate(1.2);-webkit-backdrop-filter:blur(24px) saturate(1.2)}
+body.theme-dark .searchbar{background:rgba(23,23,28,.55);border-color:rgba(255,255,255,.045);
+ backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
 body.theme-dark .sheet{background:rgba(16,16,21,.88);backdrop-filter:blur(34px) saturate(1.3);-webkit-backdrop-filter:blur(34px) saturate(1.3)}
 body.theme-light{
  --bg:#F2F2F7;--card:#FFFFFF;--ink:#16161A;--ink2:#6B6B73;--ink3:#A6A6AE;
@@ -974,7 +987,7 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.22';
+const APP_VER='2.23';
 const KLASS={tb:['Techn. Beanstandung','t-red'],kw:['Kundenwunsch','t-blue'],so:['Sonstige','t-gray']};
 const ZAHLER={kunde:'Kunde',vers:'Versicherung',gar:'Garantie',intern:'Intern / Kulanz',son:'Sonstiges'};
 const ZAHLER_KURZ={kunde:'K',vers:'V',gar:'G',intern:'I',son:'S'};
