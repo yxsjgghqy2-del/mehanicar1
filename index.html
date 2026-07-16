@@ -17,10 +17,10 @@
 :root{
  --bg:#F2F2F7;--card:#FFFFFF;--ink:#16161A;--ink2:#6B6B73;--ink3:#A6A6AE;
  --line:rgba(22,22,26,.09);--line2:rgba(22,22,26,.06);
- --blue:#0A5FFF;--green:#0E8F4E;--amber:#C2710A;--red:#E0353B;--violet:#6B4DD6;
- --blue-bg:rgba(10,95,255,.09);--green-bg:rgba(14,143,78,.10);--amber-bg:rgba(194,113,10,.11);
+ --blue:#0E9C8E;--green:#0E8F4E;--amber:#C2710A;--red:#E0353B;--violet:#6B4DD6;
+ --blue-bg:rgba(14,156,142,.1);--green-bg:rgba(14,143,78,.10);--amber-bg:rgba(194,113,10,.11);
  --red-bg:rgba(224,53,59,.09);--violet-bg:rgba(107,77,214,.10);--gray-bg:rgba(22,22,26,.06);
- --acc:#0A5FFF;--acc-ink:#FFFFFF;--acc-bg:rgba(10,95,255,.09);
+ --acc:#D9E97A;--acc-ink:#15180A;--acc-bg:rgba(190,209,74,.18);
  --rad:16px;--spring:cubic-bezier(.32,1.3,.5,1);--ease:cubic-bezier(.4,0,.2,1);
  --sat:env(safe-area-inset-top,0px);--sab:env(safe-area-inset-bottom,0px);
 }
@@ -507,6 +507,19 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
  #printarea .tots .big{border-top:1.5px solid #111;font-weight:800;font-size:13px;padding-top:6px;margin-top:3px}
  #printarea .foot{margin-top:28px;font-size:9.5px;color:#666;line-height:1.6;border-top:1px solid #ddd;padding-top:10px}
 }
+/* ============ DESIGN 3.3 — Premium-Look in Weiss (Basis) ============ */
+body{background:radial-gradient(70% 42% at 85% -12%,rgba(14,156,142,.06),transparent 60%),
+ radial-gradient(55% 38% at -12% 108%,rgba(190,209,74,.07),transparent 58%),#F4F4F6}
+.main{background-image:linear-gradient(rgba(17,17,20,.03) 1px,transparent 1px),
+ linear-gradient(90deg,rgba(17,17,20,.03) 1px,transparent 1px);background-size:44px 44px}
+.card,.sec,.pak,.kpi{background:rgba(255,255,255,.78);border-color:rgba(17,17,20,.045);
+ box-shadow:0 10px 30px rgba(17,17,20,.06);
+ backdrop-filter:blur(20px) saturate(1.15);-webkit-backdrop-filter:blur(20px) saturate(1.15)}
+.searchbar{background:rgba(255,255,255,.78);border-color:rgba(17,17,20,.045);
+ backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
+.hdr{background:rgba(244,244,246,.66)!important;border-bottom-color:rgba(17,17,20,.05)}
+.nav{border-color:rgba(17,17,20,.05);box-shadow:0 14px 38px rgba(17,17,20,.14)}
+.calcbar{border-color:rgba(17,17,20,.05);box-shadow:0 14px 38px rgba(17,17,20,.14)}
 /* ============ DESIGN 3.2 — Premium-Interaktionen ============ */
 @media (hover:hover){
  .card,.sec,.pak,.kpi{transition:transform .3s var(--ease),box-shadow .3s var(--ease),background .3s,border-color .3s}
@@ -598,11 +611,12 @@ body.theme-dark .searchbar{background:rgba(23,23,28,.55);border-color:rgba(255,2
  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px)}
 body.theme-dark .sheet{background:rgba(16,16,21,.88);backdrop-filter:blur(34px) saturate(1.3);-webkit-backdrop-filter:blur(34px) saturate(1.3)}
 body.theme-light{
- --bg:#F2F2F7;--card:#FFFFFF;--ink:#16161A;--ink2:#6B6B73;--ink3:#A6A6AE;
- --line:rgba(22,22,26,.09);--line2:rgba(22,22,26,.06);
- --blue:#0A5FFF;--green:#0E8F4E;--amber:#C2710A;--red:#E0353B;--violet:#6B4DD6;
- --blue-bg:rgba(10,95,255,.09);--green-bg:rgba(14,143,78,.10);--amber-bg:rgba(194,113,10,.11);
- --red-bg:rgba(224,53,59,.09);--violet-bg:rgba(107,77,214,.10);--gray-bg:rgba(22,22,26,.06)
+ --bg:#F4F4F6;--card:#FFFFFF;--ink:#16161A;--ink2:#6B6B73;--ink3:#A6A6AE;
+ --line:rgba(22,22,26,.07);--line2:rgba(22,22,26,.05);
+ --blue:#0E9C8E;--green:#0E8F4E;--amber:#C2710A;--red:#E0353B;--violet:#6B4DD6;
+ --blue-bg:rgba(14,156,142,.1);--green-bg:rgba(14,143,78,.10);--amber-bg:rgba(194,113,10,.11);
+ --red-bg:rgba(224,53,59,.09);--violet-bg:rgba(107,77,214,.10);--gray-bg:rgba(22,22,26,.06);
+ --acc:#D9E97A;--acc-ink:#15180A;--acc-bg:rgba(190,209,74,.18)
 }
 /* ============ NAV ENHANCEMENTS ============ */
 .nav button{transition:color .18s,background .18s}
@@ -918,6 +932,7 @@ function migrate2(){
  (S.apDb||[]).forEach(e=>{if(e.byMarke===undefined)e.byMarke={}});
  if(S.settings.awTeiler===undefined)S.settings.awTeiler=1;
  if(S.settings.designV3===undefined){S.settings.designV3=true;S.settings.theme='dark'}
+ if(S.settings.designV4===undefined){S.settings.designV4=true;S.settings.theme='light'}
  if(S.settings.stundensatzCt===undefined)S.settings.stundensatzCt=S.settings.awCt||12500;
  if(!S.apKombi)S.apKombi=AP_KOMBI_SEED.map(([kws,partner])=>({keywords:kws,partner}));
  if(!S.pakVorlagen)S.pakVorlagen=PAK_VORLAGEN_SEED.map(t=>({...t,pos:t.pos.map(p=>({...p}))}));
@@ -979,7 +994,7 @@ function applyTheme(t){
  const meta=document.querySelector('meta[name="theme-color"]');
  if(meta){
   const dark=t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
-  meta.content=dark?'#0A0A0C':'#F2F2F7';
+  meta.content=dark?'#0B0B0D':'#F4F4F6';
  }
 }
 /* Lookups */
@@ -987,7 +1002,7 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.23';
+const APP_VER='2.24';
 const KLASS={tb:['Techn. Beanstandung','t-red'],kw:['Kundenwunsch','t-blue'],so:['Sonstige','t-gray']};
 const ZAHLER={kunde:'Kunde',vers:'Versicherung',gar:'Garantie',intern:'Intern / Kulanz',son:'Sonstiges'};
 const ZAHLER_KURZ={kunde:'K',vers:'V',gar:'G',intern:'I',son:'S'};
