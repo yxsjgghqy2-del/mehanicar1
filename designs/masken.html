@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Masken — 20 Designs (Kunde · Fahrzeug · Position)</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9EAEC;color:#26282C}
+button{font:inherit;color:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font:inherit;outline:none;color:inherit;max-width:100%}
+.num{font-variant-numeric:tabular-nums}
+/* ---------- Index ---------- */
+.idx{max-width:480px;margin:0 auto;padding:30px 16px 70px}
+.idx h1{font-size:21px;letter-spacing:-.02em;margin:0 0 6px}
+.idx .s{color:#6C7076;font-size:13px;line-height:1.6;margin-bottom:22px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{display:block;text-align:left;background:#fff;border:1px solid #DDDFE3;border-radius:10px;padding:13px;text-decoration:none;color:inherit}
+.tile:active{background:#F6F7F8}
+.tile .n{display:inline-block;background:#26282C;color:#fff;font-weight:700;font-size:10.5px;border-radius:5px;padding:2px 7px;margin-bottom:7px}
+.tile .n.dk{background:#8A6D3B}
+.tile b{display:block;font-size:12.5px;margin-bottom:3px}
+.tile span{font-size:10px;color:#6C7076;line-height:1.45;display:block}
+/* ---------- Rahmen je Variante ---------- */
+.vw{min-height:100vh}
+.frame{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+.topnav{position:fixed;top:10px;left:10px;z-index:99;display:flex;gap:6px}
+.topnav a{background:rgba(38,40,44,.85);color:#fff;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:600;text-decoration:none}
+/* Masken-Umschalter (Kunde/Fahrzeug/Position) — neutral, wird pro Design überstylt */
+.mswitch{display:flex;gap:2px;margin:0 0 14px}
+.mswitch button{flex:1;padding:9px 4px;font-size:11.5px;font-weight:600;opacity:.55}
+.mswitch button.on{opacity:1}
+/* Save-Overlay */
+#ok{position:fixed;inset:0;background:rgba(30,31,34,.45);display:none;place-items:center;z-index:200}
+#ok .box{background:#fff;color:#26282C;border-radius:14px;padding:26px 24px;text-align:center;max-width:290px;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+#ok b{font-size:15px;display:block;margin-bottom:4px}
+#ok span{font-size:12px;color:#6C7076}
+#ok button{margin-top:14px;background:#26282C;color:#fff;border-radius:9px;padding:10px 22px;font-size:13px;font-weight:600}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ============================================================
+   Formular-Anatomien (Renderer-Basisklassen)
+   ============================================================ */
+/* A: Label über Feld (Box) */
+.fA .fg{margin-bottom:13px}
+.fA .fg label{display:block;font-size:11px;font-weight:600;margin-bottom:5px;color:inherit}
+.fA .fg input,.fA .fg select,.fA .fg textarea{width:100%;padding:11px 12px;font-size:14px;border-radius:8px;border:1px solid #C9CCD1;background:#fff}
+.fA .r2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* B: iOS-Gruppenzeilen (Label links, Wert rechts) */
+.fB .grp{border-radius:10px;overflow:hidden;margin-bottom:16px}
+.fB .grl{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#7A7E85;margin:0 14px 6px;font-weight:600}
+.fB .ro{display:flex;align-items:center;gap:10px;padding:11px 14px;background:#fff;border-bottom:1px solid #E4E5E8}
+.fB .ro:last-child{border-bottom:none}
+.fB .ro label{flex:0 0 108px;font-size:13.5px}
+.fB .ro input,.fB .ro select{flex:1;border:none;background:none;font-size:13.5px;text-align:right;color:#4B4E54;min-width:0}
+/* C: Tabellarisch (Label-Spalte links, dicht) */
+.fC table{width:100%;border-collapse:collapse}
+.fC td{padding:6px 0;vertical-align:middle}
+.fC td.l{width:36%;font-size:11.5px;color:#5A5E66;padding-right:12px}
+.fC td.f input,.fC td.f select{width:100%;padding:7px 9px;font-size:13px;border:1px solid #C2C6CC;border-radius:3px;background:#fff}
+/* D: Zeilen mit Unterstrich (luftig) */
+.fD .fg{margin-bottom:20px}
+.fD .fg label{display:block;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:#8A8E95;margin-bottom:2px;font-weight:600}
+.fD .fg input,.fD .fg select{width:100%;border:none;border-bottom:1px solid #C9CCD1;background:none;padding:7px 0;font-size:15px;border-radius:0}
+.fD .fg input:focus{border-bottom-color:currentColor}
+.fD .r2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+/* E: Property-Liste (Icon+Label+Inline-Wert) */
+.fE .pr{display:flex;align-items:center;gap:10px;padding:8px 6px;border-radius:6px}
+.fE .pr:hover{background:rgba(0,0,0,.03)}
+.fE .pr .ic{width:20px;text-align:center;font-size:13px;opacity:.5}
+.fE .pr label{flex:0 0 118px;font-size:12.5px;color:#6C7076}
+.fE .pr input,.fE .pr select{flex:1;border:none;background:none;font-size:13.5px;padding:4px;min-width:0}
+.fE .pr input::placeholder{color:#B4B7BC}
+/* F: Ledger / Journal (nummerierte Zeilen, mono Werte) */
+.fF .lg{display:grid;grid-template-columns:26px 1fr 1fr;gap:0;border:1px solid #C9CCD1;background:#fff}
+.fF .lg>div{padding:9px 10px;border-bottom:1px solid #E4E5E8;font-size:12px;display:flex;align-items:center}
+.fF .lg .no{background:#F2F3F4;font-size:9.5px;color:#8A8E95;justify-content:center;border-right:1px solid #E4E5E8;font-family:ui-monospace,monospace}
+.fF .lg .lb{color:#5A5E66;border-right:1px solid #EDEEEF}
+.fF .lg input,.fF .lg select{border:none;background:none;width:100%;font-size:13px;font-family:ui-monospace,monospace}
+
+/* ============================================================ V1 iOS System */
+.m1{background:#F2F2F7;color:#1C1C1E}
+.m1 .frame{padding:60px 16px 30px}
+.m1 h2{font-size:19px;margin:0 0 12px}
+.m1 .mswitch{background:#E4E4E9;border-radius:9px;padding:2px}
+.m1 .mswitch button.on{background:#fff;border-radius:7px;box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.m1 .save{width:100%;padding:14px;background:#3A6EA5;color:#fff;border-radius:11px;font-size:15px;font-weight:600;margin-top:6px}
+/* ============================================================ V2 Linear kompakt */
+.m2{background:#FBFBFB;color:#282A30}
+.m2 .frame{padding:60px 18px 30px}
+.m2 h2{font-size:16px;margin:0 0 10px;font-weight:600}
+.m2 .mswitch{gap:6px}
+.m2 .mswitch button{border:1px solid #E2E3E6;border-radius:6px;font-size:11px;padding:7px}
+.m2 .mswitch button.on{background:#F0F1F3;border-color:#C6C8CD}
+.m2 .fA .fg label{font-size:10.5px;color:#6E7178}
+.m2 .fA .fg input,.m2 .fA .fg select{padding:8px 10px;font-size:13px;border-radius:6px;border-color:#E2E3E6}
+.m2 .fA .fg input:focus{border-color:#5E6AD2;box-shadow:0 0 0 3px rgba(94,106,210,.12)}
+.m2 .save{width:100%;padding:10px;background:#5E6AD2;color:#fff;border-radius:7px;font-size:12.5px;font-weight:600;margin-top:8px}
+.m2 .kbd{font-size:9.5px;color:#9A9DA4;text-align:right;margin-top:8px}
+.m2 .kbd b{border:1px solid #DDDEE2;border-bottom-width:2px;border-radius:4px;padding:1px 5px;font-weight:600;background:#fff}
+/* ============================================================ V3 Material ruhig */
+.m3{background:#F6F7F8;color:#1F2327}
+.m3 .frame{padding:60px 18px 30px}
+.m3 h2{font-size:20px;margin:0 0 14px;font-weight:400}
+.m3 .mswitch{border-bottom:2px solid #E1E3E6;gap:0;margin-bottom:18px}
+.m3 .mswitch button{border-radius:0;padding:11px 4px;border-bottom:2px solid transparent;margin-bottom:-2px}
+.m3 .mswitch button.on{border-bottom-color:#00696D;color:#00696D}
+.m3 .fg{position:relative;margin-bottom:16px}
+.m3 .fg input,.m3 .fg select{width:100%;padding:15px 13px 7px;font-size:14px;border:1px solid #B9BDC3;border-radius:5px;background:#fff}
+.m3 .fg label{position:absolute;left:10px;top:-7px;background:#fff;padding:0 4px;font-size:10.5px;color:#5F6469}
+.m3 .fg input:focus{border-color:#00696D;box-shadow:inset 0 0 0 1px #00696D}
+.m3 .r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.m3 .save{width:100%;padding:13px;background:#00696D;color:#fff;border-radius:999px;font-size:14px;font-weight:600;margin-top:8px}
+/* ============================================================ V4 Fluent */
+.m4{background:#F3F3F3;color:#242424}
+.m4 .frame{padding:60px 18px 30px}
+.m4 h2{font-size:19px;margin:0 0 12px;font-weight:600}
+.m4 .mswitch button{border-radius:4px;padding:8px}
+.m4 .mswitch button.on{background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.14)}
+.m4 .fA .fg input,.m4 .fA .fg select{border-radius:4px;border:1px solid #D1D1D1;border-bottom:2px solid #8A8886}
+.m4 .fA .fg input:focus{border-bottom-color:#1F4E79}
+.m4 .save{padding:10px 26px;background:#1F4E79;color:#fff;border-radius:4px;font-size:13.5px;font-weight:600;margin-top:8px}
+.m4 .cancel{padding:10px 20px;background:#fff;border:1px solid #D1D1D1;border-radius:4px;font-size:13.5px;margin:8px 8px 0 0}
+/* ============================================================ V5 Karte auf Grau */
+.m5{background:#EDEEF0;color:#2B2E33}
+.m5 .frame{padding:60px 14px 30px}
+.m5 .card{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgba(20,22,26,.12);overflow:hidden}
+.m5 .chd{padding:15px 18px;border-bottom:1px solid #E7E8EA;font-size:15px;font-weight:700}
+.m5 .cbd{padding:18px}
+.m5 .cft{padding:13px 18px;border-top:1px solid #E7E8EA;background:#FAFAFB;display:flex;justify-content:flex-end;gap:9px}
+.m5 .mswitch{background:#EDEEF0;border-radius:7px;padding:2px;margin:0 18px 0}
+.m5 .mswitch button.on{background:#fff;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.m5 .save{padding:10px 22px;background:#31649B;color:#fff;border-radius:7px;font-size:13px;font-weight:600}
+.m5 .cancel{padding:10px 16px;color:#5A5E66;font-size:13px}
+/* ============================================================ V6 Luftig (Things) */
+.m6{background:#FFFFFF;color:#2A2C30}
+.m6 .frame{padding:66px 24px 30px}
+.m6 h2{font-size:23px;margin:0 0 4px;font-weight:700;letter-spacing:-.02em}
+.m6 .sub{color:#9A9DA4;font-size:12.5px;margin-bottom:22px}
+.m6 .mswitch{gap:16px;margin-bottom:24px}
+.m6 .mswitch button{flex:none;padding:2px 0;font-size:13px;border-bottom:2px solid transparent}
+.m6 .mswitch button.on{border-bottom-color:#4A6FA5;color:#4A6FA5}
+.m6 .save{width:100%;padding:13px;background:#2A2C30;color:#fff;border-radius:10px;font-size:14px;font-weight:600;margin-top:14px}
+/* ============================================================ V7 Sachlich dicht (Datev) */
+.m7{background:#F4F5F6;color:#23282D}
+.m7 .frame{padding:60px 14px 30px}
+.m7 .panel{background:#fff;border:1px solid #C9CDD2}
+.m7 .phd{background:#E8EBEE;border-bottom:1px solid #C9CDD2;padding:9px 12px;font-size:12.5px;font-weight:700;display:flex;justify-content:space-between}
+.m7 .phd span{font-weight:400;color:#5A6068;font-size:11px}
+.m7 .pbd{padding:14px 12px}
+.m7 .mswitch{gap:0;border:1px solid #C9CDD2;background:#fff;margin-bottom:12px}
+.m7 .mswitch button{border-right:1px solid #C9CDD2;font-size:11px;padding:8px}
+.m7 .mswitch button:last-child{border-right:none}
+.m7 .mswitch button.on{background:#3E5570;color:#fff}
+.m7 .save{padding:9px 24px;background:#3E5570;color:#fff;font-size:12.5px;font-weight:600;margin-top:12px}
+.m7 .hint7{font-size:10px;color:#7A8088;margin-top:8px}
+/* ============================================================ V8 Große Felder (Airbnb) */
+.m8{background:#FFFFFF;color:#222}
+.m8 .frame{padding:60px 20px 30px}
+.m8 h2{font-size:21px;margin:0 0 16px;font-weight:700}
+.m8 .mswitch{gap:8px}
+.m8 .mswitch button{border:1px solid #B0B4B9;border-radius:999px;padding:9px;font-size:12px}
+.m8 .mswitch button.on{background:#26282C;color:#fff;border-color:#26282C}
+.m8 .fA .fg input,.m8 .fA .fg select{padding:16px 14px;font-size:15px;border-radius:10px;border-color:#B0B4B9}
+.m8 .fA .fg input:focus{border-color:#26282C;box-shadow:inset 0 0 0 1px #26282C}
+.m8 .fA .fg label{font-size:12px}
+.m8 .save{width:100%;padding:15px;background:#26282C;color:#fff;border-radius:10px;font-size:15px;font-weight:700;margin-top:10px}
+/* ============================================================ V9 Notion Properties */
+.m9{background:#FFFFFF;color:#37352F}
+.m9 .frame{padding:66px 20px 30px}
+.m9 h2{font-size:24px;margin:0 0 2px;font-weight:700}
+.m9 .sub{color:#9B9A97;font-size:12px;margin-bottom:14px}
+.m9 .mswitch{gap:4px;margin-bottom:10px}
+.m9 .mswitch button{flex:none;font-size:11.5px;padding:5px 10px;border-radius:5px}
+.m9 .mswitch button.on{background:#EFEFEE}
+.m9 .divi{border-top:1px solid #EDECE9;margin:6px 0 10px}
+.m9 .save{padding:8px 18px;background:#37352F;color:#fff;border-radius:6px;font-size:12.5px;font-weight:600;margin-top:14px}
+/* ============================================================ V10 Warmes Papier */
+.m10{background:#F3F1EC;color:#33312C}
+.m10 .frame{padding:60px 18px 30px}
+.m10 .sheet{background:#FBFAF7;border:1px solid #DDD9CF;border-radius:4px;padding:20px 18px;box-shadow:0 2px 8px rgba(70,65,50,.08)}
+.m10 h2{font-size:18px;margin:0 0 2px;font-weight:700}
+.m10 .sub{font-size:11px;color:#8B867A;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid #E5E1D7}
+.m10 .mswitch{gap:0;border-bottom:1px solid #E5E1D7;margin-bottom:16px}
+.m10 .mswitch button{border-radius:0;border-bottom:2px solid transparent;margin-bottom:-1px;font-size:11.5px}
+.m10 .mswitch button.on{border-bottom-color:#7A6C3F;color:#5F5430}
+.m10 .fD .fg input{border-bottom-color:#D6D1C4}
+.m10 .save{width:100%;padding:12px;background:#5F5430;color:#FBFAF7;border-radius:4px;font-size:13px;font-weight:600;letter-spacing:.03em;margin-top:10px}
+/* ============================================================ V11 Zweispaltig klassisch */
+.m11{background:#EFF0F2;color:#2A2D31}
+.m11 .frame{padding:60px 14px 30px}
+.m11 fieldset{border:1px solid #B9BDC3;border-radius:2px;background:#FAFBFC;padding:14px 12px 8px;margin:0 0 14px}
+.m11 legend{font-size:11px;font-weight:700;padding:0 6px;letter-spacing:.04em;text-transform:uppercase;color:#4E5560}
+.m11 .mswitch{gap:6px}
+.m11 .mswitch button{background:#fff;border:1px solid #B9BDC3;border-radius:2px;font-size:11px}
+.m11 .mswitch button.on{background:#4E5560;color:#fff;border-color:#4E5560}
+.m11 .save{padding:9px 28px;background:#2F5233;color:#fff;border-radius:2px;font-size:12.5px;font-weight:600}
+/* ============================================================ V12 Anthrazit Studio (dunkel) */
+.m12{background:#232529;color:#E8E7E3}
+.m12 .frame{padding:60px 18px 30px}
+.m12 h2{font-size:18px;margin:0 0 12px;font-weight:600}
+.m12 .mswitch{background:#2C2E33;border-radius:8px;padding:2px}
+.m12 .mswitch button.on{background:#3A3D43;border-radius:6px}
+.m12 .fA .fg label{color:#A9A8A2}
+.m12 .fA .fg input,.m12 .fA .fg select{background:#2C2E33;border-color:#3F424A;color:#E8E7E3}
+.m12 .fA .fg input:focus{border-color:#C9A96A}
+.m12 .fA .fg input::placeholder{color:#5F626B}
+.m12 .save{width:100%;padding:13px;background:#C9A96A;color:#26221A;border-radius:9px;font-size:14px;font-weight:700;margin-top:8px}
+/* ============================================================ V13 Steps links */
+.m13{background:#F7F7F8;color:#26282C}
+.m13 .frame{padding:60px 14px 30px}
+.m13 .wrap13{display:grid;grid-template-columns:96px 1fr;gap:14px}
+.m13 .steps{display:flex;flex-direction:column;gap:2px}
+.m13 .stp{text-align:left;font-size:11px;padding:9px 10px;border-left:2px solid #DDDFE3;color:#7A7E85}
+.m13 .stp.on{border-left-color:#26282C;color:#26282C;font-weight:700;background:#fff}
+.m13 .body13{background:#fff;border:1px solid #E2E3E6;border-radius:8px;padding:16px 14px}
+.m13 .save{width:100%;padding:12px;background:#26282C;color:#fff;border-radius:8px;font-size:13.5px;font-weight:600;margin-top:10px}
+/* ============================================================ V14 Ledger */
+.m14{background:#F2F3F2;color:#252A26}
+.m14 .frame{padding:60px 14px 30px}
+.m14 h2{font-size:15px;margin:0 0 3px;font-family:ui-monospace,monospace;letter-spacing:-.01em}
+.m14 .sub{font-size:10.5px;color:#79807A;font-family:ui-monospace,monospace;margin-bottom:12px}
+.m14 .mswitch{gap:6px}
+.m14 .mswitch button{border:1px solid #C6CBC6;font-size:10.5px;font-family:ui-monospace,monospace;padding:7px}
+.m14 .mswitch button.on{background:#2F4A38;color:#EDF2ED;border-color:#2F4A38}
+.m14 .foot14{display:flex;justify-content:space-between;background:#2F4A38;color:#EDF2ED;padding:11px 12px;font-family:ui-monospace,monospace;font-size:11.5px;margin-top:-1px}
+.m14 .save{width:100%;padding:12px;background:#252A26;color:#EDF2ED;font-size:12.5px;font-family:ui-monospace,monospace;margin-top:12px}
+/* ============================================================ V15 Graphit-Stahl (dunkel) */
+.m15{background:#26292E;color:#DDE1E6}
+.m15 .frame{padding:60px 16px 30px}
+.m15 .panel15{background:#2D3138;border:1px solid #3A3F47;border-radius:6px;overflow:hidden}
+.m15 .phd15{background:#33383F;padding:10px 14px;font-size:12.5px;font-weight:600;border-bottom:1px solid #3A3F47;display:flex;gap:8px;align-items:center}
+.m15 .phd15 i{width:8px;height:8px;border-radius:2px;background:#6E8CA8}
+.m15 .pbd15{padding:16px 14px}
+.m15 .mswitch{gap:0;border-bottom:1px solid #3A3F47;margin-bottom:0}
+.m15 .mswitch button{border-radius:0;font-size:11.5px;padding:10px;border-bottom:2px solid transparent}
+.m15 .mswitch button.on{border-bottom-color:#6E8CA8;color:#fff;background:#2D3138}
+.m15 .fA .fg label{color:#9BA2AB}
+.m15 .fA .fg input,.m15 .fA .fg select{background:#26292E;border-color:#454B54;color:#DDE1E6}
+.m15 .fA .fg input:focus{border-color:#6E8CA8}
+.m15 .save{width:100%;padding:12px;background:#6E8CA8;color:#171A1E;border-radius:5px;font-size:13px;font-weight:700;margin-top:12px}
+/* ============================================================ V16 Inline-Liste */
+.m16{background:#F6F6F7;color:#2A2C30}
+.m16 .frame{padding:60px 16px 30px}
+.m16 h2{font-size:17px;margin:0 0 10px}
+.m16 .lst{background:#fff;border:1px solid #E2E3E6;border-radius:10px;overflow:hidden}
+.m16 .fE .pr{border-bottom:1px solid #EFF0F1;border-radius:0;padding:10px 12px}
+.m16 .fE .pr:last-child{border-bottom:none}
+.m16 .save{width:100%;padding:12px;background:#4A6FA5;color:#fff;border-radius:9px;font-size:13.5px;font-weight:600;margin-top:12px}
+/* ============================================================ V17 Fiori Segmente */
+.m17{background:#EDF0F2;color:#2B3238}
+.m17 .frame{padding:60px 14px 30px}
+.m17 .seg17{background:#fff;border-radius:10px;box-shadow:0 1px 2px rgba(30,40,50,.1);margin-bottom:12px;overflow:hidden}
+.m17 .sh17{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #E7EAEC}
+.m17 .sh17 .ic17{width:30px;height:30px;border-radius:7px;background:#E3EBF2;color:#31649B;display:grid;place-items:center;font-size:13px}
+.m17 .sh17 b{font-size:13px}
+.m17 .sh17 small{display:block;font-size:10px;color:#7C858C;font-weight:400}
+.m17 .sb17{padding:14px}
+.m17 .mswitch{background:#fff;border-radius:9px;padding:3px;box-shadow:0 1px 2px rgba(30,40,50,.08)}
+.m17 .mswitch button.on{background:#31649B;color:#fff;border-radius:7px}
+.m17 .save{width:100%;padding:13px;background:#31649B;color:#fff;border-radius:9px;font-size:13.5px;font-weight:600}
+/* ============================================================ V18 Beige Sachlich */
+.m18{background:#EFEDE8;color:#3A382F}
+.m18 .frame{padding:60px 18px 30px}
+.m18 h2{font-size:18px;margin:0 0 12px;font-weight:700}
+.m18 .mswitch{background:#E4E1D8;border-radius:8px;padding:2px}
+.m18 .mswitch button.on{background:#FBFAF7;border-radius:7px}
+.m18 .fB .ro{background:#FBFAF7;border-bottom-color:#E8E5DC}
+.m18 .fB .grl{color:#8B8677}
+.m18 .save{width:100%;padding:13px;background:#54604A;color:#F5F4EF;border-radius:9px;font-size:13.5px;font-weight:600;margin-top:4px}
+/* ============================================================ V19 Hairline Weiß */
+.m19{background:#FFFFFF;color:#212327}
+.m19 .frame{padding:64px 22px 30px}
+.m19 h2{font-size:17px;margin:0 0 2px;font-weight:600}
+.m19 .sub{font-size:11.5px;color:#909399;margin-bottom:18px}
+.m19 .mswitch{gap:0;border:1px solid #E5E6E8;border-radius:8px;overflow:hidden}
+.m19 .mswitch button{border-right:1px solid #E5E6E8;font-size:11.5px}
+.m19 .mswitch button:last-child{border-right:none}
+.m19 .mswitch button.on{background:#F5F6F7}
+.m19 .fC td.f input,.m19 .fC td.f select{border:none;border-bottom:1px solid #E5E6E8;border-radius:0;padding:8px 2px;background:none}
+.m19 .fC td.f input:focus{border-bottom-color:#212327}
+.m19 .save{width:100%;padding:13px;background:#212327;color:#fff;border-radius:8px;font-size:13.5px;font-weight:600;margin-top:16px}
+/* ============================================================ V20 Charcoal Minimal (dunkel) */
+.m20{background:#1E1F22;color:#D8D9DB}
+.m20 .frame{padding:64px 20px 30px}
+.m20 h2{font-size:17px;margin:0 0 14px;font-weight:500;letter-spacing:.01em}
+.m20 .mswitch{gap:14px}
+.m20 .mswitch button{flex:none;padding:3px 0;font-size:12.5px;border-bottom:1px solid transparent}
+.m20 .mswitch button.on{border-bottom-color:#D8D9DB;color:#fff}
+.m20 .fD .fg label{color:#7C7E83}
+.m20 .fD .fg input,.m20 .fD .fg select{border-bottom-color:#3C3E43;color:#EDEEEF;color-scheme:dark}
+.m20 .fD .fg input:focus{border-bottom-color:#D8D9DB}
+.m20 .save{width:100%;padding:13px;background:#EDEEEF;color:#1E1F22;border-radius:8px;font-size:13.5px;font-weight:700;margin-top:14px}
+/* Dunkle Varianten: iOS-Zeilen & selects dunkel */
+.m12 select,.m15 select,.m20 select{color-scheme:dark}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="ok"><div class="box"><b data-oktxt>Gespeichert</b><span>Demo — in der echten App landet der Datensatz direkt in der Akte.</span><br><button onclick="document.getElementById('ok').style.display='none'">Weiter</button></div></div>
+
+<script>
+/* ---------- Felddefinitionen (echte Masken der App) ---------- */
+const F={
+ kunde:[
+  {l:'Anrede / Typ',type:'select',o:['Privatkunde','Firma'],ic:'👤'},
+  {l:'Vorname',ph:'Max',half:1,ic:'✎'},
+  {l:'Nachname *',ph:'Mustermann',half:1,ic:'✎'},
+  {l:'Telefon',ph:'+49 170 1234567',ic:'☎'},
+  {l:'E-Mail',ph:'max@beispiel.de',ic:'✉'},
+  {l:'Straße & Nr.',ph:'Hauptstraße 12',half:1,ic:'⌂'},
+  {l:'PLZ / Ort',ph:'63450 Hanau',half:1,ic:'⌂'},
+  {l:'Zahlungsmoral',type:'select',o:['Gut','Mittel','Schlecht'],ic:'◔'},
+  {l:'Interne Notiz',ph:'z. B. zahlt bar, Stammkunde …',ic:'≡'}],
+ fzg:[
+  {l:'Kennzeichen *',ph:'HU-XX 000',ic:'▤'},
+  {l:'Marke',ph:'BMW',half:1,ic:'✎'},
+  {l:'Modell',ph:'320d',half:1,ic:'✎'},
+  {l:'FIN',ph:'WBA8E91070K123456',ic:'#'},
+  {l:'Baujahr / EZ',ph:'2019',half:1,ic:'▦'},
+  {l:'Kilometerstand',ph:'87 450',half:1,ic:'◷'},
+  {l:'HU fällig',type:'month',half:1,ic:'▦'},
+  {l:'Kraftstoff',type:'select',o:['—','Benzin','Diesel','Hybrid','Elektro'],half:1,ic:'⛽'},
+  {l:'Letzte Wartung',type:'date',ic:'✓'}],
+ pos:[
+  {l:'Bezeichnung *',ph:'Bremsscheiben & -beläge VA erneuern',ic:'✎'},
+  {l:'AW',ph:'4,5',half:1,ic:'◔'},
+  {l:'AW-Satz €',ph:'12,50',half:1,ic:'€'},
+  {l:'VK gesamt €',ph:'56,25',half:1,ic:'€'},
+  {l:'Rabatt',ph:'0,00',half:1,ic:'%'},
+  {l:'Wer zahlt',type:'select',o:['Wie Paket (Kunde)','Kunde','Versicherung','Garantie','Intern / Kulanz'],ic:'◈'},
+  {l:'Interne Notiz',ph:'nur für die Werkstatt',ic:'≡'},
+  {l:'Hinweis für Kunden',ph:'erscheint auf der Rechnung',ic:'☰'}]};
+const TITEL={kunde:'Kunde anlegen',fzg:'Fahrzeug anlegen',pos:'Position anlegen'};
+
+/* ---------- Renderer (Formular-Anatomien) ---------- */
+function ctl(f){
+ if(f.type==='select')return`<select>${f.o.map(o=>`<option>${o}</option>`).join('')}</select>`;
+ return`<input type="${f.type||'text'}" placeholder="${f.ph||''}">`}
+function rA(fs){/* Label über Feld, half-Paare in row2 */
+ let out='',i=0;
+ while(i<fs.length){const f=fs[i];
+  if(f.half&&fs[i+1]&&fs[i+1].half){
+   out+=`<div class="r2"><div class="fg"><label>${f.l}</label>${ctl(f)}</div><div class="fg"><label>${fs[i+1].l}</label>${ctl(fs[i+1])}</div></div>`;i+=2}
+  else{out+=`<div class="fg"><label>${f.l}</label>${ctl(f)}</div>`;i++}}
+ return`<div class="fA">${out}</div>`}
+function rB(fs,grl){return`<div class="fB">${grl?`<div class="grl">${grl}</div>`:''}<div class="grp">${fs.map(f=>`<div class="ro"><label>${f.l}</label>${ctl(f)}</div>`).join('')}</div></div>`}
+function rC(fs){return`<div class="fC"><table>${fs.map(f=>`<tr><td class="l">${f.l}</td><td class="f">${ctl(f)}</td></tr>`).join('')}</table></div>`}
+function rD(fs){let out='',i=0;
+ while(i<fs.length){const f=fs[i];
+  if(f.half&&fs[i+1]&&fs[i+1].half){out+=`<div class="r2"><div class="fg"><label>${f.l}</label>${ctl(f)}</div><div class="fg"><label>${fs[i+1].l}</label>${ctl(fs[i+1])}</div></div>`;i+=2}
+  else{out+=`<div class="fg"><label>${f.l}</label>${ctl(f)}</div>`;i++}}
+ return`<div class="fD">${out}</div>`}
+function rE(fs){return`<div class="fE">${fs.map(f=>`<div class="pr"><span class="ic">${f.ic||'·'}</span><label>${f.l}</label>${ctl(f)}</div>`).join('')}</div>`}
+function rF(fs){return`<div class="fF"><div class="lg">${fs.map((f,i)=>`<div class="no">${String(i+1).padStart(2,'0')}</div><div class="lb">${f.l}</div><div>${ctl(f)}</div>`).join('')}</div></div>`}
+function rM3(fs){let out='',i=0;/* Material floating */
+ while(i<fs.length){const f=fs[i];
+  if(f.half&&fs[i+1]&&fs[i+1].half){out+=`<div class="r2"><div class="fg">${ctl(f)}<label>${f.l}</label></div><div class="fg">${ctl(fs[i+1])}<label>${fs[i+1].l}</label></div></div>`;i+=2}
+  else{out+=`<div class="fg">${ctl(f)}<label>${f.l}</label></div>`;i++}}
+ return out}
+
+/* ---------- Varianten-Katalog ---------- */
+const CAT=[
+ ['iOS System','Gruppierte Zeilen wie in den iPhone-Einstellungen — Label links, Eingabe rechts.',0],
+ ['Werkzeugleiste','Kompakt und leise wie ein Profi-Tool: kleine Felder, Fokusring, Tastatur-Hinweis.',0],
+ ['Material ruhig','Umrandete Felder mit eingebettetem Label, gedecktes Petrol statt Buntheit.',0],
+ ['Fluent','Windows-Office-Schule: 4px-Ecken, Unterstrich-Feld, sachliches Marineblau.',0],
+ ['Karte + Fußzeile','Klassisches Dashboard-Modal: weiße Karte, Titelzeile, Aktionen unten rechts.',0],
+ ['Luftig','Fast leere weiße Seite, Unterstrich-Felder, große Abstände — Ruhe pur.',0],
+ ['Sachlich dicht','Behörden-/Steuerbüro-Schule: Panel mit Kopfzeile, Label-Spalte, alles auf engem Raum.',0],
+ ['Große Felder','56px-Eingaben zum Danebentreffen-unmöglich — für schnelle Finger in der Werkstatt.',0],
+ ['Eigenschaften','Wie ein Notion-Datensatz: Icon, Eigenschaft, Wert — direkt in der Zeile tippen.',0],
+ ['Warmes Papier','Off-White-Bogen mit feinen Linien und oliv-goldenem Akzent — seriös, nicht kalt.',0],
+ ['Klassisch gerahmt','Fieldsets mit Legende wie ein gutes altes Formular — jeder Block klar umrissen.',0],
+ ['Anthrazit Studio','Dunkles Warmgrau mit Messing-Akzent — edel, ohne Neon.',1],
+ ['Schritte links','Schmale Schritt-Leiste links, Felder rechts — Orientierung ohne Wizard-Zwang.',0],
+ ['Journal','Buchungssatz-Optik: nummerierte Zeilen, Monospace, Summenfuß — ideal für Positionen.',0],
+ ['Graphit & Stahl','Dunkles Panel wie eine gute IDE: Kopfzeile, Stahlblau, klare Kanten.',1],
+ ['Inline-Liste','Sieht aus wie fertige Datenzeilen — tippen und direkt drinschreiben.',0],
+ ['Segment-Karten','Jede Feldgruppe eine flache Karte mit Icon-Kopf — aufgeräumt wie Business-Software.',0],
+ ['Beige gruppiert','iOS-Anatomie in warmem Beige mit Tannengrün — freundlich, erwachsen.',0],
+ ['Hairline','Nur Haarlinien auf Weiß, Label-Spalte, ein schwarzer Knopf. Nichts lenkt ab.',0],
+ ['Charcoal minimal','Dunkelgrau, Unterstrich-Felder, weißer Knopf — die reduzierteste Form.',1]];
+
+/* ---------- Masken-Gerüst pro Variante ---------- */
+const sw=`<div class="mswitch" data-msw><button class="on" data-m="kunde">Kunde</button><button data-m="fzg">Fahrzeug</button><button data-m="pos">Position</button></div>`;
+function body(n,typ){
+ const fs=F[typ];
+ switch(n){
+  case 1:return rB(fs,TITEL[typ].toUpperCase());
+  case 2:case 4:case 12:case 15:return rA(fs);
+  case 3:return rM3(fs);
+  case 5:case 13:case 17:return rA(fs);
+  case 6:case 10:case 20:return rD(fs);
+  case 7:case 11:case 19:return rC(fs);
+  case 8:return rA(fs);
+  case 9:case 16:return rE(fs);
+  case 14:return rF(fs);
+  case 18:return rB(fs,TITEL[typ].toUpperCase());
+ }return rA(fs)}
+function shellFor(n,typ){
+ const inner=body(n,typ);const t=TITEL[typ];
+ const save=`<button class="save" data-save>Speichern</button>`;
+ switch(n){
+  case 5:return`<div class="card"><div class="chd">${t}</div>${sw}<div class="cbd">${inner}</div><div class="cft"><button class="cancel">Abbrechen</button><button class="save" data-save>Speichern</button></div></div>`;
+  case 7:return`${sw}<div class="panel"><div class="phd">${t}<span>AU-2026-0053 · Werkstatt Hanau</span></div><div class="pbd">${inner}</div></div><div style="text-align:right">${save}</div><div class="hint7"></div>`;
+  case 10:return`<div class="sheet"><h2>${t}</h2><div class="sub">mehanicar Meisterwerkstatt · Bogen 1/1</div>${sw}${inner}${save}</div>`;
+  case 11:return`${sw}<div style="height:12px"></div><fieldset><legend>${t}</legend>${inner}</fieldset><div style="text-align:right">${save}</div>`;
+  case 13:{const steps={kunde:['Person','Kontakt','Adresse'],fzg:['Fahrzeug','Technik','Termine'],pos:['Leistung','Preis','Notizen']}[typ];
+   return`<h2 style="font-size:17px;margin:0 0 12px">${t}</h2>${sw}<div class="wrap13"><div class="steps">${steps.map((s,i)=>`<button class="stp ${i===0?'on':''}">${s}</button>`).join('')}</div><div class="body13">${inner}</div></div>${save}`}
+  case 14:return`<h2>${t.toUpperCase()}</h2><div class="sub">BELEG 2026-0053 · ${new Date().toLocaleDateString('de-DE')}</div>${sw}${inner}<div class="foot14"><span>POSITIONEN: ${F[typ].length}</span><span>STATUS: ENTWURF</span></div>${save}`;
+  case 15:return`${sw.replace('class="mswitch"','class="mswitch" style="margin-bottom:12px"')}<div class="panel15"><div class="phd15"><i></i>${t}</div><div class="pbd15">${inner}</div></div>${save}`;
+  case 16:return`<h2>${t}</h2>${sw}<div class="lst">${inner}</div>${save}`;
+  case 17:{const grp={kunde:[['👤','Person','Name und Typ'],['☎','Kontakt','Telefon, E-Mail, Adresse']],fzg:[['▣','Identität','Kennzeichen, Marke, FIN'],['⚙','Technik','Baujahr, KM, HU']],pos:[['✎','Leistung','Bezeichnung und Umfang'],['€','Kalkulation','AW, Preise, Zahler']]}[typ];
+   const half=Math.ceil(F[typ].length/2);
+   return`${sw}<div style="height:12px"></div>
+    <div class="seg17"><div class="sh17"><span class="ic17">${grp[0][0]}</span><span><b>${grp[0][1]}</b><small>${grp[0][2]}</small></span></div><div class="sb17">${rA(F[typ].slice(0,half))}</div></div>
+    <div class="seg17"><div class="sh17"><span class="ic17">${grp[1][0]}</span><span><b>${grp[1][1]}</b><small>${grp[1][2]}</small></span></div><div class="sb17">${rA(F[typ].slice(half))}</div></div>${save}`}
+  case 6:return`<h2>${t}</h2><div class="sub">Alle Angaben außer * optional</div>${sw}${inner}${save}`;
+  case 9:return`<h2>${t}</h2><div class="sub">Zuletzt bearbeitet gerade eben</div>${sw}<div class="divi"></div>${inner}${save}`;
+  case 19:return`<h2>${t}</h2><div class="sub">Felder mit * sind Pflicht</div>${sw}<div style="height:14px"></div>${inner}${save}`;
+  case 4:return`<h2>${t}</h2>${sw}${inner}<div><button class="cancel">Abbrechen</button><button class="save" data-save>Speichern</button></div>`;
+  default:return`<h2>${t}</h2>${sw}${inner}${save}`;
+ }}
+
+/* ---------- Router & Index ---------- */
+const stage=document.getElementById('stage');
+function renderIndex(){
+ stage.innerHTML=`<div class="idx"><h1>Anlege-Masken — 20 Designs</h1>
+ <div class="s">Kunde anlegen · Fahrzeug anlegen · Position anlegen — jede Variante zeigt alle drei Masken (oben umschalten), voll tippbar. Gedeckte Farben, drei ruhige dunkle Ausnahmen (⬛). Sag mir die Nummer.</div>
+ <div class="tiles">${CAT.map((d,i)=>`<a class="tile" href="#/m/${i+1}"><span class="n ${d[2]?'dk':''}">${i+1}${d[2]?' ⬛':''}</span><b>${d[0]}</b><span>${d[1]}</span></a>`).join('')}</div></div>`}
+function renderVar(n){
+ stage.innerHTML=`<div class="vw m${n}"><div class="topnav"><a href="#/">← Index</a><a style="pointer-events:none;opacity:.75">${n} · ${CAT[n-1][0]}</a></div>
+  <div class="frame"><div data-mbody></div></div></div>`;
+ const mb=stage.querySelector('[data-mbody]');
+ let typ='kunde';
+ const paint=()=>{mb.innerHTML=shellFor(n,typ);
+  mb.querySelectorAll('[data-msw] button').forEach(b=>{
+   b.classList.toggle('on',b.dataset.m===typ);
+   b.onclick=()=>{typ=b.dataset.m;paint()}});
+  mb.querySelectorAll('[data-save]').forEach(b=>b.onclick=()=>{
+   document.querySelector('[data-oktxt]').textContent=TITEL[typ].replace(' anlegen','')+' gespeichert';
+   document.getElementById('ok').style.display='grid'});
+  mb.querySelectorAll('.stp').forEach(s=>s.onclick=()=>{
+   mb.querySelectorAll('.stp').forEach(x=>x.classList.remove('on'));s.classList.add('on')})};
+ paint()}
+function route(){
+ const m=location.hash.match(/#\/m\/(\d+)/);
+ if(m&&+m[1]>=1&&+m[1]<=20)renderVar(+m[1]);else renderIndex();
+ window.scrollTo(0,0)}
+window.addEventListener('hashchange',route);route();
+</script>
+</body>
+</html>
