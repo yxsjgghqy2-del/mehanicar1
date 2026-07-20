@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Auftragsmaske — 20 interaktive Vollversionen</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#E9EAEC;color:#26282C}
+button{font:inherit;color:inherit;cursor:pointer;border:none;background:none;text-align:left}
+input,select{font:inherit;outline:none;color:inherit}
+.num{font-variant-numeric:tabular-nums}
+.idx{max-width:480px;margin:0 auto;padding:30px 16px 70px}
+.idx h1{font-size:21px;letter-spacing:-.02em;margin:0 0 6px}
+.idx .s{color:#6C7076;font-size:13px;line-height:1.6;margin-bottom:22px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{display:block;background:#fff;border:1px solid #DDDFE3;border-radius:10px;padding:13px;text-decoration:none;color:inherit}
+.tile .n{display:inline-block;background:#26282C;color:#fff;font-weight:700;font-size:10.5px;border-radius:5px;padding:2px 7px;margin-bottom:7px}
+.tile .n.dk{background:#6B5B3E}
+.tile b{display:block;font-size:12.5px;margin-bottom:3px}
+.tile span{font-size:10px;color:#6C7076;line-height:1.45;display:block}
+.vw{min-height:100vh}
+.frame{max-width:430px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;position:relative}
+.topnav{position:fixed;top:10px;left:10px;z-index:99;display:flex;gap:6px}
+.topnav a{background:rgba(38,40,44,.85);color:#fff;border-radius:8px;padding:7px 12px;font-size:11px;font-weight:600;text-decoration:none}
+#toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);background:#26282C;color:#fff;font-size:12px;padding:10px 16px;border-radius:10px;display:none;z-index:300}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ======================= 1 · AKKORDEON PRO (hell) ======================= */
+.a1{background:#F1F2F4;color:#23262B}
+.a1 .frame{padding:58px 13px 96px}
+.a1 .hdr1{padding:4px 4px 12px}
+.a1 .hdr1 .ey{font-size:9.5px;font-weight:700;letter-spacing:.1em;color:#8A8F97;text-transform:uppercase}
+.a1 .hdr1 h2{font-size:21px;margin:1px 0 8px;letter-spacing:-.02em}
+.a1 .stat{display:inline-flex;align-items:center;gap:6px;border:1.5px solid #B7853B;color:#8F6524;border-radius:9px;padding:6px 11px;font-size:11.5px;font-weight:700;background:#fff}
+.a1 .sec{background:#fff;border:1px solid #E1E3E6;border-radius:14px;margin-bottom:9px;overflow:hidden;box-shadow:0 1px 2px rgba(30,33,38,.05)}
+.a1 .sech{width:100%;display:flex;align-items:center;gap:10px;padding:13px 14px}
+.a1 .sech .t{font-size:13.5px;font-weight:700}
+.a1 .sech .mini{margin-left:auto;font-size:10.5px;color:#8A8F97}
+.a1 .sech .chv{width:8px;height:8px;border-right:1.8px solid #A9ADB4;border-bottom:1.8px solid #A9ADB4;transform:rotate(45deg);transition:transform .25s;flex-shrink:0}
+.a1 .sec.open .chv{transform:rotate(225deg)}
+.a1 .secb{display:none;padding:0 14px 13px;border-top:1px solid #EFF0F2}
+.a1 .sec.open .secb{display:block}
+.a1 .kv{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F2F3F4;font-size:12.5px}
+.a1 .kv span{color:#7A7E85}.a1 .kv b{font-weight:600}
+.a1 .pak{border:1px solid #E7E8EA;border-radius:11px;margin-top:11px;overflow:hidden}
+.a1 .pakh{width:100%;display:flex;align-items:center;gap:8px;padding:10px 12px;background:#F7F8F9;font-size:12px;font-weight:700}
+.a1 .pakh .kl{font-size:9px;font-weight:800;padding:3px 7px;border-radius:6px;background:#E4EAF2;color:#3D5A80}
+.a1 .pakh .sum{margin-left:auto;font-weight:700}
+.a1 .pos1{display:flex;align-items:center;gap:9px;padding:9px 12px;border-top:1px solid #F0F1F3;font-size:12px}
+.a1 .pos1 .bz{flex:1;min-width:0}
+.a1 .pos1 .bz small{display:block;color:#8A8F97;font-size:10px;margin-top:1px}
+.a1 .qty{display:flex;align-items:center;gap:2px}
+.a1 .qty button{width:22px;height:22px;border-radius:6px;background:#F0F1F3;font-size:12px;text-align:center;font-weight:700}
+.a1 .qty i{font-style:normal;font-size:11px;min-width:26px;text-align:center}
+.a1 .pp{font-weight:700;min-width:62px;text-align:right}
+.a1 .del{color:#B9BDC3;font-size:14px;padding:2px 4px}
+.a1 .addp{width:100%;text-align:center;padding:10px;border-top:1px dashed #DEE0E3;color:#3D5A80;font-size:11.5px;font-weight:700}
+.a1 .kbar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.96);border-top:1px solid #E1E3E6;box-shadow:0 -8px 24px rgba(30,33,38,.08)}
+.a1 .kbar .in1{max-width:430px;margin:0 auto;padding:10px 16px calc(12px + env(safe-area-inset-bottom))}
+.a1 .krow{display:flex;justify-content:space-between;margin-bottom:9px}
+.a1 .krow div{font-size:9.5px;color:#8A8F97;font-weight:600}
+.a1 .krow b{display:block;font-size:14px;color:#23262B;margin-top:1px}
+.a1 .krow .gw b{color:#2F7A4D}
+.a1 .kbtn{display:flex;gap:8px}
+.a1 .kbtn .m{flex:1;background:#23262B;color:#fff;border-radius:10px;padding:12px;text-align:center;font-size:13px;font-weight:700}
+.a1 .kbtn .s{flex:0 0 84px;background:#F0F1F3;border-radius:10px;padding:12px;text-align:center;font-size:13px;font-weight:600}
+
+/* ======================= 2 · REGISTER-TABS ======================= */
+.a2{background:#F6F6F7;color:#26282C}
+.a2 .frame{padding:58px 0 30px}
+.a2 .hd2{padding:0 16px 10px;display:flex;justify-content:space-between;align-items:flex-end}
+.a2 .hd2 h2{font-size:20px;margin:0}
+.a2 .hd2 small{color:#8A8F97;font-size:11px}
+.a2 .tabs{display:flex;border-bottom:1px solid #DFE1E4;padding:0 10px;position:sticky;top:0;background:#F6F6F7;z-index:5}
+.a2 .tabs button{padding:11px 12px;font-size:12.5px;font-weight:600;color:#8A8F97;border-bottom:2px solid transparent;margin-bottom:-1px}
+.a2 .tabs button.on{color:#26282C;border-bottom-color:#26282C}
+.a2 .body2{padding:16px}
+.a2 .card2{background:#fff;border:1px solid #E5E6E8;border-radius:12px;padding:14px;margin-bottom:11px}
+.a2 .card2 h4{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:#8A8F97}
+.a2 .kv{display:flex;justify-content:space-between;padding:7px 0;font-size:12.5px;border-bottom:1px solid #F2F3F4}
+.a2 .kv span{color:#7A7E85}
+.a2 .pos1{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid #F2F3F4;font-size:12.5px}
+.a2 .pos1 .bz{flex:1}.a2 .pos1 .bz small{display:block;color:#8A8F97;font-size:10px}
+.a2 .pp{font-weight:700}
+.a2 .del{color:#C4C7CC}
+.a2 .addp{color:#31649B;font-weight:700;font-size:12px;padding:10px 0}
+.a2 .ksum{background:#26282C;color:#fff;border-radius:12px;padding:16px}
+.a2 .ksum .r{display:flex;justify-content:space-between;padding:5px 0;font-size:12.5px;opacity:.85}
+.a2 .ksum .r.big{font-size:16px;font-weight:800;opacity:1;border-top:1px solid rgba(255,255,255,.2);margin-top:8px;padding-top:11px}
+.a2 .ksum .r.gw{color:#9CD1AC}
+.a2 .m2b{width:100%;background:#31649B;color:#fff;border-radius:10px;padding:13px;text-align:center;font-weight:700;font-size:13.5px;margin-top:12px}
+
+/* ======================= 3 · RECHNUNGS-BELEG ======================= */
+.a3{background:#E8E6E1;color:#2A2925}
+.a3 .frame{padding:58px 12px 30px}
+.a3 .paper{background:#FDFCFA;box-shadow:0 14px 40px rgba(60,55,40,.18);border-radius:3px;padding:22px 18px}
+.a3 .ph3{display:flex;justify-content:space-between;border-bottom:2.5px solid #2A2925;padding-bottom:10px;margin-bottom:14px}
+.a3 .ph3 b{font-size:16px}
+.a3 .ph3 small{font-size:9.5px;color:#8B877C;display:block;margin-top:2px}
+.a3 .ph3 .re{text-align:right;font-size:10px;color:#6E6A5F}
+.a3 .meta3{display:grid;grid-template-columns:1fr 1fr;gap:4px 14px;font-size:11px;margin-bottom:14px}
+.a3 .meta3 span{color:#8B877C}
+.a3 table{width:100%;border-collapse:collapse;font-size:11.5px}
+.a3 th{text-align:left;font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:#8B877C;border-bottom:1px solid #2A2925;padding:6px 4px}
+.a3 td{padding:8px 4px;border-bottom:1px solid #E8E5DD;vertical-align:top}
+.a3 td.r,.a3 th.r{text-align:right}
+.a3 .grp3 td{font-weight:800;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#6E6A5F;border-bottom:1px solid #D8D4C8;padding-top:12px}
+.a3 .del{color:#C0BCB0;font-size:12px}
+.a3 .addln{color:#8F6524;font-weight:700;font-size:11px;padding:9px 4px}
+.a3 .tots{margin-top:12px;margin-left:auto;width:70%}
+.a3 .tots .r3{display:flex;justify-content:space-between;font-size:11.5px;padding:3.5px 0}
+.a3 .tots .r3.b{border-top:2px solid #2A2925;font-weight:800;font-size:13.5px;margin-top:5px;padding-top:8px}
+.a3 .tots .r3.g{color:#4A7A3A}
+.a3 .m3b{width:100%;margin-top:16px;background:#2A2925;color:#FDFCFA;padding:13px;text-align:center;font-weight:700;font-size:13px;border-radius:3px}
+
+/* ======================= 4 · COCKPIT DUNKEL ======================= */
+.a4{background:#1F2226;color:#E3E5E8}
+.a4 .frame{padding:58px 0 30px;flex-direction:row}
+.a4 .rail4{width:52px;display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:8px;border-right:1px solid #2E3238}
+.a4 .rl{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;font-size:14px;color:#7C828B}
+.a4 .rl.on{background:#2E3238;color:#E3E5E8}
+.a4 .body4{flex:1;padding:6px 13px 20px;min-width:0}
+.a4 h2{font-size:17px;margin:0 0 2px}
+.a4 .sub4{font-size:10.5px;color:#7C828B;margin-bottom:12px}
+.a4 .hud{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;background:#25282D;border:1px solid #33373D;border-radius:12px;padding:11px;margin-bottom:13px}
+.a4 .hud div{font-size:8.5px;color:#7C828B;text-transform:uppercase;letter-spacing:.06em}
+.a4 .hud b{display:block;font-size:13px;color:#E3E5E8;margin-top:2px;font-weight:600}
+.a4 .hud .gw b{color:#7FBF8E}
+.a4 .sec4{border:1px solid #33373D;border-radius:12px;margin-bottom:10px;overflow:hidden}
+.a4 .sech4{width:100%;display:flex;align-items:center;gap:9px;padding:11px 13px;background:#25282D;font-size:12.5px;font-weight:600}
+.a4 .sech4 .mini{margin-left:auto;font-size:10px;color:#7C828B;font-weight:400}
+.a4 .sech4 .chv{width:7px;height:7px;border-right:1.6px solid #7C828B;border-bottom:1.6px solid #7C828B;transform:rotate(45deg);transition:transform .2s}
+.a4 .sec4.open .chv{transform:rotate(225deg)}
+.a4 .secb4{display:none;padding:4px 13px 12px}
+.a4 .sec4.open .secb4{display:block}
+.a4 .kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #2A2D32;font-size:12px}
+.a4 .kv span{color:#7C828B}
+.a4 .pos1{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #2A2D32;font-size:12px}
+.a4 .pos1 .bz{flex:1}.a4 .pos1 .bz small{display:block;color:#7C828B;font-size:9.5px}
+.a4 .qty button{width:20px;height:20px;border-radius:5px;background:#2E3238;text-align:center;font-size:11px}
+.a4 .qty{display:flex;gap:2px;align-items:center}.a4 .qty i{font-style:normal;font-size:10.5px;min-width:24px;text-align:center}
+.a4 .pp{font-weight:600;min-width:58px;text-align:right}
+.a4 .del{color:#5A5F68}
+.a4 .addp{width:100%;text-align:center;color:#8FB6D9;font-size:11px;font-weight:600;padding:9px;border-top:1px dashed #33373D}
+.a4 .m4b{width:100%;background:#5B87B0;color:#12161A;border-radius:10px;padding:12px;text-align:center;font-weight:700;font-size:13px}
+
+/* ======================= 5 · BENTO-KACHELN ======================= */
+.a5{background:#F0F1F3;color:#25272B}
+.a5 .frame{padding:58px 12px 30px}
+.a5 .bg5{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.a5 .b5{background:#fff;border:1px solid #E3E4E7;border-radius:16px;padding:13px;box-shadow:0 1px 3px rgba(30,33,38,.05)}
+.a5 .b5 small{font-size:9px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#9DA1A8;display:block;margin-bottom:6px}
+.a5 .b5.w{grid-column:1/-1}
+.a5 .b5 .big5{font-size:22px;font-weight:300;letter-spacing:-.02em}
+.a5 .b5 .sub5{font-size:10.5px;color:#7A7E85;margin-top:2px}
+.a5 .pos1{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F0F1F3;font-size:12px}
+.a5 .pos1 .bz{flex:1}.a5 .pos1 .bz small{display:inline;font-size:10px;color:#9DA1A8;font-weight:400;letter-spacing:0;text-transform:none}
+.a5 .pp{font-weight:700}
+.a5 .del{color:#C4C7CC}
+.a5 .addp{color:#4A6FA5;font-weight:700;font-size:11.5px;padding:9px 0 2px}
+.a5 .kt{display:flex;justify-content:space-between;font-size:11.5px;padding:4px 0}
+.a5 .kt.b{font-weight:800;font-size:14px;border-top:1.5px solid #25272B;margin-top:6px;padding-top:8px}
+.a5 .kt.g{color:#2F7A4D}
+.a5 .m5b{width:100%;background:#25272B;color:#fff;border-radius:12px;padding:13px;text-align:center;font-weight:700;font-size:13px;margin-top:10px}
+
+/* ======================= 6 · MASTER-DETAIL ======================= */
+.a6{background:#EDEFF1;color:#23262B}
+.a6 .frame{padding:58px 0 20px}
+.a6 .hd6{padding:0 16px 10px}
+.a6 h2{font-size:19px;margin:0}
+.a6 .lst6{background:#fff;border-top:1px solid #E1E3E6;border-bottom:1px solid #E1E3E6;max-height:44vh;overflow-y:auto}
+.a6 .li6{width:100%;display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:1px solid #F0F1F3;font-size:12.5px}
+.a6 .li6.on{background:#EBF0F6;box-shadow:inset 3px 0 0 #31649B}
+.a6 .li6 .bz{flex:1}.a6 .li6 .bz small{display:block;color:#8A8F97;font-size:10px}
+.a6 .pp{font-weight:700}
+.a6 .det6{margin:12px 16px;background:#fff;border:1px solid #E1E3E6;border-radius:12px;padding:15px}
+.a6 .det6 h4{margin:0 0 10px;font-size:13.5px}
+.a6 .kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #F2F3F4;font-size:12.5px}
+.a6 .kv span{color:#7A7E85}
+.a6 .qty{display:flex;gap:4px;align-items:center}
+.a6 .qty button{width:26px;height:26px;border-radius:7px;background:#EDEFF1;text-align:center;font-weight:700}
+.a6 .addp{margin:0 16px;background:#fff;border:1px dashed #B9BDC3;border-radius:10px;padding:11px;text-align:center;color:#31649B;font-weight:700;font-size:12px;width:calc(100% - 32px)}
+.a6 .kfoot{margin:12px 16px 0;display:flex;justify-content:space-between;align-items:center;background:#23262B;color:#fff;border-radius:12px;padding:13px 15px}
+.a6 .kfoot small{font-size:9.5px;opacity:.6;display:block}
+.a6 .kfoot b{font-size:15px}
+.a6 .kfoot .b6{background:#fff;color:#23262B;border-radius:9px;padding:9px 16px;font-weight:700;font-size:12.5px}
+
+/* ======================= 7 · KLEMMBRETT ======================= */
+.a7{background:#8A8578;color:#2E2C26;padding-bottom:20px}
+.a7 .frame{padding:58px 14px 30px}
+.a7 .board{background:#C9A56A;border-radius:14px 14px 8px 8px;padding:10px 10px 12px;box-shadow:0 18px 44px rgba(40,36,25,.35)}
+.a7 .clip{width:90px;height:22px;background:linear-gradient(180deg,#9C9891,#6E6A62);border-radius:6px;margin:-20px auto 8px;box-shadow:0 3px 8px rgba(0,0,0,.3)}
+.a7 .sheet7{background:#FBFAF6;border-radius:4px;padding:18px 15px}
+.a7 h2{font-size:17px;margin:0 0 2px;font-weight:800}
+.a7 .sub7{font-size:10.5px;color:#8B8577;margin-bottom:12px}
+.a7 .box7{border:1.5px solid #2E2C26;border-radius:6px;margin-bottom:11px;overflow:hidden}
+.a7 .bh7{width:100%;display:flex;justify-content:space-between;align-items:center;padding:9px 12px;background:#F1EFE8;font-size:11.5px;font-weight:800;letter-spacing:.03em;text-transform:uppercase}
+.a7 .bb7{display:none;padding:10px 12px;border-top:1.5px solid #2E2C26}
+.a7 .box7.open .bb7{display:block}
+.a7 .kv{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px dotted #D5D1C4}
+.a7 .kv span{color:#8B8577}
+.a7 .chk{display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px dotted #D5D1C4;font-size:12px}
+.a7 .chk .bx{width:16px;height:16px;border:1.8px solid #2E2C26;border-radius:3px;display:grid;place-items:center;font-size:10px;flex-shrink:0}
+.a7 .chk.on .bx::before{content:"✕"}
+.a7 .chk .bz{flex:1}.a7 .chk .bz small{display:block;font-size:9.5px;color:#8B8577}
+.a7 .pp{font-weight:800}
+.a7 .addp{color:#8F6524;font-weight:800;font-size:11px;padding:8px 0;text-transform:uppercase;letter-spacing:.04em}
+.a7 .tot7{display:flex;justify-content:space-between;font-size:12px;padding:4px 0}
+.a7 .tot7.b{font-weight:900;font-size:14px;border-top:2px solid #2E2C26;margin-top:6px;padding-top:8px}
+.a7 .m7b{width:100%;background:#2E2C26;color:#FBFAF6;padding:12px;text-align:center;font-weight:800;border-radius:5px;margin-top:12px;font-size:12.5px;letter-spacing:.04em}
+
+/* ======================= 8 · STEPPER-PHASEN ======================= */
+.a8{background:#F5F6F7;color:#24272B}
+.a8 .frame{padding:58px 16px 30px}
+.a8 .steps8{display:flex;align-items:center;gap:0;margin-bottom:18px}
+.a8 .st8{flex:1;text-align:center;position:relative}
+.a8 .st8 .dot8{width:26px;height:26px;border-radius:50%;background:#fff;border:2px solid #C9CCD1;display:grid;place-items:center;font-size:11px;font-weight:800;margin:0 auto 5px;position:relative;z-index:1}
+.a8 .st8 span{font-size:9.5px;color:#8A8F97;font-weight:600}
+.a8 .st8::before{content:"";position:absolute;top:13px;left:-50%;right:50%;height:2px;background:#C9CCD1}
+.a8 .st8:first-child::before{display:none}
+.a8 .st8.done .dot8{background:#3E6B4F;border-color:#3E6B4F;color:#fff}
+.a8 .st8.on .dot8{border-color:#3E6B4F;color:#3E6B4F}
+.a8 .st8.done::before,.a8 .st8.on::before{background:#3E6B4F}
+.a8 .ph8{background:#fff;border:1px solid #E2E3E6;border-radius:14px;padding:16px 15px}
+.a8 .ph8 h3{margin:0 0 12px;font-size:15px}
+.a8 .kv{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid #F2F3F4;font-size:12.5px}
+.a8 .kv span{color:#7A7E85}
+.a8 .pos1{display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid #F2F3F4;font-size:12.5px}
+.a8 .pos1 .bz{flex:1}.a8 .pos1 .bz small{display:block;color:#8A8F97;font-size:10px}
+.a8 .pp{font-weight:700}
+.a8 .addp{color:#3E6B4F;font-weight:700;font-size:12px;padding:10px 0}
+.a8 .nav8{display:flex;gap:9px;margin-top:14px}
+.a8 .nav8 .p{flex:0 0 40%;background:#fff;border:1px solid #C9CCD1;border-radius:10px;padding:12px;text-align:center;font-weight:600;font-size:13px}
+.a8 .nav8 .n{flex:1;background:#3E6B4F;color:#fff;border-radius:10px;padding:12px;text-align:center;font-weight:700;font-size:13px}
+.a8 .tot8{display:flex;justify-content:space-between;font-size:12px;padding:4px 0}
+.a8 .tot8.b{font-weight:800;font-size:14px;border-top:1.5px solid #24272B;margin-top:6px;padding-top:8px}
+
+/* ======================= 9 · JOURNAL PRO ======================= */
+.a9{background:#F2F3F2;color:#252A26;font-family:ui-monospace,'SF Mono',Menlo,monospace}
+.a9 .frame{padding:58px 10px 30px}
+.a9 h2{font-size:14px;margin:0 0 2px;letter-spacing:-.01em}
+.a9 .sub9{font-size:10px;color:#79807A;margin-bottom:10px}
+.a9 .jrn{background:#fff;border:1px solid #C9CEC9}
+.a9 .jh{display:grid;grid-template-columns:26px 1fr 52px 64px 24px;font-size:8px;letter-spacing:.08em;color:#8C978A;border-bottom:1.5px solid #C9CEC9;text-transform:uppercase}
+.a9 .jh div{padding:7px 6px}
+.a9 .grp9{width:100%;background:#EAEFE9;border-bottom:1px solid #C9CEC9;padding:7px 8px;font-size:10px;font-weight:700;letter-spacing:.05em;display:flex;justify-content:space-between}
+.a9 .jr{display:grid;grid-template-columns:26px 1fr 52px 64px 24px;border-bottom:1px solid #EDF0ED;font-size:11px;align-items:center}
+.a9 .jr div{padding:8px 6px;min-width:0}
+.a9 .jr .no{color:#8C978A;font-size:9px}
+.a9 .jr .bz small{display:block;font-size:8.5px;color:#8C978A}
+.a9 .jr .r{text-align:right}
+.a9 .jr .del{text-align:center;color:#AEB6AE;font-size:11px;padding:8px 2px}
+.a9 .addln9{width:100%;text-align:center;padding:9px;color:#2F7A3B;font-size:10.5px;border-bottom:1px solid #C9CEC9}
+.a9 .jf{display:flex;justify-content:space-between;padding:9px 10px;background:#252A26;color:#EDF2ED;font-size:11px}
+.a9 .jf b{color:#B9F09B}
+.a9 .meta9{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:#C9CEC9;border:1px solid #C9CEC9;margin-bottom:10px}
+.a9 .meta9 div{background:#fff;padding:8px 9px;font-size:10px}
+.a9 .meta9 span{display:block;font-size:8px;color:#8C978A;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.a9 .m9b{width:100%;margin-top:10px;background:#252A26;color:#B9F09B;padding:11px;text-align:center;font-size:11px}
+
+/* ======================= 10 · GLAS HELL ======================= */
+.a10{background:radial-gradient(340px 260px at 88% -4%,rgba(160,180,200,.5),transparent 65%),radial-gradient(300px 280px at -8% 100%,rgba(190,200,180,.45),transparent 65%),#E9EBEA;color:#272B29}
+.a10 .frame{padding:58px 14px 96px}
+.a10 h2{font-size:20px;margin:0 0 2px}
+.a10 .sub10{font-size:11px;color:#7E8481;margin-bottom:14px}
+.a10 .g10{background:rgba(255,255,255,.55);backdrop-filter:blur(22px);border:1px solid rgba(255,255,255,.85);border-radius:20px;margin-bottom:11px;overflow:hidden;box-shadow:0 10px 30px rgba(60,70,65,.1)}
+.a10 .gh{width:100%;display:flex;align-items:center;gap:10px;padding:13px 15px;font-size:13px;font-weight:700}
+.a10 .gh .mini{margin-left:auto;font-size:10.5px;color:#7E8481;font-weight:500}
+.a10 .gh .chv{width:8px;height:8px;border-right:1.7px solid #9AA09D;border-bottom:1.7px solid #9AA09D;transform:rotate(45deg);transition:transform .25s}
+.a10 .g10.open .chv{transform:rotate(225deg)}
+.a10 .gb{display:none;padding:2px 15px 13px}
+.a10 .g10.open .gb{display:block}
+.a10 .kv{display:flex;justify-content:space-between;padding:7px 0;font-size:12.5px;border-bottom:1px solid rgba(40,45,42,.06)}
+.a10 .kv span{color:#7E8481}
+.a10 .pos1{display:flex;align-items:center;gap:9px;padding:9px 0;font-size:12.5px;border-bottom:1px solid rgba(40,45,42,.06)}
+.a10 .pos1 .bz{flex:1}.a10 .pos1 .bz small{display:block;color:#7E8481;font-size:10px}
+.a10 .pp{font-weight:700}
+.a10 .del{color:#AEB4B1}
+.a10 .addp{color:#3E6B4F;font-weight:700;font-size:12px;padding:9px 0}
+.a10 .kbar10{position:fixed;left:12px;right:12px;bottom:14px;max-width:406px;margin:0 auto;background:rgba(255,255,255,.7);backdrop-filter:blur(26px);border:1px solid rgba(255,255,255,.9);border-radius:20px;padding:12px 16px;box-shadow:0 16px 40px rgba(60,70,65,.2)}
+.a10 .krow{display:flex;justify-content:space-between;margin-bottom:9px}
+.a10 .krow div{font-size:9.5px;color:#7E8481;font-weight:600}
+.a10 .krow b{display:block;font-size:14px;color:#272B29}
+.a10 .krow .gw b{color:#3E6B4F}
+.a10 .m10b{width:100%;background:#272B29;color:#fff;border-radius:12px;padding:12px;text-align:center;font-weight:700;font-size:13px}
+
+/* ======================= 11 · KANBAN-PAKETE ======================= */
+.a11{background:#F1F2F4;color:#24262B}
+.a11 .frame{padding:58px 0 30px}
+.a11 .hd11{padding:0 16px 10px}
+.a11 h2{font-size:19px;margin:0 0 2px}
+.a11 .sub11{font-size:10.5px;color:#8A8F97}
+.a11 .strip{display:flex;gap:10px;overflow-x:auto;padding:8px 16px 14px;scroll-snap-type:x mandatory}
+.a11 .kcol{flex:0 0 80%;scroll-snap-align:center;background:#fff;border:1px solid #E2E3E6;border-radius:14px;padding:13px;align-self:flex-start}
+.a11 .kch{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.a11 .kch .kl{font-size:9px;font-weight:800;padding:3px 7px;border-radius:6px}
+.a11 .kch b{font-size:13px}
+.a11 .kch .sum{margin-left:auto;font-size:12px;font-weight:700}
+.a11 .pcard{background:#F6F7F8;border:1px solid #EBECEF;border-radius:10px;padding:10px 11px;margin-bottom:8px;font-size:12px}
+.a11 .pcard .r1{display:flex;justify-content:space-between;font-weight:600}
+.a11 .pcard small{color:#8A8F97;font-size:10px}
+.a11 .pcard .ft{display:flex;justify-content:space-between;margin-top:7px;align-items:center}
+.a11 .qty{display:flex;gap:3px;align-items:center}
+.a11 .qty button{width:22px;height:22px;border-radius:6px;background:#fff;border:1px solid #E2E3E6;text-align:center;font-weight:700;font-size:11px}
+.a11 .qty i{font-style:normal;font-size:10.5px;min-width:24px;text-align:center}
+.a11 .del{color:#B9BDC3}
+.a11 .addp{width:100%;border:1.5px dashed #C9CCD1;border-radius:10px;padding:10px;text-align:center;color:#4A6FA5;font-weight:700;font-size:11.5px}
+.a11 .kfix{margin:0 16px;background:#24262B;color:#fff;border-radius:14px;padding:13px 16px;display:flex;justify-content:space-between;align-items:center}
+.a11 .kfix small{display:block;font-size:9px;opacity:.6}
+.a11 .kfix b{font-size:15px}
+.a11 .kfix .b11{background:#fff;color:#24262B;border-radius:9px;padding:10px 16px;font-weight:700;font-size:12.5px}
+
+/* ======================= 12 · EXECUTIVE DUNKEL ======================= */
+.a12{background:#26241F;color:#E9E5DC}
+.a12 .frame{padding:58px 18px 30px}
+.a12 .top12{border-bottom:1px solid #3B382F;padding-bottom:14px;margin-bottom:14px}
+.a12 .ey12{font-size:9px;letter-spacing:.18em;color:#A39A85;text-transform:uppercase}
+.a12 h2{font-size:22px;margin:3px 0 10px;font-weight:400;letter-spacing:-.01em}
+.a12 .sums12{display:flex;gap:22px}
+.a12 .sums12 div{font-size:9px;color:#A39A85;letter-spacing:.08em;text-transform:uppercase}
+.a12 .sums12 b{display:block;font-size:19px;font-weight:300;color:#E9E5DC;margin-top:3px;letter-spacing:0}
+.a12 .sums12 .gw b{color:#C9A96A}
+.a12 .sec12{border-bottom:1px solid #3B382F;padding:13px 0}
+.a12 .sh12{width:100%;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600}
+.a12 .sh12 .mini{margin-left:auto;font-size:10px;color:#A39A85;font-weight:400}
+.a12 .sh12 .chv{width:7px;height:7px;border-right:1.5px solid #A39A85;border-bottom:1.5px solid #A39A85;transform:rotate(45deg);transition:transform .25s}
+.a12 .sec12.open .chv{transform:rotate(225deg)}
+.a12 .sb12{display:none;padding-top:10px}
+.a12 .sec12.open .sb12{display:block}
+.a12 .kv{display:flex;justify-content:space-between;padding:6.5px 0;font-size:12px}
+.a12 .kv span{color:#A39A85}
+.a12 .pos1{display:flex;align-items:center;gap:9px;padding:8px 0;font-size:12px;border-bottom:1px solid #302D26}
+.a12 .pos1:last-child{border:none}
+.a12 .pos1 .bz{flex:1}.a12 .pos1 .bz small{display:block;color:#A39A85;font-size:9.5px}
+.a12 .pp{font-weight:600;color:#E9E5DC}
+.a12 .del{color:#6B6455}
+.a12 .addp{color:#C9A96A;font-size:11px;font-weight:600;padding:9px 0;letter-spacing:.04em}
+.a12 .m12b{width:100%;margin-top:16px;border:1px solid #C9A96A;color:#C9A96A;padding:13px;text-align:center;font-size:12px;letter-spacing:.14em;text-transform:uppercase;border-radius:2px}
+
+/* ======================= 13 · TIMELINE-AKTE ======================= */
+.a13{background:#FAFAF8;color:#22241F}
+.a13 .frame{padding:58px 16px 30px}
+.a13 h2{font-size:19px;margin:0 0 14px}
+.a13 .tl13{position:relative;padding-left:26px}
+.a13 .tl13::before{content:"";position:absolute;left:8px;top:6px;bottom:6px;width:2px;background:#E0E1DB}
+.a13 .ev13{position:relative;margin-bottom:14px}
+.a13 .ev13::before{content:"";position:absolute;left:-24px;top:5px;width:10px;height:10px;border-radius:50%;background:#fff;border:2.5px solid #7A8471}
+.a13 .ev13 .when{font-size:9.5px;color:#8E9188;margin-bottom:4px;font-weight:600;letter-spacing:.03em}
+.a13 .ec{background:#fff;border:1px solid #E4E5DF;border-radius:12px;padding:12px 13px;box-shadow:0 4px 14px rgba(40,42,35,.05)}
+.a13 .ec b.t13{font-size:12.5px;display:block;margin-bottom:8px}
+.a13 .kv{display:flex;justify-content:space-between;padding:6px 0;font-size:12px;border-bottom:1px solid #F2F3EE}
+.a13 .kv span{color:#8E9188}
+.a13 .pos1{display:flex;align-items:center;gap:8px;padding:8px 0;font-size:12px;border-bottom:1px solid #F2F3EE}
+.a13 .pos1 .bz{flex:1}.a13 .pos1 .bz small{display:block;color:#8E9188;font-size:9.5px}
+.a13 .pp{font-weight:700}
+.a13 .del{color:#B9BBB2}
+.a13 .addp{color:#5A7050;font-weight:700;font-size:11.5px;padding:8px 0}
+.a13 .sum13{background:#22241F;color:#F4F4EF;border-radius:12px;padding:13px 15px}
+.a13 .sum13 .r{display:flex;justify-content:space-between;font-size:12px;padding:3px 0;opacity:.85}
+.a13 .sum13 .r.b{font-size:15px;font-weight:700;opacity:1;border-top:1px solid rgba(255,255,255,.2);margin-top:7px;padding-top:9px}
+.a13 .m13b{width:100%;background:#5A7050;color:#fff;border-radius:10px;padding:12px;text-align:center;font-weight:700;font-size:13px;margin-top:10px}
+
+/* ======================= 14 · SPLIT KALK OBEN ======================= */
+.a14{background:#EEF0F2;color:#22252A}
+.a14 .frame{padding:58px 0 30px}
+.a14 .khead{background:#2C3E50;color:#ECF0F3;padding:16px;position:sticky;top:0;z-index:6}
+.a14 .khead .r1{display:flex;justify-content:space-between;align-items:baseline}
+.a14 .khead h2{font-size:16px;margin:0}
+.a14 .khead .st14{font-size:10px;border:1px solid rgba(255,255,255,.4);border-radius:7px;padding:4px 9px}
+.a14 .kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.a14 .kgrid div{font-size:8.5px;opacity:.65;text-transform:uppercase;letter-spacing:.05em}
+.a14 .kgrid b{display:block;font-size:14px;margin-top:2px;font-weight:600}
+.a14 .kgrid .gw b{color:#8FD8A8}
+.a14 .body14{padding:14px 16px}
+.a14 .sec14{background:#fff;border:1px solid #E1E3E6;border-radius:12px;margin-bottom:10px;overflow:hidden}
+.a14 .sh14{width:100%;display:flex;align-items:center;gap:9px;padding:12px 14px;font-size:12.5px;font-weight:700}
+.a14 .sh14 .chv{margin-left:auto;width:7px;height:7px;border-right:1.6px solid #A9ADB4;border-bottom:1.6px solid #A9ADB4;transform:rotate(45deg);transition:transform .2s}
+.a14 .sec14.open .chv{transform:rotate(225deg)}
+.a14 .sb14{display:none;padding:0 14px 12px}
+.a14 .sec14.open .sb14{display:block}
+.a14 .kv{display:flex;justify-content:space-between;padding:7px 0;font-size:12.5px;border-bottom:1px solid #F2F3F4}
+.a14 .kv span{color:#7A7E85}
+.a14 .pos1{display:flex;align-items:center;gap:9px;padding:9px 0;font-size:12.5px;border-bottom:1px solid #F2F3F4}
+.a14 .pos1 .bz{flex:1}.a14 .pos1 .bz small{display:block;color:#8A8F97;font-size:10px}
+.a14 .pp{font-weight:700}
+.a14 .del{color:#C4C7CC}
+.a14 .addp{color:#2C3E50;font-weight:700;font-size:12px;padding:9px 0}
+.a14 .m14b{width:calc(100% - 32px);margin:4px 16px 0;background:#2C3E50;color:#fff;border-radius:10px;padding:13px;text-align:center;font-weight:700;font-size:13px}
+
+/* ======================= 15 · KARTEI-REITER ======================= */
+.a15{background:#E9E7E2;color:#2B2A26}
+.a15 .frame{padding:58px 12px 30px}
+.a15 .reiter{display:flex;gap:4px;padding:0 6px}
+.a15 .reiter button{background:#D8D5CD;border-radius:9px 9px 0 0;padding:9px 14px;font-size:11.5px;font-weight:700;color:#6E6B62;border:1px solid #C8C5BB;border-bottom:none}
+.a15 .reiter button.on{background:#FBFAF7;color:#2B2A26;position:relative;z-index:2}
+.a15 .karte{background:#FBFAF7;border:1px solid #C8C5BB;border-radius:10px;padding:18px 16px;margin-top:-1px;box-shadow:0 10px 30px rgba(60,56,42,.12)}
+.a15 h3{margin:0 0 12px;font-size:15px}
+.a15 .kv{display:flex;justify-content:space-between;padding:7px 0;font-size:12.5px;border-bottom:1px solid #EFEDE6}
+.a15 .kv span{color:#8B887C}
+.a15 .pos1{display:flex;align-items:center;gap:9px;padding:9px 0;font-size:12.5px;border-bottom:1px solid #EFEDE6}
+.a15 .pos1 .bz{flex:1}.a15 .pos1 .bz small{display:block;color:#8B887C;font-size:10px}
+.a15 .pp{font-weight:700}
+.a15 .del{color:#BDBAB0}
+.a15 .addp{color:#7A5C28;font-weight:700;font-size:12px;padding:9px 0}
+.a15 .tot15{display:flex;justify-content:space-between;font-size:12px;padding:4px 0}
+.a15 .tot15.b{font-weight:800;font-size:14px;border-top:1.5px solid #2B2A26;margin-top:6px;padding-top:8px}
+.a15 .m15b{width:100%;background:#2B2A26;color:#FBFAF7;border-radius:8px;padding:13px;text-align:center;font-weight:700;font-size:13px;margin-top:12px}
+
+/* ======================= 16 · GAUGE-KALK ======================= */
+.a16{background:#F2F3F4;color:#23262B}
+.a16 .frame{padding:58px 16px 30px;align-items:center}
+.a16 .gau{position:relative;width:190px;height:190px;margin:4px auto 8px}
+.a16 .ring16{position:absolute;inset:0;border-radius:50%;background:conic-gradient(#3E6B4F var(--pct,63%),#DDDFE3 0)}
+.a16 .ring16::after{content:"";position:absolute;inset:12px;border-radius:50%;background:#F2F3F4}
+.a16 .core16{position:absolute;inset:26px;border-radius:50%;background:#fff;box-shadow:0 10px 30px rgba(30,33,38,.12);display:grid;place-items:center;text-align:center}
+.a16 .core16 b{font-size:22px;display:block;font-weight:350}
+.a16 .core16 span{font-size:9px;color:#8A8F97;letter-spacing:.08em;text-transform:uppercase}
+.a16 .legs{display:flex;gap:14px;margin-bottom:14px}
+.a16 .legs div{font-size:10px;color:#8A8F97}
+.a16 .legs b{display:block;font-size:14px;color:#23262B;font-weight:600}
+.a16 .legs .gw b{color:#3E6B4F}
+.a16 .panel16{width:100%;background:#fff;border:1px solid #E2E3E6;border-radius:14px;padding:4px 14px;margin-bottom:10px}
+.a16 .pos1{display:flex;align-items:center;gap:9px;padding:10px 0;font-size:12.5px;border-bottom:1px solid #F2F3F4}
+.a16 .pos1:last-child{border:none}
+.a16 .pos1 .bz{flex:1}.a16 .pos1 .bz small{display:block;color:#8A8F97;font-size:10px}
+.a16 .qty{display:flex;gap:3px;align-items:center}
+.a16 .qty button{width:22px;height:22px;border-radius:6px;background:#F0F1F3;text-align:center;font-weight:700;font-size:11px}
+.a16 .qty i{font-style:normal;font-size:10.5px;min-width:24px;text-align:center}
+.a16 .pp{font-weight:700;min-width:58px;text-align:right}
+.a16 .addp{width:100%;text-align:center;color:#3E6B4F;font-weight:700;font-size:12px;padding:10px}
+.a16 .m16b{width:100%;background:#23262B;color:#fff;border-radius:12px;padding:13px;text-align:center;font-weight:700;font-size:13px}
+
+/* ======================= 17 · ERP PRO ======================= */
+.a17{background:#E8EAED;color:#23262B;font-size:12px}
+.a17 .frame{padding:58px 8px 24px;max-width:470px}
+.a17 .win{background:#F7F8F9;border:1px solid #B9BDC3;border-radius:6px;overflow:hidden;box-shadow:0 8px 24px rgba(30,33,38,.14)}
+.a17 .tb{display:flex;align-items:center;gap:2px;background:#DDE0E4;border-bottom:1px solid #B9BDC3;padding:5px 8px}
+.a17 .tb button{font-size:10.5px;padding:5px 10px;border-radius:4px;font-weight:600;color:#4A4E55}
+.a17 .tb button:hover{background:#CDD1D6}
+.a17 .tb .sp{flex:1}
+.a17 .tb .id17{font-size:10px;color:#7A7E85}
+.a17 .grid17{display:grid;grid-template-columns:112px 1fr;border-bottom:1px solid #D5D8DC}
+.a17 .side17{background:#EFF1F3;border-right:1px solid #D5D8DC;padding:8px 0}
+.a17 .side17 button{display:block;width:100%;padding:8px 12px;font-size:11px;color:#4A4E55;border-left:3px solid transparent}
+.a17 .side17 button.on{background:#fff;border-left-color:#31649B;font-weight:700;color:#23262B}
+.a17 .main17{padding:12px;min-height:300px;background:#fff}
+.a17 table{width:100%;border-collapse:collapse;font-size:11px}
+.a17 th{text-align:left;background:#F2F3F5;border:1px solid #E2E4E7;padding:6px 7px;font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:#7A7E85}
+.a17 td{border:1px solid #EDEFF1;padding:7px;vertical-align:middle}
+.a17 td.r,.a17 th.r{text-align:right}
+.a17 .del{color:#B9BDC3}
+.a17 .addp{color:#31649B;font-weight:700;font-size:11px;padding:8px 2px}
+.a17 .kv{display:flex;justify-content:space-between;padding:6px 2px;font-size:11.5px;border-bottom:1px solid #F0F1F3}
+.a17 .kv span{color:#7A7E85}
+.a17 .sb17{display:flex;justify-content:space-between;align-items:center;background:#EFF1F3;padding:8px 12px;font-size:10.5px;color:#4A4E55}
+.a17 .sb17 b{font-size:12px;color:#23262B}
+.a17 .m17b{background:#31649B;color:#fff;border-radius:5px;padding:8px 16px;font-weight:700;font-size:11.5px}
+
+/* ======================= 18 · BOTTOM-SHEET STAPEL ======================= */
+.a18{background:#212327;color:#E6E7E9}
+.a18 .frame{padding:58px 16px 30px}
+.a18 .hero18{padding:6px 2px 18px}
+.a18 .hero18 .ey{font-size:9.5px;letter-spacing:.1em;color:#8E9196;text-transform:uppercase}
+.a18 .hero18 h2{font-size:24px;margin:2px 0 4px;font-weight:300}
+.a18 .hero18 .who{font-size:12px;color:#B9BBBF}
+.a18 .sheet18{position:relative;background:#F4F4F5;color:#26282C;border-radius:22px 22px 0 0;padding:8px 16px 20px;flex:1;margin:0 -16px -30px;box-shadow:0 -16px 40px rgba(0,0,0,.4)}
+.a18 .grab{width:38px;height:4px;border-radius:99px;background:#C9CCD1;margin:4px auto 12px}
+.a18 .seg18{display:flex;background:#E7E8EA;border-radius:10px;padding:3px;margin-bottom:14px}
+.a18 .seg18 button{flex:1;text-align:center;padding:8px;font-size:11.5px;font-weight:600;border-radius:8px;color:#6E7278}
+.a18 .seg18 button.on{background:#fff;color:#26282C;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+.a18 .kv{display:flex;justify-content:space-between;padding:8px 0;font-size:12.5px;border-bottom:1px solid #E7E8EA}
+.a18 .kv span{color:#7A7E85}
+.a18 .pos1{display:flex;align-items:center;gap:9px;padding:9px 0;font-size:12.5px;border-bottom:1px solid #E7E8EA}
+.a18 .pos1 .bz{flex:1}.a18 .pos1 .bz small{display:block;color:#8A8F97;font-size:10px}
+.a18 .pp{font-weight:700}
+.a18 .del{color:#B9BDC3}
+.a18 .addp{color:#2C5E8A;font-weight:700;font-size:12px;padding:10px 0}
+.a18 .tot18{display:flex;justify-content:space-between;font-size:12px;padding:4px 0}
+.a18 .tot18.b{font-weight:800;font-size:14.5px;border-top:1.5px solid #26282C;margin-top:6px;padding-top:9px}
+.a18 .m18b{width:100%;background:#26282C;color:#fff;border-radius:11px;padding:13px;text-align:center;font-weight:700;font-size:13.5px;margin-top:12px}
+
+/* ======================= 19 · ZEILEN-FOKUS (Zebra) ======================= */
+.a19{background:#FFFFFF;color:#212327}
+.a19 .frame{padding:60px 0 30px}
+.a19 .hd19{padding:0 20px 12px;display:flex;justify-content:space-between;align-items:baseline;border-bottom:2px solid #212327}
+.a19 h2{font-size:18px;margin:0}
+.a19 .hd19 b.tot{font-size:18px}
+.a19 .row19{display:flex;align-items:center;gap:10px;padding:12px 20px;font-size:13px}
+.a19 .row19:nth-child(even){background:#F7F7F8}
+.a19 .row19 .lb{flex:0 0 92px;font-size:10px;color:#909399;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+.a19 .row19 .vl{flex:1;font-weight:500}
+.a19 .row19 .vl small{display:block;font-size:10px;color:#909399;font-weight:400}
+.a19 .pp{font-weight:700}
+.a19 .del{color:#C4C7CC}
+.a19 .qty{display:flex;gap:3px;align-items:center}
+.a19 .qty button{width:22px;height:22px;border-radius:6px;border:1px solid #DDDEE2;text-align:center;font-weight:700;font-size:11px}
+.a19 .qty i{font-style:normal;font-size:10.5px;min-width:24px;text-align:center}
+.a19 .addp{margin:10px 20px;color:#212327;border:1.5px dashed #C9CCD1;border-radius:8px;padding:10px;text-align:center;font-weight:700;font-size:12px;width:calc(100% - 40px)}
+.a19 .foot19{margin-top:12px;border-top:2px solid #212327;padding:12px 20px;display:flex;justify-content:space-between;align-items:center}
+.a19 .foot19 .kl19{font-size:11px;color:#909399}
+.a19 .foot19 .kl19 b{display:block;font-size:16px;color:#212327}
+.a19 .m19b{background:#212327;color:#fff;border-radius:9px;padding:12px 22px;font-weight:700;font-size:13px}
+
+/* ======================= 20 · STUDIO WARM DUNKEL ======================= */
+.a20{background:#2B2825;color:#EAE6E0}
+.a20 .frame{padding:58px 16px 96px}
+.a20 .ey20{font-size:9.5px;letter-spacing:.12em;color:#9C948A;text-transform:uppercase}
+.a20 h2{font-size:20px;margin:2px 0 14px;font-weight:500}
+.a20 .sec20{background:#332F2B;border:1px solid #453F39;border-radius:16px;margin-bottom:10px;overflow:hidden}
+.a20 .sh20{width:100%;display:flex;align-items:center;gap:10px;padding:13px 15px;font-size:13px;font-weight:600}
+.a20 .sh20 .mini{margin-left:auto;font-size:10px;color:#9C948A;font-weight:400}
+.a20 .sh20 .chv{width:7px;height:7px;border-right:1.6px solid #9C948A;border-bottom:1.6px solid #9C948A;transform:rotate(45deg);transition:transform .25s}
+.a20 .sec20.open .chv{transform:rotate(225deg)}
+.a20 .sb20{display:none;padding:0 15px 13px}
+.a20 .sec20.open .sb20{display:block}
+.a20 .kv{display:flex;justify-content:space-between;padding:7px 0;font-size:12.5px;border-bottom:1px solid #3D3833}
+.a20 .kv span{color:#9C948A}
+.a20 .pos1{display:flex;align-items:center;gap:9px;padding:9px 0;font-size:12.5px;border-bottom:1px solid #3D3833}
+.a20 .pos1 .bz{flex:1}.a20 .pos1 .bz small{display:block;color:#9C948A;font-size:10px}
+.a20 .qty{display:flex;gap:3px;align-items:center}
+.a20 .qty button{width:22px;height:22px;border-radius:6px;background:#453F39;text-align:center;font-weight:700;font-size:11px}
+.a20 .qty i{font-style:normal;font-size:10.5px;min-width:24px;text-align:center}
+.a20 .pp{font-weight:600;min-width:58px;text-align:right}
+.a20 .del{color:#736A5F}
+.a20 .addp{width:100%;text-align:center;color:#D8B98A;font-size:11.5px;font-weight:600;padding:10px;border-top:1px dashed #453F39}
+.a20 .kbar20{position:fixed;left:0;right:0;bottom:0;background:rgba(35,32,29,.97);border-top:1px solid #453F39}
+.a20 .kbar20 .in20{max-width:430px;margin:0 auto;padding:11px 16px calc(13px + env(safe-area-inset-bottom))}
+.a20 .krow{display:flex;justify-content:space-between;margin-bottom:9px}
+.a20 .krow div{font-size:9.5px;color:#9C948A;font-weight:600}
+.a20 .krow b{display:block;font-size:14px;color:#EAE6E0;margin-top:1px}
+.a20 .krow .gw b{color:#D8B98A}
+.a20 .m20b{width:100%;background:#D8B98A;color:#2B2118;border-radius:11px;padding:12px;text-align:center;font-weight:800;font-size:13px}
+</style>
+</head>
+<body>
+<div id="stage"></div>
+<div id="toast"></div>
+
+<script>
+/* =============== Demo-Datenmodell + Kalkulations-Engine =============== */
+const fmt=ct=>(ct/100).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const KL={kw:['Kundenwunsch','#E4EAF2','#3D5A80'],tb:['Techn. Beanstandung','#F3E4E2','#9C4A3C']};
+const POOL=[
+ {bez:'Ölfilter + Motoröl 5W-30',typ:'teil',menge:1,ek:3200,vk:6900},
+ {bez:'Achsvermessung',typ:'arbeit',aw:1.5,satz:1250},
+ {bez:'Wischerblätter vorn',typ:'teil',menge:1,ek:1400,vk:2990},
+ {bez:'Klimadesinfektion',typ:'arbeit',aw:0.8,satz:1250},
+ {bez:'Bremsflüssigkeit wechseln',typ:'arbeit',aw:1.2,satz:1250}];
+let D=null,poolIdx=0;
+function freshData(){poolIdx=0;return{
+ nr:'AU-2026-0053',status:'In Arbeit',kunde:{name:'Ali Yilmaz',tel:'+49 171 2345678',moral:'Gut'},
+ fzg:{kennz:'HU-SM 247',modell:'BMW 320d · 2019',km:'87.450 km',hu:'04/2027'},
+ termin:'Do, 17.07. · 17:00',
+ pakete:[
+  {id:'p1',name:'Bremsen VA + HA',klass:'kw',open:true,pos:[
+   {id:'x1',bez:'Bremsscheiben & Beläge VA erneuern',typ:'arbeit',aw:2.6,satz:1250},
+   {id:'x2',bez:'Bremsscheiben VA (Paar)',typ:'teil',menge:1,ek:9800,vk:18900},
+   {id:'x3',bez:'Bremsbeläge VA (Satz)',typ:'teil',menge:1,ek:4200,vk:8900}]},
+  {id:'p2',name:'HU-Vorbereitung',klass:'tb',open:false,pos:[
+   {id:'x4',bez:'HU/AU Vorführung & Abnahme',typ:'arbeit',aw:2.0,satz:1250}]}]}}
+const posNetto=p=>p.typ==='arbeit'?Math.round(p.aw*p.satz):p.vk*(p.menge||1);
+const posEk=p=>p.typ==='teil'?p.ek*(p.menge||1):0;
+const pakNetto=pk=>pk.pos.reduce((s,p)=>s+posNetto(p),0);
+function calc(){const n=D.pakete.reduce((s,pk)=>s+pakNetto(pk),0);
+ const ek=D.pakete.reduce((s,pk)=>s+pk.pos.reduce((x,p)=>x+posEk(p),0),0);
+ const m=Math.round(n*0.19);return{n,m,b:n+m,g:n-ek}}
+const posMeta=p=>p.typ==='arbeit'?(String(p.aw).replace('.',',')+' AW × '+fmt(p.satz)):((p.menge||1)+' × '+fmt(p.vk));
+function toast(t){const el=document.getElementById('toast');el.textContent=t;el.style.display='block';clearTimeout(el._t);el._t=setTimeout(()=>el.style.display='none',1600)}
+
+/* =============== Katalog =============== */
+const CAT=[
+ ['Akkordeon Pro','Deine Balken, verfeinert: Sektionen mit Zählern, Mengen-Stepper an jeder Position, feste Kalkulationsleiste unten.',0],
+ ['Register-Tabs','Übersicht · Positionen · Kalkulation als ruhige Reiter — nichts überlagert sich.',0],
+ ['Rechnungs-Beleg','Die Maske IST der entstehende Beleg: Positionszeilen auf Papier, Summenblock rechnet live.',0],
+ ['Cockpit','Dunkle Kommandozentrale: Icon-Rail links, HUD-Zeile oben, aufklappbare Bereiche.',1],
+ ['Kacheln','Kunde, Fahrzeug, Termin als Kacheln, Positionen + Kalkulation als breite Karten.',0],
+ ['Master-Detail','Oben die Positionsliste, unten das Detail der gewählten Zeile — wie eine Mail-App.',0],
+ ['Klemmbrett','Werkstatt-Realität: Bogen auf dem Brett, Kästchen zum Abhaken, kräftige Rahmen.',0],
+ ['Phasen','Annahme → Arbeit → Abrechnung als Stepper; jede Phase zeigt ihren Inhalt.',0],
+ ['Journal Pro','Buchungsjournal mit Paket-Zwischensummen, Monospace, Summenfuß — Zahlenmenschen-Modus.',0],
+ ['Glas hell','Aufklappbare Milchglas-Sektionen, schwebende Kalkulations-Pille unten.',0],
+ ['Paket-Spalten','Jedes Paket eine wischbare Spalte, Positionen als Karten mit Stepper.',0],
+ ['Executive','Dunkles Warmgrau, große dünne Summen oben, Sektionen als feine Linien — Chefetage.',1],
+ ['Zeitakte','Der Auftrag als Chronik: Annahme, Pakete, Summe als Ereignisse an der Zeitlinie.',0],
+ ['Kalk-Kopf','Die Kalkulation klebt als dunkler Kopf oben und rechnet beim Scrollen sichtbar mit.',0],
+ ['Kartei-Reiter','Echte Karteikarten mit Reitern oben — Akte, Arbeit, Abrechnung.',0],
+ ['Gewinn-Ring','Der Gewinnanteil als Ring in der Mitte; Positionen ändern ihn live.',0],
+ ['ERP Pro','Fenster mit Toolbar, Seitenleiste und Tabellen — Werkstattmeister-Vollformat.',0],
+ ['Bühne + Sheet','Dunkle Bühne mit Auftragskopf, heller Arbeitsbereich schiebt sich als Sheet darüber.',0],
+ ['Zeilen-Fokus','Alles eine große Zebra-Liste: Label-Spalte, Werte, Summenfuß. Radikal einfach.',0],
+ ['Studio Warm','Dunkles Braungrau mit Sand-Akzent, weiche Sektionen, feste Kalkleiste.',1]];
+
+/* =============== Gemeinsame Fragmente =============== */
+const kundeKV=()=>`<div class="kv"><span>Name</span><b>${D.kunde.name}</b></div>
+ <div class="kv"><span>Telefon</span><b class="num">${D.kunde.tel}</b></div>
+ <div class="kv"><span>Zahlungsmoral</span><b>${D.kunde.moral}</b></div>`;
+const fzgKV=()=>`<div class="kv"><span>Kennzeichen</span><b>${D.fzg.kennz}</b></div>
+ <div class="kv"><span>Fahrzeug</span><b>${D.fzg.modell}</b></div>
+ <div class="kv"><span>KM-Stand</span><b class="num">${D.fzg.km}</b></div>
+ <div class="kv"><span>HU fällig</span><b class="num">${D.fzg.hu}</b></div>`;
+function posRow(pk,p,withQty){
+ return`<div class="pos1">
+  <span class="bz"><b>${p.bez}</b><small>${posMeta(p)}</small></span>
+  ${withQty?`<span class="qty"><button data-act="minus" data-p="${pk.id}" data-x="${p.id}">−</button><i class="num">${p.typ==='arbeit'?String(p.aw).replace('.',','):p.menge}</i><button data-act="plus" data-p="${pk.id}" data-x="${p.id}">+</button></span>`:''}
+  <span class="pp num">${fmt(posNetto(p))}</span>
+  <button class="del" data-act="delpos" data-p="${pk.id}" data-x="${p.id}">✕</button></div>`}
+const addBtn=pk=>`<button class="addp" data-act="addpos" data-p="${pk.id}">+ Position hinzufügen</button>`;
+
+/* =============== Renderer der 20 Varianten =============== */
+const R={};
+R[1]=()=>{const k=calc();return`
+ <div class="hdr1"><div class="ey">Auftrag · ${D.fzg.kennz}</div><h2>${D.nr}</h2>
+  <button class="stat" data-act="stat">● ${D.status} ⌄</button></div>
+ ${sec1('k','Kunde · '+D.kunde.name,'Stammkunde',kundeKV())}
+ ${sec1('f',D.fzg.kennz,D.fzg.modell,fzgKV())}
+ ${sec1('p','Pakete & Positionen',D.pakete.length+' Pakete',D.pakete.map(pk=>`
+   <div class="pak"><button class="pakh" data-act="ptgl" data-p="${pk.id}">
+    <span class="kl" style="background:${KL[pk.klass][1]};color:${KL[pk.klass][2]}">${KL[pk.klass][0]}</span>${pk.name}
+    <span class="sum num">${fmt(pakNetto(pk))}</span></button>
+   ${pk.open?pk.pos.map(p=>posRow(pk,p,true)).join('')+addBtn(pk):''}</div>`).join(''))}
+ ${sec1('t','Termin & Organisation','',`<div class="kv"><span>Vsl. fertig</span><b>${D.termin}</b></div><div class="kv"><span>Bühne</span><b>2</b></div>`)}
+ <div class="kbar"><div class="in1">
+  <div class="krow"><div>Netto<b class="num">${fmt(k.n)}</b></div><div>MwSt 19 %<b class="num">${fmt(k.m)}</b></div>
+   <div>Brutto<b class="num">${fmt(k.b)}</b></div><div class="gw">Gewinn<b class="num">${fmt(k.g)}</b></div></div>
+  <div class="kbtn"><button class="s">PDF</button><button class="m" data-act="bill">Rechnung erstellen</button></div></div></div>`;
+ function sec1(id,t,mini,body){const o=state.open[id]!==false;
+  return`<div class="sec ${o?'open':''}"><button class="sech" data-act="tgl" data-s="${id}"><span class="t">${t}</span><span class="mini">${mini}</span><span class="chv"></span></button><div class="secb">${body}</div></div>`}};
+
+R[2]=()=>{const k=calc();const tab=state.tab||'ueber';
+ const tabs=[['ueber','Übersicht'],['pos','Positionen'],['kalk','Kalkulation']];
+ let body='';
+ if(tab==='ueber')body=`<div class="card2"><h4>Kunde</h4>${kundeKV()}</div><div class="card2"><h4>Fahrzeug</h4>${fzgKV()}</div><div class="card2"><h4>Termin</h4><div class="kv"><span>Vsl. fertig</span><b>${D.termin}</b></div><div class="kv"><span>Status</span><b>${D.status}</b></div></div>`;
+ if(tab==='pos')body=D.pakete.map(pk=>`<div class="card2"><h4>${pk.name} · ${fmt(pakNetto(pk))}</h4>${pk.pos.map(p=>posRow(pk,p,false)).join('')}${addBtn(pk)}</div>`).join('');
+ if(tab==='kalk')body=`<div class="ksum"><div class="r"><span>Netto</span><b class="num">${fmt(k.n)}</b></div><div class="r"><span>MwSt 19 %</span><b class="num">${fmt(k.m)}</b></div><div class="r big"><span>Brutto</span><b class="num">${fmt(k.b)}</b></div><div class="r gw"><span>Gewinn (DB)</span><b class="num">${fmt(k.g)}</b></div></div><button class="m2b" data-act="bill">Rechnung erstellen</button>`;
+ return`<div class="hd2"><h2>${D.nr}</h2><small>${D.fzg.kennz} · ${D.status}</small></div>
+ <div class="tabs">${tabs.map(t=>`<button class="${tab===t[0]?'on':''}" data-act="tab" data-t="${t[0]}">${t[1]}</button>`).join('')}</div>
+ <div class="body2">${body}</div>`};
+
+R[3]=()=>{const k=calc();return`<div class="paper">
+ <div class="ph3"><div><b>mehanicar</b><small>Meisterwerkstatt · Hanau</small></div>
+  <div class="re">AUFTRAG ${D.nr}<br>${new Date().toLocaleDateString('de-DE')}<br>${D.status}</div></div>
+ <div class="meta3"><div><span>Kunde</span><br><b>${D.kunde.name}</b></div><div><span>Fahrzeug</span><br><b>${D.fzg.kennz} · ${D.fzg.modell}</b></div>
+  <div><span>KM-Stand</span><br><b class="num">${D.fzg.km}</b></div><div><span>Fertig bis</span><br><b>${D.termin}</b></div></div>
+ <table><tr><th>Position</th><th class="r">Menge</th><th class="r">Betrag</th><th></th></tr>
+ ${D.pakete.map(pk=>`<tr class="grp3"><td colspan="4">${pk.name} — ${fmt(pakNetto(pk))}</td></tr>
+  ${pk.pos.map(p=>`<tr><td>${p.bez}</td><td class="r num">${p.typ==='arbeit'?String(p.aw).replace('.',',')+' AW':p.menge+' ×'}</td>
+   <td class="r num">${fmt(posNetto(p))}</td><td><button class="del" data-act="delpos" data-p="${pk.id}" data-x="${p.id}">✕</button></td></tr>`).join('')}
+  <tr><td colspan="4"><button class="addln" data-act="addpos" data-p="${pk.id}">+ Position nachtragen …</button></td></tr>`).join('')}</table>
+ <div class="tots"><div class="r3"><span>Netto</span><b class="num">${fmt(k.n)}</b></div>
+  <div class="r3"><span>MwSt 19 %</span><b class="num">${fmt(k.m)}</b></div>
+  <div class="r3 b"><span>Brutto</span><b class="num">${fmt(k.b)}</b></div>
+  <div class="r3 g"><span>Deckungsbeitrag</span><b class="num">${fmt(k.g)}</b></div></div>
+ <button class="m3b" data-act="bill">RECHNUNG AUSSTELLEN</button></div>`};
+
+R[4]=()=>{const k=calc();return`
+ <div class="rail4"><div class="rl on">▦</div><div class="rl">👤</div><div class="rl">🚗</div><div class="rl">€</div><div class="rl">✎</div></div>
+ <div class="body4"><h2>${D.nr}</h2><div class="sub4">${D.fzg.kennz} · ${D.kunde.name} · <b>${D.status}</b></div>
+ <div class="hud"><div>Netto<b class="num">${fmt(k.n)}</b></div><div>MwSt<b class="num">${fmt(k.m)}</b></div><div>Brutto<b class="num">${fmt(k.b)}</b></div><div class="gw">Gewinn<b class="num">${fmt(k.g)}</b></div></div>
+ ${sec4('k','Kunde',D.kunde.name,kundeKV())}
+ ${sec4('f','Fahrzeug',D.fzg.kennz,fzgKV())}
+ ${sec4('p','Positionen',D.pakete.reduce((s,pk)=>s+pk.pos.length,0)+' Stück',
+  D.pakete.map(pk=>`<div style="font-size:10.5px;color:#7C828B;margin:8px 0 2px;text-transform:uppercase;letter-spacing:.05em">${pk.name} · <span class="num">${fmt(pakNetto(pk))}</span></div>${pk.pos.map(p=>posRow(pk,p,true)).join('')}${addBtn(pk)}`).join(''))}
+ <button class="m4b" data-act="bill">Rechnung erstellen</button></div>`;
+ function sec4(id,t,mini,body){const o=state.open[id]!==false;
+  return`<div class="sec4 ${o?'open':''}"><button class="sech4" data-act="tgl" data-s="${id}">${t}<span class="mini">${mini}</span><span class="chv"></span></button><div class="secb4">${body}</div></div>`}};
+
+R[5]=()=>{const k=calc();return`<div class="bg5">
+ <div class="b5"><small>Kunde</small><div class="big5" style="font-size:15px;font-weight:600">${D.kunde.name}</div><div class="sub5 num">${D.kunde.tel}</div></div>
+ <div class="b5"><small>Fahrzeug</small><div class="big5" style="font-size:15px;font-weight:600">${D.fzg.kennz}</div><div class="sub5">${D.fzg.modell}</div></div>
+ <div class="b5"><small>Status</small><div class="big5" style="font-size:15px;font-weight:600">${D.status}</div><div class="sub5">${D.termin}</div></div>
+ <div class="b5"><small>Gewinn</small><div class="big5 num" style="color:#2F7A4D">${fmt(k.g)}</div><div class="sub5">Deckungsbeitrag</div></div>
+ <div class="b5 w"><small>Positionen</small>
+  ${D.pakete.map(pk=>`<div style="font-size:10px;color:#9DA1A8;font-weight:800;margin:8px 0 2px;text-transform:uppercase">${pk.name} · <span class="num">${fmt(pakNetto(pk))}</span></div>${pk.pos.map(p=>posRow(pk,p,false)).join('')}${addBtn(pk)}`).join('')}</div>
+ <div class="b5 w"><small>Kalkulation</small>
+  <div class="kt"><span>Netto</span><b class="num">${fmt(k.n)}</b></div>
+  <div class="kt"><span>MwSt 19 %</span><b class="num">${fmt(k.m)}</b></div>
+  <div class="kt b"><span>Brutto</span><b class="num">${fmt(k.b)}</b></div>
+  <div class="kt g"><span>Gewinn</span><b class="num">${fmt(k.g)}</b></div>
+  <button class="m5b" data-act="bill">Rechnung erstellen</button></div></div>`};
+
+R[6]=()=>{const k=calc();const all=D.pakete.flatMap(pk=>pk.pos.map(p=>({pk,p})));
+ const sel=state.sel||all[0].p.id;const cur=all.find(a=>a.p.id===sel)||all[0];
+ return`<div class="hd6"><h2>${D.nr} · Positionen</h2></div>
+ <div class="lst6">${all.map(a=>`<button class="li6 ${a.p.id===cur.p.id?'on':''}" data-act="sel" data-x="${a.p.id}">
+  <span class="bz"><b>${a.p.bez}</b><small>${a.pk.name}</small></span><span class="pp num">${fmt(posNetto(a.p))}</span></button>`).join('')}</div>
+ <button class="addp" data-act="addpos" data-p="${D.pakete[0].id}">+ Position hinzufügen</button>
+ <div class="det6"><h4>${cur.p.bez}</h4>
+  <div class="kv"><span>Paket</span><b>${cur.pk.name}</b></div>
+  <div class="kv"><span>Art</span><b>${cur.p.typ==='arbeit'?'Arbeitsposition':'Ersatzteil'}</b></div>
+  <div class="kv"><span>${cur.p.typ==='arbeit'?'AW':'Menge'}</span><b><span class="qty"><button data-act="minus" data-p="${cur.pk.id}" data-x="${cur.p.id}">−</button><i class="num" style="font-style:normal;padding:0 8px">${cur.p.typ==='arbeit'?String(cur.p.aw).replace('.',','):cur.p.menge}</i><button data-act="plus" data-p="${cur.pk.id}" data-x="${cur.p.id}">+</button></span></b></div>
+  <div class="kv"><span>Netto</span><b class="num">${fmt(posNetto(cur.p))}</b></div>
+  <button class="del" style="color:#B3372C;font-size:12px;padding:8px 0" data-act="delpos" data-p="${cur.pk.id}" data-x="${cur.p.id}">Position löschen</button></div>
+ <div class="kfoot"><div><small>Brutto inkl. MwSt</small><b class="num">${fmt(k.b)}</b></div><button class="b6" data-act="bill">Abrechnen</button></div>`};
+
+R[7]=()=>{const k=calc();return`<div class="board"><div class="clip"></div><div class="sheet7">
+ <h2>${D.nr} — ${D.fzg.kennz}</h2><div class="sub7">${D.kunde.name} · ${D.fzg.modell} · fertig bis ${D.termin}</div>
+ ${box7('k','Kunde',kundeKV())}
+ ${box7('f','Fahrzeug',fzgKV())}
+ ${box7('p','Arbeiten & Teile',D.pakete.map(pk=>`
+  <div style="font-size:10px;font-weight:800;margin:8px 0 2px;letter-spacing:.05em">${pk.name.toUpperCase()} · <span class="num">${fmt(pakNetto(pk))}</span></div>
+  ${pk.pos.map(p=>`<div class="chk ${state.done[p.id]?'on':''}"><button class="bx" data-act="chk" data-x="${p.id}"></button>
+   <span class="bz"><b>${p.bez}</b><small>${posMeta(p)}</small></span><span class="pp num">${fmt(posNetto(p))}</span>
+   <button class="del" data-act="delpos" data-p="${pk.id}" data-x="${p.id}" style="color:#BDBAB0">✕</button></div>`).join('')}
+  <button class="addp" data-act="addpos" data-p="${pk.id}">+ Nachtrag</button>`).join(''))}
+ <div class="tot7"><span>Netto</span><b class="num">${fmt(k.n)}</b></div>
+ <div class="tot7"><span>MwSt 19 %</span><b class="num">${fmt(k.m)}</b></div>
+ <div class="tot7 b"><span>GESAMT</span><b class="num">${fmt(k.b)}</b></div>
+ <button class="m7b" data-act="bill">ABRECHNEN & UNTERSCHRIFT</button></div></div>`;
+ function box7(id,t,body){const o=state.open[id]!==false;
+  return`<div class="box7 ${o?'open':''}"><button class="bh7" data-act="tgl" data-s="${id}">${t}<span>${o?'−':'+'}</span></button><div class="bb7">${body}</div></div>`}};
+
+R[8]=()=>{const k=calc();const ph=state.phase||2;
+ const inner=ph===1?`<h3>Annahme</h3>${kundeKV()}${fzgKV()}`
+  :ph===2?`<h3>Arbeit — Pakete & Positionen</h3>${D.pakete.map(pk=>`<div style="font-size:10.5px;color:#8A8F97;font-weight:700;margin:8px 0 2px;text-transform:uppercase">${pk.name} · <span class="num">${fmt(pakNetto(pk))}</span></div>${pk.pos.map(p=>posRow(pk,p,false)).join('')}${addBtn(pk)}`).join('')}`
+  :`<h3>Abrechnung</h3><div class="tot8"><span>Netto</span><b class="num">${fmt(k.n)}</b></div><div class="tot8"><span>MwSt 19 %</span><b class="num">${fmt(k.m)}</b></div><div class="tot8 b"><span>Brutto</span><b class="num">${fmt(k.b)}</b></div><div class="tot8" style="color:#3E6B4F"><span>Gewinn</span><b class="num">${fmt(k.g)}</b></div>`;
+ return`<div class="steps8">${['Annahme','Arbeit','Abrechnung'].map((s,i)=>`<button class="st8 ${ph>i+1?'done':ph===i+1?'on':''}" data-act="phase" data-ph="${i+1}"><span class="dot8">${ph>i+1?'✓':i+1}</span><span>${s}</span></button>`).join('')}</div>
+ <div class="ph8">${inner}</div>
+ <div class="nav8">${ph>1?`<button class="p" data-act="phase" data-ph="${ph-1}">Zurück</button>`:''}
+  <button class="n" data-act="${ph===3?'bill':'phase'}" data-ph="${ph+1}">${ph===3?'Rechnung erstellen':'Weiter'}</button></div>`};
+
+R[9]=()=>{const k=calc();let no=0;return`
+ <h2>${D.nr} — WERKSTATTJOURNAL</h2><div class="sub9">${D.fzg.kennz} · ${D.kunde.name.toUpperCase()} · STATUS: ${D.status.toUpperCase()}</div>
+ <div class="meta9"><div><span>Fahrzeug</span>${D.fzg.modell}</div><div><span>KM</span>${D.fzg.km}</div><div><span>Fertig</span>${D.termin}</div><div><span>HU</span>${D.fzg.hu}</div></div>
+ <div class="jrn"><div class="jh"><div>Nr</div><div>Position</div><div style="text-align:right">Menge</div><div style="text-align:right">Netto</div><div></div></div>
+ ${D.pakete.map(pk=>`<div class="grp9"><span>■ ${pk.name.toUpperCase()}</span><span class="num">${fmt(pakNetto(pk))}</span></div>
+  ${pk.pos.map(p=>{no++;return`<div class="jr"><div class="no">${String(no).padStart(2,'0')}</div>
+   <div class="bz">${p.bez}<small>${p.typ==='arbeit'?'LOHN':'MATERIAL'}</small></div>
+   <div class="r num">${p.typ==='arbeit'?String(p.aw).replace('.',','):p.menge}</div>
+   <div class="r num">${fmt(posNetto(p))}</div>
+   <button class="del" data-act="delpos" data-p="${pk.id}" data-x="${p.id}">✕</button></div>`}).join('')}
+  <button class="addln9" data-act="addpos" data-p="${pk.id}">+ ZEILE ERFASSEN</button>`).join('')}
+ <div class="jf"><span>NETTO ${fmt(k.n)} · MWST ${fmt(k.m)}</span><b>BRUTTO ${fmt(k.b)}</b></div></div>
+ <button class="m9b" data-act="bill">> RECHNUNG SCHREIBEN — DB ${fmt(k.g)}</button>`};
+
+R[10]=()=>{const k=calc();return`
+ <h2>${D.nr}</h2><div class="sub10">${D.fzg.kennz} · ${D.kunde.name} · ${D.status}</div>
+ ${g10('k','Kunde',D.kunde.name,kundeKV())}
+ ${g10('f','Fahrzeug',D.fzg.modell,fzgKV())}
+ ${g10('p','Pakete & Positionen',fmt(k.n),D.pakete.map(pk=>`
+  <div style="font-size:10.5px;color:#7E8481;font-weight:700;margin:8px 0 2px">${pk.name} · <span class="num">${fmt(pakNetto(pk))}</span></div>
+  ${pk.pos.map(p=>posRow(pk,p,false)).join('')}${addBtn(pk)}`).join(''))}
+ <div class="kbar10"><div class="krow"><div>Netto<b class="num">${fmt(k.n)}</b></div><div>MwSt<b class="num">${fmt(k.m)}</b></div><div>Brutto<b class="num">${fmt(k.b)}</b></div><div class="gw">Gewinn<b class="num">${fmt(k.g)}</b></div></div>
+ <button class="m10b" data-act="bill">Rechnung erstellen</button></div>`;
+ function g10(id,t,mini,body){const o=state.open[id]!==false;
+  return`<div class="g10 ${o?'open':''}"><button class="gh" data-act="tgl" data-s="${id}">${t}<span class="mini">${mini}</span><span class="chv"></span></button><div class="gb">${body}</div></div>`}};
+
+R[11]=()=>{const k=calc();return`
+ <div class="hd11"><h2>${D.nr}</h2><div class="sub11">${D.kunde.name} · ${D.fzg.kennz} — Pakete seitlich wischen</div></div>
+ <div class="strip">${D.pakete.map(pk=>`<div class="kcol">
+  <div class="kch"><span class="kl" style="background:${KL[pk.klass][1]};color:${KL[pk.klass][2]}">${KL[pk.klass][0]}</span><b>${pk.name}</b><span class="sum num">${fmt(pakNetto(pk))}</span></div>
+  ${pk.pos.map(p=>`<div class="pcard"><div class="r1"><span>${p.bez}</span></div><small>${posMeta(p)}</small>
+   <div class="ft"><span class="qty"><button data-act="minus" data-p="${pk.id}" data-x="${p.id}">−</button><i class="num">${p.typ==='arbeit'?String(p.aw).replace('.',','):p.menge}</i><button data-act="plus" data-p="${pk.id}" data-x="${p.id}">+</button></span>
+   <b class="num">${fmt(posNetto(p))}</b><button class="del" data-act="delpos" data-p="${pk.id}" data-x="${p.id}">✕</button></div></div>`).join('')}
+  <button class="addp" data-act="addpos" data-p="${pk.id}">+ Position</button></div>`).join('')}</div>
+ <div class="kfix"><div><small>Brutto · MwSt inkl.</small><b class="num">${fmt(k.b)}</b><small style="margin-top:3px">Gewinn <span class="num">${fmt(k.g)}</span></small></div>
+ <button class="b11" data-act="bill">Abrechnen</button></div>`};
+
+R[12]=()=>{const k=calc();return`
+ <div class="top12"><div class="ey12">Auftragsakte · ${D.fzg.kennz}</div><h2>${D.nr}</h2>
+ <div class="sums12"><div>Netto<b class="num">${fmt(k.n)}</b></div><div>Brutto<b class="num">${fmt(k.b)}</b></div><div class="gw">Ertrag<b class="num">${fmt(k.g)}</b></div></div></div>
+ ${s12('k','Mandant · '+D.kunde.name,kundeKV())}
+ ${s12('f','Fahrzeug · '+D.fzg.modell,fzgKV())}
+ ${s12('p','Leistungsverzeichnis',D.pakete.map(pk=>`
+  <div style="font-size:9.5px;color:#A39A85;letter-spacing:.1em;margin:10px 0 2px;text-transform:uppercase">${pk.name} — <span class="num">${fmt(pakNetto(pk))}</span></div>
+  ${pk.pos.map(p=>posRow(pk,p,false)).join('')}<button class="addp" data-act="addpos" data-p="${pk.id}">+ Position aufnehmen</button>`).join(''))}
+ <button class="m12b" data-act="bill">Rechnung ausfertigen</button>`;
+ function s12(id,t,body){const o=state.open[id]!==false;
+  return`<div class="sec12 ${o?'open':''}"><button class="sh12" data-act="tgl" data-s="${id}">${t}<span class="chv"></span></button><div class="sb12">${body}</div></div>`}};
+
+R[13]=()=>{const k=calc();return`<h2>${D.nr} — Akte</h2><div class="tl13">
+ <div class="ev13"><div class="when">HEUTE 07:40 · ANNAHME</div><div class="ec"><b class="t13">${D.kunde.name} · ${D.fzg.kennz}</b>${fzgKV()}</div></div>
+ ${D.pakete.map(pk=>`<div class="ev13"><div class="when">PAKET ANGELEGT · ${pk.name.toUpperCase()}</div><div class="ec">
+  ${pk.pos.map(p=>posRow(pk,p,false)).join('')}${addBtn(pk)}</div></div>`).join('')}
+ <div class="ev13"><div class="when">KALKULATION · LIVE</div><div class="sum13">
+  <div class="r"><span>Netto</span><b class="num">${fmt(k.n)}</b></div><div class="r"><span>MwSt 19 %</span><b class="num">${fmt(k.m)}</b></div>
+  <div class="r b"><span>Brutto</span><b class="num">${fmt(k.b)}</b></div><div class="r" style="color:#9CD1AC"><span>Gewinn</span><b class="num">${fmt(k.g)}</b></div></div>
+  <button class="m13b" data-act="bill">Rechnung erstellen</button></div></div>`};
+
+R[14]=()=>{const k=calc();return`
+ <div class="khead"><div class="r1"><h2>${D.nr} · ${D.fzg.kennz}</h2><button class="st14" data-act="stat">${D.status} ⌄</button></div>
+ <div class="kgrid"><div>Netto<b class="num">${fmt(k.n)}</b></div><div>MwSt<b class="num">${fmt(k.m)}</b></div><div>Brutto<b class="num">${fmt(k.b)}</b></div><div class="gw">Gewinn<b class="num">${fmt(k.g)}</b></div></div></div>
+ <div class="body14">
+ ${s14('k','Kunde · '+D.kunde.name,kundeKV())}
+ ${s14('f','Fahrzeug · '+D.fzg.modell,fzgKV())}
+ ${s14('p','Positionen',D.pakete.map(pk=>`<div style="font-size:10.5px;color:#8A8F97;font-weight:700;margin:8px 0 2px;text-transform:uppercase">${pk.name} · <span class="num">${fmt(pakNetto(pk))}</span></div>${pk.pos.map(p=>posRow(pk,p,false)).join('')}${addBtn(pk)}`).join(''))}
+ </div><button class="m14b" data-act="bill">Rechnung erstellen</button>`;
+ function s14(id,t,body){const o=state.open[id]!==false;
+  return`<div class="sec14 ${o?'open':''}"><button class="sh14" data-act="tgl" data-s="${id}">${t}<span class="chv"></span></button><div class="sb14">${body}</div></div>`}};
+
+R[15]=()=>{const k=calc();const tab=state.tab||'akte';
+ let inner='';
+ if(tab==='akte')inner=`<h3>Akte</h3>${kundeKV()}${fzgKV()}`;
+ if(tab==='arbeit')inner=`<h3>Arbeit</h3>${D.pakete.map(pk=>`<div style="font-size:10.5px;color:#8B887C;font-weight:700;margin:8px 0 2px;text-transform:uppercase">${pk.name} · <span class="num">${fmt(pakNetto(pk))}</span></div>${pk.pos.map(p=>posRow(pk,p,false)).join('')}${addBtn(pk)}`).join('')}`;
+ if(tab==='abr')inner=`<h3>Abrechnung</h3><div class="tot15"><span>Netto</span><b class="num">${fmt(k.n)}</b></div><div class="tot15"><span>MwSt 19 %</span><b class="num">${fmt(k.m)}</b></div><div class="tot15 b"><span>Brutto</span><b class="num">${fmt(k.b)}</b></div><div class="tot15" style="color:#4A7A3A"><span>Gewinn</span><b class="num">${fmt(k.g)}</b></div><button class="m15b" data-act="bill">Rechnung erstellen</button>`;
+ return`<div class="reiter">${[['akte','Akte'],['arbeit','Arbeit'],['abr','Abrechnung']].map(t=>`<button class="${tab===t[0]?'on':''}" data-act="tab" data-t="${t[0]}">${t[1]}</button>`).join('')}</div>
+ <div class="karte">${inner}</div>`};
+
+R[16]=()=>{const k=calc();const pct=k.b?Math.round(k.g/k.n*100):0;
+ return`<div class="gau"><div class="ring16" style="--pct:${Math.min(95,Math.max(5,pct))}%"></div>
+  <div class="core16"><div><b class="num">${fmt(k.g)}</b><span>Gewinn · ${pct} %</span></div></div></div>
+ <div class="legs"><div>Netto<b class="num">${fmt(k.n)}</b></div><div>MwSt<b class="num">${fmt(k.m)}</b></div><div>Brutto<b class="num">${fmt(k.b)}</b></div></div>
+ <div class="panel16">${D.pakete.map(pk=>`
+  <div style="font-size:10px;color:#8A8F97;font-weight:800;margin:10px 0 0;text-transform:uppercase">${pk.name} · <span class="num">${fmt(pakNetto(pk))}</span></div>
+  ${pk.pos.map(p=>posRow(pk,p,true)).join('')}`).join('')}
+ <button class="addp" data-act="addpos" data-p="${D.pakete[0].id}">+ Position hinzufügen</button></div>
+ <button class="m16b" data-act="bill">Rechnung erstellen · ${fmt(k.b)}</button>`};
+
+R[17]=()=>{const k=calc();const tab=state.tab||'pos';
+ let main='';
+ if(tab==='kopf')main=`<div class="kv"><span>Kunde</span><b>${D.kunde.name}</b></div><div class="kv"><span>Telefon</span><b class="num">${D.kunde.tel}</b></div><div class="kv"><span>Fahrzeug</span><b>${D.fzg.kennz} · ${D.fzg.modell}</b></div><div class="kv"><span>KM</span><b class="num">${D.fzg.km}</b></div><div class="kv"><span>Status</span><b>${D.status}</b></div><div class="kv"><span>Fertig</span><b>${D.termin}</b></div>`;
+ if(tab==='pos')main=`<table><tr><th>Pos.</th><th>Bezeichnung</th><th class="r">Mg.</th><th class="r">Netto</th><th></th></tr>
+  ${D.pakete.map(pk=>`<tr><td colspan="5" style="background:#F7F8F9;font-weight:700;font-size:10px">${pk.name.toUpperCase()} — <span class="num">${fmt(pakNetto(pk))}</span></td></tr>
+  ${pk.pos.map((p,i)=>`<tr><td class="num">${i+1}</td><td>${p.bez}</td><td class="r num">${p.typ==='arbeit'?String(p.aw).replace('.',','):p.menge}</td><td class="r num">${fmt(posNetto(p))}</td><td><button class="del" data-act="delpos" data-p="${pk.id}" data-x="${p.id}">✕</button></td></tr>`).join('')}
+  <tr><td colspan="5"><button class="addp" data-act="addpos" data-p="${pk.id}">+ Neue Zeile (Einfg)</button></td></tr>`).join('')}</table>`;
+ if(tab==='kalk')main=`<div class="kv"><span>Netto</span><b class="num">${fmt(k.n)}</b></div><div class="kv"><span>MwSt 19 %</span><b class="num">${fmt(k.m)}</b></div><div class="kv"><span>Brutto</span><b class="num">${fmt(k.b)}</b></div><div class="kv"><span>Wareneinsatz</span><b class="num">${fmt(k.n-k.g)}</b></div><div class="kv" style="color:#2F7A4D"><span>Deckungsbeitrag</span><b class="num">${fmt(k.g)}</b></div>`;
+ return`<div class="win">
+ <div class="tb"><button>Datei</button><button>Bearbeiten</button><button>Einfügen</button><span class="sp"></span><span class="id17">${D.nr} · ${D.status}</span></div>
+ <div class="grid17"><div class="side17">${[['kopf','Auftragskopf'],['pos','Positionen'],['kalk','Kalkulation']].map(t=>`<button class="${tab===t[0]?'on':''}" data-act="tab" data-t="${t[0]}">${t[1]}</button>`).join('')}
+  <button>Dokumente</button><button>Historie</button></div>
+ <div class="main17">${main}</div></div>
+ <div class="sb17"><span>Netto <b class="num">${fmt(k.n)}</b> · Brutto <b class="num">${fmt(k.b)}</b> · DB <b class="num" style="color:#2F7A4D">${fmt(k.g)}</b></span>
+ <button class="m17b" data-act="bill">Fakturieren</button></div></div>`};
+
+R[18]=()=>{const k=calc();const tab=state.tab||'arbeit';
+ let inner='';
+ if(tab==='akte')inner=kundeKV()+fzgKV();
+ if(tab==='arbeit')inner=D.pakete.map(pk=>`<div style="font-size:10.5px;color:#8A8F97;font-weight:700;margin:8px 0 2px;text-transform:uppercase">${pk.name} · <span class="num">${fmt(pakNetto(pk))}</span></div>${pk.pos.map(p=>posRow(pk,p,false)).join('')}${addBtn(pk)}`).join('');
+ if(tab==='geld')inner=`<div class="tot18"><span>Netto</span><b class="num">${fmt(k.n)}</b></div><div class="tot18"><span>MwSt 19 %</span><b class="num">${fmt(k.m)}</b></div><div class="tot18 b"><span>Brutto</span><b class="num">${fmt(k.b)}</b></div><div class="tot18" style="color:#2F7A4D"><span>Gewinn</span><b class="num">${fmt(k.g)}</b></div>`;
+ return`<div class="hero18"><div class="ey">Auftrag · ${D.status}</div><h2>${D.fzg.kennz}</h2>
+ <div class="who">${D.kunde.name} · ${D.fzg.modell} · fertig ${D.termin} — Brutto <b class="num">${fmt(k.b)}</b></div></div>
+ <div class="sheet18"><div class="grab"></div>
+ <div class="seg18">${[['akte','Akte'],['arbeit','Arbeit'],['geld','Kalkulation']].map(t=>`<button class="${tab===t[0]?'on':''}" data-act="tab" data-t="${t[0]}">${t[1]}</button>`).join('')}</div>
+ ${inner}<button class="m18b" data-act="bill">Rechnung erstellen</button></div>`};
+
+R[19]=()=>{const k=calc();return`
+ <div class="hd19"><h2>${D.nr}</h2><b class="tot num">${fmt(k.b)}</b></div>
+ <div class="row19"><span class="lb">Kunde</span><span class="vl">${D.kunde.name}<small class="num">${D.kunde.tel}</small></span></div>
+ <div class="row19"><span class="lb">Fahrzeug</span><span class="vl">${D.fzg.kennz}<small>${D.fzg.modell} · ${D.fzg.km}</small></span></div>
+ <div class="row19"><span class="lb">Status</span><span class="vl">${D.status}<small>fertig ${D.termin}</small></span></div>
+ ${D.pakete.map(pk=>pk.pos.map((p,i)=>`<div class="row19"><span class="lb">${i===0?pk.name:''}</span>
+  <span class="vl">${p.bez}<small>${posMeta(p)}</small></span>
+  <span class="qty"><button data-act="minus" data-p="${pk.id}" data-x="${p.id}">−</button><i class="num">${p.typ==='arbeit'?String(p.aw).replace('.',','):p.menge}</i><button data-act="plus" data-p="${pk.id}" data-x="${p.id}">+</button></span>
+  <span class="pp num">${fmt(posNetto(p))}</span><button class="del" data-act="delpos" data-p="${pk.id}" data-x="${p.id}">✕</button></div>`).join('')).join('')}
+ <button class="addp" data-act="addpos" data-p="${D.pakete[0].id}">+ Position hinzufügen</button>
+ <div class="foot19"><div class="kl19">Netto <b class="num">${fmt(k.n)}</b></div><div class="kl19">Gewinn <b class="num" style="color:#2F7A4D">${fmt(k.g)}</b></div>
+ <button class="m19b" data-act="bill">Abrechnen</button></div>`};
+
+R[20]=()=>{const k=calc();return`
+ <div class="ey20">Auftrag · ${D.fzg.kennz} · ${D.status}</div><h2>${D.nr}</h2>
+ ${s20('k','Kunde',D.kunde.name,kundeKV())}
+ ${s20('f','Fahrzeug',D.fzg.modell,fzgKV())}
+ ${s20('p','Pakete & Positionen',D.pakete.length+' Pakete',D.pakete.map(pk=>`
+  <div style="font-size:10px;color:#9C948A;font-weight:700;margin:8px 0 0;text-transform:uppercase;letter-spacing:.06em">${pk.name} · <span class="num">${fmt(pakNetto(pk))}</span></div>
+  ${pk.pos.map(p=>posRow(pk,p,true)).join('')}${addBtn(pk)}`).join(''))}
+ <div class="kbar20"><div class="in20">
+  <div class="krow"><div>Netto<b class="num">${fmt(k.n)}</b></div><div>MwSt<b class="num">${fmt(k.m)}</b></div><div>Brutto<b class="num">${fmt(k.b)}</b></div><div class="gw">Gewinn<b class="num">${fmt(k.g)}</b></div></div>
+  <button class="m20b" data-act="bill">Rechnung erstellen</button></div></div>`;
+ function s20(id,t,mini,body){const o=state.open[id]!==false;
+  return`<div class="sec20 ${o?'open':''}"><button class="sh20" data-act="tgl" data-s="${id}">${t}<span class="mini">${mini}</span><span class="chv"></span></button><div class="sb20">${body}</div></div>`}};
+
+/* =============== Router, State, Aktionen =============== */
+const stage=document.getElementById('stage');
+let state=null,curN=0;
+const STATI=['Offen','In Arbeit','Warten auf Teile','Fertig'];
+function renderIndex(){
+ stage.innerHTML=`<div class="idx"><h1>Auftragsmaske — 20 Vollversionen</h1>
+ <div class="s">Die <b>komplette Auftragsöffnung</b>: Kunde, Fahrzeug, Pakete mit Positionen und <b>live rechnender Kalkulation</b>. Überall echt bedienbar — auf/zuklappen, +/− an Positionen, hinzufügen, löschen, abrechnen. Gedeckte Farben, ⬛ = dunkle Variante.</div>
+ <div class="tiles">${CAT.map((d,i)=>`<a class="tile" href="#/a/${i+1}"><span class="n ${d[2]?'dk':''}">${i+1}${d[2]?' ⬛':''}</span><b>${d[0]}</b><span>${d[1]}</span></a>`).join('')}</div></div>`}
+function paint(){
+ stage.innerHTML=`<div class="vw a${curN}"><div class="topnav"><a href="#/">← Index</a><a style="pointer-events:none;opacity:.75">${curN} · ${CAT[curN-1][0]}</a></div>
+ <div class="frame">${R[curN]()}</div></div>`}
+function route(){
+ const m=location.hash.match(/#\/a\/(\d+)/);
+ if(m&&R[+m[1]]){curN=+m[1];D=freshData();state={open:{},done:{},tab:null,phase:null,sel:null};paint()}
+ else{curN=0;renderIndex()}
+ window.scrollTo(0,0)}
+window.addEventListener('hashchange',route);
+document.addEventListener('click',e=>{
+ const el=e.target.closest('[data-act]');if(!el||!curN)return;
+ const a=el.dataset.act;
+ const pk=el.dataset.p?D.pakete.find(x=>x.id===el.dataset.p):null;
+ const p=pk&&el.dataset.x?pk.pos.find(x=>x.id===el.dataset.x):null;
+ if(a==='tgl'){state.open[el.dataset.s]=state.open[el.dataset.s]===false?true:false;paint()}
+ if(a==='ptgl'){pk.open=!pk.open;paint()}
+ if(a==='tab'){state.tab=el.dataset.t;paint()}
+ if(a==='phase'){state.phase=Math.min(3,Math.max(1,+el.dataset.ph));paint()}
+ if(a==='sel'){state.sel=el.dataset.x;paint()}
+ if(a==='chk'){state.done[el.dataset.x]=!state.done[el.dataset.x];paint()}
+ if(a==='stat'){D.status=STATI[(STATI.indexOf(D.status)+1)%STATI.length];paint();toast('Status: '+D.status)}
+ if(a==='plus'&&p){if(p.typ==='arbeit')p.aw=Math.round((p.aw+0.5)*10)/10;else p.menge++;paint()}
+ if(a==='minus'&&p){if(p.typ==='arbeit')p.aw=Math.max(0.5,Math.round((p.aw-0.5)*10)/10);else p.menge=Math.max(1,p.menge-1);paint()}
+ if(a==='delpos'&&p){pk.pos=pk.pos.filter(x=>x.id!==p.id);paint();toast('Position entfernt — Summen aktualisiert')}
+ if(a==='addpos'&&pk){const tpl=POOL[poolIdx%POOL.length];poolIdx++;
+  pk.pos.push({...tpl,id:'n'+Date.now()});paint();toast('„'+tpl.bez+'" hinzugefügt')}
+ if(a==='bill'){const k=calc();toast('Demo: Rechnung über '+fmt(k.b)+' erstellt ✓')}
+});
+route();
+</script>
+</body>
+</html>
