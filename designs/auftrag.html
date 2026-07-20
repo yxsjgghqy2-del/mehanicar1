@@ -387,6 +387,28 @@ input,select{font:inherit;outline:none;color:inherit}
 .a14 .del{color:#C4C7CC}
 .a14 .addp{color:#2C3E50;font-weight:700;font-size:12px;padding:9px 0}
 .a14 .m14b{width:calc(100% - 32px);margin:4px 16px 0;background:#2C3E50;color:#fff;border-radius:10px;padding:13px;text-align:center;font-weight:700;font-size:13px}
+.a14 .ksub{display:flex;gap:14px;margin-top:9px;padding-top:9px;border-top:1px solid rgba(255,255,255,.16);font-size:10px;opacity:.85}
+.a14 .ksub b{font-weight:700}
+.a14 .kgrp{margin:2px 0 10px}
+.a14 .kgt{font-size:9.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#8A8F97;padding:8px 0 4px;border-bottom:1.5px solid #E7E9EB;margin-bottom:2px;display:flex;justify-content:space-between}
+.a14 .kr{display:flex;justify-content:space-between;align-items:baseline;padding:6.5px 0;font-size:12.5px;border-bottom:1px solid #F3F4F5}
+.a14 .kr span{color:#5F646C}
+.a14 .kr small{color:#9AA0A8;font-size:10px;margin-left:6px}
+.a14 .kr b{font-weight:600}
+.a14 .kr.neg b{color:#A05A2C}
+.a14 .kr.strong{border-top:1.5px solid #22252A;border-bottom:none;margin-top:2px;padding-top:9px}
+.a14 .kr.strong b{font-weight:800;font-size:14px}
+.a14 .kr.pay{background:#22252A;color:#fff;border:none;border-radius:9px;padding:11px 12px;margin-top:8px}
+.a14 .kr.pay span{color:#B9BEC6}
+.a14 .kr.pay b{font-size:16px;font-weight:800}
+.a14 .kr.gw b{color:#2F7A4D}
+.a14 .rabx{display:flex;gap:6px;align-items:center}
+.a14 .rabx button{font-size:10.5px;font-weight:700;border:1px solid #C9CCD1;border-radius:7px;padding:4px 9px;color:#5F646C}
+.a14 .rabx button.on{background:#2C3E50;border-color:#2C3E50;color:#fff}
+.a14 .bar14{height:8px;border-radius:99px;background:#E2E4E7;overflow:hidden;display:flex;margin:7px 0 4px}
+.a14 .bar14 i{display:block;height:100%}
+.a14 .bl14{display:flex;justify-content:space-between;font-size:10px;color:#8A8F97}
+.a14 .dot14{display:inline-block;width:7px;height:7px;border-radius:2px;margin-right:4px;vertical-align:0}
 
 /* ======================= 15 · KARTEI-REITER ======================= */
 .a15{background:#E9E7E2;color:#2B2A26}
@@ -583,7 +605,7 @@ const CAT=[
  ['Paket-Spalten','Jedes Paket eine wischbare Spalte, Positionen als Karten mit Stepper.',0],
  ['Executive','Dunkles Warmgrau, große dünne Summen oben, Sektionen als feine Linien — Chefetage.',1],
  ['Zeitakte','Der Auftrag als Chronik: Annahme, Pakete, Summe als Ereignisse an der Zeitlinie.',0],
- ['Kalk-Kopf','Die Kalkulation klebt als dunkler Kopf oben und rechnet beim Scrollen sichtbar mit.',0],
+ ['Kalk-Kopf PRO','Favorit, ausgebaut: Kalkulation als dunkler Kopf + detaillierte Aufstellung — Lohn/Teile, Zwischensummen, Rabatt, Anzahlung, offener Rest, Marge.',0],
  ['Kartei-Reiter','Echte Karteikarten mit Reitern oben — Akte, Arbeit, Abrechnung.',0],
  ['Gewinn-Ring','Der Gewinnanteil als Ring in der Mitte; Positionen ändern ihn live.',0],
  ['ERP Pro','Fenster mit Toolbar, Seitenleiste und Tabellen — Werkstattmeister-Vollformat.',0],
@@ -777,14 +799,53 @@ R[13]=()=>{const k=calc();return`<h2>${D.nr} — Akte</h2><div class="tl13">
   <div class="r b"><span>Brutto</span><b class="num">${fmt(k.b)}</b></div><div class="r" style="color:#9CD1AC"><span>Gewinn</span><b class="num">${fmt(k.g)}</b></div></div>
   <button class="m13b" data-act="bill">Rechnung erstellen</button></div></div>`};
 
-R[14]=()=>{const k=calc();return`
+R[14]=()=>{
+ /* Detaillierte Kalkulation: Lohn/Teile, Rabatt, Anzahlung, offener Rest, Marge */
+ const rabPct=state.rab||0, ANZ=10000;
+ const arbeiten=D.pakete.flatMap(pk=>pk.pos.filter(p=>p.typ==='arbeit'));
+ const teile=D.pakete.flatMap(pk=>pk.pos.filter(p=>p.typ==='teil'));
+ const awSum=arbeiten.reduce((s,p)=>s+p.aw,0);
+ const lohn=arbeiten.reduce((s,p)=>s+posNetto(p),0);
+ const teileVk=teile.reduce((s,p)=>s+posNetto(p),0);
+ const teileEk=teile.reduce((s,p)=>s+posEk(p),0);
+ const zwisch=lohn+teileVk;
+ const rab=Math.round(zwisch*rabPct/100);
+ const netto=zwisch-rab, mwst=Math.round(netto*0.19), brutto=netto+mwst;
+ const anz=Math.min(ANZ,brutto), offen=brutto-anz;
+ const db=netto-teileEk, marge=netto?Math.round(db/netto*100):0;
+ const lohnPct=zwisch?Math.round(lohn/zwisch*100):0;
+ return`
  <div class="khead"><div class="r1"><h2>${D.nr} · ${D.fzg.kennz}</h2><button class="st14" data-act="stat">${D.status} ⌄</button></div>
- <div class="kgrid"><div>Netto<b class="num">${fmt(k.n)}</b></div><div>MwSt<b class="num">${fmt(k.m)}</b></div><div>Brutto<b class="num">${fmt(k.b)}</b></div><div class="gw">Gewinn<b class="num">${fmt(k.g)}</b></div></div></div>
+ <div class="kgrid"><div>Netto<b class="num">${fmt(netto)}</b></div><div>MwSt<b class="num">${fmt(mwst)}</b></div><div>Brutto<b class="num">${fmt(brutto)}</b></div><div class="gw">Gewinn<b class="num">${fmt(db)}</b></div></div>
+ <div class="ksub"><span>Anzahlung <b class="num">− ${fmt(anz)}</b></span><span>Noch offen <b class="num">${fmt(offen)}</b></span><span>Marge <b class="num">${marge} %</b></span></div></div>
  <div class="body14">
  ${s14('k','Kunde · '+D.kunde.name,kundeKV())}
  ${s14('f','Fahrzeug · '+D.fzg.modell,fzgKV())}
- ${s14('p','Positionen',D.pakete.map(pk=>`<div style="font-size:10.5px;color:#8A8F97;font-weight:700;margin:8px 0 2px;text-transform:uppercase">${pk.name} · <span class="num">${fmt(pakNetto(pk))}</span></div>${pk.pos.map(p=>posRow(pk,p,false)).join('')}${addBtn(pk)}`).join(''))}
- </div><button class="m14b" data-act="bill">Rechnung erstellen</button>`;
+ ${s14('p','Positionen',D.pakete.map(pk=>`<div style="font-size:10.5px;color:#8A8F97;font-weight:700;margin:8px 0 2px;text-transform:uppercase">${pk.name} · <span class="num">${fmt(pakNetto(pk))}</span></div>${pk.pos.map(p=>posRow(pk,p,true)).join('')}${addBtn(pk)}`).join(''))}
+ ${s14('kalk','Kalkulation im Detail',`
+  <div class="kgrp"><div class="kgt"><span>Arbeitslohn</span><span class="num">${fmt(lohn)}</span></div>
+   ${arbeiten.map(p=>`<div class="kr"><span>${p.bez}<small class="num">${String(p.aw).replace('.',',')} AW × ${fmt(p.satz)}</small></span><b class="num">${fmt(posNetto(p))}</b></div>`).join('')}
+   <div class="kr"><span>Summe Lohn<small class="num">${String(Math.round(awSum*10)/10).replace('.',',')} AW gesamt</small></span><b class="num">${fmt(lohn)}</b></div></div>
+  <div class="kgrp"><div class="kgt"><span>Teile & Material</span><span class="num">${fmt(teileVk)}</span></div>
+   ${teile.map(p=>`<div class="kr"><span>${p.bez}<small class="num">${p.menge} × EK ${fmt(p.ek)} → VK ${fmt(p.vk)}</small></span><b class="num">${fmt(posNetto(p))}</b></div>`).join('')}
+   <div class="kr"><span>Teile-Aufschlag<small>VK − EK</small></span><b class="num" style="color:#2F7A4D">+ ${fmt(teileVk-teileEk)}</b></div></div>
+  <div class="kgrp"><div class="kgt"><span>Pakete</span></div>
+   ${D.pakete.map(pk=>`<div class="kr"><span>${pk.name}<small>${pk.pos.length} Positionen</small></span><b class="num">${fmt(pakNetto(pk))}</b></div>`).join('')}</div>
+  <div class="kgrp"><div class="kgt"><span>Abzüge & Summen</span></div>
+   <div class="kr"><span>Zwischensumme</span><b class="num">${fmt(zwisch)}</b></div>
+   <div class="kr neg"><span>Rabatt auf Auftrag</span>
+    <span class="rabx">${[0,5,10].map(r=>`<button class="${rabPct===r?'on':''}" data-act="rab" data-r="${r}">${r} %</button>`).join('')}<b class="num">− ${fmt(rab)}</b></span></div>
+   <div class="kr"><span>Netto</span><b class="num">${fmt(netto)}</b></div>
+   <div class="kr"><span>MwSt 19 %</span><b class="num">${fmt(mwst)}</b></div>
+   <div class="kr strong"><span>Brutto</span><b class="num">${fmt(brutto)}</b></div>
+   <div class="kr neg"><span>Anzahlung erhalten<small>12.07.</small></span><b class="num">− ${fmt(anz)}</b></div>
+   <div class="kr pay"><span>Zu zahlen bei Abholung</span><b class="num">${fmt(offen)}</b></div></div>
+  <div class="kgrp"><div class="kgt"><span>Ertrag (intern)</span></div>
+   <div class="kr"><span>Wareneinsatz (EK Teile)</span><b class="num">− ${fmt(teileEk)}</b></div>
+   <div class="kr gw"><span>Deckungsbeitrag<small>${marge} % vom Netto</small></span><b class="num">${fmt(db)}</b></div>
+   <div class="bar14"><i style="width:${lohnPct}%;background:#2C3E50"></i><i style="width:${100-lohnPct}%;background:#7FA3C4"></i></div>
+   <div class="bl14"><span><span class="dot14" style="background:#2C3E50"></span>Lohn ${lohnPct} %</span><span><span class="dot14" style="background:#7FA3C4"></span>Teile ${100-lohnPct} %</span></div></div>`)}
+ </div><button class="m14b" data-act="bill">Rechnung erstellen · ${fmt(offen)} offen</button>`;
  function s14(id,t,body){const o=state.open[id]!==false;
   return`<div class="sec14 ${o?'open':''}"><button class="sh14" data-act="tgl" data-s="${id}">${t}<span class="chv"></span></button><div class="sb14">${body}</div></div>`}};
 
@@ -888,6 +949,7 @@ document.addEventListener('click',e=>{
  if(a==='sel'){state.sel=el.dataset.x;paint()}
  if(a==='chk'){state.done[el.dataset.x]=!state.done[el.dataset.x];paint()}
  if(a==='stat'){D.status=STATI[(STATI.indexOf(D.status)+1)%STATI.length];paint();toast('Status: '+D.status)}
+ if(a==='rab'){state.rab=+el.dataset.r;paint();toast('Rabatt: '+el.dataset.r+' % — Summen aktualisiert')}
  if(a==='plus'&&p){if(p.typ==='arbeit')p.aw=Math.round((p.aw+0.5)*10)/10;else p.menge++;paint()}
  if(a==='minus'&&p){if(p.typ==='arbeit')p.aw=Math.max(0.5,Math.round((p.aw-0.5)*10)/10);else p.menge=Math.max(1,p.menge-1);paint()}
  if(a==='delpos'&&p){pk.pos=pk.pos.filter(x=>x.id!==p.id);paint();toast('Position entfernt — Summen aktualisiert')}
