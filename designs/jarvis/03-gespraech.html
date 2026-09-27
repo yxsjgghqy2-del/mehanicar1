@@ -1,0 +1,705 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F6F6F4">
+<title>Jarvis · Gespräch mit Werkzeugen</title>
+<style>
+:root{
+ --paper:#F6F6F4;--card:#FFFFFF;--tint:#FAFAF8;--sunk:#EEEEEA;--line:#E0E0DA;--line2:#ECECE7;
+ --ink:#1F2428;--ink2:#565C63;--ink3:#7E838A;
+ --slate:#2C3E50;--slate-mute:#AFBCC9;--slate-bg:#E6EAEE;
+ --olive:#5B6B3A;--olive-d:#4B5930;--olive-bg:#EBEEE2;--olive-ink:#44512A;--olive-lt:#B5C293;
+ --rust:#9A4930;--rust-bg:#F5E7E1;
+ --ochre:#7A5C15;--ochre-bg:#F2EBD8;
+ --aug:#A3A298;
+ --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+ --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Georgia,serif;
+ --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+ --gut:16px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;height:100%}
+body{margin:0;height:100%;background:var(--paper);color:var(--ink);font:15px/1.45 var(--sans);-webkit-font-smoothing:antialiased}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0;text-align:inherit}
+:focus-visible{outline:2px solid var(--slate);outline-offset:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.tn{font-variant-numeric:tabular-nums}
+.ic{flex:none;display:block}
+
+/* Rahmen */
+.app{height:100vh;height:100dvh;display:grid;grid-template-rows:auto auto minmax(0,1fr);max-width:1180px;margin:0 auto;position:relative}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:calc(env(safe-area-inset-top) + 8px) calc(env(safe-area-inset-right) + var(--gut)) 8px calc(env(safe-area-inset-left) + var(--gut));border-bottom:1px solid var(--line)}
+.idn{display:flex;align-items:center;gap:10px;min-width:0}
+.mono{width:34px;height:34px;border-radius:9px;border:1px solid var(--line);background:var(--card);display:grid;place-items:center;font:600 19px/1 var(--serif);color:var(--slate);flex:none}
+.idt{display:flex;flex-direction:column;line-height:1.25;min-width:0}
+.idt b{font-size:16px;letter-spacing:-.01em}
+.idt span{font-size:12.5px;color:var(--ink2);white-space:nowrap}
+.sub-d{display:none}
+.top-r{display:flex;align-items:center;gap:20px}
+.date{display:none;font-size:13px;color:var(--ink2)}
+.back{font-size:12.5px;color:var(--ink3);text-decoration:none;padding:12px 0;white-space:nowrap}
+.back:hover{color:var(--ink)}
+
+.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) 18px;align-items:center;gap:6px;width:100%;min-height:52px;background:var(--slate);color:#fff;padding:8px calc(env(safe-area-inset-right) + var(--gut)) 8px calc(env(safe-area-inset-left) + var(--gut))}
+.strip .c{display:flex;flex-direction:column;min-width:0;line-height:1.2}
+.strip b{font-size:16px;font-weight:650;font-variant-numeric:tabular-nums;white-space:nowrap}
+.strip small{font-size:11px;color:var(--slate-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chev{transition:transform .2s ease}
+.strip[aria-expanded=true] .chev{transform:rotate(180deg)}
+.strip:focus-visible{outline-color:#fff;outline-offset:-4px}
+
+.main{position:relative;min-height:0;display:grid;grid-template-columns:minmax(0,1fr)}
+.chat{min-height:0;display:grid;grid-template-rows:minmax(0,1fr) auto}
+.log{position:relative;overflow-y:auto;overscroll-behavior:contain;padding:6px calc(env(safe-area-inset-right) + var(--gut)) 24px calc(env(safe-area-inset-left) + var(--gut));display:flex;flex-direction:column;gap:16px}
+
+/* Nachrichten */
+.day{align-self:center;font-size:12px;color:var(--ink3);padding-top:10px;letter-spacing:.02em}
+.g{display:flex;flex-direction:column;align-items:flex-start;gap:8px;animation:up .22s ease both}
+.g.me{align-items:flex-end}
+.g.static{animation:none}
+@keyframes up{from{opacity:0;transform:translateY(6px)}}
+.who{display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink3)}
+.who .mono{width:24px;height:24px;border-radius:7px;font-size:14px}
+.who b{color:var(--ink);font-weight:600}
+.b{max-width:min(92%,580px);background:var(--card);border:1px solid var(--line);border-radius:4px 16px 16px 16px;padding:10px 13px;overflow-wrap:anywhere}
+.me .b{background:var(--slate);border-color:var(--slate);color:#fff;border-radius:16px 16px 4px 16px;max-width:min(82%,480px)}
+.stamp{font-size:11.5px;color:var(--ink3);margin-top:-4px}
+.dots{display:flex;gap:5px;padding:15px 14px}
+.dots i{width:6px;height:6px;border-radius:50%;background:var(--ink3);animation:bl 1s infinite ease-in-out}
+.dots i:nth-child(2){animation-delay:.15s}.dots i:nth-child(3){animation-delay:.3s}
+@keyframes bl{0%,80%,100%{opacity:.25}40%{opacity:1}}
+
+/* Werkzeug-Karten */
+.w{width:100%;max-width:600px;background:var(--card);border:1px solid var(--line);border-radius:12px;position:relative;overflow:hidden;--st:transparent}
+.w::before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:var(--st);transition:background .25s ease;z-index:1}
+.st-rust{--st:var(--rust)}.st-ochre{--st:var(--ochre)}.st-olive{--st:var(--olive)}.st-slate{--st:var(--slate)}
+.w.is-done{--st:var(--olive)}
+.wh{display:flex;align-items:center;gap:8px;min-height:40px;padding:8px 12px 8px 15px;border-bottom:1px solid var(--line2);background:var(--tint);font-size:13px;font-weight:600;color:var(--ink2)}
+.wt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wb{padding:12px 14px 14px 15px;display:flex;flex-direction:column;gap:11px}
+.aft{display:none!important}
+.is-done .aft{display:inline-flex!important}.is-done .bef{display:none!important}
+
+.chip{display:inline-flex;align-items:center;gap:4px;height:22px;padding:0 8px;border-radius:999px;font-size:11.5px;font-weight:650;white-space:nowrap;background:var(--sunk);color:var(--ink2);flex:none}
+.c-rust{background:var(--rust-bg);color:var(--rust)}.c-ochre{background:var(--ochre-bg);color:var(--ochre)}
+.c-olive{background:var(--olive-bg);color:var(--olive-ink)}.c-slate{background:var(--slate-bg);color:var(--slate)}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:44px;padding:0 16px;border-radius:10px;font-size:15px;font-weight:600;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none;transition:background .15s ease,border-color .15s ease;white-space:nowrap}
+.btn:hover{background:var(--tint);border-color:#CDCDC5}
+.btn.pri{background:var(--olive);border-color:var(--olive);color:#fff}
+.btn.pri:hover{background:var(--olive-d);border-color:var(--olive-d)}
+.btn.ghost{border-color:transparent;background:none;color:var(--ink2);padding:0 10px}
+.acts{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.doneln{display:flex;align-items:center;gap:9px;min-height:44px;color:var(--olive-ink);font-weight:600;font-size:14.5px}
+.doneln .ic{width:22px;height:22px;border-radius:50%;background:var(--olive-bg);padding:3px}
+.laterln{display:flex;align-items:center;gap:8px;min-height:44px;color:var(--ink2);font-size:14px;flex-wrap:wrap}
+.flash{animation:fl 1.2s ease}
+@keyframes fl{0%,60%{box-shadow:0 0 0 3px var(--olive-bg),0 0 0 4px var(--olive)}100%{box-shadow:0 0 0 0 transparent}}
+
+.pl{font:600 12px/1 var(--mono);letter-spacing:.02em;border:1px solid #9DA1A6;border-left:4px solid var(--slate);border-radius:4px;padding:4px 6px 4px 5px;background:#fff;color:var(--ink);white-space:nowrap;flex:none}
+.vh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.vh b{font-size:15.5px}
+.vh .chip{margin-left:auto}
+.sub{font-size:13px;color:var(--ink2);margin-top:-4px}
+.note{margin:0;font-size:13px;color:var(--ink2);display:flex;gap:6px;align-items:flex-start}
+.note .ic{margin-top:2px}
+
+/* Zeitleiste im Konflikt */
+.tl{list-style:none;margin:0;padding:0}
+.tl li{display:grid;grid-template-columns:44px 14px minmax(0,1fr);align-items:center;column-gap:8px;min-height:36px;position:relative;font-size:14px}
+.tl li::before{content:"";position:absolute;left:58px;top:0;bottom:0;width:1px;background:var(--line)}
+.tl li:first-child::before{top:50%}.tl li:last-child::before{bottom:50%}
+.tl time{font-weight:600;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink2)}
+.tl .dot{width:10px;height:10px;border-radius:50%;justify-self:center;background:var(--ink3);position:relative;z-index:1;box-shadow:0 0 0 3px var(--card)}
+.tl .t{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.tl-plan .dot{background:var(--rust)}
+.tl-new .dot{background:var(--card);border:2px solid var(--olive)}
+.tl-new .t{font-weight:600}
+.tl-end .dot{background:var(--slate)}
+.is-done .tl-plan time,.is-done .tl-plan .t{color:var(--ink3);text-decoration:line-through}
+.is-done .tl-plan .dot{background:var(--line)}
+.is-done .tl-plan .chip{display:none}
+.is-done .tl-new .dot{background:var(--olive)}
+
+/* Entwürfe */
+.in{margin:0;padding:8px 12px;border-left:2px solid var(--line);background:var(--tint);border-radius:0 8px 8px 0}
+.in figcaption{font-size:12px;color:var(--ink3);margin-bottom:2px}
+.in p{margin:0;font-size:14px;color:var(--ink2)}
+.kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;margin:0;font-size:13.5px}
+.kv dt{color:var(--ink3)}.kv dd{margin:0;font-weight:550}
+.lbl{font-size:12px;color:var(--ink3);font-weight:600;margin-bottom:-6px}
+.draft{width:100%;resize:none;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#FCFCFA;font-size:15px;line-height:1.45;min-height:88px;overflow:hidden;transition:border-color .15s ease,box-shadow .15s ease}
+.draft:focus{border-color:var(--olive);outline:none;box-shadow:0 0 0 3px var(--olive-bg)}
+.draft[readonly]{background:var(--tint);color:var(--ink2)}
+.opt{display:flex;align-items:center;gap:10px;min-height:44px;font-size:14px;color:var(--ink)}
+.opt .box{width:20px;height:20px;border:1.5px solid var(--ink3);border-radius:5px;display:grid;place-items:center;flex:none;transition:background .15s ease}
+.opt[aria-pressed=true] .box{background:var(--olive);border-color:var(--olive);color:#fff}
+.opt[aria-pressed=false] .box svg{visibility:hidden}
+.is-done .opt{pointer-events:none;color:var(--ink2)}
+.stars{display:flex;gap:2px;color:var(--ochre)}
+
+/* Listen in Karten */
+.qrow{display:grid;grid-template-columns:74px minmax(0,1fr) auto 16px;align-items:center;gap:10px;width:100%;min-height:54px;padding:8px 12px 8px 15px;border-top:1px solid var(--line2);transition:background .15s ease}
+.qrow:first-child{border-top:0}
+.qrow:hover{background:var(--tint)}
+.qrow .chip{justify-self:start}
+.qt{font-size:14.5px;line-height:1.35}
+.u{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--ink2);white-space:nowrap}
+.u::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--ink3)}
+.u-jetzt::before{background:var(--rust)}.u-heute::before{background:var(--ochre)}.u-Woche::before{background:#C4C4BC}
+.u-ok::before{background:var(--olive)}
+.qic{color:var(--ink3)}
+.qrow.done .qt{color:var(--ink3);text-decoration:line-through}
+.qrow.done .qic{color:var(--olive)}
+
+.wtog{display:flex;align-items:center;gap:9px;width:100%;min-height:48px;padding:0 12px 0 15px;font-size:14px;font-weight:600;color:var(--ink2)}
+.wtog .chip{margin-right:auto}
+.wtog[aria-expanded=true] .chev{transform:rotate(180deg)}
+.plog{list-style:none;margin:0;padding:2px 14px 12px 15px;border-top:1px solid var(--line2)}
+.plog li{display:grid;grid-template-columns:78px minmax(0,1fr);gap:8px;padding:8px 0;font-size:14px;border-top:1px solid var(--line2)}
+.plog li:first-child{border-top:0}
+.plog time{color:var(--ink3);font-size:13px;font-variant-numeric:tabular-nums}
+
+.ord{position:relative;border-top:1px solid var(--line2)}
+.ord:first-child{border-top:0}
+.ord::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--st)}
+.ordh{display:flex;flex-direction:column;gap:6px;width:100%;padding:11px 14px 11px 15px}
+.ordh:hover{background:var(--tint)}
+.r1{display:flex;align-items:center;gap:8px;min-width:0}
+.r1 b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r1 .chip{margin-left:auto}
+.r2{font-size:13px;color:var(--ink2)}
+.r3{display:flex;align-items:center;gap:8px}
+.bar{flex:1;height:4px;border-radius:2px;background:var(--sunk);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--st);border-radius:2px}
+.pc{font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
+.ordd{padding:0 14px 12px 15px;display:flex;flex-direction:column;gap:10px}
+
+.op,.blk{position:relative;padding:12px 14px 14px 15px;border-top:1px solid var(--line2);display:flex;flex-direction:column;gap:9px}
+.op:first-of-type,.blk:first-of-type{border-top:0}
+.op::before,.blk::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--st)}
+.op.is-done::before,.blk.is-done::before{background:var(--olive)}
+.opr{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.opr small{display:block;font-size:12px;color:var(--ink3)}
+.opr>b{font-size:16px}
+.age{display:flex;align-items:center;gap:10px}
+.agebar{flex:1;display:flex;gap:2px;height:5px}
+.agebar i{height:100%;border-radius:2px;background:#C9C9C1}
+.agebar i.od{background:var(--rust)}
+.agebar i.rest{background:var(--sunk)}
+.is-done .agebar i.od{background:#D9B7AA}
+.lnk{display:inline-flex;align-items:center;gap:6px;min-height:44px;font-size:14px;font-weight:600;color:var(--slate);align-self:flex-start;margin:-8px 0}
+.letter{margin:0;padding:10px 12px;background:var(--tint);border:1px solid var(--line2);border-radius:8px;font:13.5px/1.5 var(--serif);color:var(--ink2)}
+
+/* Umsatz */
+.hero{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
+.hero b{font-size:28px;font-weight:650;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.hero span{font-size:13px;color:var(--ink2)}
+.lgd{display:flex;gap:16px;font-size:12.5px;color:var(--ink2)}
+.lgd i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:-1px}
+.plot{display:grid;grid-template-columns:38px minmax(0,1fr);gap:8px;margin-top:6px}
+.ya{position:relative;height:136px;font-size:11px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.ya span{position:absolute;right:0;transform:translateY(50%)}
+.pa{position:relative;height:136px;display:flex;border-bottom:1px solid #B5B5AD}
+.gl{position:absolute;left:0;right:0;height:1px;background:var(--line2)}
+.wk{flex:1;position:relative;display:flex;align-items:flex-end;justify-content:center;gap:2px;border-radius:6px 6px 0 0;z-index:1;transition:background .15s ease}
+.wk[aria-pressed=true]{background:rgba(44,62,80,.055)}
+.wk .ba{width:min(18px,30%);border-radius:4px 4px 0 0;background:var(--aug);position:relative}
+.wk .bs{background:var(--olive)}
+.wk[aria-pressed=true] .bs::after{content:attr(data-v);position:absolute;bottom:100%;left:50%;transform:translateX(-50%);margin-bottom:3px;font-size:11px;font-weight:650;color:var(--ink);white-space:nowrap;font-variant-numeric:tabular-nums}
+.xa{display:flex;margin-left:46px;font-size:11.5px;color:var(--ink3);margin-top:-4px}
+.xa span{flex:1;text-align:center}
+.readout{margin:0;font-size:13.5px;color:var(--ink2);min-height:20px}
+.readout b{color:var(--ink)}
+.kp{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line2);border:1px solid var(--line2);border-radius:10px;overflow:hidden}
+.kp>div{background:var(--card);padding:9px 11px;display:flex;flex-direction:column}
+.kp small{font-size:12px;color:var(--ink3)}
+.kp b{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums}
+.kp span{font-size:12px;color:var(--ink2)}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tbl{width:100%;border-collapse:collapse;font-size:14px;min-width:296px}
+.tbl th{font-size:12px;font-weight:600;color:var(--ink3);text-align:left;padding:0 6px 6px;border-bottom:1px solid var(--line)}
+.tbl td{padding:9px 6px;border-bottom:1px solid var(--line2);vertical-align:top}
+.tbl td:first-child,.tbl th:first-child{padding-left:0}
+.tbl td:last-child,.tbl th:last-child{padding-right:0}
+.tbl td small{display:block;font-size:12px;color:var(--ink3)}
+.tbl .r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tbl tfoot td{border-bottom:0;font-weight:650;padding-bottom:2px}
+.tbl tfoot .sub2 td{font-weight:400;color:var(--ink2);font-size:13px;padding-top:0}
+.meter{display:flex;align-items:center;gap:7px;font-size:12.5px;white-space:nowrap;padding-top:3px}
+.meter i{width:34px;height:4px;border-radius:2px;background:var(--rust-bg);position:relative;overflow:hidden}
+.meter i span{position:absolute;inset:0 auto 0 0;background:var(--rust);border-radius:2px}
+
+.day-r{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;align-items:center;padding:9px 14px 9px 15px;border-top:1px solid var(--line2);position:relative;font-size:14px}
+.day-r:first-child{border-top:0}
+.day-r::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--st)}
+.day-r .d b{display:block;font-size:14px}.day-r .d small{font-size:12px;color:var(--ink3);font-variant-numeric:tabular-nums}
+.cap{display:flex;align-items:center;gap:8px;margin-top:4px}
+.cap .bar{height:5px}
+.inb{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:10px;align-items:start;width:100%;padding:11px 14px 11px 15px;border-top:1px solid var(--line2);min-height:44px}
+.inb:first-child{border-top:0}
+.inb:hover{background:var(--tint)}
+.inb .ic{margin-top:2px;color:var(--ink2)}
+.inb small{display:block;font-size:12px;color:var(--ink3)}
+.inb p{margin:2px 0 0;font-size:13.5px;color:var(--ink2)}
+
+.sgs{display:flex;flex-wrap:wrap;gap:8px}
+.sg{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 15px;border-radius:22px;border:1px solid var(--line);background:var(--card);font-size:14px;white-space:nowrap;transition:border-color .15s ease,background .15s ease}
+.sg:hover{border-color:#C6C6BE}
+.sg.nx{border-color:var(--olive);color:var(--olive-ink);font-weight:600}
+
+/* Eingabe */
+.comp{border-top:1px solid var(--line);background:var(--paper);padding:10px calc(env(safe-area-inset-right) + var(--gut)) calc(env(safe-area-inset-bottom) + 10px) calc(env(safe-area-inset-left) + var(--gut));display:flex;flex-direction:column;gap:8px;min-width:0}
+.sugs{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 calc(-1 * var(--gut));padding:0 var(--gut)}
+.sugs::-webkit-scrollbar{display:none}
+.inrow{display:flex;gap:8px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:3px 3px 3px 14px;transition:border-color .15s ease}
+.inrow:focus-within{border-color:var(--slate)}
+#inp{flex:1;min-width:0;border:0;background:none;height:44px;font-size:16px;outline:none}
+#inp::placeholder{color:var(--ink3)}
+.send{width:44px;height:44px;border-radius:11px;background:var(--olive);color:#fff;display:grid;place-items:center;flex:none;transition:background .15s ease}
+.send:hover{background:var(--olive-d)}
+
+/* Kontextspalte */
+.ctx{display:none;position:absolute;left:0;right:0;top:0;max-height:100%;overflow-y:auto;z-index:20;background:var(--paper);border-bottom:1px solid var(--line);box-shadow:0 18px 40px rgba(31,36,40,.16);padding:6px calc(env(safe-area-inset-right) + var(--gut)) 16px calc(env(safe-area-inset-left) + var(--gut))}
+.app.ctx-open .ctx{display:block;animation:dn .2s ease}
+@keyframes dn{from{opacity:0;transform:translateY(-6px)}}
+.scrim{display:none;position:absolute;inset:0;z-index:15;background:rgba(31,36,40,.22)}
+.app.ctx-open .scrim{display:block}
+.kpi{background:var(--slate);color:#fff;border-radius:12px;padding:14px 16px 16px}
+.kpi h2{display:flex;justify-content:space-between;gap:8px;margin:0;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--slate-mute);font-weight:650}
+.kg{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:14px}
+.kg>div{display:flex;flex-direction:column;gap:1px;min-width:0}
+.kg small{font-size:12px;color:var(--slate-mute)}
+.kg b{font-size:23px;font-weight:650;letter-spacing:-.015em;font-variant-numeric:tabular-nums;line-height:1.2}
+.kg span{font-size:12px;color:#DCE3EA}
+.segs{display:flex;gap:2px;margin-top:5px}
+.segs i{flex:1;height:4px;border-radius:1px;background:rgba(255,255,255,.2);transition:background .25s ease}
+.segs i.on{background:var(--olive-lt)}
+.nextb{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px 14px 16px;display:flex;flex-direction:column;gap:8px;position:relative;overflow:hidden}
+.nextb::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--olive)}
+.nextb h3{margin:0;font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--olive-ink);font-weight:700}
+.nextb p{margin:0;font-size:15px;font-weight:600;line-height:1.35}
+.nrow{display:flex;align-items:center;gap:10px}
+.nrow .btn{margin-left:auto}
+.sec{margin-top:10px;border-top:1px solid var(--line)}
+.secb{display:flex;align-items:center;gap:8px;width:100%;min-height:46px;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--ink2)}
+.secb .n{font-size:11.5px;color:var(--ink3);letter-spacing:0;font-weight:600}
+.secb .chev{margin-left:auto}
+.secb[aria-expanded=false] .chev{transform:rotate(-90deg)}
+.lst{list-style:none;margin:0 0 4px;padding:0}
+.lst li{display:grid;grid-template-columns:48px minmax(0,1fr);gap:10px;padding:8px 0 8px 10px;border-top:1px solid var(--line2);font-size:14px;position:relative}
+.lst li:first-child{border-top:0}
+.lst li::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:3px;border-radius:2px;background:var(--st,var(--line))}
+.lst time,.lst .d{font-weight:600;font-variant-numeric:tabular-nums}
+.lst small{display:block;color:var(--ink3);font-size:12.5px}
+.lst .cap{margin-top:5px}
+.foot{margin:2px 0 6px;font-size:12.5px;color:var(--ink3)}
+.tm{display:grid;grid-template-columns:32px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line2);font-size:14px}
+.tm:first-child{border-top:0}
+.av{width:32px;height:32px;border-radius:50%;background:var(--sunk);display:grid;place-items:center;font-size:11.5px;font-weight:700;color:var(--ink2);letter-spacing:.02em}
+.tm small{display:block;color:var(--ink3);font-size:12.5px}
+.ctx-close{width:100%;margin-top:12px}
+
+@media (max-width:999px){.ctx .kpi{display:none}.nextb{margin-top:8px}}
+@media (min-width:1000px){
+ :root{--gut:0px}
+ .app{padding:0 24px}
+ .top{padding:14px 0}
+ .sub-m{display:none}.sub-d{display:inline}
+ .date{display:inline}
+ .strip{display:none}
+ .main{grid-template-columns:minmax(0,1fr) 336px;column-gap:40px}
+ .log{padding:8px 4px 28px}
+ .comp{padding:12px 0 18px;border-top:1px solid var(--line)}
+ .sugs{flex-wrap:wrap;overflow:visible;margin:0;padding:0}
+ .ctx{display:block;position:static;max-height:none;overflow-y:auto;box-shadow:none;border:0;border-left:1px solid var(--line);padding:20px 0 24px 28px;background:none;animation:none}
+ .app.ctx-open .ctx{animation:none}
+ .app.ctx-open .scrim,.scrim{display:none}
+ .ctx-close{display:none}
+ .w{max-width:620px}
+}
+@media (prefers-reduced-motion:reduce){
+ *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+ .dots i{opacity:.6}
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+ <header class="top">
+  <div class="idn">
+   <span class="mono" aria-hidden="true">J</span>
+   <div class="idt"><b>Jarvis</b><span class="sub-m">Büroleiter · <span class="clk tn">07:40</span></span><span class="sub-d">Büroleiter der mehanicar Meisterwerkstatt, Hanau</span></div>
+  </div>
+  <div class="top-r"><span class="date">Montag, 28. September · <span class="clk tn">07:40</span></span><a class="back" href="index.html">← Alle Layouts</a></div>
+ </header>
+ <button class="strip" id="strip" type="button" aria-expanded="false" aria-controls="ctx"></button>
+ <main class="main">
+  <section class="chat" aria-label="Gespräch mit Jarvis">
+   <div class="log" id="log" role="log" aria-live="polite" aria-relevant="additions"></div>
+   <form class="comp" id="comp" autocomplete="off">
+    <div class="sugs" id="sugs"></div>
+    <div class="inrow"><label class="sr" for="inp">Nachricht an Jarvis</label><input id="inp" type="text" enterkeyhint="send" placeholder="Frag Jarvis oder gib ihm einen Auftrag …"><button class="send" type="submit" aria-label="Senden"><svg class="ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button></div>
+   </form>
+  </section>
+  <button class="scrim" id="scrim" type="button" tabindex="-1" aria-label="Übersicht schließen"></button>
+  <aside class="ctx" id="ctx" aria-label="Heute im Blick"></aside>
+ </main>
+</div>
+<script>
+(()=>{
+'use strict';
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const log=$('#log'),app=$('#app'),inp=$('#inp'),ctx=$('#ctx'),strip=$('#strip');
+const RM=matchMedia('(prefers-reduced-motion: reduce)');
+const P={
+ check:'M5 12.5l4.2 4.2L19 7',chevD:'M6 9l6 6 6-6',chevR:'M9 6l6 6-6 6',
+ chat:'M20 11.5a8 8 0 0 1-11.7 7.1L4 20l1.3-4.1A8 8 0 1 1 20 11.5z',
+ cam:'M8 4h8a4 4 0 0 1 4 4v8a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V8a4 4 0 0 1 4-4zM12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 1 0 0-7zM16.8 7.2h.01',
+ phone:'M5 4h3.5l2 5-2.4 1.5a11 11 0 0 0 5.4 5.4L15 13.5l5 2V19a1 1 0 0 1-1 1A15 15 0 0 1 4 5a1 1 0 0 1 1-1z',
+ alert:'M12 4.5l8.5 15h-17zM12 10v4.2M12 17.2h.01',
+ euro:'M17 6.8A6.5 6.5 0 1 0 17 17.2M4.5 10.2h8.5M4.5 13.8h8.5',
+ box:'M4 8l8-4 8 4v8l-8 4-8-4zM4 8l8 4 8-4M12 12v8',
+ cal:'M4.5 6h15v14h-15zM4.5 10h15M8.5 3.5v4M15.5 3.5v4',
+ clock:'M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 1 0 0-17zM12 7.5V12l3 2',
+ doc:'M6.5 3.5h8l4 4v13h-12zM14 3.5V8h4.5M9.5 12.5h6M9.5 16h4',
+ star:'M12 3.8l2.5 5.2 5.7.8-4.1 4 1 5.6L12 16.7l-5.1 2.7 1-5.6-4.1-4 5.7-.8z',
+ list:'M9 6.5h11M9 12h11M9 17.5h11M4.5 6.5h.01M4.5 12h.01M4.5 17.5h.01',
+ chart:'M4.5 4v15.5H20M8.5 16v-4.5M12.5 16V8.5M16.5 16v-6',
+ hist:'M4.5 12a7.5 7.5 0 1 0 2.2-5.3M4.5 4.5v3.7h3.7M12 8.2V12l2.8 1.8',
+ wrench:'M14.5 5.5a4 4 0 0 0-4.9 5L4.5 15.6l3.9 3.9 5.1-5.1a4 4 0 0 0 5-4.9L16 12l-3-1-1-3z',
+ cars:'M5 16.5V12l2-5h10l2 5v4.5M5 12h14M7.5 16.5v2M16.5 16.5v2M8 14.2h.01M16 14.2h.01'
+};
+const ic=(n,s=16,cls='ic',fill='none')=>`<svg class="${cls}" width="${s}" height="${s}" viewBox="0 0 24 24" fill="${fill}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="${P[n]}"/></svg>`;
+const chev=(s=16)=>ic('chevD',s,'ic chev');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const eur=(n,d=2)=>n.toLocaleString('de-DE',{minimumFractionDigits:d,maximumFractionDigits:d})+' €';
+const wait=ms=>new Promise(r=>setTimeout(r,ms));
+let U=0;const uid=()=>'u'+(++U);
+
+/* ---------- Zustand ---------- */
+const S={min:7*60+40,done:{},later:{},reserve:true,open:{},sec:{termine:true,woche:true,team:false},text:{}};
+const now=()=>String(Math.floor(S.min/60)).padStart(2,'0')+':'+String(S.min%60).padStart(2,'0');
+const tick=()=>{S.min++;$$('.clk').forEach(e=>e.textContent=now());return now();};
+
+const Q=[
+ {id:'wolf',a:'Kunden',u:'jetzt',t:'Antwort an Tobias Wolf senden, Do 09:00 reservieren',s:'Herrn Wolf antworten',ask:'Schreib Herrn Wolf'},
+ {id:'konflikt',a:'Werkstatt',u:'jetzt',t:'HU-TR 51 auf 10:30 verschieben – Teile kommen 10:00',s:'HU-TR 51 verschieben',ask:'HU-TR 51 verschieben'},
+ {id:'becker',a:'Kunden',u:'heute',t:'Jonas Becker an KV-Freigabe erinnern',s:'Herrn Becker erinnern',ask:'Erinnere Herrn Becker an den KV'},
+ {id:'mahnung',a:'Geld',u:'heute',t:'Autohaus Schmidt: 2. Mahnung über 1.245,00 € senden',s:'Mahnung an Autohaus Schmidt',ask:'Mahnung für Autohaus Schmidt'},
+ {id:'bestellung',a:'Lager',u:'heute',t:'Stahlgruber-Bestellung über 86,40 € freigeben',s:'Bestellung freigeben',ask:'Zeig mir die Bestellung'},
+ {id:'nina',a:'Kunden',u:'heute',t:'Nina Braun zurückrufen, Wartung anbieten',s:'Nina Braun zurückrufen',ask:'Nina Braun zurückrufen'},
+ {id:'lisa',a:'Kunden',u:'heute',t:'Lisa Hoffmann den Ölwechsel-Preis schicken',s:'Lisa Hoffmann antworten',ask:'Antwort an Lisa Hoffmann'},
+ {id:'koch',a:'Kunden',u:'Woche',t:'Stefan Koch wegen überfälliger HU anschreiben',s:'Herrn Koch anschreiben',ask:'HU-Erinnerung an Herrn Koch'},
+ {id:'bewertung',a:'Kunden',u:'Woche',t:'Dankes-Antwort auf Google-Bewertung veröffentlichen',s:'Bewertung beantworten',ask:'Google-Bewertung beantworten'}
+];
+const TX={
+ wolf:'Hallo Herr Wolf, danke für Ihre Nachricht! Das klingt nach verschlissenen Bremsbelägen vorne – bitte nicht zu lange warten. Passt Ihnen Donnerstag, 1.10., um 9:00 Uhr? Richtpreis je nach Befund 180–320 €. Viele Grüße, Samed – mehanicar',
+ becker:'Hallo Herr Becker, kurze Erinnerung zum Kostenvoranschlag für Ihren Astra (214,20 €). Sollen wir die Inspektion heute wie geplant machen? Ein kurzes OK per WhatsApp genügt.',
+ lisa:'Hallo Lisa, der Ölwechsel für deinen Fiat 500 kostet bei uns 89 € inkl. Markenöl und Filter. Diese Woche geht z. B. Dienstag oder Donnerstag – sag einfach Bescheid!',
+ krausefertig:'Hallo Frau Krause, Ihr Mercedes ist fertig und kann ab 16 Uhr abgeholt werden.',
+ koch:'Hallo Herr Koch, die HU für Ihren Golf (F-KL 882) war im September fällig. Diese Woche haben wir noch Termine frei – soll ich Ihnen einen eintragen? Viele Grüße, Samed – mehanicar',
+ bewertung:'Vielen Dank, Frau Krause! Schön, dass Sie zufrieden waren – wir freuen uns auf Ihren nächsten Besuch. Samed und das Team von mehanicar',
+ mahnung:'Sehr geehrte Damen und Herren, zu unserer Rechnung RE-2026-0118 über 1.245,00 € konnten wir trotz erster Mahnung keinen Zahlungseingang feststellen. Bitte überweisen Sie den Betrag bis zum 05.10.2026. Mit freundlichen Grüßen, Samed – mehanicar Meisterwerkstatt, Hanau'
+};
+const DN={
+ wolf:t=>`Gesendet ${t}`+(S.reserve?' · Do 09:00 reserviert':''),konflikt:()=>'Verschoben auf 10:30',becker:t=>`Gesendet ${t}`,
+ mahnung:t=>`2. Mahnung gesendet ${t}`,bestellung:t=>`Bestellt ${t} · Lieferung morgen früh`,nina:t=>`Zurückgerufen ${t}`,
+ lisa:t=>`Gesendet ${t}`,koch:t=>`Gesendet ${t}`,bewertung:t=>`Veröffentlicht ${t}`,krausefertig:()=>'Vorgemerkt · geht raus, sobald fertig'
+};
+const FOL={
+ wolf:()=>S.reserve?'Ist raus. Donnerstag, 1.10., 09:00 auf Bühne 3 ist für Herrn Wolf reserviert – ich sage Bescheid, sobald er antwortet.':'Ist raus. Den Termin habe ich nicht reserviert, Bühne 3 bleibt am Donnerstag frei.',
+ konflikt:()=>'Erledigt: HU-TR 51 startet um 10:30 auf Bühne 1, eine halbe Stunde nach der Teile-Lieferung. Die Abholung um 16:00 bleibt.',
+ becker:()=>'Die Erinnerung an Herrn Becker ist raus. Sobald sein OK kommt, trage ich die Freigabe ein und sage dir Bescheid.',
+ mahnung:()=>'Die 2. Mahnung an Autohaus Schmidt ist per E-Mail raus, Frist 05.10. Übrigens: Ihr Audi steht seit Freitag abholbereit – bei der Abholung kannst du beide Rechnungen ansprechen.',
+ bestellung:()=>'Bestellung ist bei Stahlgruber raus: 6× Ölfilter, 6× DOT 4, 86,40 € netto. Lieferung morgen früh, ich buche die Teile beim Wareneingang ein.',
+ nina:()=>'Notiert. Ich lege Frau Braun die Wartung als Terminvorschlag für diese Woche an.',
+ lisa:()=>'Die Antwort an Lisa Hoffmann ist auf Instagram raus.',
+ koch:()=>'Das Anschreiben an Herrn Koch ist raus. Meldet er sich bis Donnerstag nicht, erinnere ich dich.',
+ bewertung:()=>'Die Antwort steht jetzt öffentlich unter der Bewertung.',
+ krausefertig:()=>'Vorgemerkt. Frau Krause bekommt die Nachricht automatisch, sobald der Auftrag auf „Fertig“ steht.'
+};
+const LT={wolf:'ich erinnere dich um 08:30, Herr Wolf wartet seit 06:52',konflikt:'ich frage um 08:45 noch mal nach, vor dem geplanten Start',koch:'ich erinnere dich morgen früh',bewertung:'ich erinnere dich morgen früh'};
+
+/* ---------- Bausteine ---------- */
+const bub=h=>`<div class="b">${h}</div>`;
+const sgs=l=>`<div class="sgs">${l.map(([t,a])=>`<button type="button" class="sg" data-ask="${esc(a||t)}">${t}</button>`).join('')}</div>`;
+const acts=id=>`<div class="acts" data-for="${id}"></div>`;
+const ta=(id,lbl='Deine Nachricht')=>{const i=uid();return `<label class="lbl" for="${i}">${lbl}</label><textarea class="draft" id="${i}" data-txt="${id}" rows="3">${esc(S.text[id]??TX[id])}</textarea>`;};
+const hd=(icn,t,chips='')=>`<div class="wh">${ic(icn,15)}<span class="wt">${t}</span>${chips}</div>`;
+const actsHTML=id=>{
+ if(S.done[id])return `<div class="doneln">${ic('check',16)}<span>${DN[id](S.done[id])}</span></div>`;
+ if(S.later[id])return `<div class="laterln">${ic('clock',16)}<span>Auf später gelegt</span><button type="button" class="btn ghost" data-undo="${id}">Doch jetzt</button></div>`;
+ const L=`<button type="button" class="btn" data-later="${id}">Später</button>`;
+ switch(id){
+  case 'konflikt':return `<button type="button" class="btn pri" data-do="konflikt">Auf 10:30 verschieben</button>`+L;
+  case 'mahnung':return `<button type="button" class="btn pri" data-do="mahnung">2. Mahnung senden</button>`+L;
+  case 'bestellung':return `<button type="button" class="btn pri" data-do="bestellung">Bestellen</button>`+L;
+  case 'nina':return `<a class="btn pri" href="tel:+496181442790">${ic('phone',16)}Anrufen</a><button type="button" class="btn" data-do="nina">Erledigt</button>`;
+  case 'bewertung':return `<button type="button" class="btn pri" data-do="bewertung">Veröffentlichen</button>`+L;
+  case 'krausefertig':return `<button type="button" class="btn pri" data-do="krausefertig">Vormerken</button>`;
+  default:return `<button type="button" class="btn pri" data-do="${id}">Senden</button>`+L;
+ }
+};
+
+const LOG=[['07:00','3 Terminerinnerungen für Dienstag per WhatsApp verschickt'],['06:53','Anfrage von Tobias Wolf analysiert, Antwort vorbereitet'],['06:30','Tagesplan erstellt, Teile-Konflikt bei HU-TR 51 erkannt'],['Gestern 19:40','5-Sterne-Bewertung von Maria Krause erhalten, Dankes-Antwort als Entwurf']];
+const wLog=()=>{const i=uid();return `<div class="w"><button type="button" class="wtog" data-tog aria-expanded="false" aria-controls="${i}">${ic('hist',16)}<span>Über Nacht erledigt</span><span class="chip">4</span>${chev()}</button><ol class="plog" id="${i}" hidden>${LOG.map(([t,x])=>`<li><time>${t}</time><span>${x}</span></li>`).join('')}</ol></div>`;};
+
+const wConf=()=>`<div class="w st-rust" data-act="konflikt">${hd('alert','Konflikt · Bühne 1',`<span class="chip c-rust bef">jetzt</span><span class="chip c-olive aft">gelöst</span>`)}<div class="wb">
+<div class="vh"><span class="pl">HU-TR 51</span><b>Mercedes C 220 d</b></div>
+<div class="sub">Maria Krause · Getriebeölspülung · 2,5 AW · AU-2026-0054</div>
+<ol class="tl">
+<li class="tl-plan"><time>09:00</time><i class="dot"></i><span class="t">Start geplant <span class="chip c-rust">Teile fehlen</span></span></li>
+<li><time>10:00</time><i class="dot"></i><span class="t">Getriebeöl-Kit kommt · Stahlgruber</span></li>
+<li class="tl-new"><time>10:30</time><i class="dot"></i><span class="t">Neuer Start <span class="chip c-olive bef">Vorschlag</span><span class="chip c-olive aft">im Plan</span></span></li>
+<li class="tl-end"><time>16:00</time><i class="dot"></i><span class="t">Abholung · Frau Krause</span></li>
+</ol>${acts('konflikt')}</div></div>`;
+
+const wWolf=()=>`<div class="w st-rust" data-act="wolf">${hd('chat','WhatsApp an Tobias Wolf',`<span class="chip c-rust bef">Priorität hoch</span><span class="chip c-olive aft">gesendet</span>`)}<div class="wb">
+<figure class="in"><figcaption>Tobias Wolf · heute 06:52</figcaption><p>„Hallo, mein Golf macht beim Bremsen so ein Schleifgeräusch. Habt ihr diese Woche noch Zeit?“</p></figure>
+<dl class="kv"><dt>Einschätzung</dt><dd>Bremsbeläge/-scheiben VA verschlissen</dd><dt>Richtpreis</dt><dd class="tn">180–320 €</dd><dt>Termin</dt><dd>Do 01.10., 09:00 · Bühne 3</dd></dl>
+${ta('wolf','Deine Antwort')}
+<button type="button" class="opt" data-res aria-pressed="${S.reserve}"><span class="box">${ic('check',14)}</span>Do 01.10., 09:00 auf Bühne 3 reservieren</button>
+${acts('wolf')}</div></div>`;
+
+const qrow=q=>{const d=S.done[q.id],l=S.later[q.id];return `<button type="button" class="qrow${d?' done':''}" data-q="${q.id}"><span class="chip">${q.a}</span><span class="qt">${q.t}</span><span class="u ${d?'u-ok':'u-'+q.u}">${d?'erledigt':l?'später':q.u}</span><span class="qic">${ic(d?'check':'chevR',16)}</span></button>`;};
+const wQueue=()=>`<div class="w">${hd('list','Außerdem für dich',`<span class="chip" data-live="qcount"></span>`)}<div data-live="queue"></div></div>`;
+
+const ORD=[
+ {id:'53',pl:'HU-SM 247',car:'BMW 320d',st:()=>'In Arbeit',tone:'slate',p:45,r2:()=>'Bremsen VA+HA · Bühne 2 · Kevin · fertig 11:30',det:[['Auftrag','AU-2026-0053'],['Kunde','Ali Yilmaz · Stammkunde'],['Fahrzeug','2019 · 87.450 km'],['Arbeit','4,6 AW · Teile da'],['Freigabe','per WhatsApp'],['Brutto','932,96 €']]},
+ {id:'54',pl:'HU-TR 51',car:'Mercedes C 220 d',st:()=>'Warten auf Teile',tone:'ochre',p:0,r2:()=>S.done.konflikt?'Getriebeölspülung · Start 10:30 auf Bühne 1 · Abholung 16:00':'Getriebeölspülung · Teile kommen 10:00 · geplant 09:00 · Abholung 16:00',det:[['Auftrag','AU-2026-0054'],['Kunde','Maria Krause'],['Arbeit','2,5 AW'],['Teile','Getriebeöl-Kit · Stahlgruber, 10:00'],['Brutto','412,34 €']],ask:()=>S.done.konflikt?null:['Konflikt lösen','HU-TR 51 verschieben']},
+ {id:'55',pl:'HU-WZ 19',car:'Opel Astra K',st:()=>'Freigabe fehlt',tone:'rust',p:0,r2:()=>'Inspektion + Wischerblätter · KV 214,20 € seit Freitag · Abholung 17:00'+(S.done.becker?' · erinnert '+S.done.becker:''),det:[['Auftrag','AU-2026-0055'],['Kunde','Jonas Becker'],['Arbeit','1,8 AW'],['KV','214,20 € · beim Kunden seit Freitag']],ask:()=>S.done.becker?null:['Herrn Becker erinnern','Erinnere Herrn Becker an den KV']},
+ {id:'48',pl:'OF-PG 304',car:'Audi A4 Avant',st:()=>'Abholbereit',tone:'olive',p:100,r2:()=>'Autohaus Schmidt GmbH · fertig seit Freitag · Rechnung 620,00 € offen',det:[['Auftrag','AU-2026-0048'],['Kunde','Autohaus Schmidt GmbH'],['Rechnung','620,00 € · bei Abholung']]}
+];
+const ordRow=o=>{const k='o'+o.id,op=!!S.open[k],i=uid(),a=o.ask&&o.ask();return `<div class="ord" style="--st:var(--${o.tone})"><button type="button" class="ordh" data-tog="${k}" aria-expanded="${op}" aria-controls="${i}"><span class="r1"><span class="pl">${o.pl}</span><b>${o.car}</b><span class="chip c-${o.tone}">${o.st()}</span></span><span class="r2">${o.r2()}</span><span class="r3"><span class="bar"><i style="width:${o.p}%"></i></span><span class="pc">${o.p} %</span></span></button><div class="ordd" id="${i}"${op?'':' hidden'}><dl class="kv">${o.det.map(([x,v])=>`<dt>${x}</dt><dd>${v}</dd>`).join('')}</dl>${a?sgs([a]):''}</div></div>`;};
+const wOrders=()=>`<div class="w">${hd('wrench','Aufträge heute',`<span class="chip">4</span>`)}<div data-live="orders"></div></div>`;
+
+const WK=[['1.–7.',4020,4150],['8.–14.',4310,4690],['15.–21.',4180,4560],['22.–28.',4470,5020]];
+const readout=k=>{const w=WK[k],d=(w[2]/w[1]-1)*100;return `${w[0]} Sep: <b class="tn">${eur(w[2],0)}</b> · August: <span class="tn">${eur(w[1],0)}</span> · <span class="tn">${d>=0?'+':'−'}${Math.abs(d).toFixed(1).replace('.',',')} %</span>`;};
+const wUms=()=>{const i=uid();return `<div class="w">${hd('chart','Umsatz September',`<span class="chip c-olive">+8,5 %</span>`)}<div class="wb" data-chart>
+<div class="hero"><b>18.420 €</b><span>bis heute · August im gleichen Zeitraum 16.980 €</span></div>
+<div class="lgd"><span><i style="background:var(--aug)"></i>August</span><span><i style="background:var(--olive)"></i>September</span></div>
+<div class="plot"><div class="ya" aria-hidden="true">${[0,2000,4000,6000].map(v=>`<span style="bottom:${v/60}%">${v.toLocaleString('de-DE')}</span>`).join('')}</div>
+<div class="pa">${[1,2,3,4,5,6].map(k=>`<i class="gl" style="bottom:${(k/6*100).toFixed(3)}%"></i>`).join('')}${WK.map((w,k)=>`<button type="button" class="wk" data-wk="${k}" aria-pressed="${k===3}" aria-label="Woche ${w[0]}: September ${eur(w[2],0)}, August ${eur(w[1],0)}"><span class="ba" style="height:${w[1]/60}%"></span><span class="ba bs" data-v="${w[2].toLocaleString('de-DE')}" style="height:${w[2]/60}%"></span></button>`).join('')}</div></div>
+<div class="xa" aria-hidden="true">${WK.map(w=>`<span>${w[0]}</span>`).join('')}</div>
+<p class="readout" aria-live="polite">${readout(3)}</p>
+<div class="kp"><div><small>Rohgewinn</small><b>9.310 €</b><span>Marge 50,5 %</span></div><div><small>Offene Posten</small><b>2.254 €</b><span>1 Rechnung überfällig</span></div><div><small>Effizienz</small><b>112 %</b><span>verkaufte AW zu gestempelt</span></div><div><small>Ø Auftragswert</small><b>486 €</b><span>im September</span></div></div>
+<button type="button" class="lnk" data-tog aria-expanded="false" aria-controls="${i}">${ic('list',15)}Als Tabelle zeigen</button>
+<div class="tw" id="${i}" hidden><table class="tbl"><thead><tr><th>Woche</th><th class="r">August</th><th class="r">September</th><th class="r">Differenz</th></tr></thead><tbody>${WK.map(w=>`<tr><td>${w[0]}</td><td class="r">${eur(w[1],0)}</td><td class="r">${eur(w[2],0)}</td><td class="r">+${eur(w[2]-w[1],0)}</td></tr>`).join('')}</tbody><tfoot><tr><td>Summe</td><td class="r">16.980 €</td><td class="r">18.420 €</td><td class="r">+1.440 €</td></tr></tfoot></table></div>
+</div></div>`;};
+
+const wOP=()=>{const i=uid();return `<div class="w">${hd('euro','Offene Posten',`<span class="chip tn">2.254,00 €</span>`)}
+<div class="op" data-act="mahnung" style="--st:var(--rust)"><div class="opr"><span><b>Autohaus Schmidt GmbH</b><small>RE-2026-0118 · Ziel 14 Tage</small></span><b class="tn">1.245,00 €</b></div>
+<div class="age"><span class="agebar" aria-hidden="true"><i style="width:40%"></i><i class="od" style="width:60%"></i></span><span class="chip c-rust bef">21 Tage überfällig</span><span class="chip c-olive aft">2. Mahnung raus</span></div>
+<button type="button" class="lnk" data-tog aria-expanded="false" aria-controls="${i}">${ic('doc',15)}2. Mahnung ansehen</button><p class="letter" id="${i}" hidden>${TX.mahnung}</p>${acts('mahnung')}</div>
+<div class="op" style="--st:var(--ochre)"><div class="opr"><span><b>Maria Krause</b><small>RE-2026-0121 · Ziel 14 Tage</small></span><b class="tn">389,00 €</b></div>
+<div class="age"><span class="agebar" aria-hidden="true"><i style="width:64%"></i><i class="rest" style="width:36%"></i></span><span class="chip">Tag 9 von 14</span></div><p class="note">Noch im Rahmen – fällig am Samstag, 03.10.</p></div>
+<div class="op" style="--st:var(--slate)"><div class="opr"><span><b>Autohaus Schmidt GmbH</b><small>AU-2026-0048 · Audi A4 Avant</small></span><b class="tn">620,00 €</b></div><p class="note">Auto steht seit Freitag abholbereit – Rechnung bei Abholung.</p></div></div>`;};
+
+const meter=(b,m)=>`<span class="meter"><i><span style="width:${b/m*100}%"></span></i><span class="tn">${b} / ${m}</span></span>`;
+const wLager=()=>`<div class="w st-ochre" data-act="bestellung">${hd('box','Bestellvorschlag · Stahlgruber',`<span class="chip c-ochre bef">unter Mindestbestand</span><span class="chip c-olive aft">bestellt</span>`)}<div class="wb">
+<div class="tw"><table class="tbl"><thead><tr><th>Artikel</th><th>Bestand / Min.</th><th class="r">Menge</th><th class="r">Betrag</th></tr></thead><tbody>
+<tr><td><b>Ölfilter</b><small>MANN W 712/95</small></td><td>${meter(1,4)}</td><td class="r">6×</td><td class="r">53,40 €</td></tr>
+<tr><td><b>Bremsflüssigkeit</b><small>DOT 4 · 1 l</small></td><td>${meter(2,5)}</td><td class="r">6×</td><td class="r">33,00 €</td></tr></tbody>
+<tfoot><tr><td colspan="3">Summe netto</td><td class="r">86,40 €</td></tr><tr class="sub2"><td colspan="3">mit 19 % MwSt</td><td class="r">102,82 €</td></tr></tfoot></table></div>
+<p class="note">${ic('clock',14)}<span>Lieferung morgen früh. Schon unterwegs: Getriebeöl-Kit für HU-TR 51, kommt heute 10:00.</span></p>
+${acts('bestellung')}</div></div>`;
+
+const ninaBlk=()=>`<div class="blk" data-act="nina" style="--st:var(--ochre)"><div class="vh"><span class="pl">HU-BB 410</span><b>Seat Leon</b><span class="chip c-ochre bef">Wartung fällig</span><span class="chip c-olive aft">zurückgerufen</span></div><div class="sub">Nina Braun · letzte Wartung vor 13 Monaten</div><p class="note">${ic('phone',14)}<span>Verpasster Anruf heute 07:15 · <span class="tn">06181 44 27 90</span></span></p>${acts('nina')}</div>`;
+const wHU=()=>`<div class="w">${hd('cal','Erinnerungen · fällig',`<span class="chip">2</span>`)}
+<div class="blk" data-act="koch" style="--st:var(--rust)"><div class="vh"><span class="pl">F-KL 882</span><b>VW Golf 7</b><span class="chip c-rust bef">HU überfällig</span><span class="chip c-olive aft">angeschrieben</span></div><div class="sub">Stefan Koch · HU war im September 2026 fällig</div>${ta('koch','Anschreiben per WhatsApp')}${acts('koch')}</div>${ninaBlk()}</div>`;
+const wNina=()=>`<div class="w">${hd('phone','Rückruf',`<span class="chip">07:15</span>`)}${ninaBlk()}</div>`;
+
+const DR={
+ becker:{i:'chat',h:'WhatsApp an Jonas Becker',c:['KV offen','ochre'],d:'gesendet',tone:'ochre',top:`<div class="vh"><span class="pl">HU-WZ 19</span><b>Opel Astra K</b></div><div class="sub">AU-2026-0055 · Inspektion + Wischerblätter · KV 214,20 € seit Freitag · Abholung 17:00</div>`},
+ lisa:{i:'cam',h:'Instagram an Lisa Hoffmann',c:['Anfrage','slate'],d:'gesendet',tone:'slate',top:`<figure class="in"><figcaption>Lisa Hoffmann · gestern 21:14</figcaption><p>„Was kostet bei euch ein Ölwechsel für einen Fiat 500?“</p></figure><dl class="kv"><dt>Festpreis</dt><dd>89 € inkl. Öl &amp; Filter</dd></dl>`},
+ krausefertig:{i:'chat',h:'Fertig-Meldung an Maria Krause',c:['wenn fertig','slate'],d:'vorgemerkt',tone:'slate',top:`<p class="note">${ic('clock',14)}<span>Geht automatisch per WhatsApp raus, sobald der Auftrag auf „Fertig“ steht.</span></p>`},
+ bewertung:{i:'star',h:'Google-Bewertung · Maria Krause',c:['5 Sterne','olive'],d:'beantwortet',tone:'olive',top:`<div class="vh"><span class="stars" aria-label="5 von 5 Sternen">${ic('star',16,'ic','currentColor').repeat(5)}</span><span class="sub" style="margin:0">gestern 19:40</span></div>`}
+};
+const wDraft=id=>{const d=DR[id];return `<div class="w st-${d.tone}" data-act="${id}">${hd(d.i,d.h,`<span class="chip c-${d.c[1]} bef">${d.c[0]}</span><span class="chip c-olive aft">${d.d}</span>`)}<div class="wb">${d.top}${ta(id,id==='bewertung'?'Deine Antwort':'Deine Nachricht')}${acts(id)}</div></div>`;};
+
+const wWeek=()=>`<div class="w">${hd('cal','Diese Woche · Bühnen & Team','')}<div data-live="week"></div></div>`;
+const weekRows=()=>{const res=S.done.wolf&&S.reserve;return [
+ ['Mo','28.09.','Heute · 4 Aufträge','Luca, Kevin, Samed im Haus','slate',0],
+ ['Di','29.09.','3 Termine','Erinnerungen sind raus','line',0],
+ ['Mi','30.09.','2 Termine · Luca im Urlaub','Auslastung 94 % – Engpass','rust',94],
+ ['Do','01.10.',res?'09:00 Bühne 3 reserviert':'09:00 Bühne 3 frei',res?'Tobias Wolf · Bremsen VA':'guter Platz für neue Aufträge',res?'slate':'olive',0],
+ ['Fr','02.10.','Luca im Urlaub','','line',0]];};
+const dayRow=r=>`<div class="day-r" style="--st:var(--${r[4]})"><span class="d"><b>${r[0]}</b><small>${r[1]}</small></span><span>${r[2]}${r[3]?`<small style="display:block;font-size:12.5px;color:var(--${r[4]==='rust'?'rust':'ink3'})">${r[3]}</small>`:''}${r[5]?`<span class="cap"><span class="bar" style="--st:var(--rust)"><i style="width:${r[5]}%"></i></span><span class="chip c-rust">Engpass</span></span>`:''}</span></div>`;
+
+const wInbox=()=>`<div class="w">${hd('chat','Neue Anfragen',`<span class="chip">3</span>`)}<div data-live="inbox"></div></div>`;
+const inboxRows=()=>[
+ ['chat','Tobias Wolf','WhatsApp · heute 06:52','„Mein Golf macht beim Bremsen so ein Schleifgeräusch …“','wolf',['hoch','rust'],'Schreib Herrn Wolf'],
+ ['phone','Nina Braun','Verpasster Anruf · heute 07:15','Seat Leon, HU-BB 410 – Wartung ist fällig','nina',['heute','ochre'],'Nina Braun zurückrufen'],
+ ['cam','Lisa Hoffmann','Instagram · gestern 21:14','„Was kostet bei euch ein Ölwechsel für einen Fiat 500?“','lisa',['heute','ochre'],'Antwort an Lisa Hoffmann']
+].map(r=>`<button type="button" class="inb" data-ask="${r[6]}">${ic(r[0],16)}<span><b>${r[1]}</b><small>${r[2]}</small><p>${r[3]}</p></span>${S.done[r[4]]?`<span class="chip c-olive">erledigt</span>`:`<span class="chip c-${r[5][1]}">${r[5][0]}</span>`}</button>`).join('');
+
+const LIVE={
+ queue:()=>Q.slice(2).map(qrow).join(''),
+ qcount:()=>{const n=Q.slice(2).filter(q=>!S.done[q.id]).length;return n?n+' offen':'alles erledigt';},
+ orders:()=>ORD.map(ordRow).join(''),
+ week:()=>weekRows().map(dayRow).join(''),
+ inbox:inboxRows
+};
+
+/* ---------- Antworten ---------- */
+const nextQ=()=>Q.find(q=>!S.done[q.id]&&!S.later[q.id])||Q.find(q=>!S.done[q.id]);
+const nextSgs=()=>{const n=Q.find(q=>!S.done[q.id]&&!S.later[q.id]);return n?`<div class="sgs"><button type="button" class="sg nx" data-next="${n.id}">Weiter: ${n.s}${ic('chevR',15)}</button></div>`:'';};
+const doneNote=id=>S.done[id]?'Schon erledigt – hier zum Nachlesen. ':'';
+const R={
+ heute:()=>[bub('Heute stehen <b>4 Aufträge</b> an: einer läuft, einer wartet auf Teile, einer auf die Freigabe – und der Audi von Autohaus Schmidt ist abholbereit. Tipp einen Auftrag an für Details.'),wOrders(),bub('Die Woche: Mittwoch wird eng (94 %, Luca hat Urlaub). Donnerstag 09:00 ist Bühne 3 '+(S.done.wolf&&S.reserve?'für Herrn Wolf reserviert.':'noch frei.')),sgs([['Woche ansehen','Wie sieht die Woche aus?'],['Offene Rechnungen']])],
+ umsatz:()=>[bub('September läuft gut: <b>18.420 €</b> Umsatz bis heute, 8,5 % mehr als im Vormonat. Jede Woche lag über der August-Woche.'),wUms(),sgs([['Offene Rechnungen'],['Was steht heute an?']])],
+ rechnung:()=>[bub(S.done.mahnung?'Offen sind 2.254,00 € in drei Posten. Die 2. Mahnung an Autohaus Schmidt ist schon raus.':'Offen sind <b>2.254,00 €</b> in drei Posten. Kritisch ist nur Autohaus Schmidt – 21 Tage drüber, die 2. Mahnung ist vorbereitet.'),wOP()],
+ lager:()=>[bub(doneNote('bestellung')+'Zwei Artikel liegen unter Mindestbestand. Mein Vorschlag bei Stahlgruber, Lieferung morgen früh:'),wLager()],
+ hu:()=>[bub('Zwei Kunden sind fällig. Bei Herrn Koch ist die HU schon drüber, das Anschreiben ist fertig. Frau Braun hat heute früh angerufen – ideal, um die Wartung anzubieten.'),wHU()],
+ becker:()=>[bub(doneNote('becker')+'Der KV über 214,20 € liegt seit Freitag bei Herrn Becker. Ohne sein OK fangen wir den Astra nicht an – Abholung wäre heute 17:00.'),wDraft('becker')],
+ lisa:()=>[bub(doneNote('lisa')+'Lisa Hoffmann hat gestern Abend auf Instagram nach einem Ölwechsel für ihren Fiat 500 gefragt. Unser Festpreis: 89 € inkl. Öl und Filter.'),wDraft('lisa')],
+ nina:()=>[bub(doneNote('nina')+'Nina Braun hat um 07:15 angerufen. Ihr Seat Leon (HU-BB 410) war vor 13 Monaten zuletzt zur Wartung – biete sie ihr gleich mit an.'),wNina()],
+ bewertung:()=>[bub(doneNote('bewertung')+'Maria Krause hat gestern um 19:40 mit 5 Sternen bewertet. Meine Antwort dazu:'),wDraft('bewertung')],
+ woche:()=>[bub('Mittwoch ist der Engpass: 94 % ausgelastet, und Luca hat von Mittwoch bis Freitag Urlaub. Neue Aufträge lege ich dir lieber auf Donnerstag.'),wWeek()],
+ anfragen:()=>[bub('Seit gestern Abend kamen 3 Anfragen rein. Die von Herrn Wolf ist die wichtigste – es geht um die Bremsen.'),wInbox()],
+ wolf:()=>S.done.wolf?[bub(`Die Antwort an Herrn Wolf ist um ${S.done.wolf} raus`+(S.reserve?', Donnerstag 09:00 auf Bühne 3 ist reserviert.':'.')+' Eine Rückmeldung von ihm gibt es noch nicht.'),nextSgs()]:[bub('Tobias Wolf, WhatsApp von 06:52: Schleifgeräusch beim Bremsen. Klingt nach Belägen vorne – Sicherheit geht vor. Mein Entwurf:'),wWolf()],
+ konflikt:()=>S.done.konflikt?[bub('Schon erledigt: HU-TR 51 startet um 10:30 auf Bühne 1, die Teile kommen um 10:00. Abholung bleibt 16:00.'),nextSgs()]:[bub('Bühne 1 ist ab 09:00 für Frau Krauses Mercedes geplant, das Getriebeöl-Kit kommt aber erst um 10:00. Ich schlage 10:30 vor:'),wConf()],
+ krause:()=>[bub(S.done.konflikt?'Frau Krauses Mercedes startet um 10:30 auf Bühne 1, die Teile kommen um 10:00. Abholung 16:00 – die Fertig-Meldung kann ich schon vormerken.':'Frau Krauses Mercedes wartet auf das Getriebeöl-Kit (kommt 10:00), geplant ist er aber schon für 09:00. Das sollten wir zuerst lösen:'),S.done.konflikt?'':wConf(),wDraft('krausefertig'),bub('Außerdem: Sie hat gestern mit 5 Sternen bewertet, und ihre Rechnung RE-2026-0121 über 389,00 € ist noch im Zahlungsziel.'),sgs([['Bewertung beantworten','Google-Bewertung beantworten']])],
+ danke:()=>{const n=Q.find(q=>!S.done[q.id]&&!S.later[q.id]);return [bub(n?`Gern. Als Nächstes wäre dran: ${n.s}.`:'Gern. Für heute ist alles erledigt.'),nextSgs()];},
+ unklar:()=>[bub('Das habe ich nicht sicher verstanden. Soll ich dir eins davon zeigen?'),sgs([['Was steht heute an?'],['Umsatz diesen Monat'],['Offene Rechnungen'],['Bestellung & Lager','Zeig mir die Bestellung'],['HU-Erinnerungen'],['Woche & Team','Wie sieht die Woche aus?']])]
+};
+function route(s){
+ const t=s.toLowerCase(),has=(...k)=>k.some(x=>t.includes(x));
+ if(has('wolf','golf','schleif'))return R.wolf();
+ if(has('becker','astra','kostenvoranschlag','kv-','freigabe',' kv'))return R.becker();
+ if(has('verschieb','konflikt','hu-tr','getriebe','bühne 1'))return R.konflikt();
+ if(has('krause','mercedes'))return R.krause();
+ if(has('lisa','hoffmann','instagram','ölwechsel','fiat'))return R.lisa();
+ if(has('nina','braun','anruf','zurückruf','seat'))return R.nina();
+ if(has('koch'))return R.hu();
+ if(has('bewertung','google','rezension'))return R.bewertung();
+ if(has('rechnung','mahnung','schmidt','offene posten','zahlung','bezahlt','überfällig','geld'))return R.rechnung();
+ if(has('umsatz','gewinn','finanz','verdien','monat','zahlen','effizienz'))return R.umsatz();
+ if(has('bestell','lager','teile','filter','stahlgruber','dot 4','bremsflüssig'))return R.lager();
+ if(/\bhu\b|\bau\b|tüv|erinner|wartung|fällig/.test(t))return R.hu();
+ if(has('woche','auslastung','team','urlaub','luca','kevin','kapazit','mittwoch','donnerstag'))return R.woche();
+ if(has('anfrage','nachricht','whatsapp','posteingang','neu rein'))return R.anfragen();
+ if(has('heute','plan','steht an','auftr','termin','übersicht'))return R.heute();
+ if(has('danke','super','passt','perfekt'))return R.danke();
+ return R.unklar();
+}
+
+/* ---------- Ablauf ---------- */
+function grow(t){t.style.height='auto';t.style.height=(t.scrollHeight+2)+'px';}
+function addJ(parts,o={}){
+ const g=document.createElement('div');g.className='g j'+(o.stat?' static':'');
+ g.innerHTML=`<div class="who"><span class="mono" aria-hidden="true">J</span><b>Jarvis</b><span class="tn">${o.t||now()}</span></div>`+parts.filter(Boolean).join('');
+ log.append(g);sync();g.querySelectorAll('textarea').forEach(grow);return g;
+}
+function addMe(text){const g=document.createElement('div');g.className='g me';g.innerHTML=`<div class="b">${esc(text)}</div><span class="stamp tn">${now()}</span>`;log.append(g);return g;}
+function scrollToAnchor(a){const max=log.scrollHeight-log.clientHeight;let top=max;if(a){const y=log.scrollTop+a.getBoundingClientRect().top-log.getBoundingClientRect().top-10;if(y<top)top=y;}log.scrollTo({top:Math.max(0,top),behavior:RM.matches?'auto':'smooth'});}
+let chain=Promise.resolve();
+function respond(fn,anchor){
+ chain=chain.then(async()=>{
+  const t=document.createElement('div');t.className='g j typ';t.innerHTML='<div class="b dots" role="status" aria-label="Jarvis schreibt"><i></i><i></i><i></i></div>';
+  log.append(t);scrollToAnchor(null);
+  await wait(700);t.remove();
+  const g=addJ(fn());scrollToAnchor(anchor||g);
+ });
+ return chain;
+}
+function send(text){text=String(text||'').trim();if(!text)return;closeCtx();tick();const me=addMe(text);scrollToAnchor(null);respond(()=>route(text),me);}
+function act(id,src){
+ if(S.done[id])return;
+ const blk=src&&src.closest('[data-act]'),tx=blk&&blk.querySelector('textarea');if(tx)S.text[id]=tx.value;
+ S.done[id]=tick();delete S.later[id];sync();
+ respond(()=>{const left=Q.some(q=>!S.done[q.id]);return [bub(FOL[id]()+(left?'':' Damit ist alles erledigt, was heute ansteht. Ich melde mich, wenn etwas Neues reinkommt.')),nextSgs()];});
+}
+function later(id){S.later[id]=1;sync();respond(()=>[bub('Okay, liegt zurück – '+(LT[id]||'ich erinnere dich um 12:00')+'.'),nextSgs()]);}
+function goNext(id){
+ closeCtx();
+ const q=Q.find(x=>x.id===id);if(!q)return;
+ const ex=[...log.querySelectorAll(`[data-act="${id}"]`)].pop();
+ if(ex&&!S.done[id]){
+  if(S.later[id]){delete S.later[id];sync();}
+  const y=log.scrollTop+ex.getBoundingClientRect().top-log.getBoundingClientRect().top-12;
+  log.scrollTo({top:Math.max(0,y),behavior:RM.matches?'auto':'smooth'});
+  ex.classList.remove('flash');void ex.offsetWidth;ex.classList.add('flash');
+  const b=ex.querySelector('.acts .btn');if(b)b.focus({preventScroll:true});
+  return;
+ }
+ send(q.ask);
+}
+
+/* ---------- Kontext ---------- */
+const sec=(k,title,n,body)=>`<section class="sec"><button type="button" class="secb" data-sec="${k}" aria-expanded="${S.sec[k]}" aria-controls="sec-${k}">${title}<span class="n">${n}</span>${chev()}</button><div id="sec-${k}"${S.sec[k]?'':' hidden'}>${body}</div></section>`;
+function renderCtx(){
+ const open=Q.filter(q=>!S.done[q.id]).length,nx=nextQ(),moved=!!S.done.konflikt;
+ const ter=[
+  moved?['10:30','Start HU-TR 51 · Bühne 1','Mercedes C 220 d · verschoben von 09:00','olive']:['09:00','Start HU-TR 51 · Bühne 1','Teile kommen erst 10:00 – Konflikt','rust'],
+  ['10:00','Lieferung Getriebeöl-Kit','Stahlgruber · für HU-TR 51','line'],
+  ['11:30','HU-SM 247 fertig','BMW 320d · Bühne 2 · Kevin','slate'],
+  ['16:00','Abholung HU-TR 51','Maria Krause · Mercedes C 220 d','line'],
+  ['17:00','Abholung HU-WZ 19','Jonas Becker · '+(S.done.becker?'an KV erinnert':'KV noch nicht freigegeben'),S.done.becker?'line':'ochre']
+ ].sort((a,b)=>a[0].localeCompare(b[0]));
+ const wk=weekRows().slice(1);
+ ctx.innerHTML=`<section class="kpi"><h2><span>Heute im Blick</span><span class="tn">Mo 28.09. · ${now()}</span></h2><div class="kg">
+<div><small>Aufträge heute</small><b>4</b><span>1 abholbereit · 1 wartet</span></div>
+<div><small>Für dich zu entscheiden</small><b>${open}</b><div class="segs" aria-hidden="true">${Q.map(q=>`<i class="${S.done[q.id]?'on':''}"></i>`).join('')}</div></div>
+<div><small>Offene Posten</small><b>2.254 €</b><span>${S.done.mahnung?'2. Mahnung ist raus':'1 Rechnung überfällig'}</span></div>
+<div><small>Umsatz September</small><b>18.420 €</b><span>+8,5 % zum Vormonat</span></div></div></section>
+<section class="nextb">${nx?`<h3>Als Nächstes</h3><p>${nx.t}</p><div class="nrow"><span class="chip">${nx.a}</span><span class="u u-${nx.u}">${S.later[nx.id]?'später':nx.u}</span><button type="button" class="btn pri" data-next="${nx.id}">Ansehen</button></div>`:`<h3>Alles erledigt</h3><p>Keine offenen Entscheidungen. Jarvis meldet sich, wenn etwas reinkommt.</p>`}</section>
+${sec('termine','Nächste Termine',ter.length,`<ul class="lst">${ter.map(r=>`<li style="--st:var(--${r[3]})"><time>${r[0]}</time><span>${r[1]}<small>${r[2]}</small></span></li>`).join('')}</ul><p class="foot">Abholbereit seit Freitag: OF-PG 304 · Audi A4 Avant · Autohaus Schmidt</p>`)}
+${sec('woche','Diese Woche','Di – Fr',`<ul class="lst">${wk.map(r=>`<li style="--st:var(--${r[4]})"><span class="d">${r[0]}<small class="tn">${r[1]}</small></span><span>${r[2]}${r[3]?`<small>${r[3]}</small>`:''}${r[5]?`<span class="cap"><span class="bar" style="--st:var(--rust)"><i style="width:${r[5]}%"></i></span><span class="chip c-rust">94 %</span></span>`:''}</span></li>`).join('')}</ul>`)}
+${sec('team','Team',3,`<div><div class="tm"><span class="av">SM</span><span>Samed<small>Meister · Inhaber</small></span><span class="chip c-olive">im Haus</span></div><div class="tm"><span class="av">KV</span><span>Kevin<small>Geselle · Bühne 2, BMW 320d</small></span><span class="chip c-olive">im Haus</span></div><div class="tm"><span class="av">LU</span><span>Luca<small>Azubi · Urlaub Mi 30.09. – Fr 02.10.</small></span><span class="chip c-ochre">ab Mi weg</span></div></div>`)}
+<button type="button" class="btn ctx-close" data-close>Schließen</button>`;
+ strip.innerHTML=`<span class="sr">Heute im Blick: </span><span class="c"><b>4</b><small>Aufträge</small></span><span class="c"><b>${open}</b><small>Für dich</small></span><span class="c"><b>2.254 €</b><small>Offene Posten</small></span><span class="c"><b>18.420 €</b><small>Umsatz Sep</small></span>${chev(18)}`;
+}
+function sync(){
+ $$('[data-act]').forEach(el=>{const id=el.dataset.act,d=!!S.done[id];el.classList.toggle('is-done',d);el.querySelectorAll('textarea').forEach(t=>{t.readOnly=d;if(d&&S.text[id]!=null&&t.value!==S.text[id]){t.value=S.text[id];grow(t);}});});
+ $$('.acts[data-for]').forEach(el=>{const id=el.dataset.for,sig=S.done[id]?'d':S.later[id]?'l':'o';if(el.dataset.sig===sig)return;el.dataset.sig=sig;el.innerHTML=actsHTML(id);});
+ $$('[data-live]').forEach(el=>{el.innerHTML=LIVE[el.dataset.live]();});
+ $$('[data-res]').forEach(b=>b.setAttribute('aria-pressed',String(S.reserve)));
+ renderCtx();
+}
+function closeCtx(){app.classList.remove('ctx-open');strip.setAttribute('aria-expanded','false');}
+function toggleCtx(){const o=!app.classList.contains('ctx-open');app.classList.toggle('ctx-open',o);strip.setAttribute('aria-expanded',String(o));if(o)ctx.scrollTop=0;}
+
+/* ---------- Ereignisse ---------- */
+document.addEventListener('click',e=>{
+ const t=e.target.closest('button,a');if(!t)return;
+ const d=t.dataset;
+ if(d.ask!=null){send(d.ask);return;}
+ if(d.q){const q=Q.find(x=>x.id===d.q);if(q)send(q.ask);return;}
+ if(d.next){goNext(d.next);return;}
+ if(d.do){act(d.do,t);return;}
+ if(d.later){later(d.later);return;}
+ if(d.undo){delete S.later[d.undo];sync();return;}
+ if(d.tog!=null){const x=t.getAttribute('aria-expanded')!=='true';t.setAttribute('aria-expanded',String(x));const p=document.getElementById(t.getAttribute('aria-controls'));if(p)p.hidden=!x;if(d.tog)S.open[d.tog]=x;return;}
+ if(d.sec){const k=d.sec,x=!S.sec[k];S.sec[k]=x;t.setAttribute('aria-expanded',String(x));const p=document.getElementById('sec-'+k);if(p)p.hidden=!x;return;}
+ if(d.res!=null){S.reserve=!S.reserve;sync();return;}
+ if(d.wk!=null){const c=t.closest('[data-chart]');c.querySelectorAll('.wk').forEach(b=>b.setAttribute('aria-pressed',String(b===t)));c.querySelector('.readout').innerHTML=readout(+d.wk);return;}
+ if(t===strip||t.id==='scrim'||d.close!=null){toggleCtx();return;}
+});
+log.addEventListener('input',e=>{const t=e.target;if(t.matches('textarea[data-txt]')){S.text[t.dataset.txt]=t.value;grow(t);}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&app.classList.contains('ctx-open')){closeCtx();strip.focus();}});
+$('#comp').addEventListener('submit',e=>{e.preventDefault();const v=inp.value;inp.value='';send(v);});
+window.addEventListener('resize',()=>$$('textarea.draft').forEach(grow));
+
+/* ---------- Start ---------- */
+$('#sugs').innerHTML=[['Was steht heute an?'],['Umsatz diesen Monat'],['Offene Rechnungen'],['Schreib Herrn Wolf'],['Bestellung & Lager','Zeig mir die Bestellung'],['HU-Erinnerungen'],['Woche & Team','Wie sieht die Woche aus?']].map(([l,a])=>`<button type="button" class="sg" data-ask="${esc(a||l)}">${l}</button>`).join('');
+log.innerHTML='<div class="day">Montag, 28. September 2026</div>';
+addJ([
+ bub('Guten Morgen, Samed. Heute stehen <b>4 Aufträge</b> an, über Nacht kamen <b>3 Anfragen</b> rein. Zwei Dinge brauchen dich gleich, der Rest hat Zeit bis heute Abend.'),
+ wLog(),
+ bub('<b>Erstens:</b> Frau Krauses Mercedes ist um 09:00 auf Bühne 1 geplant, das Getriebeöl-Kit kommt aber erst um 10:00. Ich schlage 10:30 vor – bis zur Abholung um 16:00 bleibt genug Luft.'),
+ wConf(),
+ bub('<b>Zweitens:</b> Tobias Wolf hat um 06:52 geschrieben, sein Golf schleift beim Bremsen. Das klingt nach Belägen vorne, also Sicherheit. Donnerstag 09:00 ist Bühne 3 frei, die Antwort ist fertig:'),
+ wWolf(),
+ bub('Der Rest kann warten, bis du Luft hast. Tipp einen Punkt an, dann lege ich ihn dir vor:'),
+ wQueue()
+],{stat:true,t:'07:38'});
+log.scrollTop=0;
+})();
+</script>
+</body>
+</html>

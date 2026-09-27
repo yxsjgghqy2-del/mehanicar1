@@ -37,7 +37,7 @@ h1{font-size:clamp(26px,5vw,38px);letter-spacing:-.025em;line-height:1.08;margin
 .item:focus-visible{outline:2.5px solid var(--slate);outline-offset:3px}
 .shot{position:relative;aspect-ratio:390/600;background:#E4E4E0;overflow:hidden;border-bottom:1px solid var(--line)}
 .shot img{width:100%;display:block}
-.num{position:absolute;top:10px;left:10px;background:rgba(34,37,42,.86);color:#fff;font-size:11px;font-weight:750;border-radius:7px;padding:3px 8px;font-variant-numeric:tabular-nums}
+.num{position:absolute;bottom:10px;left:10px;background:rgba(34,37,42,.86);color:#fff;font-size:11px;font-weight:750;border-radius:7px;padding:3px 8px;font-variant-numeric:tabular-nums}
 .body{padding:14px 15px 16px;display:flex;flex-direction:column;gap:7px;flex:1}
 .name{display:flex;align-items:center;gap:8px;font-size:15.5px;font-weight:720;letter-spacing:-.01em}
 .badge{font-size:10px;font-weight:700;border-radius:999px;padding:2px 8px;background:#EEEFEC;color:var(--ink2);letter-spacing:.02em}
@@ -80,7 +80,7 @@ const REC=window.JARVIS_REC||[];
 const topSet=new Set(REC.map(r=>r.nn));
 document.getElementById('grid').innerHTML=L.map(([nn,slug,name,desc,dark])=>`
  <a class="item" href="${nn}-${slug}.html">
-  <div class="shot"><img src="img/${nn}-mobile.png" alt="Vorschau ${name}" loading="lazy"><span class="num">${nn}</span></div>
+  <div class="shot"><img src="img/${nn}-mobile.png" alt="Vorschau ${name}" loading="lazy" onerror="this.remove()"><span class="num">${nn}</span></div>
   <div class="body">
    <div class="name">${name}${dark?'<span class="badge dk">dunkel</span>':''}${topSet.has(nn)?'<span class="badge top">Empfohlen</span>':''}</div>
    <p class="desc">${(window.JARVIS_DESC&&window.JARVIS_DESC[nn])||desc}</p>

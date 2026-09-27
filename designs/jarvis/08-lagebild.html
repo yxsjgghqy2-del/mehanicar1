@@ -1,0 +1,709 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2C3E50">
+<title>Jarvis · Lagebild</title>
+<style>
+:root{
+ --ground:#EFEEEA;--ground2:#E4E2DC;--ground3:#F7F6F3;--surface:#FFFFFF;
+ --ink:#26282B;--ink2:#54585E;--ink3:#6F7379;--line:rgba(38,40,43,.11);--line2:rgba(38,40,43,.2);
+ --slate:#2C3E50;--on-slate:#EEF1F4;--on-slate2:#AEBBC8;
+ --ws:#4A5F78;--ku:#2F6F73;--ge:#6B7A3A;--la:#A07A3A;--alert:#9A4B38;
+ --ws-t:#E6EAEF;--ku-t:#E1ECEC;--ge-t:#ECEEE1;--la-t:#F3EBDD;--alert-t:#F5E7E2;
+ --ws-l:#A6B7CB;--ku-l:#8DC0C1;--ge-l:#BAC58A;--la-l:#D8B77E;--alert-l:#D59E8B;
+ --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+ --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Georgia,serif;
+ --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+ --hh:120px;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{-webkit-text-size-adjust:100%;background:var(--ground)}
+body{margin:0;background:var(--ground);color:var(--ink);font:15px/1.4 var(--sans);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased;min-height:100vh}
+body.lock{overflow:hidden}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left;-webkit-tap-highlight-color:transparent}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
+.head :focus-visible{outline-color:#fff}
+.ic{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.sm{width:16px;height:16px}
+.pl{font-family:var(--mono);font-size:.9em;letter-spacing:-.01em;white-space:nowrap}
+.mj{width:28px;height:28px;border-radius:7px;background:var(--slate);color:#F3F1EB;display:inline-grid;place-items:center;font:600 16px/1 var(--serif);flex:none}
+.mj.sm{width:20px;height:20px;border-radius:5px;font-size:12px}
+
+/* Kopf */
+.head{position:sticky;top:0;z-index:20;background:var(--slate);color:var(--on-slate);padding-top:env(safe-area-inset-top)}
+.head-in{max-width:1280px;margin:0 auto;padding:4px max(16px,env(safe-area-inset-right)) 8px max(16px,env(safe-area-inset-left));display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand back" "health health";column-gap:12px;align-items:center}
+.brand{grid-area:brand;display:flex;align-items:center;gap:10px;min-width:0}
+.brand .mj{background:#F1EFE9;color:var(--slate)}
+.brand b{display:block;font-size:15px;font-weight:650;letter-spacing:.01em}
+.brand small{display:block;font-size:12px;color:var(--on-slate2)}
+.back{grid-area:back;font-size:12px;color:var(--on-slate2);text-decoration:none;min-height:44px;display:flex;align-items:center;padding:0 2px}
+.back:hover{color:#fff}
+.health{grid-area:health;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.hi{display:flex;flex-direction:column;gap:4px;min-height:52px;padding:4px 0 6px;border-bottom:2px solid transparent;transition:opacity .2s ease,border-color .2s ease;min-width:0}
+.hi.dim{opacity:.5}
+.hi.on{border-bottom-color:#fff}
+.hl{font-size:11px;color:var(--on-slate2);display:flex;align-items:center;gap:5px;white-space:nowrap}
+.hl .dot{width:6px;height:6px;border-radius:50%;background:var(--alert-l);flex:none}
+.hv{font-size:11px;color:var(--on-slate2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.1}
+.hv b{font-size:17px;font-weight:650;color:#fff;letter-spacing:-.01em;transition:color .3s}
+.hi.chg .hv b{color:var(--ku-l)}
+.hb{position:relative;height:3px;background:rgba(255,255,255,.15);border-radius:2px;overflow:hidden}
+.hb i{position:absolute;left:0;top:0;bottom:0;background:var(--l);transition:width .3s ease,left .3s ease,background-color .3s}
+.hb i.g{opacity:.38}
+.hb i.ov{background:var(--alert-l)}
+.hb i.ov.dun{background:var(--l);opacity:.55}
+.hb.segs{display:grid;grid-template-columns:repeat(3,1fr);gap:2px;background:none}
+.hb.segs i{position:static;background:rgba(255,255,255,.15)}
+.hb.segs i.on{background:var(--l)}
+.hs{display:none;font-size:12px;color:var(--on-slate2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Grundgerüst */
+.shell{max-width:640px;margin:0 auto;padding:18px max(16px,env(safe-area-inset-right)) calc(96px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.main{min-width:0}
+.brief{margin:0 0 16px}
+.bline{font:400 19px/1.38 var(--serif);margin:0 0 8px;color:var(--ink);text-wrap:pretty;letter-spacing:-.003em}
+.bby{font-size:12px;color:var(--ink3);display:flex;align-items:center;gap:8px;margin:0;flex-wrap:wrap}
+.seg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:2px;background:var(--ground2);padding:3px;border-radius:11px;margin:0 0 18px}
+.sg{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:50px;border-radius:8px;gap:1px;color:var(--ink2);transition:background-color .18s ease,box-shadow .18s ease;min-width:0}
+.sg b{font-size:16px;font-weight:650;color:var(--ink);line-height:1.1}
+.sg span{font-size:11.5px;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.sg span i{width:6px;height:6px;border-radius:2px;background:var(--c);flex:none}
+.sg[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(38,40,43,.13),0 0 0 .5px rgba(38,40,43,.08)}
+.sg:hover:not([aria-pressed="true"]){background:rgba(255,255,255,.45)}
+
+/* Bereichs-Aufschlüsselung */
+.area{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--c);border-radius:10px;padding:12px 16px 14px;margin:0 0 18px;animation:fin .25s ease}
+.area h3{margin:0 0 6px;font-size:14px;font-weight:650;display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.area h3 span{font-weight:500;color:var(--ink2);font-size:12.5px}
+.al-list{list-style:none;margin:0;padding:0}
+.al-list li{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+.al-list li:first-child{border-top:0}
+.al-list .k{font-size:11.5px;color:var(--ink3);width:auto}
+.al-list.kv li{grid-template-columns:78px minmax(0,1fr) auto}
+.bno{width:28px;height:28px;border-radius:6px;border:1px solid var(--line2);display:grid;place-items:center;font-size:12px;font-weight:650;color:var(--ws)}
+.t2{display:block;font-size:14px;font-weight:600}
+.al-list small{display:block;font-size:12.5px;color:var(--ink2)}
+.st{font-size:12px;font-weight:600;padding:3px 8px;border-radius:6px;background:var(--ground);color:var(--ink2);white-space:nowrap;display:inline-flex;align-items:center;gap:6px}
+.st.al{background:var(--alert-t);color:var(--alert)}
+.st.ok{background:var(--ku-t);color:var(--ku)}
+.team{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12.5px;color:var(--ink2)}
+.team span{display:inline-flex;align-items:center}
+.team b{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--ground2);font-size:10px;color:var(--ink);margin-right:6px;letter-spacing:.02em}
+.figs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px;margin:6px 0 14px}
+.figs span{display:block;font-size:12px;color:var(--ink2)}
+.figs b{display:block;font-size:19px;font-weight:650;letter-spacing:-.01em}
+.figs small{display:block;font-size:11.5px;color:var(--ink3)}
+.figs .up{color:var(--ge);font-weight:600}
+.oph{display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;color:var(--ink2)}
+.oph b{color:var(--ink)}
+.stack{display:flex;gap:2px;height:10px;border-radius:3px;overflow:hidden}
+.stack i{background:var(--ge)}
+.stack i.a{background:var(--alert)}
+.stack i.l{background:#B9C193}
+.leg{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px;font-size:12.5px;color:var(--ink2)}
+.leg li{display:flex;align-items:center;gap:8px}
+.leg i{width:10px;height:10px;border-radius:2px;background:var(--ge);flex:none}
+.leg i.a{background:var(--alert)}
+.leg i.l{background:#B9C193}
+.leg b{margin-left:auto;color:var(--ink);font-weight:600}
+
+/* Bänder */
+.bands{display:grid;gap:18px;grid-template-columns:minmax(0,1fr);grid-template-areas:"b0" "b1" "b2" "lg"}
+.band{min-width:0}
+.b0{grid-area:b0}.b1{grid-area:b1}.b2{grid-area:b2}.lg{grid-area:lg}
+.bar{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 12px 0 14px;background:var(--ground2);border-radius:10px}
+button.bar:hover{background:#DDDBD4}
+.bn{font-weight:680;font-size:16px;letter-spacing:-.005em}
+.bs{font-size:12.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bc{margin-left:auto;min-width:28px;height:24px;padding:0 8px;border-radius:12px;background:var(--surface);font-size:13px;font-weight:650;display:grid;place-items:center;flex:none}
+.b0 .bar{background:var(--ink);color:#fff}
+.b0 .bs{color:#C9CCD0}
+.b0 .bc{background:rgba(255,255,255,.14);color:#fff}
+.b0 .bar::before{content:"";width:3px;height:18px;border-radius:2px;background:var(--alert-l);margin-right:-2px}
+.chev{transition:transform .2s ease;color:var(--ink2)}
+.bar[aria-expanded="false"] .chev{transform:rotate(-90deg)}
+.bbody{margin-top:8px;animation:fin .22s ease}
+.box{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.box.empty,.list .empty{padding:16px;color:var(--ink3);font-size:14px}
+.list{list-style:none;margin:0;padding:0}
+.list>li{border-top:1px solid var(--line);overflow:hidden;transition:height .26s ease,opacity .2s ease,transform .26s ease}
+.list>li:first-child{border-top:0}
+.list .subl{font-size:11.5px;color:var(--ink3);padding:9px 16px 7px;background:var(--ground3);letter-spacing:.02em}
+
+/* Zeilen */
+.row{display:grid;grid-template-columns:20px minmax(0,1fr) auto 12px;grid-template-areas:"ic t k c" "ic s s c";column-gap:10px;row-gap:3px;align-items:start;width:100%;min-height:64px;padding:12px 12px 12px 16px;position:relative;transition:background-color .15s ease}
+.row::before{content:"";position:absolute;left:0;top:11px;bottom:11px;width:3px;border-radius:0 2px 2px 0;background:var(--c)}
+.row.info::before{width:2px;opacity:.4}
+.row:hover{background:var(--ground3)}
+.row.sel{background:#F3F2EE;box-shadow:inset 0 0 0 1.5px var(--line2)}
+.row .ai{grid-area:ic;color:var(--c);margin-top:1px}
+.row .t{grid-area:t;font-weight:620;font-size:15px;line-height:1.3;align-self:center}
+.row.info .t{font-weight:540}
+.row .s{grid-area:s;font-size:13px;color:var(--ink2);line-height:1.35}
+.row .cv{grid-area:c;width:12px;height:12px;align-self:center;color:var(--ink3)}
+.kz{grid-area:k;text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:2px;line-height:1.15}
+.kz b{font-size:15px;font-weight:650;white-space:nowrap}
+.kz small{font-size:11.5px;color:var(--ink3);white-space:nowrap}
+.kz.al small{color:var(--alert)}
+.pg{display:block;width:44px;height:3px;background:var(--ground2);border-radius:2px;overflow:hidden;margin-top:2px}
+.pg i{display:block;height:100%;background:var(--c)}
+
+/* Jetzt-Karten */
+.nows{display:grid;gap:10px}
+.now{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden;transition:height .26s ease,opacity .2s ease,transform .26s ease}
+.now.first{border-color:rgba(38,40,43,.22);box-shadow:0 1px 3px rgba(38,40,43,.06)}
+.ntag{display:flex;align-items:center;gap:8px;margin:0;padding:11px 14px 0 16px;font-size:11.5px;font-weight:650;letter-spacing:.03em;color:var(--ink2)}
+.ntag em{font-style:normal;font-weight:600;color:var(--alert);background:var(--alert-t);border-radius:5px;padding:2px 7px;letter-spacing:0}
+.now .row{min-height:66px}
+.now .row::before{top:12px;bottom:12px}
+.nacts{display:flex;gap:8px;padding:0 12px 12px 16px}
+.btn{min-height:44px;border-radius:9px;padding:8px 16px;font-weight:600;font-size:14.5px;display:inline-flex;align-items:center;justify-content:center;gap:8px;text-align:center;line-height:1.2;transition:background-color .15s ease}
+.btn.pri{background:var(--ink);color:#fff;flex:1 1 auto}
+.btn.pri:hover{background:#3A3D41}
+.btn.sec{background:var(--ground2);color:var(--ink);flex:1 1 auto}
+.btn.sec:hover{background:#DAD8D1}
+.btn.ghost{color:var(--ink2);border:1px solid var(--line2);flex:none}
+.btn.ghost:hover{background:var(--ground3)}
+.out{opacity:0!important;transform:translateX(18px);border-width:0!important}
+.in{animation:fin .3s ease}
+@keyframes fin{from{opacity:0;transform:translateY(-4px)}}
+
+/* Woche */
+.wk{padding:12px 14px 10px;border-bottom:1px solid var(--line)}
+.wkh{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);margin-bottom:8px}
+.wkg{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+.wd{display:flex;flex-direction:column;gap:4px;min-width:0}
+.wp{font-size:12px;font-weight:650}
+.wbar{height:38px;background:var(--ground);border-radius:4px;position:relative;overflow:hidden}
+.wbar i{position:absolute;left:0;right:0;bottom:0;background:var(--ws);transition:height .3s ease}
+.wd.hot .wbar i{background:var(--alert)}
+.wd.hot .wp{color:var(--alert)}
+.wd.lock .wbar i{opacity:.45}
+.wn{font-size:12px;color:var(--ink2)}
+.wn b{color:var(--ink);font-weight:650}
+.wd.today .wn b{border-bottom:1.5px solid var(--ink)}
+.wx{font-size:11px;color:var(--ink3);line-height:1.2;min-height:13px}
+.wlu{grid-column:3/6;position:relative;border-top:1.5px solid var(--ink3);margin-top:2px;padding-top:3px;font-size:11px;color:var(--ink2)}
+.wlu::before,.wlu::after{content:"";position:absolute;top:-5px;width:1.5px;height:8px;background:var(--ink3)}
+.wlu::before{left:0}.wlu::after{right:0}
+
+/* Protokoll */
+.log{list-style:none;margin:0;padding:4px 0}
+.log li{display:grid;grid-template-columns:auto 22px minmax(0,1fr);gap:10px;align-items:start;padding:9px 14px;font-size:13.5px;line-height:1.4}
+.log li+li{border-top:1px solid var(--line)}
+.lt{font-size:12px;color:var(--ink3);min-width:44px;padding-top:1px;white-space:nowrap}
+.lw{width:22px;height:22px;border-radius:5px;background:var(--slate);color:#F3F1EB;font:600 12px/22px var(--serif);text-align:center}
+.log li.me .lw{background:var(--ground2);color:var(--ink);font:650 9.5px/22px var(--sans);border-radius:50%;letter-spacing:.02em}
+.log li.me .lx{color:var(--ink)}
+.lx{color:var(--ink2)}
+
+/* Detail */
+.scrim{position:fixed;inset:0;background:rgba(24,26,29,.34);opacity:0;pointer-events:none;transition:opacity .26s ease;z-index:30}
+.scrim.on{opacity:1;pointer-events:auto}
+.detail{position:fixed;left:0;right:0;bottom:0;z-index:40;margin:0 auto;max-width:640px;max-height:88vh;overflow:auto;overscroll-behavior:contain;background:var(--surface);border-radius:16px 16px 0 0;transform:translateY(102%);visibility:hidden;transition:transform .28s cubic-bezier(.3,.7,.2,1),visibility 0s linear .28s;box-shadow:0 -8px 30px rgba(24,26,29,.14)}
+.detail.open{transform:none;visibility:visible;transition:transform .28s cubic-bezier(.3,.7,.2,1)}
+.detail:focus{outline:none}
+.grab{width:36px;height:4px;border-radius:2px;background:var(--line2);margin:8px auto 0}
+.dh{display:flex;align-items:center;gap:6px;padding:6px 8px 0 16px}
+.chip{font-size:12px;font-weight:600;padding:4px 9px;border-radius:999px;background:var(--t,var(--ground));color:var(--c,var(--ink2));display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.x{margin-left:auto;width:44px;height:44px;display:grid;place-items:center;border-radius:10px;color:var(--ink2)}
+.x:hover{background:var(--ground3)}
+.dt{font-size:21px;font-weight:680;letter-spacing:-.012em;margin:6px 16px 4px;line-height:1.25}
+.ds{margin:0 16px;color:var(--ink2);font-size:14px}
+.why{margin:16px 16px 0;padding:14px;background:var(--ground);border-radius:10px;display:grid;grid-template-columns:28px minmax(0,1fr);gap:12px}
+.why h3{font:650 12px/1.2 var(--sans);margin:2px 0 6px;color:var(--ink2);letter-spacing:.04em;text-transform:uppercase}
+.why p{margin:0;font:16px/1.48 var(--serif);color:var(--ink)}
+.facts{margin:16px 16px 0;display:grid;grid-template-columns:auto minmax(0,1fr);border-top:1px solid var(--line)}
+.facts dt,.facts dd{padding:10px 0;border-bottom:1px solid var(--line);margin:0;font-size:14px}
+.facts dt{color:var(--ink2);padding-right:16px}
+.facts dd{text-align:right;font-weight:560}
+.telrow{display:flex;align-items:center;gap:12px;margin:14px 16px 0;padding:10px 14px;min-height:52px;border:1px solid var(--line2);border-radius:10px;text-decoration:none;color:var(--ku)}
+.telrow span{display:flex;flex-direction:column;font-weight:600;color:var(--ink)}
+.telrow small{font-weight:500;color:var(--ink2);font-size:13px}
+.draft{margin:16px 16px 0}
+.draft label{font-size:12px;color:var(--ink2);display:block;margin-bottom:6px}
+.draft textarea{width:100%;min-height:118px;border:1px solid var(--line2);border-radius:10px;padding:12px;font:16px/1.45 var(--sans);color:var(--ink);background:var(--ground3);resize:vertical}
+.draft textarea:focus{outline:2px solid var(--ink);outline-offset:1px;background:#fff}
+.draft small{display:block;font-size:12px;color:var(--ink3);margin-top:6px}
+.acts{position:sticky;bottom:0;display:flex;gap:8px;margin-top:18px;padding:12px 16px calc(12px + env(safe-area-inset-bottom));background:var(--surface);border-top:1px solid var(--line)}
+.acts .btn.pri{min-height:48px}
+.acts .btn.sec{flex:none}
+.dempty{padding:28px 22px;display:grid;gap:14px;color:var(--ink2)}
+.dempty p{margin:0;font:16px/1.5 var(--serif);color:var(--ink2)}
+.dempty .k{font-size:12px;color:var(--ink3)}
+/* Detail-Visuals */
+.vis{margin:16px 16px 0}
+.vis h4{margin:0 0 8px;font-size:12px;font-weight:600;color:var(--ink2)}
+.tlt{position:relative;height:18px;font-size:11.5px;color:var(--ink2)}
+.tlt span{position:absolute;white-space:nowrap;top:0}
+.tltr{position:relative;height:32px;background:var(--ground);border-radius:6px}
+.tlb{position:absolute;top:5px;bottom:5px;border-radius:4px;font-size:11.5px;font-weight:600;display:flex;align-items:center;padding:0 6px;white-space:nowrap;overflow:hidden}
+.tlb.old{border:1.5px dashed var(--alert);color:var(--alert)}
+.tlb.new{background:var(--ws);color:#fff}
+.tlm{position:absolute;top:-4px;bottom:-4px;border-left:1.5px solid var(--ink2)}
+.tla{position:relative;height:16px;font-size:11px;color:var(--ink3);margin-top:3px}
+.tla span{position:absolute;transform:translateX(-50%)}
+.tla span:first-child{transform:none}
+.sr{margin-bottom:10px}
+.srh{display:flex;justify-content:space-between;gap:10px;font-size:13px;margin-bottom:5px}
+.srh b{font-weight:650;white-space:nowrap}
+.srh small{font-weight:500;color:var(--ink3)}
+.sb{position:relative;height:8px;background:var(--ground);border-radius:4px}
+.sb i{position:absolute;top:0;bottom:0;left:0;background:var(--alert);border-radius:4px 0 0 4px}
+.sb i.g{background:var(--la);opacity:.45;border-radius:0}
+.sb em{position:absolute;top:-3px;bottom:-3px;border-left:1.5px solid var(--ink)}
+.sn{margin:4px 0 0;font-size:12.5px;color:var(--ink2)}
+.dun{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.dun div{border-top:3px solid var(--ge);padding-top:6px;font-size:12.5px;color:var(--ink2)}
+.dun div b{display:block;color:var(--ink);font-size:13px}
+.dun div.cur{border-top-color:var(--alert)}
+.dun div.cur b{color:var(--alert)}
+.vis .wk{padding:0;border:0}
+
+/* Toast */
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translate(-50%,16px);opacity:0;visibility:hidden;background:var(--ink);color:#fff;border-radius:12px;padding:6px 6px 6px 16px;display:flex;align-items:center;gap:12px;width:min(calc(100% - 32px),460px);z-index:60;transition:opacity .22s ease,transform .22s ease,visibility 0s linear .22s;font-size:14px;line-height:1.35;box-shadow:0 8px 24px rgba(24,26,29,.22)}
+.toast.on{opacity:1;visibility:visible;transform:translate(-50%,0);transition:opacity .22s ease,transform .22s ease}
+.toast>span{flex:1;min-width:0;display:flex;gap:8px;align-items:flex-start}
+.toast>span .ic{color:var(--ku-l);margin-top:-1px}
+.toast button{min-height:44px;padding:0 14px;border-radius:8px;color:#fff;font-weight:650;background:rgba(255,255,255,.12);display:flex;align-items:center;gap:6px;flex:none}
+.toast button:hover{background:rgba(255,255,255,.2)}
+.toast :focus-visible{outline-color:#fff}
+
+/* Desktop */
+@media (min-width:1080px){
+ .head-in{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"brand health back";column-gap:44px;padding:8px 24px}
+ .health{gap:32px}
+ .hi{min-height:62px;padding-top:6px}
+ .hs{display:block}
+ .hl{font-size:11.5px}
+ .shell{max-width:1280px;display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start;padding:22px 24px 48px}
+ .bline{font-size:20px;max-width:64ch}
+ .seg{display:inline-grid;grid-template-columns:repeat(5,auto)}
+ .sg{flex-direction:row-reverse;gap:8px;padding:0 14px;min-height:44px}
+ .sg b{font-size:14px;color:var(--ink2)}
+ .sg[aria-pressed="true"] b{color:var(--ink)}
+ .sg span{font-size:13.5px}
+ .figs{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .area{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:0 28px}
+ .area h3{grid-column:1/-1}
+ .area.one{display:block}
+ .bands{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-areas:"b0 b1 b2" "lg b1 b2";grid-template-rows:auto 1fr;gap:16px;align-items:start}
+ .row{grid-template-columns:20px minmax(0,1fr) auto;grid-template-areas:"ic t k" "ic s s";padding:11px 12px 11px 14px}
+ .row .cv{display:none}
+ .row .t{font-size:14.5px}
+ .row .s{font-size:12.5px}
+ .kz b{font-size:14px}
+ .nacts .btn{font-size:14px;padding:8px 12px}
+ .aside{position:sticky;top:calc(var(--hh) + 22px)}
+ .detail{position:relative;left:auto;right:auto;bottom:auto;z-index:1;max-width:none;max-height:calc(100vh - var(--hh) - 44px);transform:none;visibility:visible;border-radius:12px;border:1px solid var(--line);box-shadow:0 1px 3px rgba(38,40,43,.05);transition:none}
+ .grab{display:none}
+ .dh{padding-top:10px}
+ .scrim{display:none}
+ .toast{left:24px;transform:translate(0,16px);width:440px}
+ .toast.on{transform:translate(0,0)}
+}
+@media (prefers-reduced-motion:reduce){
+ *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important;transition-delay:0s!important}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+<symbol id="i-ws" viewBox="0 0 24 24"><path d="M14.6 5.4a4.2 4.2 0 0 0-5.3 5.3L3.9 16.1a2 2 0 0 0 2.9 2.9l5.4-5.4a4.2 4.2 0 0 0 5.3-5.3l-2.4 2.4-2.5-.4-.4-2.5z"/></symbol>
+<symbol id="i-ku" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M4.8 19.6c.9-3.5 3.8-5.4 7.2-5.4s6.3 1.9 7.2 5.4"/></symbol>
+<symbol id="i-ge" viewBox="0 0 24 24"><rect x="3" y="6.5" width="18" height="11" rx="1.6"/><circle cx="12" cy="12" r="2.4"/><path d="M6.6 9.6v4.8M17.4 9.6v4.8"/></symbol>
+<symbol id="i-la" viewBox="0 0 24 24"><path d="M3.6 7.6 12 3.8l8.4 3.8v8.8L12 20.2l-8.4-3.8z"/><path d="M3.6 7.6 12 11.4l8.4-3.8M12 11.4v8.8"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 5 7 7-7 7"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 13.5 4.5 9 9 4.5"/><path d="M4.5 9H14a5.5 5.5 0 0 1 0 11h-3"/></symbol>
+<symbol id="i-tel" viewBox="0 0 24 24"><path d="M5.2 4h3.3l1.6 4-2.1 1.3a11 11 0 0 0 6.7 6.7l1.3-2.1 4 1.6v3.3a1.6 1.6 0 0 1-1.7 1.6A16 16 0 0 1 3.6 5.7 1.6 1.6 0 0 1 5.2 4z"/></symbol>
+<symbol id="i-ok" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7.5"/></symbol>
+</svg>
+
+<header class="head" id="head">
+ <div class="head-in">
+  <div class="brand"><span class="mj" aria-hidden="true">J</span><div><b>Lagebild</b><small>Mo, 28. Sep 2026 · 07:40</small></div></div>
+  <a class="back" href="index.html">← Alle Layouts</a>
+  <nav class="health" id="health" aria-label="Zustand je Bereich, antippen filtert"></nav>
+ </div>
+</header>
+
+<div class="shell">
+ <main class="main">
+  <section class="brief" aria-label="Zusammenfassung von Jarvis">
+   <p class="bline" id="brief"></p>
+   <p class="bby" id="bby"></p>
+  </section>
+  <div class="seg" id="seg" role="group" aria-label="Nach Bereich filtern"></div>
+  <section class="area" id="area" hidden aria-live="polite"></section>
+  <div class="bands">
+   <section class="band b0" aria-labelledby="bn0">
+    <div class="bar"><span class="bn" id="bn0">Jetzt</span><span class="bs">bis 09:00 · höchstens 3</span><span class="bc" id="bc0"></span></div>
+    <div class="bbody" id="bb0"></div>
+   </section>
+   <section class="band b1" aria-labelledby="bn1">
+    <button class="bar" data-tog="1" aria-expanded="true" aria-controls="bb1"><span class="bn" id="bn1">Heute</span><span class="bs">bis Feierabend</span><span class="bc" id="bc1"></span><svg class="ic chev" aria-hidden="true"><use href="#i-down"/></svg></button>
+    <div class="bbody" id="bb1"></div>
+   </section>
+   <section class="band b2" aria-labelledby="bn2">
+    <button class="bar" data-tog="2" aria-expanded="true" aria-controls="bb2"><span class="bn" id="bn2">Diese Woche</span><span class="bs">bis Fr 02.10.</span><span class="bc" id="bc2"></span><svg class="ic chev" aria-hidden="true"><use href="#i-down"/></svg></button>
+    <div class="bbody" id="bb2"></div>
+   </section>
+   <section class="band lg" aria-labelledby="bn3">
+    <button class="bar" data-tog="3" aria-expanded="false" aria-controls="bb3"><span class="bn" id="bn3">Erledigt</span><span class="bs">von Jarvis und dir</span><span class="bc" id="bc3"></span><svg class="ic chev" aria-hidden="true"><use href="#i-down"/></svg></button>
+    <div class="bbody" id="bb3" hidden></div>
+   </section>
+  </div>
+ </main>
+ <aside class="aside" aria-label="Detail">
+  <div class="detail" id="detail" tabindex="-1"></div>
+ </aside>
+</div>
+<div class="scrim" id="scrim"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"><span><svg class="ic" aria-hidden="true"><use href="#i-ok"/></svg><span id="tt"></span></span><button id="tu" type="button"><svg class="ic sm" aria-hidden="true"><use href="#i-undo"/></svg>Rückgängig</button></div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const AR={ws:['Werkstatt','i-ws'],ku:['Kunden','i-ku'],ge:['Geld','i-ge'],la:['Lager','i-la']};
+const HZ=['Jetzt','Heute','Diese Woche'];
+const LATER=['Später heute','Auf diese Woche','Nächste Woche'];
+const PL=s=>`<span class="pl">${s}</span>`;
+const IT=[
+{id:'wolf',a:'ku',h:0,t:'Tobias Wolf antworten',s:'Golf schleift beim Bremsen · WhatsApp 06:52',k:'Do 09:00',kc:'Bühne 3 frei',tag:'Sicherheit',bt:'die Antwort an Tobias Wolf',
+w:'Schleifen beim Bremsen heißt meist: Die Beläge vorne sind runter. Das ist ein Sicherheitsthema. Herr Wolf will diese Woche kommen, und der einzige freie Slot ist Donnerstag 09:00 auf Bühne 3. Antwortest du jetzt, ist er gesichert.',
+f:[['Eingang','WhatsApp · heute 06:52'],['Vermutung','Beläge/Scheiben VA verschlissen'],['Priorität','Hoch · Sicherheit'],['Termin','Do 01.10. · 09:00 · Bühne 3'],['Richtpreis','180–320 €']],
+d:['WhatsApp an Tobias Wolf','Hallo Herr Wolf, danke für Ihre Nachricht! Das klingt nach verschlissenen Bremsbelägen vorne – bitte nicht zu lange warten. Passt Ihnen Donnerstag, 1.10., um 9:00 Uhr? Richtpreis je nach Befund 180–320 €. Viele Grüße, Samed – mehanicar'],
+act:'Senden & Do 09:00 reservieren',sh:'Senden & reservieren',ok:'Antwort an Tobias Wolf gesendet, Do 09:00 reserviert'},
+{id:'shift',a:'ws',h:0,t:PL('HU-TR 51')+' auf 10:30 schieben',s:'Mercedes C 220 d · Getriebeöl-Kit kommt erst 10:00',k:'10:30',kc:'statt 09:00',al:1,x:'tl',bt:'der Mercedes auf Bühne 1',
+w:'Die Getriebeölspülung ist für 09:00 auf Bühne 1 geplant, das Kit von Stahlgruber kommt aber erst um 10:00. Schiebe ich auf 10:30, wartet Kevin nicht auf Teile, und die Abholung um 16:00 hält trotzdem.',
+f:[['Auftrag','AU-2026-0054'],['Kundin','Maria Krause'],['Arbeit','Getriebeölspülung · 2,5 AW'],['Teile','Getriebeöl-Kit · 10:00'],['Abholung','heute 16:00'],['Betrag','412,34 € brutto']],
+act:'Auf 10:30 verschieben',sh:'Auf 10:30 verschieben',ok:'HU-TR 51 startet um 10:30 auf Bühne 1'},
+{id:'becker',a:'ku',h:1,t:'KV-Freigabe Becker fehlt',s:PL('HU-WZ 19')+' Opel Astra K · Inspektion + Wischer',k:'214,20 €',kc:'KV seit Fr',
+w:'Der Kostenvoranschlag liegt seit Freitag bei Herrn Becker. Die Inspektion ist für heute geplant, Abholung 17:00. Ohne Freigabe bis Mittag wird es knapp – eine kurze Erinnerung reicht meistens.',
+f:[['Auftrag','AU-2026-0055 · offen'],['Arbeit','Inspektion + Wischerblätter · 1,8 AW'],['KV','214,20 € · seit Fr 25.09.'],['Abholung','heute 17:00']],
+d:['WhatsApp an Jonas Becker','Hallo Herr Becker, kurze Erinnerung zum Kostenvoranschlag für Ihren Astra (214,20 €). Sollen wir die Inspektion heute wie geplant machen? Ein kurzes OK per WhatsApp genügt.'],
+act:'Erinnerung senden',ok:'Erinnerung an Jonas Becker gesendet'},
+{id:'mahn',a:'ge',h:1,t:'2. Mahnung Autohaus Schmidt',s:'RE-2026-0118 · 1. Mahnung ohne Reaktion',k:'1.245,00 €',kc:'21 Tage über',al:1,x:'dun',
+w:'Die Rechnung ist seit 21 Tagen überfällig, auf die 1. Mahnung kam nichts. Die 2. Mahnung ist fertig, mit 7 Tagen Frist. Übrigens: Der Audi A4 von Autohaus Schmidt steht seit Freitag abholbereit – ein guter Anlass, beides zu klären.',
+f:[['Rechnung','RE-2026-0118'],['Kunde','Autohaus Schmidt GmbH'],['Betrag','1.245,00 €'],['Fällig seit','07.09.2026 · 21 Tage'],['Versand','E-Mail mit PDF']],
+act:'2. Mahnung senden',ok:'2. Mahnung an Autohaus Schmidt gesendet'},
+{id:'best',a:'la',h:1,t:'Ölfilter & DOT 4 bestellen',s:'2 Artikel unter Mindestbestand · Stahlgruber',k:'86,40 €',kc:'netto',x:'stock',
+w:'Ölfilter MANN W 712/95 und Bremsflüssigkeit DOT 4 sind unter Mindestbestand, und diese Woche stehen weitere Inspektionen und Bremsenjobs an. Gibst du heute frei, liefert Stahlgruber morgen früh.',
+f:[['Lieferant','Stahlgruber'],['Positionen','6× Ölfilter · 6× DOT 4 (1 l)'],['Summe','86,40 € netto · 102,82 € brutto'],['Lieferung','morgen früh']],
+act:'Bestellung freigeben',ok:'Bestellung bei Stahlgruber freigegeben, Lieferung morgen früh'},
+{id:'braun',a:'ku',h:1,t:'Nina Braun zurückrufen',s:'Verpasster Anruf · Seat Leon, Wartung fällig',k:'07:15',kc:'verpasst',tel:'06181 44 27 90',
+w:'Frau Braun hat um 07:15 angerufen und nichts hinterlassen. Ihr Seat Leon war vor 13 Monaten zuletzt zur Wartung – ruf zurück und biete die Wartung gleich mit an.',
+f:[['Nummer','06181 44 27 90'],['Fahrzeug',PL('HU-BB 410')+' Seat Leon'],['Letzte Wartung','vor 13 Monaten'],['Vorschlag','Wartung anbieten']],
+act:'Rückruf erledigt',ok:'Rückruf bei Nina Braun erledigt'},
+{id:'hoff',a:'ku',h:1,t:'Lisa Hoffmann antworten',s:'Ölwechsel Fiat 500 · Instagram, gestern 21:14',k:'89 €',kc:'Festpreis',
+w:'Lisa hat gestern Abend auf Instagram nach dem Preis gefragt. Für den Fiat 500 gilt unser Festpreis von 89 € inklusive Öl und Filter. Wer noch am selben Tag Antwort bekommt, bucht deutlich öfter.',
+f:[['Eingang','Instagram · gestern 21:14'],['Fahrzeug','Fiat 500'],['Preis','89 € inkl. Öl & Filter']],
+d:['Instagram an Lisa Hoffmann','Hallo Lisa, der Ölwechsel für deinen Fiat 500 kostet bei uns 89 € inkl. Markenöl und Filter. Diese Woche geht z. B. Dienstag oder Donnerstag – sag einfach Bescheid!'],
+act:'Antwort senden',ok:'Antwort an Lisa Hoffmann gesendet'},
+{id:'bmw',a:'ws',h:1,i:1,t:'BMW 320d läuft auf Bühne 2',s:PL('HU-SM 247')+' Bremsen VA+HA · Kevin',k:'45 %',kc:'fertig 11:30',pg:45,
+w:'Kevin ist bei 45 %, die Teile sind da, Herr Yilmaz hat per WhatsApp freigegeben. Alles im Plan für 11:30. Soll ich ihm die Fertigmeldung schicken, sobald Kevin den Auftrag abschließt?',
+f:[['Auftrag','AU-2026-0053 · in Arbeit'],['Kunde','Ali Yilmaz · Stammkunde'],['Fahrzeug','BMW 320d · 2019 · 87.450 km'],['Arbeit','Bremsen VA+HA · 4,6 AW'],['Betrag','932,96 € brutto']],
+d:['WhatsApp an Ali Yilmaz, wenn fertig','Hallo Herr Yilmaz, Ihr BMW ist fertig und kann abgeholt werden. Viele Grüße, Samed – mehanicar'],
+act:'Fertigmeldung automatisch senden',ok:'Fertigmeldung an Ali Yilmaz vorgemerkt'},
+{id:'audi',a:'ge',h:1,i:1,t:'Audi A4 wartet auf Abholung',s:PL('OF-PG 304')+' Autohaus Schmidt · Rechnung offen',k:'620,00 €',kc:'fertig seit Fr',
+w:'Der Audi A4 Avant ist seit Freitag fertig und belegt einen Stellplatz, die Rechnung über 620,00 € ist offen. Ich erinnere Autohaus Schmidt an die Abholung und hänge die Rechnung an.',
+f:[['Auftrag','AU-2026-0048 · fertig'],['Kunde','Autohaus Schmidt GmbH'],['Rechnung','620,00 € offen'],['Fertig seit','Fr 25.09.']],
+d:['E-Mail an Autohaus Schmidt','Guten Tag, der Audi A4 Avant (OF-PG 304) ist fertig und kann abgeholt werden. Die Rechnung über 620,00 € finden Sie im Anhang. Viele Grüße, Samed – mehanicar'],
+act:'Abholerinnerung senden',ok:'Abholerinnerung mit Rechnung an Autohaus Schmidt gesendet'},
+{id:'kit',a:'la',h:1,i:1,t:'Getriebeöl-Kit kommt 10:00',s:'Stahlgruber · für '+PL('HU-TR 51'),k:'10:00',kc:'Lieferung',
+w:'Das Kit für die Getriebeölspülung am Mercedes kommt heute um 10:00. Ich melde Kevin die Ankunft, sobald der Wareneingang gebucht ist – dann kann er direkt anfangen.',
+f:[['Lieferant','Stahlgruber'],['Artikel','Getriebeöl-Kit'],['Für','AU-2026-0054 · Mercedes C 220 d'],['Ankunft','heute 10:00']],
+act:'Kevin bei Ankunft melden',ok:'Jarvis meldet Kevin die Ankunft des Kits'},
+{id:'mi',a:'ws',h:2,t:'Mittwoch fast voll',s:'Luca im Urlaub · 2 Termine · nur SM und KV',k:'94 %',kc:'Mi 30.09.',al:1,x:'week',
+w:'Luca ist von Mittwoch bis Freitag im Urlaub. Mit zwei Terminen ist Mittwoch schon zu 94 % ausgelastet. Ich würde Mittwoch für neue Online-Termine sperren und neue Anfragen auf Donnerstag lenken.',
+f:[['Mittwoch','2 Termine · 94 %'],['Team','Samed, Kevin · Luca Urlaub bis Fr'],['Donnerstag','09:00 auf Bühne 3 frei']],
+act:'Mi für neue Termine sperren',ok:'Mittwoch ist für neue Online-Termine gesperrt'},
+{id:'koch',a:'ku',h:2,t:'HU Stefan Koch überfällig',s:PL('F-KL 882')+' VW Golf 7 · Anschreiben liegt bereit',k:'09/2026',kc:'HU fällig',al:1,
+w:'Die HU für den Golf 7 war im September fällig. Ein freundliches Anschreiben mit Terminangebot ist vorbereitet – je früher er es bekommt, desto eher kommt er zu uns statt zur nächsten Prüfstelle.',
+f:[['Fahrzeug','VW Golf 7'],['Kennzeichen',PL('F-KL 882')],['HU fällig','09/2026 · überfällig']],
+d:['WhatsApp an Stefan Koch','Hallo Herr Koch, die HU für Ihren Golf (F-KL 882) war im September fällig. Sollen wir einen Termin machen? Sagen Sie einfach, wann es Ihnen passt. Viele Grüße, Samed – mehanicar'],
+act:'Anschreiben senden',ok:'HU-Anschreiben an Stefan Koch gesendet'},
+{id:'bew',a:'ku',h:2,t:'Google-Bewertung beantworten',s:'Maria Krause · 5 Sterne, gestern 19:40',k:'5 / 5',kc:'Google',
+w:'Frau Krause hat gestern fünf Sterne gegeben. Eine persönliche Antwort vom Meister wirkt auf neue Kunden – und sie holt heute um 16:00 ihren Mercedes ab.',
+f:[['Plattform','Google'],['Bewertung','5 von 5 Sternen'],['Eingang','gestern 19:40']],
+d:['Antwort auf Google','Vielen Dank, Frau Krause! Schön, dass Sie zufrieden sind – bis zum nächsten Mal. Samed, mehanicar'],
+act:'Antwort veröffentlichen',ok:'Dankes-Antwort auf Google veröffentlicht'},
+{id:'rek',a:'ge',h:2,i:1,t:'Rechnung Krause im Ziel',s:'RE-2026-0121 · 9 von 14 Tagen',k:'389,00 €',kc:'Tag 9 / 14',pg:64,
+w:'Die Rechnung ist seit 9 Tagen offen, das Zahlungsziel sind 14 Tage – alles im Rahmen. Geht bis Tag 15 nichts ein, erinnere ich freundlich. Frau Krause ist heute um 16:00 ohnehin da.',
+f:[['Rechnung','RE-2026-0121'],['Kundin','Maria Krause'],['Betrag','389,00 €'],['Zahlungsziel','14 Tage · noch 5']],
+act:'Ab Tag 15 automatisch erinnern',ok:'Automatische Zahlungserinnerung für RE-2026-0121 aktiv'}
+];
+const LOG0=[['07:00','3 Terminerinnerungen für Dienstag per WhatsApp verschickt'],['06:53','Anfrage von Tobias Wolf analysiert, Antwort vorbereitet'],['06:30','Tagesplan erstellt, Teile-Konflikt bei HU-TR 51 erkannt'],['Gestern 19:40','5-Sterne-Bewertung von Maria Krause erhalten, Dank als Entwurf']];
+const BY={};IT.forEach((it,i)=>{it.o=i;BY[it.id]=it});
+const S={f:'all',done:new Set(),mv:{},sel:null,open:{1:1,2:1,3:0},min:40,log:[],flash:null};
+const DESK=matchMedia('(min-width:1080px)');
+const RM=matchMedia('(prefers-reduced-motion: reduce)');
+const hz=it=>it.id in S.mv?S.mv[it.id]:it.h;
+const op=it=>!S.done.has(it.id)&&hz(it)<3;
+const isO=id=>op(BY[id]);
+const vis=it=>op(it)&&(S.f==='all'||S.f===it.a);
+const cv=a=>`--c:var(--${a});--t:var(--${a}-t)`;
+const ic=(i,c='')=>`<svg class="ic ${c}" aria-hidden="true"><use href="#${i}"/></svg>`;
+const plain=s=>s.replace(/<[^>]+>/g,'');
+const ordered=()=>IT.filter(vis).sort((a,b)=>hz(a)-hz(b)||a.o-b.o);
+const nextId=()=>{const l=ordered();return l.length?l[0].id:null};
+
+/* Zeilen */
+const kz=it=>`<span class="kz${it.al?' al':''}"><b>${it.k}</b><small>${it.kc}</small>${it.pg?`<span class="pg"><i style="width:${it.pg}%"></i></span>`:''}</span>`;
+const rowBtn=it=>`<button class="row${it.i?' info':''}${S.sel===it.id?' sel':''}" data-open="${it.id}" style="${cv(it.a)}" aria-controls="detail"${S.sel===it.id?' aria-current="true"':''}>${ic(AR[it.a][1],'ai')}<span class="t">${it.t}</span>${kz(it)}<span class="s">${it.s}</span>${ic('i-chev','cv')}</button>`;
+const nowCard=(it,first)=>`<article class="now${first?' first':''}${S.flash===it.id?' in':''}" data-row="${it.id}" style="${cv(it.a)}">${first?`<p class="ntag"><span>Als Nächstes</span>${it.tag?`<em>${it.tag}</em>`:''}</p>`:''}${rowBtn(it)}<div class="nacts"><button class="btn ${first?'pri':'sec'}" data-do="${it.id}">${it.sh||it.act}</button><button class="btn ghost" data-later="${it.id}">${LATER[0]}</button></div></article>`;
+const li=it=>`<li data-row="${it.id}"${S.flash===it.id?' class="in"':''}>${rowBtn(it)}</li>`;
+const emptyText=h=>{const a=S.f==='all'?'':' für '+AR[S.f][0];return ['Nichts Dringendes'+a+'. Gut so.','Heute nichts mehr offen'+a+'.','Diese Woche nichts offen'+a+'.'][h]};
+function listHTML(items,h){
+ if(!items.length)return `<ul class="list"><li class="empty">${emptyText(h)}</li></ul>`;
+ const dec=items.filter(x=>!x.i),inf=items.filter(x=>x.i);
+ let s=dec.map(li).join('');
+ if(inf.length)s+=`<li class="subl">Im Blick · läuft, Jarvis passt auf</li>`+inf.map(li).join('');
+ return `<ul class="list">${s}</ul>`;
+}
+function weekHTML(){
+ const wd=!isO('wolf'),md=!isO('mi');
+ const D=[['Mo','28.',78,'heute'],['Di','29.',82,'3 Termine'],['Mi','30.',94,md?'gesperrt':'Engpass'],['Do','01.',wd?84:71,wd?'09:00 Wolf':'09:00 frei'],['Fr','02.',58,'']];
+ return `<div class="wk"><div class="wkh"><span>Auslastung Bühnen</span><span>SM · KV · LU</span></div><div class="wkg">${D.map(([d,dt,p,n],i)=>`<div class="wd${p>=90?' hot':''}${i===0?' today':''}${i===2&&md?' lock':''}"><span class="wp">${p} %</span><span class="wbar"><i style="height:${p}%"></i></span><span class="wn"><b>${d}</b> ${dt}</span><span class="wx">${n}</span></div>`).join('')}<div class="wlu">Luca im Urlaub</div></div></div>`;
+}
+function renderBands(){
+ for(let h=0;h<3;h++){
+  const L=IT.filter(it=>vis(it)&&hz(it)===h);
+  const bb=$('bb'+h);
+  if(h===0)bb.innerHTML=L.length?`<div class="nows">${L.map((it,i)=>nowCard(it,i===0)).join('')}</div>`:`<div class="box empty">${emptyText(0)}</div>`;
+  else bb.innerHTML=`<div class="box">${h===2&&(S.f==='all'||S.f==='ws')?weekHTML():''}${listHTML(L,h)}</div>`;
+ }
+ S.flash=null;
+}
+
+/* Gesundheit */
+function buildHealth(){
+ $('health').innerHTML=['ws','ku','ge','la'].map(a=>`<button class="hi" data-f="${a}" data-hf="1" style="--l:var(--${a}-l)"><span class="hl"><i class="dot" hidden></i>${AR[a][0]}</span><span class="hv"><b></b> <span class="u"></span></span><span class="hb${a==='ku'?' segs':''}">${a==='ku'?'<i></i><i></i><i></i>':a==='ws'?'<i></i>':'<i></i><i></i>'}</span><span class="hs"></span></button>`).join('');
+}
+function renderHealth(){
+ const n=['wolf','hoff','braun'].filter(isO).length,conf=isO('shift'),mahn=isO('mahn'),best=isO('best');
+ const now=a=>IT.some(it=>it.a===a&&op(it)&&hz(it)===0);
+ const set=(a,v,u,sub,bars)=>{
+  const e=$('health').querySelector(`[data-f="${a}"]`),b=e.querySelector('b'),nv=String(v);
+  if(b.textContent&&b.textContent!==nv){e.classList.add('chg');setTimeout(()=>e.classList.remove('chg'),900)}
+  b.textContent=nv;e.querySelector('.u').textContent=u;e.querySelector('.hs').textContent=sub;
+  bars(e.querySelectorAll('.hb i'));
+  e.querySelector('.dot').hidden=!now(a);
+  e.classList.toggle('on',S.f===a);e.classList.toggle('dim',S.f!=='all'&&S.f!==a);
+  e.setAttribute('aria-pressed',S.f===a);
+  e.setAttribute('aria-label',`${AR[a][0]}: ${nv} ${u}, ${sub}. Nach ${AR[a][0]} filtern`);
+ };
+ set('ws','78','% belegt',conf?'1 Konflikt auf Bühne 1':'Plan steht, kein Konflikt',is=>{is[0].style.width='78%'});
+ set('ku',n,n===1?'Anfrage':'Anfragen',isO('becker')?'dazu 1 KV-Freigabe offen':'alle Freigaben da',is=>is.forEach((x,i)=>x.classList.toggle('on',i<n)));
+ set('ge','2.254','€ offen',mahn?'davon 1.245 € überfällig':'2. Mahnung ist raus',is=>{is[0].className='ov'+(mahn?'':' dun');is[0].style.width='55%';is[1].style.left='55%';is[1].style.width='45%'});
+ set('la',best?2:0,'unter Min.',best?'Bestellvorschlag wartet':'bestellt, kommt morgen früh',is=>{is[0].style.width='33%';is[1].className='g';is[1].style.left='33%';is[1].style.width=best?'0%':'67%'});
+}
+function renderSeg(){
+ const c={all:0,ws:0,ku:0,ge:0,la:0};IT.forEach(it=>{if(op(it)){c.all++;c[it.a]++}});
+ $('seg').innerHTML=[['all','Alle'],['ws','Werkstatt'],['ku','Kunden'],['ge','Geld'],['la','Lager']].map(([k,n])=>`<button class="sg" data-f="${k}" aria-pressed="${S.f===k}" style="--c:var(--${k==='all'?'ink':k})" aria-label="${n}, ${c[k]} offen"><b>${c[k]}</b><span>${k!=='all'?'<i></i>':''}${n}</span></button>`).join('');
+}
+function renderCounts(){for(let h=0;h<3;h++)$('bc'+h).textContent=IT.filter(it=>vis(it)&&hz(it)===h).length}
+function renderBrief(){
+ const c=h=>IT.filter(it=>op(it)&&hz(it)===h).length,n0=c(0),n1=c(1),n2=c(2);
+ const W=['Nichts','Eine Sache','Zwei Dinge','Drei Dinge'];
+ const f=IT.filter(it=>op(it)&&hz(it)===0)[0];
+ let s;
+ if(n0)s=`Guten Morgen, Samed. ${W[n0]} ${n0===1?'braucht':'brauchen'} dich vor 9 Uhr – zuerst ${f.bt||plain(f.t)}. Danach ${n1} für heute und ${n2} für diese Woche.`;
+ else if(n1+n2)s=`Das Dringende ist erledigt. Für heute bleiben ${n1}, für diese Woche ${n2} Punkte – sortiert nach Zeit, nicht nach Bereich.`;
+ else s='Alles erledigt, Samed. Ich melde mich, sobald etwas Neues reinkommt.';
+ $('brief').textContent=s;
+ $('bby').innerHTML=`<span class="mj sm" aria-hidden="true">J</span><span>Jarvis · Stand 07:40 · über Nacht ${LOG0.length} Dinge erledigt${S.log.length?` · von dir heute ${S.log.length}`:''}</span>`;
+}
+function stockHTML(){
+ const ord=!isO('best'),R=[['Ölfilter MANN W 712/95',1,4],['Bremsflüssigkeit DOT 4 · 1 l',2,5]];
+ return R.map(([n,b,m])=>`<div class="sr"><div class="srh"><span>${n}</span><b>${b}${ord?' + 6':''} <small>/ min. ${m}</small></b></div><div class="sb"><i style="width:${b*10}%"></i>${ord?`<i class="g" style="left:${b*10}%;width:60%"></i>`:''}<em style="left:${m*10}%" title="Mindestbestand"></em></div></div>`).join('')+`<p class="sn">${ord?'Bestellt: je 6 Stück · Lieferung morgen früh':'Vorschlag: je 6 Stück bei Stahlgruber · 86,40 € netto'}</p>`;
+}
+function renderArea(){
+ const el=$('area'),a=S.f;
+ if(a==='all'){el.hidden=true;el.innerHTML='';return}
+ el.hidden=false;el.style.cssText=cv(a);el.className='area';
+ const o=isO,st=(open,t1,t2,cls='al')=>`<span class="st ${open?cls:'ok'}">${open?t1:t2}</span>`;
+ let h='';
+ if(a==='ws'){
+  h=`<h3>Bühnen heute <span>Auslastung 78 % · 3 Bühnen</span></h3><div><ul class="al-list">
+<li><span class="bno">1</span><div><span class="t2">${PL('HU-TR 51')} Mercedes C 220 d</span><small>Getriebeölspülung · ${o('shift')?'09:00 geplant, Teile erst 10:00':'Start 10:30, Abholung 16:00'}</small></div>${st(o('shift'),'Konflikt','10:30')}</li>
+<li><span class="bno">2</span><div><span class="t2">${PL('HU-SM 247')} BMW 320d</span><small>Bremsen VA+HA · Kevin · fertig 11:30</small></div><span class="st">45 %</span></li>
+<li><span class="bno">3</span><div><span class="t2">${PL('HU-WZ 19')} Opel Astra K</span><small>Inspektion · Abholung 17:00</small></div>${st(o('becker'),'Freigabe fehlt','erinnert','')}</li></ul></div>
+<div><div class="team"><span><b>SM</b>Samed · Meister</span><span><b>KV</b>Kevin · Geselle, Bühne 2</span><span><b>LU</b>Luca · Azubi, Urlaub Mi–Fr</span></div></div>`;
+ }else if(a==='ku'){
+  const n=['wolf','hoff','braun'].filter(o).length;
+  h=`<h3>Kunden <span>${n} Anfragen · ${o('becker')?1:0} Freigabe · 2 Erinnerungen</span></h3><ul class="al-list kv">
+<li><span class="k">WhatsApp</span><span class="t2">Tobias Wolf</span>${st(o('wolf'),'offen','beantwortet')}</li>
+<li><span class="k">Instagram</span><span class="t2">Lisa Hoffmann</span>${st(o('hoff'),'offen','beantwortet')}</li>
+<li><span class="k">Anruf</span><span class="t2">Nina Braun</span>${st(o('braun'),'verpasst','zurückgerufen')}</li></ul><ul class="al-list kv">
+<li><span class="k">KV-Freigabe</span><span class="t2">Jonas Becker · 214,20 €</span>${st(o('becker'),'seit Fr','erinnert','')}</li>
+<li><span class="k">HU</span><span class="t2">Stefan Koch · ${PL('F-KL 882')}</span>${st(o('koch'),'überfällig','angeschrieben')}</li>
+<li><span class="k">Wartung</span><span class="t2">Nina Braun · ${PL('HU-BB 410')}</span>${st(o('braun'),'13 Monate','angeboten','')}</li></ul>`;
+ }else if(a==='ge'){
+  h=`<h3>September bisher <span>Stand heute 07:40</span></h3><div class="figs">
+<div><span>Umsatz</span><b>18.420 €</b><small><span class="up">+8,5 %</span> zu Aug. (16.980 €)</small></div>
+<div><span>Rohgewinn</span><b>9.310 €</b><small>50,5 % vom Umsatz</small></div>
+<div><span>Effizienz</span><b>112 %</b><small>verkaufte AW zu Stempelzeit</small></div>
+<div><span>Ø Auftragswert</span><b>486 €</b><small>AW-Satz 12,50 €</small></div></div>
+<div><div class="oph"><span>Offene Posten</span><b>2.254,00 €</b></div><div class="stack" aria-hidden="true"><i class="a" style="flex:1245"></i><i style="flex:620"></i><i class="l" style="flex:389"></i></div>
+<ul class="leg"><li><i class="a"></i>RE-2026-0118 · Schmidt · ${o('mahn')?'21 T über':'2. Mahnung raus'}<b>1.245,00 €</b></li><li><i></i>AU-2026-0048 · Schmidt · abholbereit<b>620,00 €</b></li><li><i class="l"></i>RE-2026-0121 · Krause · Tag 9/14<b>389,00 €</b></li></ul></div>`;
+  el.className='area one';
+ }else{
+  h=`<h3>Lager <span>${o('best')?'2 Artikel unter Mindestbestand':'Nachschub bestellt'}</span></h3><div>${stockHTML()}</div><div><ul class="al-list kv"><li><span class="k">Unterwegs</span><div><span class="t2">Getriebeöl-Kit</span><small>Stahlgruber · für ${PL('HU-TR 51')}</small></div><span class="st">heute 10:00</span></li><li><span class="k">Vorschlag</span><div><span class="t2">6× Ölfilter · 6× DOT 4</span><small>Stahlgruber · 86,40 € netto</small></div>${st(o('best'),'offen','bestellt','')}</li></ul></div>`;
+ }
+ el.innerHTML=h;
+}
+function renderLog(){
+ const L=[...S.log.map(l=>({t:l.t,tx:l.tx,me:1})),...LOG0.map(([t,tx])=>({t,tx}))];
+ $('bb3').innerHTML=`<div class="box"><ol class="log">${L.map(l=>`<li${l.me?' class="me"':''}><span class="lt">${l.t}</span><span class="lw" aria-label="${l.me?'Du':'Jarvis'}">${l.me?'SM':'J'}</span><span class="lx">${l.tx}</span></li>`).join('')}</ol></div>`;
+ $('bc3').textContent=L.length;
+}
+
+/* Detail */
+function visHTML(it){
+ if(it.x==='tl'){const p=t=>((t-8)/9*100).toFixed(1)+'%';
+  return `<div class="vis"><h4>Bühne 1 heute</h4><div class="tlt"><span style="left:${p(10)}">Teile da 10:00</span><span style="right:${(100-parseFloat(p(16))).toFixed(1)}%">Abholung 16:00</span></div><div class="tltr"><span class="tlb old" style="left:${p(9)};width:${(1.5/9*100).toFixed(1)}%">Plan</span><span class="tlb new" style="left:${p(10.5)};width:${(1.5/9*100).toFixed(1)}%">10:30</span><span class="tlm" style="left:${p(10)}"></span><span class="tlm" style="left:${p(16)}"></span></div><div class="tla">${[8,10,12,14,16].map(t=>`<span style="left:${p(t)}">${String(t).padStart(2,'0')}:00</span>`).join('')}</div></div>`}
+ if(it.x==='stock')return `<div class="vis"><h4>Bestand und Mindestbestand</h4>${stockHTML()}</div>`;
+ if(it.x==='dun')return `<div class="vis"><h4>Mahnstufen</h4><div class="dun"><div><b>Rechnung</b>fällig 07.09.</div><div><b>1. Mahnung</b>ohne Reaktion</div><div class="cur"><b>2. Mahnung</b>liegt bereit</div></div></div>`;
+ if(it.x==='week')return `<div class="vis">${weekHTML()}</div>`;
+ return '';
+}
+function detailHTML(it){
+ const A=AR[it.a],h=hz(it);
+ return `<div class="grab" aria-hidden="true"></div><div class="dh"><span class="chip" style="${cv(it.a)}">${ic(A[1],'sm')}${A[0]}</span><span class="chip">${HZ[h]}</span><button class="x" data-close aria-label="Schließen">${ic('i-x')}</button></div>
+<h2 class="dt" id="dT">${it.t}</h2><p class="ds">${it.s}</p>
+<section class="why"><span class="mj" aria-hidden="true">J</span><div><h3>Warum jetzt?</h3><p>${it.w}</p></div></section>
+${visHTML(it)}
+${it.f?`<dl class="facts">${it.f.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`:''}
+${it.tel?`<a class="telrow" href="tel:+496181442790">${ic('i-tel')}<span>Nina Braun anrufen<small>${it.tel}</small></span></a>`:''}
+${it.d?`<div class="draft"><label for="dTx">Entwurf · ${it.d[0]}</label><textarea id="dTx" rows="5">${it.d[1]}</textarea><small>Du kannst den Text direkt ändern, bevor du sendest.</small></div>`:''}
+<div class="acts"><button class="btn pri" data-do="${it.id}">${it.act}</button><button class="btn sec" data-later="${it.id}">${LATER[h]}</button></div>`;
+}
+function renderDetail(){
+ const d=$('detail'),it=S.sel&&BY[S.sel];
+ if(!it||!op(it)){
+  const n=IT.filter(op).length;
+  d.innerHTML=`<div class="dempty"><span class="mj" aria-hidden="true">J</span><p>${n?'Wähle links einen Eintrag – ich zeige dir, warum er ansteht und was ich schon vorbereitet habe.':'Alles erledigt. Ich melde mich, sobald etwas Neues reinkommt.'}</p><span class="k">${n} offen · ${S.log.length} heute von dir erledigt</span></div>`;
+  d.removeAttribute('aria-labelledby');return;
+ }
+ d.innerHTML=detailHTML(it);d.setAttribute('aria-labelledby','dT');d.scrollTop=0;
+}
+function markSel(){document.querySelectorAll('.row[data-open]').forEach(r=>{const on=r.dataset.open===S.sel;r.classList.toggle('sel',on);on?r.setAttribute('aria-current','true'):r.removeAttribute('aria-current')})}
+let lastF=null;
+function openItem(id){
+ S.sel=id;renderDetail();markSel();
+ if(!DESK.matches){
+  lastF=document.activeElement;
+  const d=$('detail');d.classList.add('open');d.setAttribute('role','dialog');d.setAttribute('aria-modal','true');
+  $('scrim').classList.add('on');document.body.classList.add('lock');
+  setTimeout(()=>{const x=d.querySelector('.x');x&&x.focus({preventScroll:true})},RM.matches?0:80);
+ }else{const x=$('detail').querySelector('.dt');$('detail').focus({preventScroll:true})}
+}
+function closeSheet(restore=true){
+ const d=$('detail');
+ if(DESK.matches){S.sel=null;renderDetail();markSel();return}
+ if(!d.classList.contains('open'))return;
+ d.classList.remove('open');d.removeAttribute('aria-modal');d.removeAttribute('role');
+ $('scrim').classList.remove('on');document.body.classList.remove('lock');
+ S.sel=null;markSel();
+ if(restore&&lastF&&document.contains(lastF))lastF.focus({preventScroll:true});
+}
+
+/* Fokus bei Neuaufbau behalten */
+function keyOf(el){if(!el||!el.dataset)return null;for(const k of ['open','do','later','f','tog'])if(el.dataset[k]!=null)return `[data-${k}="${el.dataset[k]}"]${el.dataset.hf?'[data-hf]':''}`;return null}
+function renderAll(){
+ const k=keyOf(document.activeElement),inSeg=document.activeElement&&document.activeElement.closest&&document.activeElement.closest('#seg');
+ renderHealth();renderSeg();renderCounts();renderBrief();renderArea();renderBands();renderLog();
+ if(k){const el=document.querySelector((inSeg?'#seg ':'')+k);if(el&&el!==document.activeElement)el.focus({preventScroll:true})}
+}
+function renderMeta(){renderHealth();renderSeg();renderCounts();renderBrief();renderArea();renderLog()}
+
+/* Ausführen, verschieben, rückgängig */
+function leave(id,cb){
+ const el=document.querySelector(`.bands [data-row="${id}"]`);
+ if(!el||RM.matches){cb();return}
+ el.style.height=el.offsetHeight+'px';void el.offsetHeight;
+ el.classList.add('out');el.style.height='0px';
+ setTimeout(cb,270);
+}
+function afterChange(id,wasSel,keep){
+ renderBands();
+ if(DESK.matches){if(keep&&op(BY[id]))S.sel=id;else if(wasSel||!S.sel||!op(BY[S.sel]))S.sel=nextId();renderDetail();markSel()}
+}
+function doIt(id){
+ const it=BY[id];if(!it||!op(it))return;
+ const wasSel=S.sel===id,t='07:'+(++S.min);
+ S.done.add(id);S.log.unshift({id,t,tx:it.ok});
+ renderMeta();
+ if(!DESK.matches)closeSheet(false);
+ leave(id,()=>afterChange(id,wasSel));
+ toast(it.ok,()=>{S.done.delete(id);S.log=S.log.filter(l=>!(l.id===id&&l.t===t));S.flash=id;if(DESK.matches)S.sel=id;renderAll();renderDetail();markSel()});
+}
+function later(id){
+ const it=BY[id];if(!it||!op(it))return;
+ const h=hz(it),had=id in S.mv,prev=S.mv[id],wasSel=S.sel===id;
+ S.mv[id]=h+1;
+ renderMeta();
+ if(!DESK.matches)closeSheet(false);
+ leave(id,()=>{S.flash=id;afterChange(id,wasSel,h+1<3)});
+ toast(h+1<3?`„${plain(it.t)}“ nach „${HZ[h+1]}“ verschoben`:`„${plain(it.t)}“ auf nächste Woche verschoben`,()=>{if(had)S.mv[id]=prev;else delete S.mv[id];S.flash=id;renderAll();if(DESK.matches){S.sel=id;renderDetail();markSel()}});
+}
+let tT=null,undoFn=null;
+function toast(msg,fn){$('tt').textContent=msg;undoFn=fn;$('toast').classList.add('on');clearTimeout(tT);tT=setTimeout(hideToast,6500)}
+function hideToast(){$('toast').classList.remove('on');undoFn=null}
+$('tu').addEventListener('click',()=>{const f=undoFn;hideToast();if(f)f()});
+function tog(n){
+ S.open[n]=!S.open[n];
+ document.querySelector(`[data-tog="${n}"]`).setAttribute('aria-expanded',String(!!S.open[n]));
+ $('bb'+n).hidden=!S.open[n];
+}
+function setFilter(k,fromHealth){
+ S.f=fromHealth&&S.f===k?'all':k;
+ renderAll();
+ if(DESK.matches){markSel()}
+}
+
+document.addEventListener('click',e=>{
+ const t=e.target.closest('[data-open],[data-do],[data-later],[data-f],[data-tog],[data-close]');
+ if(!t)return;
+ const d=t.dataset;
+ if(d.do!=null)doIt(d.do);
+ else if(d.later!=null)later(d.later);
+ else if(d.open!=null)openItem(d.open);
+ else if(d.f!=null)setFilter(d.f,!!d.hf);
+ else if(d.tog!=null)tog(+d.tog);
+ else if(d.close!=null)closeSheet();
+});
+$('scrim').addEventListener('click',()=>closeSheet());
+document.addEventListener('keydown',e=>{
+ const d=$('detail'),modal=d.classList.contains('open')&&!DESK.matches;
+ if(e.key==='Escape'){if(modal)closeSheet();else if($('toast').classList.contains('on'))hideToast()}
+ if(e.key==='Tab'&&modal){
+  const f=[...d.querySelectorAll('button,a[href],textarea')];if(!f.length)return;
+  const a=f[0],z=f[f.length-1];
+  if(e.shiftKey&&document.activeElement===a){e.preventDefault();z.focus()}
+  else if(!e.shiftKey&&document.activeElement===z){e.preventDefault();a.focus()}
+  else if(!d.contains(document.activeElement)){e.preventDefault();a.focus()}
+ }
+});
+function setHH(){document.documentElement.style.setProperty('--hh',$('head').offsetHeight+'px')}
+function applyMode(){
+ const d=$('detail');
+ d.classList.remove('open');$('scrim').classList.remove('on');document.body.classList.remove('lock');d.removeAttribute('aria-modal');
+ if(DESK.matches){d.setAttribute('role','region');if(!S.sel)S.sel=nextId();if(!S.open[3])tog(3)}
+ else{d.removeAttribute('role');S.sel=null}
+ renderDetail();markSel();setHH();
+}
+DESK.addEventListener('change',applyMode);
+addEventListener('resize',setHH);
+buildHealth();renderAll();applyMode();
+})();
+</script>
+</body>
+</html>

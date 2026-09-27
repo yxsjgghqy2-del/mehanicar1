@@ -1,0 +1,746 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#2C3E50">
+<title>Jarvis · Copilot-Seitenleiste</title>
+<style>
+:root{
+ --bg:#EEF0F2;--card:#FFFFFF;--soft:#F4F6F7;--line:#D9DEE3;--line-2:#E7EAED;
+ --ink:#1E2A35;--ink-2:#4E5C69;--ink-3:#687480;
+ --slate:#2C3E50;--slate-d:#23313F;--hm:rgba(255,255,255,.68);--hl:rgba(255,255,255,.14);
+ --green:#2F7A4D;--green-bg:#E3EFE7;--h-green:#A6D4B6;
+ --amber:#B7791F;--amber-ink:#83570F;--amber-bg:#FAF0DC;--h-amber:#EDC987;
+ --brick:#A0462F;--brick-bg:#F6E6E1;
+ --steel:#3E6685;--steel-bg:#E5EDF3;
+ --plate:#2F4F86;
+ --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+ --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Georgia,serif;
+ --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+ --peek:64px;--hh:112px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 var(--sans);font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer;text-align:left;touch-action:manipulation}
+a{color:inherit}
+.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+:focus-visible{outline:2px solid var(--slate);outline-offset:2px;border-radius:6px}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.mono{font-family:var(--mono);font-size:12.5px;letter-spacing:-.01em}
+
+/* Kopf */
+.top{position:sticky;top:0;z-index:30;background:var(--slate);color:#fff;padding:env(safe-area-inset-top) max(16px,env(safe-area-inset-right)) 6px max(16px,env(safe-area-inset-left))}
+.top :focus-visible{outline-color:#fff}
+.top-in{max-width:1320px;margin:0 auto}
+.tr{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:40px}
+.back{display:inline-flex;align-items:center;min-height:44px;margin:-2px 0;font-size:12.5px;color:var(--hm);text-decoration:none}
+.back:hover{color:#fff}
+.now{font-size:12.5px;color:var(--hm)}
+.brand{display:none}
+.kpis{display:grid;grid-template-columns:minmax(0,.78fr) minmax(0,1.3fr) minmax(0,1.14fr) minmax(0,1.08fr);border-top:1px solid var(--hl)}
+.kpi{display:flex;flex-direction:column;min-height:62px;padding:8px 8px 4px;border-left:1px solid var(--hl);border-radius:0;transition:background .25s}
+.kpi:first-child{border-left:0;padding-left:0}
+.kpi:hover{background:rgba(255,255,255,.05)}
+.kpi.flash{background:rgba(255,255,255,.13)}
+.kv{font-size:19px;font-weight:650;line-height:1.2;letter-spacing:-.01em;white-space:nowrap}
+.kv small{font-size:12.5px;font-weight:600;margin-left:3px;color:var(--hm)}
+.kl{font-size:11px;color:var(--hm);white-space:nowrap}
+.ks{font-size:11px;font-weight:650;white-space:nowrap;margin-top:1px}
+.ks.g{color:var(--h-green)}.ks.a{color:var(--h-amber)}.ks.m{color:var(--hm)}
+
+/* Rahmen */
+.shell{max-width:1320px;margin:0 auto;padding:14px max(16px,env(safe-area-inset-right)) calc(var(--peek) + 36px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+main{min-width:0;display:flex;flex-direction:column;gap:12px}
+.day{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding:2px 2px 2px}
+.kick{margin:0;font-size:12px;color:var(--ink-3)}
+h1{margin:1px 0 0;font-size:22px;line-height:1.2;letter-spacing:-.015em;font-weight:700}
+.team{display:flex;gap:4px}
+.tm{width:30px;height:30px;border-radius:7px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center;font-size:10.5px;font-weight:700;color:var(--ink-2);letter-spacing:.03em}
+.foot{margin:6px 2px 0;font-size:12px;color:var(--ink-3)}
+
+/* Sektionen */
+.sec{background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;scroll-margin-top:calc(var(--hh) + 12px)}
+.sec-h{margin:0;font-size:inherit;font-weight:inherit}
+.sb{width:100%;display:flex;align-items:center;gap:7px;min-height:52px;padding:8px 10px 8px 14px}
+.sb .si{color:var(--ink-3);display:none}
+.st{font-size:15px;font-weight:650;white-space:nowrap}
+.sn{font-size:13px;color:var(--ink-3);font-weight:600}
+.chips{margin-left:auto;display:flex;flex-wrap:wrap;justify-content:flex-end;gap:5px;min-width:0}
+.chev{color:var(--ink-3);transition:transform .22s ease}
+.sec.open>.sec-h .chev{transform:rotate(90deg)}
+.sbody{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s ease}
+.sec.open>.sbody{grid-template-rows:1fr}
+.sbody-in{overflow:hidden;min-height:0;visibility:hidden;transition:visibility 0s .24s}
+.sec.open>.sbody>.sbody-in{visibility:visible;transition:none}
+
+.chip{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 6px;border-radius:5px;font-size:12px;font-weight:600;white-space:nowrap;background:var(--soft);color:var(--ink-2);flex:none}
+.chip::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor}
+.chip.n::before{display:none}
+.c-amber{background:var(--amber-bg);color:var(--amber-ink)}
+.c-green{background:var(--green-bg);color:var(--green)}
+.c-steel{background:var(--steel-bg);color:var(--steel)}
+.c-brick{background:var(--brick-bg);color:var(--brick)}
+.c-plain{background:transparent;color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--line)}
+.c-plain::before{background:transparent;box-shadow:inset 0 0 0 1.5px currentColor}
+
+/* Bühnenplan */
+.plan{padding:2px 16px 12px;border-top:1px solid var(--line-2)}
+.plan-h{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:38px;font-size:12.5px;color:var(--ink-3)}
+.plan-h b{color:var(--ink-2);font-weight:650}
+#planSum{font-weight:600;color:var(--green)}
+#planSum.w{color:var(--amber-ink)}
+.leg{display:flex;gap:12px;justify-content:flex-end;align-items:center;white-space:nowrap;font-size:11.5px;color:var(--ink-3);margin-top:4px}
+.lg{display:inline-block;width:14px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.lg.w{background:repeating-linear-gradient(135deg,#F3DDB1 0 3px,var(--amber-bg) 3px 6px);box-shadow:inset 0 0 0 1px #DDB46E}
+.lg.t{border:1px dashed #95A1AC}
+.track{position:relative;margin-left:26px}
+.marks{position:relative;height:17px;font-size:10.5px;font-weight:650}
+.marks span{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;transition:left .3s ease}
+.mk-now{color:var(--slate);transform:translateX(4px)!important}
+.mk-p{color:var(--amber-ink)}
+.lanes{display:grid;gap:5px}
+.lane{position:relative;height:28px;border-radius:4px;background:var(--soft) repeating-linear-gradient(90deg,transparent 0 calc(20% - 1px),var(--line-2) calc(20% - 1px) 20%)}
+.lane::before{content:attr(data-l);position:absolute;left:-26px;top:0;line-height:28px;font-size:11px;font-weight:700;color:var(--ink-3)}
+.blk{position:absolute;top:3px;bottom:3px;border-radius:4px;display:flex;align-items:center;padding:0 4px 0 7px;font-size:10.5px;font-weight:700;letter-spacing:.01em;white-space:nowrap;overflow:hidden;transition:left .32s ease,width .32s ease,background-color .3s}
+.blk span{position:relative}
+.blk.run{background:var(--steel-bg);color:var(--steel);box-shadow:inset 0 0 0 1px #B9CCDC}
+.blk.run i{position:absolute;left:0;top:0;bottom:0;background:#C8D8E6}
+.blk.warn{background:repeating-linear-gradient(135deg,#F3DDB1 0 5px,var(--amber-bg) 5px 10px);color:var(--amber-ink);box-shadow:inset 0 0 0 1px #DDB46E}
+.blk.plan{background:var(--card);color:var(--ink-2);box-shadow:inset 0 0 0 1px #9DB1C3}
+.blk.tent{background:transparent;color:var(--ink-3);border:1px dashed #95A1AC}
+.pline{position:absolute;top:-4px;bottom:-4px;width:0;border-left:1.5px solid var(--amber);z-index:2}
+.nline{position:absolute;top:0;bottom:17px;width:0;border-left:1.5px solid var(--slate);z-index:3}
+.axis{position:relative;height:17px;font-size:10.5px;color:var(--ink-3)}
+.axis span{position:absolute;top:3px;transform:translateX(-50%)}
+
+/* Auftragsbalken */
+.olist{container-type:inline-size}
+.ord{position:relative;border-top:1px solid var(--line-2);box-shadow:inset 4px 0 0 var(--stripe,transparent);transition:background .2s}
+.s-run{--stripe:var(--steel)}.s-warn{--stripe:var(--amber)}.s-open{--stripe:#AAB3BB}.s-ready{--stripe:var(--green)}
+.ord.sel{background:#F6F8F9}
+.oh{width:100%;display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"pl ch cv" "ot ot ot" "op op op";gap:7px 10px;align-items:center;padding:12px 12px 8px 18px}
+.oh .plate{grid-area:pl}
+.plate{display:inline-flex;align-items:center;height:24px;padding:0 7px 0 12px;border:1.5px solid var(--ink);border-radius:4px;background:linear-gradient(90deg,var(--plate) 0 6px,var(--card) 6px);font-size:12.5px;font-weight:700;letter-spacing:.04em;white-space:nowrap;color:var(--ink)}
+.plate.sm{height:22px;font-size:12px}
+.oh .chip{grid-area:ch;justify-self:end}
+.oh .chev{grid-area:cv}
+.ord.open .oh .chev{transform:rotate(90deg)}
+.ot{grid-area:ot;display:flex;flex-wrap:wrap;gap:0 8px;align-items:baseline;min-width:0}
+.ot b{font-size:15.5px;font-weight:650}
+.ot span{font-size:14px;color:var(--ink-2)}
+.op{grid-area:op;display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--ink-2);min-width:0}
+.bar{flex:0 0 64px;height:4px;border-radius:2px;background:var(--line-2);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--stripe);transition:width .3s ease}
+.pct{font-weight:650;color:var(--ink)}
+.om{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.om em{font-style:normal;color:var(--amber-ink);font-weight:650}
+.jn{display:flex;align-items:center;gap:9px;width:calc(100% - 30px);margin:0 12px 12px 18px;min-height:44px;padding:6px 8px 6px 10px;background:var(--soft);border-radius:6px;box-shadow:inset 2px 0 0 var(--tone,var(--line));font-family:var(--serif);font-style:italic;font-size:14.5px;line-height:1.3;color:var(--ink);transition:background .15s}
+.jn:hover{background:#ECEFF2}
+.jn .jc{margin-left:auto;width:16px;height:16px;color:var(--ink-3)}
+.t-warn{--tone:var(--amber)}.t-ok{--tone:var(--green)}.t-info{--tone:#98A5B1}.t-brick{--tone:var(--brick)}
+.jmono{flex:none;display:inline-grid;place-items:center;width:20px;height:20px;border-radius:4px;background:var(--slate);color:#fff;font:600 13px/1 var(--serif);font-style:normal}
+.jmono.s{width:17px;height:17px;font-size:11.5px;border-radius:3px}
+.jmono.l{width:30px;height:30px;font-size:19px;border-radius:6px}
+.od{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s ease}
+.ord.open .od{grid-template-rows:1fr}
+.od-in{overflow:hidden;min-height:0;visibility:hidden;transition:visibility 0s .24s}
+.ord.open .od-in{visibility:visible;transition:none}
+.dl{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin:0 12px 14px 18px;padding-top:12px;border-top:1px dashed var(--line)}
+.dl div{min-width:0}
+.dl dt{font-size:11.5px;color:var(--ink-3)}
+.dl dd{margin:1px 0 0;font-size:14px;font-weight:560}
+.dl dd.w{color:var(--amber-ink)}.dl dd.g{color:var(--green)}
+@container (min-width:640px){
+ .oh{grid-template-columns:108px minmax(0,1fr) minmax(0,250px) 148px 18px;grid-template-areas:"pl ot op ch cv";gap:12px;padding:14px 14px 10px 20px}
+ .oh .chip{justify-self:start}
+ .op{flex-wrap:wrap;row-gap:3px}
+ .om{flex-basis:100%}
+ .jn{width:calc(100% - 154px);margin:0 14px 12px 140px}
+ .dl{grid-template-columns:repeat(4,minmax(0,1fr));margin-left:140px;margin-right:14px}
+}
+
+/* Zeilen in Sektionen */
+.row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:4px 12px;align-items:start;align-content:start;width:100%;min-height:56px;padding:12px 14px 12px 16px;border-top:1px solid var(--line-2);box-shadow:inset 3px 0 0 transparent;transition:background .15s}
+.row:hover{background:#F8F9FA}
+.row.sel{background:#F2F5F7;box-shadow:inset 3px 0 0 var(--slate)}
+.ri{width:34px;height:34px;border-radius:8px;background:var(--soft);display:grid;place-items:center;color:var(--ink-2)}
+.dt{width:34px;display:flex;flex-direction:column;align-items:center;line-height:1.15;padding-top:1px}
+.dt b{font-size:14px}.dt span{font-size:11px;color:var(--ink-3)}
+.rm{min-width:0;display:flex;flex-direction:column;gap:2px}
+.r1{display:flex;flex-wrap:wrap;gap:0 8px;align-items:baseline}
+.r1 b{font-weight:650}
+.rt{font-size:12.5px;color:var(--ink-3)}
+.r2{font-size:13.5px;color:var(--ink-2);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.rx{grid-column:2/-1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.nw{white-space:nowrap}
+.r1 .plate{height:22px;font-size:12px;align-self:center}
+.rj{display:flex;align-items:center;gap:7px;margin-top:2px;padding-left:8px;box-shadow:inset 2px 0 0 var(--tone);font-family:var(--serif);font-style:italic;font-size:14px;color:var(--ink);line-height:1.3}
+.rs{display:flex;flex-direction:column;align-items:flex-end;gap:5px;text-align:right}
+.amt{font-weight:650;white-space:nowrap}
+.row.dim .rm{opacity:.62}
+.cap{display:flex;align-items:center;gap:8px;margin-top:2px;font-size:12px;color:var(--ink-3)}
+.cap .bar{flex:0 0 96px;height:5px}
+.cap .bar i{background:var(--c,var(--amber))}
+.tav{display:flex;gap:3px}
+.tav i{font-style:normal;font-size:10px;font-weight:700;width:22px;height:18px;border-radius:4px;display:grid;place-items:center;background:var(--soft);color:var(--ink-2)}
+.tav i.off{background:transparent;color:#A6AFB7;text-decoration:line-through;box-shadow:inset 0 0 0 1px var(--line-2)}
+.msum{padding:4px 16px 14px;border-top:1px solid var(--line-2)}
+.mh{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding-top:10px}
+.mh small{display:block;font-size:12px;color:var(--ink-3)}
+.big{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.delta{font-size:13px;font-weight:650;color:var(--green);white-space:nowrap}
+.cmp{display:grid;gap:5px;margin:10px 0 12px}
+.cmp div{display:grid;grid-template-columns:30px minmax(0,1fr) 76px;align-items:center;gap:8px;font-size:12px;color:var(--ink-3)}
+.cmp i{display:block;height:8px;border-radius:2px;background:#C9D0D6}
+.cmp i.cur{background:var(--green)}
+.cmp em{font-style:normal;text-align:right;color:var(--ink-2);font-weight:600}
+.mgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin:0;padding-top:10px;border-top:1px dashed var(--line)}
+.mgrid dt{font-size:11.5px;color:var(--ink-3)}
+.mgrid dd{margin:1px 0 0;font-weight:650;font-size:15px}
+
+/* Jarvis */
+.jv{position:fixed;left:0;right:0;bottom:0;z-index:40;height:86vh;height:min(86dvh,760px);max-width:640px;margin:0 auto;background:var(--card);border-radius:16px 16px 0 0;box-shadow:0 -1px 0 var(--line),0 -10px 30px rgba(30,42,53,.13);display:flex;flex-direction:column;transform:translateY(calc(100% - var(--peek) - env(safe-area-inset-bottom)));transition:transform .28s cubic-bezier(.3,.7,.2,1),box-shadow .3s}
+.jv.open{transform:translateY(0)}
+.grip{flex:none;display:flex;flex-direction:column;padding:7px 14px 0 16px;min-height:var(--peek);touch-action:none;user-select:none;-webkit-user-select:none;border-radius:16px 16px 0 0;transition:background .3s}
+.grip.bump{background:var(--soft)}
+.handle{width:38px;height:4px;border-radius:2px;background:#C3CAD1;align-self:center}
+.gr{display:flex;align-items:center;gap:10px;min-height:44px;font-size:14.5px;color:var(--ink-2)}
+.gr b{color:var(--ink);font-weight:650}
+.gr .i{margin-left:auto;transition:transform .25s}
+.jv.open .gr .i{transform:rotate(180deg)}
+.jv-body{flex:1;min-height:0;display:flex;flex-direction:column;transition:opacity .2s}
+.jv-brand{display:none}
+.jv-head{flex:none;padding:0 16px 12px;border-bottom:1px solid var(--line-2)}
+.ctx{display:flex;align-items:center;gap:10px;min-height:32px;flex-wrap:wrap}
+.ctx-k{font-size:12px;font-weight:650;color:var(--ink-3);letter-spacing:.02em}
+.ctx-back{display:inline-flex;align-items:center;gap:4px;min-height:44px;margin:-6px 0 -6px -6px;padding:0 8px 0 2px;border-radius:6px;font-size:13.5px;font-weight:600;color:var(--steel)}
+.ctx-t{margin:4px 0 0;font-size:14.5px;color:var(--ink-2)}
+.ctx-t b{color:var(--ink);font-weight:650}
+.intro{margin:4px 0 0}
+.jv-scroll{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;padding:0 16px 18px;-webkit-overflow-scrolling:touch}
+.jv-scroll.anim{animation:swap .22s ease}
+@keyframes swap{from{opacity:0;transform:translateY(5px)}}
+.hint{position:relative;padding:14px 0 16px 14px;border-bottom:1px solid var(--line-2)}
+.hint::before{content:"";position:absolute;left:0;top:16px;bottom:18px;width:3px;border-radius:2px;background:var(--tone)}
+.ha{margin:0;display:flex;gap:8px;align-items:center;font-size:11.5px;color:var(--ink-3)}
+.next{font-weight:700;color:var(--slate);letter-spacing:.04em;text-transform:uppercase;font-size:10.5px}
+.hint h3{margin:3px 0 4px;font-size:15.5px;line-height:1.3;font-weight:650}
+.voice{margin:0;font-family:var(--serif);font-size:15.5px;line-height:1.45;color:#2A3743}
+.draft{margin:10px 0 0;border:1px solid var(--line);border-radius:8px;background:var(--soft);padding:2px 12px 10px}
+.drh{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;color:var(--ink-3)}
+.lnk{min-height:40px;padding:0 2px 0 10px;font-size:12.5px;font-weight:600;color:var(--steel)}
+.draft p{margin:0;font-size:14px;line-height:1.45;white-space:pre-wrap}
+.draft p[contenteditable=true]{background:var(--card);box-shadow:0 0 0 1.5px var(--steel);border-radius:4px;padding:4px 6px;outline:none}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn{display:inline-flex;align-items:center;gap:7px;min-height:44px;padding:0 15px;border-radius:8px;font-size:14.5px;font-weight:600;text-decoration:none;transition:background .15s,box-shadow .15s}
+.btn.pri{background:var(--slate);color:#fff}
+.btn.pri:hover{background:var(--slate-d)}
+.btn.sec{background:var(--card);box-shadow:inset 0 0 0 1px var(--line);color:var(--ink)}
+.btn.sec:hover{box-shadow:inset 0 0 0 1px #AEB8C1}
+.btn.txt{padding:0 10px;color:var(--ink-2)}
+.btn.txt:hover{color:var(--ink)}
+.hint.fin{display:flex;align-items:center;gap:10px;padding:10px 0 10px 14px;--tone:var(--green)}
+.hint.fin.z{--tone:#B7C0C8}
+.hint.fin::before{top:12px;bottom:12px}
+.hint.fin p{margin:0;flex:1;font-size:13.5px;color:var(--ink-2)}
+.hint.fin p b{color:var(--ink);font-weight:650;margin-right:4px}
+.hint.fin .i.ok{color:var(--green)}
+.hint.fin .btn{flex:none}
+.qh{display:flex;justify-content:space-between;align-items:center;gap:10px;margin:20px 0 4px;font-size:12px;font-weight:650;color:var(--ink-3);letter-spacing:.02em}
+.qh button{display:flex;align-items:center;gap:6px;min-height:40px;font-weight:650;color:var(--ink-2)}
+.qh button .i{width:15px;height:15px;transition:transform .2s}
+.qh button[aria-expanded=true] .i{transform:rotate(90deg)}
+.ql{list-style:none;margin:0;padding:0}
+.qi{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:6px 0;border-bottom:1px solid var(--line-2);font-size:14px}
+.qi .lbl{flex:1;min-width:0;line-height:1.3}
+.qi small{display:block;font-size:11.5px;color:var(--ink-3)}
+.qi .qc{width:15px;height:15px;color:var(--ink-3)}
+.u{flex:none;width:50px;height:22px;border-radius:4px;display:grid;place-items:center;font-size:11px;font-weight:700}
+.u-now{background:var(--amber-bg);color:var(--amber-ink)}
+.u-day{box-shadow:inset 0 0 0 1px #A9BCCB;color:var(--steel)}
+.u-wk{color:var(--ink-3);box-shadow:inset 0 0 0 1px var(--line)}
+.u-ok{color:var(--green)}.u-ok .i{width:16px;height:16px}
+.qi.done{color:var(--ink-3)}
+.qi.done .lbl>span{text-decoration:line-through;text-decoration-color:#B5BEC6}
+.log{list-style:none;margin:0;padding:0}
+.log li{display:grid;grid-template-columns:62px minmax(0,1fr);gap:8px;padding:7px 0;border-bottom:1px solid var(--line-2);font-size:13.5px;color:var(--ink-2)}
+.log time{font-size:12px;color:var(--ink-3);padding-top:1px}
+.log li.me span b{color:var(--ink);font-weight:650}
+.qa{margin:10px 0 0;padding:10px 0;border-bottom:1px solid var(--line-2)}
+.qq{margin:0 0 6px;font-size:13.5px;font-weight:600;color:var(--ink-2)}
+.qq::before{content:"Du: ";color:var(--ink-3);font-weight:500}
+.qaa{display:flex;gap:10px;align-items:flex-start}
+.qaa .voice{font-size:15px}
+.typing{margin:0;font-size:13px;color:var(--ink-3);font-style:italic}
+.jv-ask{flex:none;border-top:1px solid var(--line-2);padding:8px 0 calc(10px + env(safe-area-inset-bottom));background:var(--card)}
+.qs{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 28px 8px 12px;-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
+.qs::-webkit-scrollbar{display:none}
+.qchip{flex:none;min-height:44px;padding:0 12px;border-radius:8px;box-shadow:inset 0 0 0 1px var(--line);font-size:13.5px;color:var(--ink-2);white-space:nowrap}
+.qchip:hover{background:var(--soft);color:var(--ink)}
+.askf{display:flex;gap:8px;padding:0 12px}
+.askf input{flex:1;min-width:0;height:44px;border:1px solid var(--line);border-radius:8px;padding:0 12px;font:inherit;font-size:16px;background:var(--soft);color:var(--ink)}
+.askf input:focus{outline:none;border-color:var(--steel);background:var(--card)}
+.askf button{flex:none;width:44px;height:44px;border-radius:8px;background:var(--slate);color:#fff;display:grid;place-items:center}
+.scrim{position:fixed;inset:0;z-index:35;background:rgba(30,42,53,.32);opacity:0;pointer-events:none;transition:opacity .25s}
+.scrim.on{opacity:1;pointer-events:auto}
+
+@media (max-width:1023px){
+ .jv:not(.open):not(.drag) .jv-body{opacity:0;visibility:hidden;transition:opacity .2s,visibility 0s .2s}
+}
+@media (min-width:420px){.sb .si{display:block}}
+@media (min-width:1024px){
+ .top{padding:0 24px 12px}
+ .hrow{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:32px}
+ .brand{display:flex;flex-direction:column;gap:2px;padding-bottom:8px}
+ .brand b{font-size:20px;font-weight:700;letter-spacing:-.01em}
+ .brand span{font-size:13px;color:var(--hm)}
+ .kpis{grid-template-columns:repeat(4,156px);border-top:0}
+ .kpi{padding:6px 14px 4px;min-height:66px}
+ .kpi:first-child{padding-left:14px;border-left:1px solid var(--hl)}
+ .kv{font-size:24px}
+ .kl,.ks{font-size:12px}
+ .shell{display:grid;grid-template-columns:minmax(0,1fr) 360px;gap:24px;align-items:start;padding:20px 24px 40px}
+ .day{padding-top:0}
+ .kick{display:none}
+ .jv{position:sticky;top:calc(var(--hh) + 20px);left:auto;right:auto;bottom:auto;z-index:1;height:calc(100vh - var(--hh) - 40px);max-width:none;margin:0;transform:none!important;transition:box-shadow .3s;border-radius:12px;box-shadow:inset 0 0 0 1px var(--line)}
+ .jv.ping{box-shadow:inset 0 0 0 1px var(--line),0 0 0 3px rgba(44,62,80,.16)}
+ .grip,.scrim{display:none}
+ .jv-brand{display:flex;align-items:center;gap:10px;padding:14px 16px 8px}
+ .jv-brand b{font-size:15.5px;font-weight:650;display:block;line-height:1.2}
+ .jv-brand span{font-size:12px;color:var(--ink-3)}
+ .jv-ask{border-radius:0 0 12px 12px;padding-bottom:12px}
+ .foot{margin-top:2px}
+}
+@media (prefers-reduced-motion:reduce){
+ *,*::before,*::after{transition-duration:.01ms!important;animation:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="i-chev" viewBox="0 0 24 24"><path d="M9.5 6l6 6-6 6"/></symbol>
+ <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 14.5l6-6 6 6"/></symbol>
+ <symbol id="i-back" viewBox="0 0 24 24"><path d="M14.5 6l-6 6 6 6"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+ <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 6.5L5 10.5l4 4"/><path d="M5 10.5h9.5a4.5 4.5 0 0 1 0 9H12"/></symbol>
+ <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4.5l3 2"/></symbol>
+ <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4.5 18.5v-12A2.5 2.5 0 0 1 7 4h10a2.5 2.5 0 0 1 2.5 2.5v7.5a2.5 2.5 0 0 1-2.5 2.5H8.5z"/><path d="M8.5 9h7M8.5 12h4.5"/></symbol>
+ <symbol id="i-cam" viewBox="0 0 24 24"><rect x="4.5" y="4.5" width="15" height="15" rx="4.5"/><circle cx="12" cy="12" r="3.4"/><path d="M16.3 7.7h.01"/></symbol>
+ <symbol id="i-phone" viewBox="0 0 24 24"><path d="M7 4.5h2.8l1.4 3.8-1.9 1.2a10.5 10.5 0 0 0 5.2 5.2l1.2-1.9 3.8 1.4V17a2.5 2.5 0 0 1-2.5 2.5A13 13 0 0 1 4.5 7 2.5 2.5 0 0 1 7 4.5z"/></symbol>
+ <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 4.8l2.2 4.5 5 .7-3.6 3.5.8 4.9L12 16.1l-4.4 2.3.8-4.9-3.6-3.5 5-.7z"/></symbol>
+ <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 4.8a4.3 4.3 0 0 0 4.5 5.9l-8.8 8.8a2.1 2.1 0 0 1-3-3l8.8-8.8a4.3 4.3 0 0 1-1.5-2.9z"/></symbol>
+ <symbol id="i-inbox" viewBox="0 0 24 24"><path d="M4.5 13.5l2.3-7.5h10.4l2.3 7.5v5h-15z"/><path d="M4.5 13.5h4.5l1 2h4l1-2h4.5"/></symbol>
+ <symbol id="i-bell" viewBox="0 0 24 24"><path d="M6.5 16v-5a5.5 5.5 0 0 1 11 0v5l1.5 1.5h-14z"/><path d="M10 20h4"/></symbol>
+ <symbol id="i-cal" viewBox="0 0 24 24"><rect x="4.5" y="5.5" width="15" height="14" rx="2"/><path d="M4.5 10h15M8.5 3.5v4M15.5 3.5v4"/></symbol>
+ <symbol id="i-euro" viewBox="0 0 24 24"><path d="M17 7.3a6 6 0 1 0 0 9.4M5 10.5h8M5 13.5h8"/></symbol>
+ <symbol id="i-box" viewBox="0 0 24 24"><path d="M4.5 8L12 4.5 19.5 8v8L12 19.5 4.5 16z"/><path d="M4.5 8L12 11.5 19.5 8M12 11.5v8"/></symbol>
+ <symbol id="i-send" viewBox="0 0 24 24"><path d="M12 19V5.5M6.5 11L12 5.5l5.5 5.5"/></symbol>
+</svg>
+
+<header class="top" id="top">
+ <div class="top-in">
+  <div class="tr">
+   <a class="back" href="index.html">← Alle Layouts</a>
+   <span class="now" id="now">Mo 28.09. · 07:40</span>
+  </div>
+  <div class="hrow">
+   <div class="brand"><b>mehanicar</b><span>Meisterwerkstatt Hanau · Werkstatt-Übersicht</span></div>
+   <div class="kpis" role="group" aria-label="Tageszahlen">
+    <button class="kpi" data-kpi="fz" data-k="k-fz"><span class="kv"></span><span class="kl">Fahrzeuge</span><span class="ks"></span></button>
+    <button class="kpi" data-kpi="dec" data-k="k-dec"><span class="kv"></span><span class="kl">Entscheidungen</span><span class="ks"></span></button>
+    <button class="kpi" data-kpi="ums" data-k="k-ums"><span class="kv"></span><span class="kl">Umsatz Sep.</span><span class="ks"></span></button>
+    <button class="kpi" data-kpi="op" data-k="k-op"><span class="kv"></span><span class="kl">Offene Posten</span><span class="ks"></span></button>
+   </div>
+  </div>
+ </div>
+</header>
+
+<div class="shell">
+ <main id="main">
+  <div class="day">
+   <div><p class="kick">mehanicar Meisterwerkstatt · Hanau</p><h1>Montag, 28. September</h1></div>
+   <div class="team" aria-label="Team heute: Samed, Kevin, Luca"><span class="tm" title="Samed · Meister">SM</span><span class="tm" title="Kevin · Geselle">KV</span><span class="tm" title="Luca · Azubi">LU</span></div>
+  </div>
+
+  <section class="sec open" id="sec-orders">
+   <h2 class="sec-h"><button class="sb" data-sec="orders" data-k="sb-orders" aria-expanded="true" aria-controls="sb-orders"><svg class="i si" aria-hidden="true"><use href="#i-wrench"/></svg><span class="st">Aufträge heute</span><span class="sn">4</span><span class="chips" id="chips-orders"></span><svg class="i chev" aria-hidden="true"><use href="#i-chev"/></svg></button></h2>
+   <div class="sbody" id="sb-orders"><div class="sbody-in">
+    <div class="plan">
+     <div class="plan-h"><b>Bühnen heute</b><span id="planSum"></span></div>
+     <div class="track" aria-hidden="true">
+      <div class="marks"><span class="mk-now" style="left:1.67%">07:40</span><span class="mk-p" style="left:25%">Teile 10:00</span></div>
+      <div class="lanes">
+       <div class="lane" data-l="B1"><span class="blk" id="b-o54"></span><span class="pline" style="left:25%"></span></div>
+       <div class="lane" data-l="B2"><span class="blk run" id="b-o53" style="left:0;width:40%"><i style="width:45%"></i><span>HU-SM 247</span></span></div>
+       <div class="lane" data-l="B3"><span class="blk" id="b-o55"></span></div>
+      </div>
+      <div class="axis"><span style="left:5%">08</span><span style="left:25%">10</span><span style="left:45%">12</span><span style="left:65%">14</span><span style="left:85%">16</span></div>
+      <span class="nline" style="left:1.67%"></span>
+     </div>
+     <div class="leg" aria-hidden="true"><span><i class="lg w"></i>Konflikt</span><span><i class="lg t"></i>ohne Freigabe</span></div>
+     <p class="vh" id="planTxt"></p>
+    </div>
+    <div class="olist" id="olist"></div>
+   </div></div>
+  </section>
+
+  <div id="secs" style="display:flex;flex-direction:column;gap:12px"></div>
+  <p class="foot">Entwurf 04 · Copilot-Seitenleiste · Demo-Daten, nicht mit der App verbunden</p>
+ </main>
+
+ <aside class="jv" id="jv" aria-label="Jarvis">
+  <button class="grip" id="grip" aria-expanded="false" aria-controls="jvBody">
+   <span class="handle" aria-hidden="true"></span>
+   <span class="gr"><span class="jmono" aria-hidden="true">J</span><span><b>Jarvis</b> · <span id="peekTxt" aria-live="polite">3 Hinweise zu diesem Tag</span></span><svg class="i" aria-hidden="true"><use href="#i-up"/></svg></span>
+  </button>
+  <div class="jv-body" id="jvBody">
+   <div class="jv-brand"><span class="jmono l" aria-hidden="true">J</span><div><b>Jarvis</b><span>Beifahrer · kommentiert, was du ansiehst</span></div></div>
+   <div class="jv-head" id="jvHead"></div>
+   <div class="jv-scroll" id="jvScroll"></div>
+   <div class="jv-ask">
+    <div class="qs" role="group" aria-label="Vorbereitete Fragen">
+     <button class="qchip" data-q="heute">Was muss vor 10 Uhr raus?</button>
+     <button class="qchip" data-q="sep">Wie steht der September?</button>
+     <button class="qchip" data-q="wed">Wer hat Mittwoch Zeit?</button>
+    </div>
+    <form class="askf" id="askf" autocomplete="off"><label class="vh" for="askin">Jarvis fragen</label><input id="askin" type="text" placeholder="Jarvis fragen …" enterkeyhint="send"><button type="submit" aria-label="Frage senden"><svg class="i" aria-hidden="true"><use href="#i-send"/></svg></button></form>
+   </div>
+  </div>
+ </aside>
+</div>
+<div class="scrim" id="scrim"></div>
+<div id="sab" style="position:fixed;bottom:0;height:env(safe-area-inset-bottom);width:0;visibility:hidden"></div>
+
+<script>
+(function(){
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const NB=' ';
+const grp=n=>String(n).replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+const eur=(n,d=2)=>{const s=n.toFixed(d).split('.');return grp(s[0])+(s[1]?','+s[1]:'')+NB+'€'};
+const ic=(n,c='')=>`<svg class="i ${c}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
+const pl=(n,a,b)=>`${n} ${n===1?a:b}`;
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const NUM=['Keine','Eine','Zwei','Drei','Vier'];
+const desk=()=>matchMedia('(min-width:1024px)').matches;
+
+const S={sel:null,open:null,sheet:false,sec:{orders:true,inbox:false,remind:false,week:false,money:false,stock:false},done:{},snz:{},log:[],min:40,qa:[],drafts:{},logOpen:true};
+const D=a=>!!S.done[a];
+const clock=()=>{const t=7*60+S.min;return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0')};
+const op=()=>2254-(D('pay')?620:0);
+
+const ACT={
+ tobias:{dec:1,u:'jetzt',area:'Kunden',q:'Antwort an Tobias Wolf senden + Do 09:00 reservieren',ctx:'r-wolf',log:'Antwort an Tobias Wolf gesendet, Do 01.10. 09:00 reserviert'},
+ moveTR:{dec:1,u:'jetzt',area:'Werkstatt',q:'HU-TR 51 auf 10:30 verschieben – Teile kommen 10:00',ctx:'o54',log:'HU-TR 51 auf 10:30 verschoben'},
+ becker:{dec:1,u:'heute',area:'Kunden',q:'Jonas Becker an KV-Freigabe erinnern',ctx:'o55',log:'Jonas Becker an den KV erinnert'},
+ mahnung:{dec:1,u:'heute',area:'Geld',q:'Autohaus Schmidt: 2. Mahnung über 1.245,00 € senden',ctx:'g-0118',log:'2. Mahnung an Autohaus Schmidt gesendet'},
+ order:{dec:1,u:'heute',area:'Lager',q:'Stahlgruber-Bestellung 86,40 € freigeben',ctx:'l-order',log:'Bestellung Stahlgruber über 86,40 € freigegeben'},
+ koch:{dec:1,u:'Woche',area:'Kunden',q:'Stefan Koch wegen überfälliger HU anschreiben',ctx:'m-koch',log:'Stefan Koch wegen der HU angeschrieben'},
+ nina:{dec:1,u:'heute',area:'Kunden',q:'Nina Braun zurückrufen, Wartung anbieten',ctx:'r-nina',log:'Rückruf bei Nina Braun erledigt'},
+ lisa:{dec:1,u:'heute',area:'Kunden',q:'Lisa Hoffmann Ölwechsel-Preis antworten',ctx:'r-lisa',log:'Lisa Hoffmann geantwortet (89 €)'},
+ review:{dec:1,u:'Woche',area:'Kunden',q:'Dankes-Antwort auf Google-Bewertung veröffentlichen',ctx:'r-review',log:'Dankes-Antwort auf Google veröffentlicht'},
+ yilmaz:{log:'Nachricht an Ali Yilmaz für 11:30 geplant'},
+ krause:{log:'Fertigmeldung an Maria Krause vorgemerkt'},
+ beckerOk:{log:'Freigabe von Jonas Becker erfasst'},
+ pickup:{log:'Autohaus Schmidt an die Abholung erinnert'},
+ pay:{log:'Zahlung 620,00 € für AU-2026-0048 erfasst'},
+ wed:{log:'Mittwoch für neue Termine gesperrt'}
+};
+const DEC=['tobias','moveTR','becker','mahnung','order','koch','nina','lisa','review'];
+const LOG=[['07:00','3 Terminerinnerungen für Dienstag per WhatsApp verschickt'],['06:53','Anfrage von Tobias Wolf analysiert, Antwort vorbereitet'],['06:30','Tagesplan erstellt, Teile-Konflikt bei HU-TR 51 erkannt'],['gestern 19:40','5-Sterne-Bewertung von Maria Krause erhalten, Dankes-Antwort als Entwurf']];
+
+const HT={
+ o53plan:()=>({tone:'ok',area:'Werkstatt',title:'Läuft nach Plan',body:'Kevin ist bei 45 %, die Teile sind da, die Freigabe kam per WhatsApp. Bühne 2 wird gegen 11:30 frei.'}),
+ yilmaz:()=>({act:'yilmaz',tone:'info',area:'Kunden · heute',title:'Herrn Yilmaz Bescheid geben',body:'Soll ich ihm um 11:30 schreiben, dass sein BMW abholbereit ist?',chan:'WhatsApp-Entwurf',draft:'Hallo Herr Yilmaz, Ihr BMW ist fertig – die Bremsen vorne und hinten sind neu. Sie können ihn ab 11:30 Uhr abholen. Viele Grüße, Samed – mehanicar',pri:'Für 11:30 planen',done:'Nachricht an Herrn Yilmaz ist für 11:30 geplant'}),
+ moveTR:()=>({act:'moveTR',tone:'warn',title:'Teile kommen erst um 10:00',body:'HU-TR 51 steht um 09:00 auf Bühne 1, das Getriebeöl-Kit von Stahlgruber ist aber erst um 10:00 da. Ich schlage Start 10:30 vor – die Abholung um 16:00 bleibt machbar.',pri:'Auf 10:30 verschieben',done:'HU-TR 51 startet 10:30 auf Bühne 1'}),
+ krause:()=>({act:'krause',ns:1,tone:'info',area:'Kunden · heute',title:'Frau Krause informieren, wenn fertig',body:'Ich schicke die Nachricht, sobald der Auftrag abgeschlossen ist.',chan:'WhatsApp-Entwurf',draft:'Hallo Frau Krause, Ihr Mercedes ist fertig und kann ab 16 Uhr abgeholt werden.',pri:'Vormerken',done:'Fertigmeldung an Frau Krause vorgemerkt'}),
+ krauseRe:()=>({tone:'info',area:'Geld',title:'RE-2026-0121 noch offen',body:'389,00 € seit 9 Tagen, Zahlungsziel 14 Tage – noch im Rahmen. Bei der Abholung kurz ansprechen, sonst erinnere ich am 05.10.'}),
+ review:()=>({act:'review',tone:'ok',title:'5 von 5 Sternen von Frau Krause',body:'Gestern 19:40 auf Google. Die Dankes-Antwort liegt bereit.',chan:'Google-Antwort',draft:'Vielen Dank, Frau Krause! Schön, dass Sie zufrieden sind – wir freuen uns auf Ihren nächsten Besuch. Samed & Team, mehanicar',pri:'Veröffentlichen',done:'Dankes-Antwort auf Google veröffentlicht'}),
+ becker:()=>({act:'becker',tone:'warn',title:'Kostenvoranschlag nicht freigegeben',body:'Der KV über 214,20 € liegt seit Freitag bei Herrn Becker. Ohne OK bis Mittag wird die Abholung um 17:00 knapp.',chan:'WhatsApp-Entwurf',draft:'Hallo Herr Becker, kurze Erinnerung zum Kostenvoranschlag für Ihren Astra (214,20 €). Sollen wir die Inspektion heute wie geplant machen? Ein kurzes OK per WhatsApp genügt.',pri:'Erinnerung senden',done:'Herr Becker ist erinnert – ich melde mich, sobald das OK da ist'}),
+ beckerOk:()=>({act:'beckerOk',ns:1,tone:'info',area:'Werkstatt · heute',title:'OK schon bekommen?',body:'Falls Herr Becker angerufen hat: Freigabe hier erfassen, dann plane ich die Inspektion fest auf Bühne 3 um 12:30 ein.',pri:'Freigabe erfassen',done:'Freigabe erfasst, Inspektion 12:30 auf Bühne 3'}),
+ pickup:()=>({act:'pickup',tone:'warn',area:'Kunden · heute',title:'Steht seit Freitag abholbereit',body:'Der A4 blockiert einen Stellplatz. Soll ich das Autohaus an die Abholung erinnern?',chan:'E-Mail-Entwurf',draft:'Guten Morgen, der Audi A4 Avant (OF-PG 304) ist fertig und kann bei uns abgeholt werden. Die Rechnung über 620,00 € liegt bei. Viele Grüße, Samed – mehanicar',pri:'Erinnerung senden',done:'Autohaus Schmidt an die Abholung erinnert'}),
+ pay:()=>({act:'pay',ns:1,tone:'info',area:'Geld · bei Abholung',title:'Rechnung 620,00 € offen',body:'Wird bei der Abholung bezahlt, erfasse es hier – die offenen Posten sinken dann auf 1.634 €.',pri:'Zahlung erfassen',done:'620,00 € erfasst – offene Posten jetzt 1.634 €'}),
+ mahnung:()=>({act:'mahnung',tone:'brick',title:'RE-2026-0118 · 21 Tage überfällig',body:'Autohaus Schmidt schuldet noch 1.245,00 €, auf die 1. Mahnung kam nichts. Die 2. Mahnung ist vorbereitet – sachlich, mit neuer Frist von 7 Tagen.',pri:'2. Mahnung senden',done:'2. Mahnung über 1.245,00 € an Autohaus Schmidt gesendet'}),
+ combo:()=>({tone:'info',area:'Geld',title:'Gleicher Kunde wie OF-PG 304',body:D('pay')?'Die 620,00 € für den Audi sind bezahlt – offen ist nur noch diese Rechnung.':'Beim Audi sind noch 620,00 € offen. Holt das Autohaus ab, beides ansprechen – zusammen 1.865,00 €.'}),
+ tobias:()=>({act:'tobias',tone:'warn',title:'Bremsen schleifen – Sicherheit',body:'Tobias Wolf, VW Golf. Klingt nach verschlissenen Belägen oder Scheiben vorne. Ich würde Do 01.10. um 09:00 auf Bühne 3 anbieten, Richtpreis 180–320 €.',chan:'WhatsApp-Entwurf',draft:'Hallo Herr Wolf, danke für Ihre Nachricht! Das klingt nach verschlissenen Bremsbelägen vorne – bitte nicht zu lange warten. Passt Ihnen Donnerstag, 1.10., um 9:00 Uhr? Richtpreis je nach Befund 180–320 €. Viele Grüße, Samed – mehanicar',pri:'Senden & Do 09:00 reservieren',done:'Antwort gesendet, Do 01.10. 09:00 auf Bühne 3 reserviert'}),
+ slot:()=>D('tobias')?{tone:'ok',area:'Woche',title:'Do 09:00 ist reserviert',body:'Bühne 3 am Donnerstag um 09:00 ist jetzt für Tobias Wolf geblockt.'}:{tone:'info',area:'Woche',title:'Einziger freier Vormittag',body:'Do 01.10. um 09:00 auf Bühne 3 ist diese Woche der einzige freie Slot – Mittwoch ist zu 94 % voll.'},
+ lisa:()=>({act:'lisa',tone:'info',title:'Preisfrage Ölwechsel',body:'Fiat 500: Festpreis 89 € inkl. Öl und Filter. Die Antwort ist fertig.',chan:'Instagram-Entwurf',draft:'Hallo Lisa, der Ölwechsel für deinen Fiat 500 kostet bei uns 89 € inkl. Markenöl und Filter. Diese Woche geht z. B. Dienstag oder Donnerstag – sag einfach Bescheid!',pri:'Senden',done:'Antwort an Lisa Hoffmann gesendet'}),
+ nina:()=>({act:'nina',tone:'warn',title:'Verpasster Anruf um 07:15',body:'06181 44 27 90 – das ist Nina Braun (Seat Leon, HU-BB 410). Ihre letzte Wartung ist 13 Monate her: beim Rückruf gleich einen Termin anbieten.',tel:'+496181442790',pri:'Erledigt',done:'Rückruf bei Nina Braun erledigt'}),
+ koch:()=>({act:'koch',tone:'warn',title:'HU überfällig: F-KL 882',body:'Stefan Koch, VW Golf 7. Die HU war im September fällig. Das Anschreiben ist fertig.',chan:'E-Mail-Entwurf',draft:'Hallo Herr Koch, die HU für Ihren Golf (F-KL 882) war im September fällig. Wir machen HU und AU direkt bei uns – sollen wir einen Termin für nächste Woche eintragen? Viele Grüße, Samed – mehanicar',pri:'Senden',done:'Stefan Koch wegen der HU angeschrieben'}),
+ wed:()=>({act:'wed',tone:'warn',area:'Woche',title:'Mittwoch wird eng',body:'Luca hat Mi–Fr Urlaub, Mittwoch ist schon zu 94 % ausgelastet. Ich würde für Mittwoch keine neuen Termine mehr annehmen.',pri:'Mittwoch sperren',done:'Mittwoch für neue Termine gesperrt'}),
+ tue:()=>({tone:'ok',area:'Woche',title:'Dienstag ist vorbereitet',body:'Die 3 Kunden für morgen haben um 07:00 ihre Terminerinnerung per WhatsApp bekommen.'}),
+ fri:()=>({tone:'info',area:'Woche',title:'Freitag zu zweit',body:'Luca ist auch am Freitag im Urlaub – plane mit Samed und Kevin.'}),
+ sep:()=>({tone:'ok',area:'Geld',title:'September: 8,5 % über August',body:`18.420 € Umsatz, Rohgewinn 9.310 €. Effizienz 112 % – ihr verkauft mehr AW, als ihr stempelt. Offen sind noch ${eur(op(),0)}.`}),
+ order:()=>({act:'order',tone:'warn',title:'Ölfilter und DOT 4 unter Minimum',body:'Ölfilter MANN W 712/95: 1 von 4. Bremsflüssigkeit DOT 4: 2 von 5. Vorschlag Stahlgruber: 6 × Ölfilter + 6 × DOT 4 = 86,40 € netto, Lieferung morgen früh.',pri:'Bestellung freigeben',done:'86,40 € bei Stahlgruber bestellt – Lieferung morgen früh'}),
+ kit:()=>({tone:'info',area:'Lager',title:'Getriebeöl-Kit unterwegs',body:'Für HU-TR 51 – Stahlgruber liefert heute um 10:00.'})
+};
+const OVH=['moveTR','tobias','wed'];
+const CTX={
+ o53:{plate:'HU-SM 247',t:'BMW 320d',s:'Ali Yilmaz',short:'HU-SM 247',h:['o53plan','yilmaz']},
+ o54:{plate:'HU-TR 51',t:'Mercedes C 220 d',s:'Maria Krause',short:'HU-TR 51',h:['moveTR','krause','krauseRe','review']},
+ o55:{plate:'HU-WZ 19',t:'Opel Astra K',s:'Jonas Becker',short:'HU-WZ 19',h:['becker','beckerOk']},
+ o48:{plate:'OF-PG 304',t:'Audi A4 Avant',s:'Autohaus Schmidt GmbH',short:'OF-PG 304',h:['pickup','pay','mahnung']},
+ 'r-wolf':{k:'Anfrage · WhatsApp 06:52',t:'Tobias Wolf',s:'VW Golf',short:'Tobias Wolf',h:['tobias','slot']},
+ 'r-lisa':{k:'Anfrage · Instagram, gestern 21:14',t:'Lisa Hoffmann',s:'Fiat 500',short:'Lisa Hoffmann',h:['lisa']},
+ 'r-nina':{k:'Verpasster Anruf · 07:15',t:'Nina Braun',s:'Seat Leon · HU-BB 410',short:'Nina Braun',h:['nina']},
+ 'r-review':{k:'Google-Bewertung · gestern 19:40',t:'Maria Krause',s:'5 von 5 Sternen',short:'der Bewertung',h:['review']},
+ 'm-koch':{plate:'F-KL 882',t:'VW Golf 7',s:'Stefan Koch · HU überfällig',short:'F-KL 882',h:['koch']},
+ 'm-nina':{plate:'HU-BB 410',t:'Seat Leon',s:'Nina Braun · Wartung fällig',short:'HU-BB 410',h:['nina']},
+ 'w-tue':{k:'Woche',t:'Dienstag, 29.09.',s:'3 Termine',short:'Dienstag',h:['tue']},
+ 'w-wed':{k:'Woche',t:'Mittwoch, 30.09.',s:'2 Termine · 94 %',short:'Mittwoch',h:['wed']},
+ 'w-thu':{k:'Woche',t:'Donnerstag, 01.10.',s:'Bühne 3 ab 09:00',short:'Donnerstag',h:['slot','tobias']},
+ 'w-fri':{k:'Woche',t:'Freitag, 02.10.',s:'Luca im Urlaub',short:'Freitag',h:['fri']},
+ 'g-sep':{k:'Geld',t:'September bisher',s:'Stand 28.09.',short:'September',h:['sep']},
+ 'g-0118':{k:'Rechnung RE-2026-0118',t:'Autohaus Schmidt GmbH',s:'1.245,00 € · 21 Tage überfällig',short:'RE-2026-0118',h:['mahnung','combo']},
+ 'g-0121':{k:'Rechnung RE-2026-0121',t:'Maria Krause',s:'389,00 € · Tag 9 von 14',short:'RE-2026-0121',h:['krauseRe']},
+ 'l-order':{k:'Lager · Stahlgruber',t:'Bestellvorschlag',s:'86,40 € netto',short:'der Bestellung',h:['order','kit']}
+};
+CTX['l-oil']=CTX['l-dot']=CTX['l-kit']=CTX['l-order'];
+const ORD=[
+ {id:'o53',plate:'HU-SM 247',car:'BMW 320d',cust:'Ali Yilmaz'},
+ {id:'o54',plate:'HU-TR 51',car:'Mercedes C 220 d',cust:'Maria Krause'},
+ {id:'o55',plate:'HU-WZ 19',car:'Opel Astra K',cust:'Jonas Becker'},
+ {id:'o48',plate:'OF-PG 304',car:'Audi A4 Avant',cust:'Autohaus Schmidt GmbH'}
+];
+function ordState(id){
+ if(id==='o53')return{cls:'s-run',chip:['c-steel','In Arbeit'],pct:45,meta:'Bühne 2 · Kevin · bis 11:30',
+  jn:D('yilmaz')?['ok','Fertig 11:30 – Nachricht an Herrn Yilmaz geplant']:['ok','Läuft nach Plan – fertig gegen 11:30'],
+  dl:[['Auftrag','AU-2026-0053'],['Arbeiten','Bremsen VA + HA'],['Arbeitswerte','4,6 AW · 57,50 €'],['Brutto','932,96 €'],['Fahrzeug','2019 · 87.450 km'],['Teile','da',1],['Freigabe','per WhatsApp',1],['Kunde','Stammkunde']]};
+ if(id==='o54'){const c=!D('moveTR');return{cls:'s-warn',chip:['c-amber','Warten auf Teile'],pct:0,
+  meta:c?'Bühne 1 · Samed · <em>Start 09:00</em>':'Bühne 1 · Samed · Start 10:30',
+  jn:c?['warn','Teile erst 10:00 – Start 10:30?']:['ok','Start 10:30 – die Teile kommen 10:00'],
+  dl:[['Auftrag','AU-2026-0054'],['Arbeiten','Getriebeölspülung'],['Arbeitswerte','2,5 AW · 31,25 €'],['Brutto','412,34 €'],['Teile','Getriebeöl-Kit · 10:00'],['Start',c?'09:00 · Konflikt':'10:30 · Bühne 1',c?2:1],['Abholung','16:00'],['Mechaniker','Samed']]};}
+ if(id==='o55'){const ok=D('beckerOk'),r=D('becker');return{cls:ok?'s-run':'s-open',chip:ok?['c-steel','Freigegeben']:['c-plain','Offen · KV'],pct:0,
+  meta:'Bühne 3 · Luca · Abholung 17:00',
+  jn:ok?['ok','Freigegeben – Inspektion 12:30 auf Bühne 3']:r?['info',`Erinnert um ${S.done.becker} – ich warte auf das OK`]:['warn','KV seit Freitag offen – Herrn Becker erinnern?'],
+  dl:[['Auftrag','AU-2026-0055'],['Arbeiten','Inspektion + Wischerblätter'],['Arbeitswerte','1,8 AW · 22,50 €'],['KV','214,20 €'],['Freigabe',ok?'erfasst':r?'erinnert, warte auf OK':'offen seit Freitag',ok?1:2],['Geplant','12:30 · Bühne 3'],['Abholung','17:00'],['Mechaniker','Luca']]};}
+ const p=D('pay'),pu=D('pickup');
+ return{cls:'s-ready',chip:['c-green','Abholbereit'],pct:100,meta:'Hof · fertig seit Freitag',
+  jn:p?['ok','Bezahlt – wartet nur noch auf Abholung']:pu?['info','Abholung erinnert – 620 € noch offen']:['warn','Abholbereit seit Freitag – 620 € offen'],
+  dl:[['Auftrag','AU-2026-0048'],['Kunde','Autohaus Schmidt GmbH'],['Fertig seit','Freitag'],['Rechnung',p?'620,00 € bezahlt':'620,00 € offen',p?1:2],['Abholung',pu?'erinnert':'nicht vereinbart'],['Mechaniker','Kevin']]};
+}
+
+/* ---------- Render ---------- */
+let prevK={};
+function setK(k,val,sub){
+ const el=$(`[data-kpi="${k}"]`),kv=el.querySelector('.kv');
+ if(prevK[k]!==val){if(prevK[k]!==undefined)flash(el);kv.innerHTML=val;prevK[k]=val;}
+ const ks=el.querySelector('.ks');ks.className='ks '+sub[0];ks.textContent=sub[1];
+}
+function flash(el){el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),450);}
+function renderTop(){
+ const dec=DEC.filter(a=>!D(a)).length,now=DEC.filter(a=>!D(a)&&ACT[a].u==='jetzt').length;
+ setK('fz','4',D('moveTR')?['g','im Plan']:['a','1 Konflikt']);
+ setK('dec',String(dec),now?['a',`${now} jetzt`]:['g','nichts akut']);
+ setK('ums','18.420<small>€</small>',['g','+8,5 %']);
+ setK('op',grp(op())+'<small>€</small>',D('mahnung')?['m','Mahnung raus']:['a','1 überfällig']);
+ $('#now').textContent='Mo 28.09. · '+clock();
+}
+function place(sel,a,b,cls,txt){const el=$(sel);el.className='blk '+cls;el.style.left=((a-7.5)*10)+'%';el.style.width=((b-a)*10)+'%';if(!el.firstChild)el.innerHTML=`<span>${txt}</span>`;}
+function renderPlan(){
+ const c=!D('moveTR'),ok=D('beckerOk');
+ place('#b-o54',c?9:10.5,c?11.5:13,c?'warn':'plan','HU-TR 51');
+ place('#b-o55',12.5,15,ok?'plan':'tent','HU-WZ 19');
+ const ps=$('#planSum');ps.textContent=c?'1 Konflikt auf Bühne 1':'alle im Plan';ps.classList.toggle('w',c);
+ $('#planTxt').textContent=`Bühne 1: HU-TR 51 ${c?'09:00 bis 11:30, Konflikt – Teile kommen 10:00':'10:30 bis 13:00'}. Bühne 2: HU-SM 247 bis 11:30, 45 %. Bühne 3: HU-WZ 19 12:30 bis 15:00${ok?'':', noch ohne Freigabe'}.`;
+}
+function chip(c,t){return `<span class="chip ${c}">${t}</span>`}
+function renderOrders(){
+ $('#chips-orders').innerHTML=(D('moveTR')?'':chip('c-amber','1 Konflikt'))+chip('c-green','1 abholbereit');
+ $('#olist').innerHTML=ORD.map(o=>{
+  const st=ordState(o.id),open=S.open===o.id,sel=S.sel===o.id;
+  return `<article class="ord ${st.cls}${open?' open':''}${sel?' sel':''}" data-id="${o.id}">
+<button class="oh" data-k="oh-${o.id}" aria-expanded="${open}" aria-controls="od-${o.id}"><span class="plate">${o.plate}</span><span class="ot"><b>${o.car}</b><span>${o.cust}</span></span><span class="op"><span class="bar" aria-hidden="true"><i style="width:${st.pct}%"></i></span>${st.pct?`<span class="pct">${st.pct}${NB}%</span>`:''}<span class="om">${st.meta}</span></span>${chip(st.chip[0],st.chip[1])}${ic('chev','chev')}</button>
+<button class="jn t-${st.jn[0]}" data-jn="${o.id}" data-k="jn-${o.id}"><span class="jmono" aria-hidden="true">J</span><span class="vh">Jarvis:</span><span>${st.jn[1]}</span>${ic('chev','jc')}</button>
+<div class="od" id="od-${o.id}"><div class="od-in"><dl class="dl">${st.dl.map(d=>`<div><dt>${d[0]}</dt><dd${d[2]===1?' class="g"':d[2]===2?' class="w"':''}>${d[1]}</dd></div>`).join('')}</dl></div></div></article>`;}).join('');
+}
+function row(ctx,lead,main,side,note,cls='',extra=''){
+ const n=note?`<span class="rj t-${note[0]}"><span class="jmono s" aria-hidden="true">J</span><span class="vh">Jarvis:</span>${note[1]}</span>`:'';
+ return `<button class="row${S.sel===ctx?' sel':''}${cls}" data-ctx="${ctx}" data-k="r-${ctx}">${lead}<span class="rm">${main}</span><span class="rs">${side}</span>${extra||n?`<span class="rx">${extra}${n}</span>`:''}</button>`;
+}
+const lead=i=>`<span class="ri">${ic(i)}</span>`;
+function sec(key,icon,title,count,chips,body){
+ const o=S.sec[key];
+ return `<section class="sec${o?' open':''}" id="sec-${key}"><h2 class="sec-h"><button class="sb" data-sec="${key}" data-k="sb-${key}" aria-expanded="${o}" aria-controls="sb-${key}">${ic(icon,'si')}<span class="st">${title}</span><span class="sn">${count}</span><span class="chips">${chips}</span>${ic('chev','chev')}</button></h2><div class="sbody" id="sb-${key}"><div class="sbody-in">${body}</div></div></section>`;
+}
+function renderSecs(){
+ const inOpen=['tobias','lisa','nina','review'].filter(a=>!D(a)).length;
+ let h='';
+ h+=sec('inbox','inbox','Eingang',4,chip('c-plain',`${inOpen} offen`)+(D('tobias')?'':chip('c-amber','1 dringend')),
+  row('r-wolf',lead('chat'),`<span class="r1"><b>Tobias Wolf</b><span class="rt">WhatsApp · 06:52</span></span><span class="r2">„Hallo, mein Golf macht beim Bremsen so ein Schleifgeräusch. Habt ihr diese Woche noch Zeit?“</span>`,D('tobias')?chip('c-green','Beantwortet'):chip('c-amber','Hoch'),D('tobias')?null:['warn','Bremsen vorne – Do 09:00 anbieten'],D('tobias')?' dim':'')+
+  row('r-lisa',lead('cam'),`<span class="r1"><b>Lisa Hoffmann</b><span class="rt">Instagram · gestern 21:14</span></span><span class="r2">„Was kostet bei euch ein Ölwechsel für einen Fiat 500?“</span>`,D('lisa')?chip('c-green','Beantwortet'):chip('c-plain','Entwurf'),D('lisa')?null:['info','Festpreis 89 € – Antwort ist fertig'],D('lisa')?' dim':'')+
+  row('r-nina',lead('phone'),`<span class="r1"><b>Nina Braun</b><span class="rt">Verpasster Anruf · 07:15</span></span><span class="r2"><span class="nw">06181 44 27 90</span> · Seat Leon, <span class="nw">HU-BB 410</span></span>`,D('nina')?chip('c-green','Erledigt'):chip('c-amber','Rückruf'),D('nina')?null:['warn','Wartung fällig – zurückrufen'],D('nina')?' dim':'')+
+  row('r-review',lead('star'),`<span class="r1"><b>Maria Krause</b><span class="rt">Google · gestern 19:40</span></span><span class="r2">Bewertung: 5 von 5 Sternen</span>`,D('review')?chip('c-green','Veröffentlicht'):chip('c-plain','Entwurf'),D('review')?null:['ok','Dankes-Antwort liegt bereit'],D('review')?' dim':''));
+ h+=sec('remind','bell','Erinnerungen',2,(D('koch')?'':chip('c-brick','HU überfällig'))+(D('nina')?'':chip('c-plain','1 Wartung')),
+  row('m-koch',lead('bell'),`<span class="r1"><span class="plate">F-KL 882</span><b>VW Golf 7</b></span><span class="r2">Stefan Koch · HU war 09/2026 fällig</span>`,D('koch')?chip('c-green','Angeschrieben'):chip('c-brick','überfällig'),D('koch')?null:['warn','Anschreiben ist fertig'],D('koch')?' dim':'')+
+  row('m-nina',lead('wrench'),`<span class="r1"><span class="plate">HU-BB 410</span><b>Seat Leon</b></span><span class="r2">Nina Braun · letzte Wartung vor 13 Monaten</span>`,D('nina')?chip('c-green','Erledigt'):chip('c-amber','fällig'),D('nina')?null:['info','Hat heute angerufen – Wartung anbieten'],D('nina')?' dim':''));
+ const tav=(off)=>`<span class="tav" aria-label="${off?'Luca im Urlaub':'Team komplett'}"><i>SM</i><i>KV</i><i${off?' class="off"':''}>LU</i></span>`;
+ const dt=(a,b)=>`<span class="dt"><b>${a}</b><span>${b}</span></span>`;
+ h+=sec('week','cal','Woche',4,D('wed')?chip('c-plain','Mi gesperrt'):chip('c-amber','Mi Engpass'),
+  row('w-tue',dt('Di','29.09.'),`<span class="r1"><b>3 Termine</b></span><span class="r2">Erinnerungen um 07:00 verschickt</span>`,tav(0))+
+  row('w-wed',dt('Mi','30.09.'),`<span class="r1"><b>2 Termine</b><span class="rt">Luca im Urlaub</span></span>`,(D('wed')?chip('c-plain','gesperrt'):chip('c-amber','Engpass'))+tav(1),D('wed')?null:['warn','Keine neuen Termine mehr annehmen'],'',`<span class="cap"><span class="bar"><i style="width:94%"></i></span>94${NB}% ausgelastet</span>`)+
+  row('w-thu',dt('Do','01.10.'),`<span class="r1"><b>${D('tobias')?'09:00 · Tobias Wolf':'09:00 frei'}</b><span class="rt">Bühne 3</span></span><span class="r2">${D('tobias')?'Bremsen VA, reserviert':'Einziger freier Vormittag der Woche'}</span>`,(D('tobias')?chip('c-steel','reserviert'):chip('c-green','1 Slot frei'))+tav(1))+
+  row('w-fri',dt('Fr','02.10.'),`<span class="r1"><b>Zu zweit</b></span><span class="r2">Luca im Urlaub</span>`,tav(1)));
+ h+=sec('money','euro','Geld',3,(D('mahnung')?chip('c-steel','Mahnung raus'):chip('c-brick','1 überfällig'))+chip('c-plain n',eur(op(),0)+' offen'),
+  `<div class="msum"><div class="mh"><div><small>Umsatz September bisher</small><span class="big">18.420${NB}€</span></div><span class="delta">+8,5${NB}% ggü. Aug.</span></div>
+<div class="cmp" aria-hidden="true"><div><span>Aug</span><i style="width:92.2%"></i><em>16.980${NB}€</em></div><div><span>Sep</span><i class="cur" style="width:100%"></i><em>18.420${NB}€</em></div></div>
+<dl class="mgrid"><div><dt>Rohgewinn</dt><dd>9.310${NB}€</dd></div><div><dt>Offene Posten</dt><dd>${eur(op(),0)}</dd></div><div><dt>Effizienz (AW / Stempelzeit)</dt><dd>112${NB}%</dd></div><div><dt>Ø Auftragswert</dt><dd>486${NB}€</dd></div></dl></div>`+
+  row('g-0118',lead('euro'),`<span class="r1"><b>Autohaus Schmidt GmbH</b></span><span class="r2 mono">RE-2026-0118</span>`,`<span class="amt">1.245,00${NB}€</span>`+(D('mahnung')?chip('c-steel','2. Mahnung raus'):chip('c-brick','21 Tage über')),D('mahnung')?null:['brick','2. Mahnung ist vorbereitet'])+
+  row('g-0121',lead('euro'),`<span class="r1"><b>Maria Krause</b></span><span class="r2 mono">RE-2026-0121</span>`,`<span class="amt">389,00${NB}€</span>`+chip('c-plain','im Rahmen'),null,'',`<span class="cap" style="--c:var(--green)"><span class="bar"><i style="width:64%"></i></span>Zahlungsziel: Tag 9 von 14</span>`)+
+  row('o48',lead('euro'),`<span class="r1"><b>Autohaus Schmidt GmbH</b></span><span class="r2"><span class="mono">AU-2026-0048</span> · Audi A4</span>`,`<span class="amt">620,00${NB}€</span>`+(D('pay')?chip('c-green','bezahlt'):chip('c-plain','offen'))));
+ const oc=D('order');
+ h+=sec('stock','box','Lager',4,oc?chip('c-green','bestellt'):chip('c-amber','2 unter Minimum'),
+  row('l-oil',lead('box'),`<span class="r1"><b>Ölfilter MANN W 712/95</b></span>`,oc?chip('c-steel','bestellt'):chip('c-amber','nachbestellen'),null,'',`<span class="cap"><span class="bar"><i style="width:25%"></i></span>Bestand 1 · Minimum 4</span>`)+
+  row('l-dot',lead('box'),`<span class="r1"><b>Bremsflüssigkeit DOT 4 (1 l)</b></span>`,oc?chip('c-steel','bestellt'):chip('c-amber','nachbestellen'),null,'',`<span class="cap"><span class="bar"><i style="width:40%"></i></span>Bestand 2 · Minimum 5</span>`)+
+  row('l-order',lead('box'),`<span class="r1"><b>Bestellvorschlag Stahlgruber</b></span><span class="r2">6 × Ölfilter, 6 × DOT 4 · Lieferung morgen früh</span>`,`<span class="amt">86,40${NB}€</span>`+(oc?chip('c-green','freigegeben'):chip('c-amber','Freigabe')),oc?null:['warn','Freigeben, dann kommt es morgen früh'])+
+  row('l-kit',lead('box'),`<span class="r1"><b>Getriebeöl-Kit</b><span class="rt">für HU-TR 51</span></span><span class="r2">Stahlgruber · kommt heute 10:00</span>`,chip('c-steel','unterwegs')));
+ $('#secs').innerHTML=h;
+}
+function openHints(ctx){const c=CTX[ctx];return (c?c.h:OVH).map(k=>HT[k]()).filter(h=>!(h.act&&(D(h.act)||S.snz[h.act])));}
+function hintHTML(h,isLead){
+ const a=h.act,area=h.area||(a&&ACT[a].dec?`${ACT[a].area} · ${ACT[a].u}`:'');
+ if(a&&D(a))return `<div class="hint fin">${ic('check','ok')}<p><b>${S.done[a]}</b>${h.done}</p><button class="btn txt" data-undo="${a}" data-k="u-${a}">${ic('undo')}Rückgängig</button></div>`;
+ if(a&&S.snz[a])return `<div class="hint fin z">${ic('clock')}<p><b>bis 12:00</b>zurückgestellt: ${h.title}</p><button class="btn txt" data-unsnz="${a}" data-k="z-${a}">Zurückholen</button></div>`;
+ const txt=a&&S.drafts[a]||h.draft,pc=isLead?'pri':'sec';
+ let acts='';
+ if(a){acts=`<div class="acts">`+(h.tel?`<a class="btn ${pc}" href="tel:${h.tel}">${ic('phone')}Zurückrufen</a><button class="btn sec" data-act="${a}" data-k="p-${a}">${h.pri}</button>`:`<button class="btn ${pc}" data-act="${a}" data-k="p-${a}">${h.pri}</button>`+(h.ns?'':`<button class="btn txt" data-snz="${a}" data-k="s-${a}">Später</button>`))+`</div>`;}
+ return `<article class="hint t-${h.tone}"><p class="ha">${isLead?'<span class="next">Als Nächstes</span>':''}<span>${area}</span></p><h3>${h.title}</h3><p class="voice">${h.body}</p>${txt?`<div class="draft"><div class="drh"><span>${h.chan}</span><button class="lnk" data-edit="${a}" data-k="e-${a}">Bearbeiten</button></div><p id="dr-${a}">${esc(txt)}</p></div>`:''}${acts}</article>`;
+}
+function intro(n){return n?`Guten Morgen, Samed. ${NUM[n]} ${n===1?'Sache braucht':'Sachen brauchen'} dich jetzt, der Rest läuft.`:'Nichts Dringendes mehr – alles Weitere hat Zeit bis heute Nachmittag.';}
+function renderPanel(anim){
+ const c=CTX[S.sel];
+ if(!c){const n=DEC.filter(a=>!D(a)&&ACT[a].u==='jetzt').length;
+  $('#jvHead').innerHTML=`<div class="ctx"><span class="ctx-k">TAGESÜBERBLICK · MO 28.09.</span></div><p class="voice intro">${intro(n)}</p>`;}
+ else $('#jvHead').innerHTML=`<div class="ctx"><button class="ctx-back" data-clear="1" data-k="ctxback">${ic('back')}Tagesüberblick</button>${c.plate?`<span class="plate sm">${c.plate}</span>`:`<span class="ctx-k">${c.k}</span>`}</div><p class="ctx-t"><b>${c.t}</b> · ${c.s}</p>`;
+ const hs=(c?c.h:OVH).map(k=>HT[k]());
+ let leadDone=false,out='';
+ hs.forEach(h=>{const isL=!leadDone&&h.act&&!D(h.act)&&!S.snz[h.act];if(isL)leadDone=true;out+=hintHTML(h,isL);});
+ if(!c){
+  const open=DEC.filter(a=>!D(a)).length;
+  out+=`<h3 class="qh"><span>Warteschlange</span><span>${open} von 9 offen</span></h3><ol class="ql">`+DEC.map(a=>{const x=ACT[a],d=D(a),u=x.u==='jetzt'?'now':x.u==='heute'?'day':'wk';
+   return `<li><button class="qi${d?' done':''}" data-go="${x.ctx}" data-k="q-${a}"><span class="u ${d?'u-ok':'u-'+u}">${d?ic('check'):x.u}</span><span class="lbl"><span>${x.q}</span><small>${x.area}${d?' · erledigt '+S.done[a]:''}</small></span>${ic('chev','qc')}</button></li>`}).join('')+`</ol>`;
+  const items=S.log.map(l=>`<li class="me"><time>${l.t}</time><span><b>Du:</b> ${l.txt}</span></li>`).join('')+LOG.map(l=>`<li><time>${l[0]}</time><span>${l[1]}</span></li>`).join('');
+  out+=`<h3 class="qh"><button data-log="1" data-k="logt" aria-expanded="${S.logOpen}" aria-controls="logl">${ic('chev')}Protokoll · über Nacht erledigt</button><span>${LOG.length+S.log.length}</span></h3>${S.logOpen?`<ol class="log" id="logl">${items}</ol>`:''}`;
+ }
+ if(S.qa.length){out+=`<h3 class="qh"><span>Gefragt</span></h3>`+S.qa.map(x=>`<div class="qa"><p class="qq">${esc(x.q)}</p><div class="qaa"><span class="jmono" aria-hidden="true">J</span>${x.a?`<p class="voice">${x.a}</p>`:'<p class="typing">Jarvis schreibt …</p>'}</div></div>`).join('');}
+ const sc=$('#jvScroll');sc.innerHTML=out;
+ if(anim){sc.scrollTop=0;sc.classList.remove('anim');void sc.offsetWidth;sc.classList.add('anim');}
+}
+function renderPeek(){
+ const c=CTX[S.sel],n=openHints(S.sel).length;
+ const t=c?(n?`${pl(n,'Hinweis','Hinweise')} zu ${c.short}`:`zu ${c.short} ist alles erledigt`):(n?`${pl(n,'Hinweis','Hinweise')} zu diesem Tag`:'Tag im Griff, nichts offen');
+ const el=$('#peekTxt');
+ if(el.textContent!==t){el.textContent=t;if(!S.sheet&&!desk()){const g=$('#grip');g.classList.add('bump');setTimeout(()=>g.classList.remove('bump'),500);}}
+}
+let pendingFocus=null;
+function render(anim){
+ const k=pendingFocus||(document.activeElement&&document.activeElement.dataset&&document.activeElement.dataset.k);
+ renderTop();renderPlan();renderOrders();renderSecs();renderPanel(anim);renderPeek();
+ if(k){const el=document.querySelector(`[data-k="${k}"]`);if(el&&el!==document.activeElement)el.focus({preventScroll:true});}
+ pendingFocus=null;
+}
+
+/* ---------- Zustand ändern ---------- */
+function markSel(){
+ $$('.ord').forEach(a=>{const on=a.dataset.id===S.open;a.classList.toggle('open',on);a.classList.toggle('sel',a.dataset.id===S.sel);a.querySelector('.oh').setAttribute('aria-expanded',on);});
+ $$('.row').forEach(r=>r.classList.toggle('sel',r.dataset.ctx===S.sel));
+}
+function setCtx(ctx,{open=null,sheet=false}={}){
+ const changed=S.sel!==ctx;
+ S.sel=ctx;S.open=open;markSel();renderPanel(changed);renderPeek();
+ if(sheet&&!desk())setSheet(true);
+ if(desk()&&changed){const j=$('#jv');j.classList.add('ping');setTimeout(()=>j.classList.remove('ping'),420);}
+}
+function toggleOrder(id){if(S.open===id)setCtx(null);else setCtx(id,{open:id});}
+function toggleSec(k){
+ S.sec[k]=!S.sec[k];const s=$('#sec-'+k);s.classList.toggle('open',S.sec[k]);s.querySelector('.sb').setAttribute('aria-expanded',S.sec[k]);
+}
+function openSec(k){if(!S.sec[k])toggleSec(k);const s=$('#sec-'+k);setTimeout(()=>s.scrollIntoView({behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'}),30);}
+function saveEditing(){$$('.draft p[contenteditable=true]').forEach(p=>{S.drafts[p.id.slice(3)]=p.textContent;});}
+function doAct(a){saveEditing();S.min++;S.done[a]=clock();delete S.snz[a];S.log.unshift({a,t:clock(),txt:ACT[a].log});pendingFocus='u-'+a;render(false);}
+function undo(a){delete S.done[a];S.log=S.log.filter(l=>l.a!==a);pendingFocus='p-'+a;render(false);}
+function snooze(a){S.snz[a]=1;pendingFocus='z-'+a;render(false);}
+function unsnooze(a){delete S.snz[a];pendingFocus='p-'+a;render(false);}
+function editDraft(b){
+ const a=b.dataset.edit,p=$('#dr-'+a);
+ if(p.getAttribute('contenteditable')==='true'){p.removeAttribute('contenteditable');S.drafts[a]=p.textContent;b.textContent='Bearbeiten';}
+ else{p.setAttribute('contenteditable','true');b.textContent='Fertig';p.focus();const r=document.createRange();r.selectNodeContents(p);r.collapse(false);const s=getSelection();s.removeAllRanges();s.addRange(r);}
+}
+function kpi(k){
+ if(k==='dec'){setCtx(null,{sheet:true});return;}
+ if(k==='fz'){openSec('orders');return;}
+ openSec('money');
+}
+/* ---------- Jarvis fragen ---------- */
+const QS={heute:'Was muss vor 10 Uhr raus?',sep:'Wie steht der September?',wed:'Wer hat Mittwoch Zeit?'};
+function answer(k){
+ if(k==='heute'){const l=[['tobias','die Antwort an Tobias Wolf – Bremsen, das ist Sicherheit'],['moveTR','HU-TR 51 auf 10:30 schieben, die Teile kommen erst 10:00'],['becker','Herrn Becker an den KV erinnern, sonst wird 17:00 knapp']].filter(x=>!D(x[0]));
+  if(!l.length){const nx=DEC.find(a=>!D(a));return 'Vor 10 Uhr ist alles raus. '+(nx?`Als Nächstes: ${ACT[nx].q}.`:'Die Warteschlange ist leer.');}
+  return `${l.length===1?'Nur noch eins':NUM[l.length]+' Dinge'}: ${l.map((x,i)=>`${i+1}. ${x[1]}`).join('; ')}. Der Rest hat Zeit bis nach der Mittagspause.`;}
+ if(k==='sep')return `September bisher: 18.420 € Umsatz, 8,5 % über August. Rohgewinn 9.310 €, Effizienz 112 %, Ø Auftragswert 486 €. Offen sind ${eur(op(),0)}${D('mahnung')?' – die 2. Mahnung an Autohaus Schmidt ist raus.':' – größter Posten: Autohaus Schmidt mit 1.245,00 €, 21 Tage überfällig.'}`;
+ if(k==='wed')return `Mittwoch wird eng: Luca hat Mi–Fr Urlaub, du und Kevin seid da, 94 % ausgelastet. ${D('wed')?'Neue Termine für Mittwoch sind schon gesperrt.':'Ich würde Mittwoch nichts mehr annehmen.'} ${D('tobias')?'Donnerstag 09:00 ist inzwischen für Tobias Wolf reserviert.':'Donnerstag um 09:00 ist Bühne 3 frei.'}`;
+ return 'Dazu habe ich in diesem Entwurf noch keine Daten. Nimm eine der vorbereiteten Fragen – oder tipp auf einen Auftrag, dann sage ich dir, was dort ansteht.';
+}
+function match(q){q=q.toLowerCase();if(/10|heute|raus|dringend|zuerst|wichtig/.test(q))return 'heute';if(/sept|umsatz|geld|monat|gewinn|posten|zahl/.test(q))return 'sep';if(/mittwoch|woche|zeit|urlaub|luca|termin|kapaz|frei/.test(q))return 'wed';return 'x';}
+function ask(q,key){
+ const item={q,a:null};S.qa.push(item);if(S.qa.length>4)S.qa.shift();
+ if(!desk())setSheet(true);
+ renderPanel(false);const sc=$('#jvScroll');sc.scrollTop=sc.scrollHeight;
+ setTimeout(()=>{item.a=answer(key);renderPanel(false);sc.scrollTop=sc.scrollHeight;},420);
+}
+/* ---------- Bottom-Sheet ---------- */
+const jv=$('#jv'),grip=$('#grip'),scrim=$('#scrim');
+function setSheet(o){S.sheet=o;jv.classList.toggle('open',o);grip.setAttribute('aria-expanded',o);scrim.classList.toggle('on',o&&!desk());}
+let drag=null,supp=false;
+const closedY=()=>jv.offsetHeight-grip.offsetHeight-$('#sab').offsetHeight;
+grip.addEventListener('pointerdown',e=>{if(desk()||e.button>0)return;drag={y0:e.clientY,t0:performance.now(),base:S.sheet?0:closedY(),moved:false,y:null};grip.setPointerCapture(e.pointerId);});
+grip.addEventListener('pointermove',e=>{
+ if(!drag)return;const dy=e.clientY-drag.y0;
+ if(!drag.moved&&Math.abs(dy)>6){drag.moved=true;jv.style.transition='none';jv.classList.add('drag');}
+ if(!drag.moved)return;const y=Math.min(closedY(),Math.max(0,drag.base+dy));drag.y=y;jv.style.transform=`translateY(${y}px)`;
+});
+function endDrag(e,cancel){
+ if(!drag)return;const d=drag;drag=null;if(!d.moved)return;
+ supp=true;setTimeout(()=>supp=false,350);
+ const v=(e.clientY-d.y0)/Math.max(1,performance.now()-d.t0),cy=closedY(),y=d.y==null?d.base:d.y;
+ jv.style.transition='';jv.style.transform='';jv.classList.remove('drag');
+ setSheet(cancel?S.sheet:(v<-.35?true:v>.35?false:y<cy*.6));
+}
+grip.addEventListener('pointerup',e=>endDrag(e,false));
+grip.addEventListener('pointercancel',e=>endDrag(e,true));
+scrim.addEventListener('click',()=>setSheet(false));
+matchMedia('(min-width:1024px)').addEventListener('change',()=>setSheet(false));
+
+/* ---------- Ereignisse ---------- */
+document.addEventListener('click',e=>{
+ const t=e.target.closest('button');if(!t)return;const d=t.dataset;
+ if(t===grip){if(supp){supp=false;return;}setSheet(!S.sheet);return;}
+ if(t.classList.contains('oh'))return toggleOrder(t.closest('.ord').dataset.id);
+ if(d.jn)return setCtx(d.jn,{open:d.jn,sheet:true});
+ if(d.sec)return toggleSec(d.sec);
+ if(d.ctx){const c=d.ctx;if(S.sel===c)return setCtx(null);return setCtx(c,{open:c.startsWith('o')?c:null,sheet:true});}
+ if(d.go)return setCtx(d.go,{open:d.go.startsWith('o')?d.go:null,sheet:true});
+ if(d.act)return doAct(d.act);
+ if(d.undo)return undo(d.undo);
+ if(d.snz)return snooze(d.snz);
+ if(d.unsnz)return unsnooze(d.unsnz);
+ if(d.edit)return editDraft(t);
+ if(d.q)return ask(QS[d.q],d.q);
+ if(d.kpi)return kpi(d.kpi);
+ if(d.clear)return setCtx(null);
+ if(d.log){S.logOpen=!S.logOpen;pendingFocus='logt';render(false);}
+});
+$('#askf').addEventListener('submit',e=>{e.preventDefault();const i=$('#askin'),v=i.value.trim();if(!v)return;i.value='';ask(v,match(v));});
+document.addEventListener('keydown',e=>{
+ if(e.key!=='Escape')return;
+ if(e.target.isContentEditable){e.target.blur();return;}
+ if(S.sheet&&!desk()){setSheet(false);grip.focus();return;}
+ if(S.sel)setCtx(null);
+});
+const ro=new ResizeObserver(()=>document.documentElement.style.setProperty('--hh',$('#top').offsetHeight+'px'));ro.observe($('#top'));
+render(false);
+})();
+</script>
+</body>
+</html>
