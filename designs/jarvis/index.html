@@ -45,6 +45,10 @@ h1{font-size:clamp(26px,5vw,38px);letter-spacing:-.025em;line-height:1.08;margin
 .badge.top{background:var(--green-bg);color:var(--green)}
 .desc{font-size:13px;line-height:1.55;color:var(--ink2);margin:0}
 .try{margin-top:auto;padding-top:6px;font-size:12.5px;font-weight:700;color:var(--slate)}
+.item.pending{pointer-events:none;opacity:.72}
+.item.pending .shot img{display:none}
+.item.pending .shot::after{content:"Entsteht gerade …";position:absolute;inset:0;display:grid;place-items:center;font-size:13px;color:var(--ink3);font-weight:600}
+.item.pending .try{color:var(--ink3)}
 .foot{margin-top:34px;font-size:13.5px;line-height:1.6;color:var(--ink2);max-width:62ch}
 @media(prefers-reduced-motion:reduce){.item{transition:none}.item:hover{transform:none}}
 </style>
@@ -82,6 +86,11 @@ document.getElementById('grid').innerHTML=L.map(([nn,slug,name,desc,dark])=>`
    <p class="desc">${(window.JARVIS_DESC&&window.JARVIS_DESC[nn])||desc}</p>
    <span class="try">Ausprobieren →</span>
   </div></a>`).join('');
+/* Noch nicht fertige Entwürfe als „Entsteht gerade“ markieren (HEAD-Abfrage umgeht jeden Cache) */
+document.querySelectorAll('.item').forEach(a=>{
+ const mark=()=>{a.classList.add('pending');a.querySelector('.try').textContent='Kommt in Kürze';a.setAttribute('aria-disabled','true');a.tabIndex=-1};
+ if(location.protocol==='file:')return;
+ fetch(a.getAttribute('href'),{method:'HEAD',cache:'no-store'}).then(r=>{if(!r.ok)mark()}).catch(mark)});
 if(REC.length){document.getElementById('rec').classList.add('on');
  document.getElementById('recList').innerHTML=REC.map(r=>`<li><b>${r.nn} · ${(L.find(x=>x[0]===r.nn)||[])[2]||''}</b> — ${r.why}</li>`).join('')}
 </script>
