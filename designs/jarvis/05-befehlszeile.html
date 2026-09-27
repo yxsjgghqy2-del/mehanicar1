@@ -1,0 +1,520 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Jarvis · Befehlszeile</title>
+<style>
+:root{
+ --page:#F4F5F6;--surface:#FFFFFF;--ink:#1F2328;--ink2:#59616A;--ink3:#8C939B;
+ --line:#E3E6E9;--line2:#EEF0F2;--accent:#0F6E7A;--accent-bg:#E4F0F1;--accent-ink:#0B5560;
+ --ok:#2F7A4D;--ok-bg:#E3F0E7;--warn:#9A6414;--warn-bg:#F6EBD9;--bad:#A8432F;--bad-bg:#F6E3DE;
+ --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+ --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+ --r:14px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--page);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.45;
+ padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 40px)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;text-align:left}
+button:focus-visible,a:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.num,.mono{font-variant-numeric:tabular-nums}
+.mono{font-family:var(--mono)}
+.wrap{max-width:1080px;margin:0 auto}
+
+/* Kopf */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:26px}
+.back{font-size:12.5px;color:var(--ink3);text-decoration:none;padding:8px 0}
+.back:hover{color:var(--ink)}
+.brand{display:flex;align-items:center;gap:9px}
+.mono-j{width:26px;height:26px;border-radius:7px;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:ui-serif,"Iowan Old Style",Georgia,serif;font-size:15px}
+.brand b{font-size:14px;letter-spacing:.01em}
+.brand span{font-size:12px;color:var(--ink3)}
+
+/* Eingabe */
+.cmd{max-width:720px;margin:0 auto 18px;position:relative}
+.bar{display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:16px;
+ padding:0 12px 0 16px;min-height:58px;box-shadow:0 1px 2px rgba(31,35,40,.04),0 10px 30px rgba(31,35,40,.06);transition:border-color .18s,box-shadow .18s}
+.bar:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px rgba(15,110,122,.12),0 10px 30px rgba(31,35,40,.06)}
+.bar svg{color:var(--ink3)}
+.bar input{flex:1;min-width:0;border:0;outline:0;background:none;font:inherit;font-size:17px;padding:16px 0;color:var(--ink)}
+.bar input::placeholder{color:var(--ink3)}
+.kbd{font-family:var(--mono);font-size:11px;color:var(--ink2);border:1px solid var(--line);border-bottom-width:2px;border-radius:6px;padding:2px 6px;background:#FAFBFB;white-space:nowrap}
+.clear{width:36px;height:36px;border-radius:10px;display:none;place-items:center;color:var(--ink3)}
+.clear:hover{background:var(--line2);color:var(--ink)}
+.bar.has .clear{display:grid}
+.bar.has .kbd{display:none}
+.hint{display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:11.5px;color:var(--ink3)}
+.hint span{display:flex;align-items:center;gap:5px}
+@media (pointer:coarse){.hint,.bar .kbd{display:none}}
+
+/* Hauptbereich */
+.main{max-width:720px;margin:0 auto}
+.grid{display:block}
+@media (min-width:920px){
+ .main.split{max-width:none}
+ .main.split .grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:18px;align-items:start}
+ .main.split .pv-wrap{position:sticky;top:18px}
+}
+.grp{margin:0 0 18px}
+.gh{display:flex;align-items:baseline;justify-content:space-between;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin:0 4px 7px}
+.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.row{width:100%;display:flex;align-items:center;gap:12px;padding:12px 14px;min-height:56px;border-top:1px solid var(--line2);transition:background .12s}
+.row:first-child{border-top:0}
+.row:hover{background:#F8F9FA}
+.row.act{background:var(--accent-bg)}
+.row .ic{width:34px;height:34px;border-radius:9px;background:var(--line2);display:grid;place-items:center;color:var(--ink2);flex-shrink:0}
+.row.act .ic{background:#fff;color:var(--accent)}
+.row .tx{flex:1;min-width:0}
+.row .tt{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row .ts{font-size:12.5px;color:var(--ink2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+.row .rt{display:flex;align-items:center;gap:8px;flex-shrink:0;font-size:12.5px;color:var(--ink2)}
+.row .enter{display:none}
+.row.act .enter{display:inline-block}
+@media (pointer:coarse){.row .enter{display:none!important}}
+.row mark{background:none;color:var(--accent-ink);font-weight:700}
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:650;border-radius:999px;padding:3px 9px;white-space:nowrap;background:var(--line2);color:var(--ink2)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}
+.chip.warn{background:var(--warn-bg);color:var(--warn)}
+.chip.bad{background:var(--bad-bg);color:var(--bad)}
+.chip.acc{background:var(--accent-bg);color:var(--accent-ink)}
+.plate{font-family:var(--mono);font-weight:700;font-size:12.5px;border:1.5px solid var(--ink);border-radius:5px;padding:1px 7px;background:#fff;letter-spacing:.02em;white-space:nowrap}
+.plate::before{content:"";display:inline-block;width:4px;height:11px;background:#2F4E7A;border-radius:1px;margin:0 6px -1px -3px}
+
+/* Beispiele */
+.tries{display:flex;flex-wrap:wrap;gap:8px}
+.try{border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:9px 14px;font-size:13px;font-family:var(--mono);color:var(--ink2);min-height:40px}
+.try:hover{border-color:var(--accent);color:var(--accent-ink)}
+.empty-note{font-size:13.5px;color:var(--ink2);padding:18px 16px}
+
+/* Vorschau */
+.pv{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px 18px 16px;box-shadow:0 10px 30px rgba(31,35,40,.05)}
+.pv-k{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);margin-bottom:10px}
+.pv h2{font-size:20px;line-height:1.25;letter-spacing:-.015em;margin:0 0 6px;text-wrap:balance}
+.pv .sub{font-size:13.5px;color:var(--ink2);margin:0 0 14px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:0;border-top:1px solid var(--line2);margin:0 0 14px}
+.kv dt,.kv dd{margin:0;padding:9px 0;border-bottom:1px solid var(--line2);font-size:13.5px}
+.kv dt{color:var(--ink2)}
+.kv dd{text-align:right;font-weight:600;padding-left:16px}
+.note{display:flex;gap:10px;background:#F7F8F8;border:1px solid var(--line2);border-left:3px solid var(--accent);border-radius:10px;padding:11px 12px;font-size:13.5px;color:var(--ink);margin:0 0 14px}
+.note.warn{border-left-color:var(--warn);background:#FBF7F0}
+.note .j{width:20px;height:20px;border-radius:6px;background:var(--ink);color:#fff;display:grid;place-items:center;font-family:ui-serif,Georgia,serif;font-size:12px;flex-shrink:0;margin-top:1px}
+.draft-h{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2);margin:0 0 6px}
+textarea{width:100%;min-height:128px;resize:vertical;border:1px solid var(--line);border-radius:12px;padding:12px 13px;font:inherit;font-size:14.5px;line-height:1.55;color:var(--ink);background:#FBFCFC}
+textarea:focus{outline:0;border-color:var(--accent)}
+.acts{display:flex;flex-wrap:wrap;gap:9px;margin-top:14px}
+.btn{min-height:46px;padding:0 18px;border-radius:12px;font-weight:650;font-size:14.5px;display:inline-flex;align-items:center;gap:8px;justify-content:center}
+.btn.pri{background:var(--accent);color:#fff}
+.btn.pri:hover{background:var(--accent-ink)}
+.btn.sec{border:1px solid var(--line);background:#fff}
+.btn.sec:hover{border-color:var(--ink3)}
+.btn[disabled]{opacity:.5;cursor:default}
+.done{display:flex;gap:10px;align-items:flex-start;background:var(--ok-bg);color:#1F4F33;border-radius:12px;padding:12px 13px;font-size:13.5px;margin-top:14px}
+.done svg{color:var(--ok);margin-top:1px}
+.tl{display:grid;grid-template-columns:52px 1fr;gap:0;margin:0 0 14px;border:1px solid var(--line2);border-radius:12px;overflow:hidden}
+.tl div{padding:9px 11px;font-size:13px;border-top:1px solid var(--line2)}
+.tl div:nth-child(-n+2){border-top:0}
+.tl .t{font-family:var(--mono);color:var(--ink2);background:#F7F8F8;border-right:1px solid var(--line2)}
+.tl .old{text-decoration:line-through;color:var(--ink3)}
+.tl .new{color:var(--accent-ink);font-weight:650}
+.tbl{width:100%;border-collapse:collapse;font-size:13.5px;margin:0 0 6px}
+.tbl th{text-align:left;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:0 0 7px;border-bottom:1px solid var(--line)}
+.tbl td{padding:9px 0;border-bottom:1px solid var(--line2)}
+.tbl .r{text-align:right}
+.tbl tfoot td{font-weight:700;border-bottom:0}
+.bars{display:grid;grid-template-columns:auto 1fr auto;gap:8px 12px;align-items:center;font-size:13px;margin:4px 0 14px}
+.bars .b{height:10px;border-radius:99px;background:var(--line2);overflow:hidden}
+.bars .b i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,#9FC3C7,var(--accent))}
+.bars .b.prev i{background:#C9CED3}
+.figs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+.fig{border:1px solid var(--line2);border-radius:12px;padding:11px 12px}
+.fig small{display:block;font-size:11.5px;color:var(--ink2)}
+.fig b{display:block;font-size:21px;font-weight:500;letter-spacing:-.02em;margin-top:2px}
+.fig em{font-style:normal;font-size:12px;color:var(--ok);font-weight:650}
+.stock{margin:0 0 14px}
+.stock .lvl{height:8px;border-radius:99px;background:var(--line2);overflow:hidden;margin:8px 0 4px}
+.stock .lvl i{display:block;height:100%;background:var(--warn);border-radius:99px}
+.stock small{font-size:12px;color:var(--ink2)}
+.pv-empty{border:1px dashed var(--line);border-radius:var(--r);padding:26px 20px;text-align:center;color:var(--ink3);font-size:13.5px;display:none}
+@media (min-width:920px){.main.split .pv-empty{display:block}.main.split #pv:not(:empty)+.pv-empty{display:none}}
+
+/* Mobile-Sheet */
+.sheet-bg{position:fixed;inset:0;background:rgba(31,35,40,.32);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40}
+.sheet-bg.on{opacity:1;pointer-events:auto}
+@media (max-width:919px){
+ .pv-wrap{position:fixed;left:0;right:0;bottom:0;z-index:50;max-height:88vh;overflow-y:auto;transform:translateY(105%);transition:transform .26s cubic-bezier(.3,.9,.3,1);
+  padding:0 10px calc(env(safe-area-inset-bottom) + 10px)}
+ .pv-wrap.on{transform:none}
+ .pv-wrap .pv{border-radius:18px 18px 14px 14px;box-shadow:0 -12px 40px rgba(31,35,40,.18)}
+ .grab{display:flex;justify-content:space-between;align-items:center;margin:-4px 0 10px}
+ .grab i{width:36px;height:4px;border-radius:99px;background:var(--line);margin:0 auto}
+}
+@media (min-width:920px){.grab{display:none}.sheet-bg{display:none}}
+.close{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:var(--ink2)}
+.close:hover{background:var(--line2)}
+
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom) + 22px);transform:translate(-50%,20px);opacity:0;background:var(--ink);color:#fff;font-size:13.5px;border-radius:12px;padding:11px 16px;transition:all .22s;z-index:60;max-width:calc(100% - 32px)}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;animation:none!important}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+ <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></symbol>
+ <symbol id="i-x" viewBox="0 0 24 24"><path d="M6.5 6.5l11 11M17.5 6.5l-11 11"/></symbol>
+ <symbol id="i-cmd" viewBox="0 0 24 24"><path d="M5 7l5 5-5 5"/><path d="M12 17h7"/></symbol>
+ <symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.8 4.6a4.6 4.6 0 0 0-4.3 6.2l-5.7 5.7a1.9 1.9 0 0 0 2.7 2.7l5.7-5.7a4.6 4.6 0 0 0 6.2-4.3l-2.8 2.8-2.5-.6-.6-2.5z"/></symbol>
+ <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5c1.2-3.5 4-5 7-5s5.8 1.5 7 5"/></symbol>
+ <symbol id="i-car" viewBox="0 0 24 24"><path d="M4.5 15.5v-3l2-4.5h11l2 4.5v3"/><path d="M3.5 15.5h17v2.5h-17z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/></symbol>
+ <symbol id="i-receipt" viewBox="0 0 24 24"><path d="M6.5 3.5h11v17l-2.2-1.4-2.1 1.4-2.1-1.4-2.3 1.4-2.3-1.4z"/><path d="M9 8h6M9 11.5h6M9 15h3.5"/></symbol>
+ <symbol id="i-box" viewBox="0 0 24 24"><path d="M4 8l8-4 8 4v8.5l-8 4-8-4z"/><path d="M4 8l8 4 8-4M12 12v8.5"/></symbol>
+ <symbol id="i-msg" viewBox="0 0 24 24"><path d="M5 18.5l1.2-3.3A7 7 0 1 1 9 18z"/></symbol>
+ <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 7.5V12l3 2"/></symbol>
+ <symbol id="i-phone" viewBox="0 0 24 24"><path d="M7 4.5h2.8l1.4 3.8-1.9 1.2a10.5 10.5 0 0 0 5.2 5.2l1.2-1.9 3.8 1.4V17a2.5 2.5 0 0 1-2.5 2.5A13 13 0 0 1 4.5 7 2.5 2.5 0 0 1 7 4.5z"/></symbol>
+ <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+ <symbol id="i-chart" viewBox="0 0 24 24"><path d="M5 19.5V11M10 19.5V6M15 19.5v-6M20 19.5V9"/></symbol>
+ <symbol id="i-history" viewBox="0 0 24 24"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M4.5 4.5v3.5H8"/><path d="M12 8v4.2l2.8 1.8"/></symbol>
+ <symbol id="i-star" viewBox="0 0 24 24"><path d="M12 4.8l2.2 4.5 5 .7-3.6 3.5.8 4.9L12 16.1l-4.4 2.3.8-4.9-3.6-3.5 5-.7z"/></symbol>
+</svg>
+
+<div class="wrap">
+ <div class="top">
+  <a class="back" href="index.html">← Alle Layouts</a>
+  <div class="brand"><span class="mono-j">J</span><div><b>Jarvis</b> <span>· Mo 28.09. · 07:40</span></div></div>
+ </div>
+
+ <div class="cmd">
+  <label class="bar" id="bar">
+   <svg class="i"><use href="#i-search"/></svg>
+   <input id="q" type="text" autocomplete="off" spellcheck="false" enterkeyhint="go"
+    placeholder="Frag Jarvis oder tippe einen Befehl …" aria-label="Frag Jarvis oder tippe einen Befehl" aria-controls="results">
+   <span class="kbd">⌘ K</span>
+   <button class="clear" id="clear" type="button" aria-label="Eingabe leeren"><svg class="i"><use href="#i-x"/></svg></button>
+  </label>
+  <div class="hint"><span><span class="kbd">↑</span><span class="kbd">↓</span> auswählen</span><span><span class="kbd">↵</span> ausführen</span><span><span class="kbd">esc</span> leeren</span></div>
+ </div>
+
+ <div class="main" id="main">
+  <div class="grid">
+   <div id="results" role="listbox" aria-label="Ergebnisse"></div>
+   <div class="pv-wrap" id="pvWrap">
+    <div id="pv"></div>
+    <div class="pv-empty" id="pvEmpty">Wähle links einen Eintrag — Jarvis zeigt hier die Vorschau und was er tun würde.</div>
+   </div>
+  </div>
+ </div>
+</div>
+<div class="sheet-bg" id="sheetBg"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+/* ============ Demo-Daten ============ */
+const ORDERS=[
+ {id:'AU-2026-0053',plate:'HU-SM 247',model:'BMW 320d',cust:'Ali Yilmaz',work:'Bremsen VA+HA',aw:'4,6',status:'In Arbeit',tone:'acc',pct:45,where:'Bühne 2 · Kevin',due:'fertig 11:30',brutto:'932,96 €',note:'Läuft nach Plan — Kevin ist bei 45 %, Teile sind da. Fertig gegen 11:30.'},
+ {id:'AU-2026-0054',plate:'HU-TR 51',model:'Mercedes C 220 d',cust:'Maria Krause',work:'Getriebeölspülung',aw:'2,5',status:'Warten auf Teile',tone:'warn',pct:0,where:'Bühne 1 · Start 09:00',due:'Abholung 16:00',brutto:'412,34 €',note:'Konflikt: geplant 09:00, das Getriebeöl-Kit von Stahlgruber kommt erst 10:00. Vorschlag: Start 10:30.',warn:true,cmd:'verschiebe tr 51 10:30'},
+ {id:'AU-2026-0055',plate:'HU-WZ 19',model:'Opel Astra K',cust:'Jonas Becker',work:'Inspektion + Wischerblätter',aw:'1,8',status:'Offen · KV fehlt',tone:'',pct:0,where:'Bühne 3',due:'Abholung 17:00',brutto:'214,20 € (KV)',note:'Der Kostenvoranschlag liegt seit Freitag beim Kunden — noch keine Freigabe. Eine kurze Erinnerung per WhatsApp reicht meist.',warn:true,cmd:'schreib becker erinnerung'},
+ {id:'AU-2026-0048',plate:'OF-PG 304',model:'Audi A4 Avant',cust:'Autohaus Schmidt GmbH',work:'fertig · abholbereit',aw:'—',status:'Abholbereit',tone:'ok',pct:100,where:'Hof',due:'seit Freitag',brutto:'620,00 € offen',note:'Steht seit Freitag fertig auf dem Hof und blockiert einen Stellplatz. Rechnung über 620,00 € ist noch offen.'}];
+const CUSTOMERS=[
+ {name:'Ali Yilmaz',tel:'+49 171 2345678',tag:'Stammkunde',info:'HU-SM 247 · Bremsen heute, fertig 11:30',chan:'WhatsApp'},
+ {name:'Maria Krause',tel:'+49 160 5566778',tag:'Rechnung offen',info:'HU-TR 51 · RE-2026-0121 · 389,00 € offen (9 Tage)',chan:'WhatsApp'},
+ {name:'Jonas Becker',tel:'+49 152 3344556',tag:'KV offen',info:'HU-WZ 19 · KV 214,20 € wartet auf Freigabe',chan:'WhatsApp',cmd:'schreib becker erinnerung'},
+ {name:'Autohaus Schmidt GmbH',tel:'06181 90 12 30',tag:'2. Mahnung fällig',info:'RE-2026-0118 · 1.245,00 € · 21 Tage überfällig',chan:'E-Mail',cmd:'mahnung schmidt'},
+ {name:'Tobias Wolf',tel:'+49 176 8899001',tag:'Neue Anfrage',info:'WhatsApp 06:52 · Golf schleift beim Bremsen',chan:'WhatsApp',cmd:'schreib wolf donnerstag 9'},
+ {name:'Lisa Hoffmann',tel:'Instagram',tag:'Neue Anfrage',info:'Instagram gestern 21:14 · Ölwechsel Fiat 500',chan:'Instagram',cmd:'antworte hoffmann ölwechsel'},
+ {name:'Nina Braun',tel:'06181 44 27 90',tag:'Verpasster Anruf',info:'HU-BB 410 · Anruf 07:15 · Wartung fällig',chan:'Telefon',cmd:'ruf braun zurück'},
+ {name:'Stefan Koch',tel:'+49 157 2233114',tag:'HU überfällig',info:'F-KL 882 · VW Golf 7 · HU war 09/2026 fällig',chan:'WhatsApp',cmd:'erinnere koch hu'}];
+const VEHICLES=[
+ {plate:'HU-SM 247',model:'BMW 320d · 2019 · 87.450 km',owner:'Ali Yilmaz',state:'In Arbeit',tone:'acc'},
+ {plate:'HU-TR 51',model:'Mercedes C 220 d',owner:'Maria Krause',state:'Warten auf Teile',tone:'warn'},
+ {plate:'HU-WZ 19',model:'Opel Astra K',owner:'Jonas Becker',state:'KV offen',tone:''},
+ {plate:'OF-PG 304',model:'Audi A4 Avant',owner:'Autohaus Schmidt GmbH',state:'Abholbereit',tone:'ok'},
+ {plate:'F-KL 882',model:'VW Golf 7',owner:'Stefan Koch',state:'HU überfällig',tone:'bad',cmd:'erinnere koch hu'},
+ {plate:'HU-BB 410',model:'Seat Leon',owner:'Nina Braun',state:'Wartung fällig',tone:'warn',cmd:'ruf braun zurück'}];
+const INVOICES=[
+ {nr:'RE-2026-0118',cust:'Autohaus Schmidt GmbH',amt:'1.245,00 €',state:'21 Tage überfällig',tone:'bad',cmd:'mahnung schmidt'},
+ {nr:'RE-2026-0121',cust:'Maria Krause',amt:'389,00 €',state:'9 Tage offen',tone:'',info:'Zahlungsziel 14 Tage — noch im Rahmen.'},
+ {nr:'zu AU-2026-0048',cust:'Autohaus Schmidt GmbH',amt:'620,00 €',state:'offen · Auto abholbereit',tone:'warn'}];
+const STOCK=[
+ {name:'Ölfilter MANN W 712/95',have:1,min:4,cmd:'bestell ölfilter und dot4'},
+ {name:'Bremsflüssigkeit DOT 4 (1 l)',have:2,min:5,cmd:'bestell ölfilter und dot4'}];
+const SUGGEST=[
+ {t:'Antwort an Tobias Wolf senden',s:'Do 01.10., 09:00 auf Bühne 3 reservieren',u:'jetzt',tone:'bad',cmd:'schreib wolf donnerstag 9'},
+ {t:'HU-TR 51 auf 10:30 verschieben',s:'Getriebeöl-Kit kommt erst 10:00',u:'jetzt',tone:'bad',cmd:'verschiebe tr 51 10:30'},
+ {t:'Stahlgruber-Bestellung freigeben',s:'6× Ölfilter, 6× DOT 4 · 86,40 € netto',u:'heute',tone:'warn',cmd:'bestell ölfilter und dot4'}];
+let RECENT=[
+ {t:'umsatz september',w:'gestern 18:12'},
+ {t:'verschiebe wz 19 12:30',w:'Freitag 16:40'},
+ {t:'mahnung schmidt',w:'Freitag 09:05'}];
+const TRIES=['schreib wolf donnerstag 9','verschiebe tr 51 10:30','bestell dot4','umsatz','mahnung schmidt','was steht heute an','ruf braun zurück'];
+const DRAFTS={
+ wolf:'Hallo Herr Wolf, danke für Ihre Nachricht! Das klingt nach verschlissenen Bremsbelägen vorne – bitte nicht zu lange warten. Passt Ihnen Donnerstag, 1.10., um 9:00 Uhr? Richtpreis je nach Befund 180–320 €. Viele Grüße, Samed – mehanicar',
+ becker:'Hallo Herr Becker, kurze Erinnerung zum Kostenvoranschlag für Ihren Astra (214,20 €). Sollen wir die Inspektion heute wie geplant machen? Ein kurzes OK per WhatsApp genügt.',
+ hoffmann:'Hallo Lisa, der Ölwechsel für deinen Fiat 500 kostet bei uns 89 € inkl. Markenöl und Filter. Diese Woche geht z. B. Dienstag oder Donnerstag – sag einfach Bescheid!',
+ krause:'Hallo Frau Krause, Ihr Mercedes ist fertig und kann ab 16 Uhr abgeholt werden.',
+ yilmaz:'Hallo Herr Yilmaz, Ihr BMW ist fertig – Bremsen vorne und hinten sind neu. Sie können ihn ab 11:30 Uhr abholen. Viele Grüße, Samed – mehanicar',
+ koch:'Hallo Herr Koch, die HU für Ihren Golf (F-KL 882) war im September fällig. Sollen wir einen Termin machen? Diese Woche ginge z. B. Donnerstag. Viele Grüße, Samed – mehanicar',
+ schmidt:'Sehr geehrte Damen und Herren,\n\nzur Rechnung RE-2026-0118 über 1.245,00 € konnten wir bisher keinen Zahlungseingang feststellen. Wir bitten um Ausgleich bis zum 05.10.2026.\n\nMit freundlichen Grüßen\nSamed – mehanicar Meisterwerkstatt'};
+
+/* ============ Helfer ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const norm=s=>String(s).toLowerCase().replace(/ä/g,'ae').replace(/ö/g,'oe').replace(/ü/g,'ue').replace(/ß/g,'ss');
+const compact=s=>norm(s).replace(/[^a-z0-9]/g,'');
+const ic=n=>`<svg class="i"><use href="#i-${n}"/></svg>`;
+const chip=(t,tone)=>`<span class="chip ${tone||''}">${esc(t)}</span>`;
+const plate=p=>`<span class="plate">${esc(p)}</span>`;
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('on');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('on'),2200)}
+const DONE={};
+const DESK=()=>matchMedia('(min-width:920px)').matches;
+
+/* ============ Befehle verstehen ============ */
+function parseTime(q){
+ const m=q.match(/\b(\d{1,2})(?:[:.](\d{2}))?\s*(?:uhr)?\b/);
+ if(!m)return null;const h=+m[1];if(h<6||h>19)return null;
+ return String(h).padStart(2,'0')+':'+(m[2]||'00')}
+function intent(raw){
+ const q=norm(raw.trim());if(q.length<3)return null;
+ const has=(...w)=>w.some(x=>q.includes(x));
+ if(has('schreib','nachricht','whatsapp','antwort','sag ')){
+  if(has('wolf'))return {kind:'msg',key:'wolf',to:'Tobias Wolf',chan:'WhatsApp',title:'Antwort an Tobias Wolf',sub:'WhatsApp · + Do 01.10., 09:00 auf Bühne 3 reservieren',extra:'Beim Senden reserviert Jarvis Do 01.10., 09:00 auf Bühne 3 für Herrn Wolf.',doneTxt:'Gesendet an Tobias Wolf · Do 01.10., 09:00 ist auf Bühne 3 reserviert.'};
+  if(has('becker'))return {kind:'msg',key:'becker',to:'Jonas Becker',chan:'WhatsApp',title:'Erinnerung an Jonas Becker',sub:'WhatsApp · KV-Freigabe für den Astra',doneTxt:'Erinnerung an Jonas Becker gesendet. Jarvis meldet sich, sobald er antwortet.'};
+  if(has('hoffmann','lisa'))return {kind:'msg',key:'hoffmann',to:'Lisa Hoffmann',chan:'Instagram',title:'Antwort an Lisa Hoffmann',sub:'Instagram · Ölwechsel Fiat 500 · 89 €',doneTxt:'Antwort an Lisa Hoffmann über Instagram gesendet.'};
+  if(has('krause'))return {kind:'msg',key:'krause',to:'Maria Krause',chan:'WhatsApp',title:'Fertigmeldung an Maria Krause',sub:'WhatsApp · Abholung ab 16 Uhr',warn:'Achtung: HU-TR 51 steht noch auf „Warten auf Teile“. Erst senden, wenn der Mercedes wirklich fertig ist.',doneTxt:'Fertigmeldung an Maria Krause gesendet.'};
+  if(has('yilmaz'))return {kind:'msg',key:'yilmaz',to:'Ali Yilmaz',chan:'WhatsApp',title:'Fertigmeldung an Ali Yilmaz',sub:'WhatsApp · Abholung ab 11:30',doneTxt:'Nachricht an Ali Yilmaz für 11:30 geplant.'};
+  if(has('koch'))return {kind:'msg',key:'koch',to:'Stefan Koch',chan:'WhatsApp',title:'HU-Erinnerung an Stefan Koch',sub:'WhatsApp · F-KL 882 · HU überfällig',doneTxt:'HU-Erinnerung an Stefan Koch gesendet.'};
+ }
+ if(has('erinner')&&has('koch','hu'))return intent('schreib koch');
+ if(has('erinner')&&has('becker','kv'))return intent('schreib becker');
+ if(has('antworte','antwort')&&has('hoffmann','oel','lisa'))return intent('schreib hoffmann');
+ if(has('verschieb','verleg','schieb')){
+  const t=parseTime(q.replace(/tr ?51|wz ?19|sm ?247/g,''))||'10:30';
+  if(has('wz','astra','becker'))return {kind:'move',plate:'HU-WZ 19',from:'12:30',to:t,title:'HU-WZ 19 auf '+t+' verschieben',sub:'Bühne 3 · Opel Astra K'};
+  return {kind:'move',plate:'HU-TR 51',from:'09:00',to:t,title:'HU-TR 51 auf '+t+' verschieben',sub:'Bühne 1 · Getriebeöl-Kit kommt 10:00'};
+ }
+ if(has('bestell','nachbestell','order')){
+  const both=has('und','alles','beide','lager')||(has('dot','brems')&&has('filter','oel'));
+  const items=both?['filter','dot']:has('filter','oel')?['filter']:has('dot','brems')?['dot']:['filter','dot'];
+  return {kind:'order',items,title:'Bestellung bei Stahlgruber',sub:(items.length===2?'Ölfilter + DOT 4':items[0]==='dot'?'Bremsflüssigkeit DOT 4':'Ölfilter MANN W 712/95')+' · Lieferung morgen früh'};
+ }
+ if(has('mahn'))return {kind:'mahnung',title:'2. Mahnung an Autohaus Schmidt GmbH',sub:'RE-2026-0118 · 1.245,00 € · 21 Tage überfällig'};
+ if(has('umsatz','gewinn','geld','september','zahlen','einnahmen'))return {kind:'numbers',title:'Zahlen September',sub:'Stand heute, 07:40'};
+ if(has('heute','plan','was steht','tagesplan','naechst'))return {kind:'plan',title:'Heute auf dem Plan',sub:'4 Fahrzeuge · 1 Konflikt'};
+ if(has('ruf','anruf','zurueckruf','telefon')&&has('braun','zurueck','verpasst'))return {kind:'call',title:'Nina Braun zurückrufen',sub:'Verpasster Anruf 07:15 · 06181 44 27 90'};
+ return null;
+}
+
+/* ============ Suche ============ */
+function hay(...parts){const s=parts.join(' ');return norm(s)+' '+compact(s)}
+function matches(h,q){const toks=norm(q).split(/\s+/).filter(Boolean);return toks.length&&toks.every(t=>h.includes(t)||h.includes(t.replace(/[^a-z0-9]/g,'')))}
+function hl(text,q){
+ const low=text.toLowerCase(),toks=q.toLowerCase().split(/\s+/).filter(t=>t.length>1);
+ const marks=new Array(text.length).fill(false);
+ toks.forEach(t=>{const i=low.indexOf(t);if(i>=0)for(let k=i;k<i+t.length;k++)marks[k]=true});
+ let out='',open=false;
+ for(let k=0;k<text.length;k++){if(marks[k]&&!open){out+='<mark>';open=true}if(!marks[k]&&open){out+='</mark>';open=false}out+=esc(text[k])}
+ return out+(open?'</mark>':'')}
+function search(q){
+ const groups=[];
+ const it=intent(q);
+ if(it)groups.push({h:'Befehl',items:[{type:'intent',icon:'cmd',title:it.title,sub:it.sub,right:chip('Jarvis erledigt das','acc'),data:it}]});
+ const acts=SUGGEST.filter(s=>matches(hay(s.t,s.s),q)).map(s=>({type:'intent',icon:'cmd',title:s.t,sub:s.s,right:chip(s.u,s.tone),data:intent(s.cmd)}));
+ if(acts.length&&!it)groups.push({h:'Aktionen',items:acts});
+ const o=ORDERS.filter(x=>matches(hay(x.id,x.plate,x.model,x.cust,x.work,x.status),q)).map(x=>({type:'order',icon:'wrench',title:x.plate+' · '+x.model,sub:x.work+' · '+x.cust,right:chip(x.status,x.tone),data:x}));
+ if(o.length)groups.push({h:'Aufträge',items:o});
+ const c=CUSTOMERS.filter(x=>matches(hay(x.name,x.tel,x.info,x.tag),q)).map(x=>({type:'cust',icon:'user',title:x.name,sub:x.info,right:chip(x.tag,/überfällig|Mahnung/.test(x.tag)?'bad':/Anfrage|Anruf|offen/.test(x.tag)?'warn':''),data:x}));
+ if(c.length)groups.push({h:'Kunden',items:c});
+ const v=VEHICLES.filter(x=>matches(hay(x.plate,x.model,x.owner,x.state),q)&&!o.find(y=>y.data.plate===x.plate)).map(x=>({type:'veh',icon:'car',title:x.plate+' · '+x.model.split(' · ')[0],sub:x.owner,right:chip(x.state,x.tone),data:x}));
+ if(v.length)groups.push({h:'Fahrzeuge',items:v});
+ const r=INVOICES.filter(x=>matches(hay(x.nr,x.cust,x.amt,x.state,'rechnung'),q)).map(x=>({type:'inv',icon:'receipt',title:x.nr+' · '+x.amt,sub:x.cust,right:chip(x.state,x.tone),data:x}));
+ if(r.length)groups.push({h:'Rechnungen',items:r});
+ const s=STOCK.filter(x=>matches(hay(x.name,'lager bestand'),q)).map(x=>({type:'stock',icon:'box',title:x.name,sub:'Bestand '+x.have+' · Mindestbestand '+x.min,right:chip('nachbestellen','warn'),data:x}));
+ if(s.length)groups.push({h:'Lager',items:s});
+ return groups;
+}
+
+/* ============ Rendern ============ */
+let FLAT=[],active=0,QUERY='';
+function renderEmpty(){
+ FLAT=[];
+ const sug=SUGGEST.map(s=>({type:'intent',icon:'cmd',title:s.t,sub:s.s,right:chip(s.u,s.tone),data:intent(s.cmd)}));
+ const rec=RECENT.map(r=>({type:'recent',icon:r.ok?'check':'history',title:r.t,sub:r.w,right:'',data:r}));
+ FLAT=[...sug,...rec];
+ let i=0;
+ const rows=items=>items.map(x=>rowHtml(x,i++,false)).join('');
+ $('#results').innerHTML=`
+  <section class="grp"><div class="gh"><span>Jarvis schlägt vor</span><span class="num">${SUGGEST.filter(s=>!DONE[s.cmd]).length} offen</span></div><div class="list">${rows(sug)}</div></section>
+  <section class="grp"><div class="gh"><span>Zuletzt</span></div><div class="list">${rows(rec)}</div></section>
+  <section class="grp"><div class="gh"><span>Probier's aus</span></div><div class="tries">${TRIES.map(t=>`<button class="try" data-try="${esc(t)}">${esc(t)}</button>`).join('')}</div></section>`;
+ $('#main').classList.remove('split');
+ active=-1;setActive(-1,false);
+}
+function rowHtml(x,i,withHl){
+ const done=x.type==='intent'&&x.data&&DONE[keyOf(x.data)];
+ return `<button class="row" role="option" data-i="${i}" id="r${i}">
+  <span class="ic">${ic(done?'check':x.icon)}</span>
+  <span class="tx"><div class="tt">${withHl?hl(x.title,QUERY):esc(x.title)}</div><div class="ts">${withHl?hl(x.sub,QUERY):esc(x.sub)}</div></span>
+  <span class="rt">${done?chip('erledigt','ok'):x.right}<span class="kbd enter">↵</span></span></button>`}
+function renderResults(){
+ const groups=search(QUERY);FLAT=[];let i=0;
+ if(!groups.length){
+  $('#results').innerHTML=`<section class="grp"><div class="list"><div class="empty-note">Dazu finde ich nichts. Versuch einen Namen, ein Kennzeichen (z. B. <span class="mono">tr51</span>) oder einen Befehl wie <span class="mono">bestell dot4</span>.</div></div></section>
+   <section class="grp"><div class="tries">${TRIES.slice(0,4).map(t=>`<button class="try" data-try="${esc(t)}">${esc(t)}</button>`).join('')}</div></section>`;
+  $('#main').classList.remove('split');$('#pv').innerHTML='';return}
+ $('#results').innerHTML=groups.map(g=>{const html=g.items.map(x=>{FLAT.push(x);return rowHtml(x,i++,x.type!=='intent')}).join('');
+  return `<section class="grp"><div class="gh"><span>${g.h}</span><span class="num">${g.items.length}</span></div><div class="list">${html}</div></section>`}).join('');
+ $('#main').classList.add('split');
+ setActive(0,DESK());
+}
+function keyOf(d){return d?d.kind+':'+(d.key||d.plate||d.title):''}
+function setActive(i,show){
+ document.querySelectorAll('.row.act').forEach(r=>r.classList.remove('act'));
+ active=i;const el=$('#r'+i);
+ if(el){el.classList.add('act');$('#q').setAttribute('aria-activedescendant','r'+i);if(document.activeElement===$('#q'))el.scrollIntoView({block:'nearest'})}
+ if(show&&FLAT[i])renderPreview(FLAT[i]);
+ if(!FLAT[i]&&DESK())$('#pv').innerHTML='';
+}
+
+/* ============ Vorschau ============ */
+function note(t,warn){return `<div class="note ${warn?'warn':''}"><span class="j">J</span><span>${t}</span></div>`}
+function kv(rows){return `<dl class="kv">${rows.map(([k,v])=>`<dt>${k}</dt><dd>${v}</dd>`).join('')}</dl>`}
+function grabbar(){return `<div class="grab"><span style="width:40px"></span><i></i><button class="close" data-close aria-label="Vorschau schließen">${ic('x')}</button></div>`}
+function pv(kicker,iconName,inner){return `<article class="pv">${grabbar()}<div class="pv-k">${ic(iconName)}${kicker}</div>${inner}</article>`}
+function renderPreview(x){
+ let h='';const d=x.data;
+ if(x.type==='intent'&&d)h=previewIntent(d);
+ else if(x.type==='recent'){$('#q').value=d.t;onInput();return}
+ else if(x.type==='order'){
+  h=pv('Auftrag · '+esc(d.id),'wrench',`<h2>${plate(d.plate)} ${esc(d.model)}</h2><p class="sub">${esc(d.cust)} · ${esc(d.work)}</p>
+   ${kv([['Status',chip(d.status,d.tone)],['Wo',esc(d.where)],['Termin',esc(d.due)],['Arbeitswerte',esc(d.aw)+' AW'],['Brutto',`<span class="num">${esc(d.brutto)}</span>`]])}
+   ${note(esc(d.note),d.warn)}
+   <div class="acts">${d.cmd?`<button class="btn pri" data-run="${esc(d.cmd)}">${d.cmd.startsWith('verschiebe')?'Auf 10:30 verschieben':'Erinnerung vorbereiten'}</button>`:''}<button class="btn sec" data-toast="Auftrag ${esc(d.id)} würde sich jetzt öffnen">Auftrag öffnen</button></div>`)}
+ else if(x.type==='cust'){
+  h=pv('Kunde','user',`<h2>${esc(d.name)}</h2><p class="sub">${esc(d.info)}</p>
+   ${kv([['Kontakt',`<span class="num">${esc(d.tel)}</span>`],['Kanal',esc(d.chan)],['Status',chip(d.tag,/überfällig|Mahnung/.test(d.tag)?'bad':/Anfrage|Anruf|offen/.test(d.tag)?'warn':'')]])}
+   <div class="acts">${d.cmd?`<button class="btn pri" data-run="${esc(d.cmd)}">Was Jarvis vorschlägt</button>`:''}<button class="btn sec" data-toast="${esc(d.name)} wird angerufen …">${ic('phone')}Anrufen</button></div>`)}
+ else if(x.type==='veh'){
+  h=pv('Fahrzeug','car',`<h2>${plate(d.plate)}</h2><p class="sub">${esc(d.model)} · ${esc(d.owner)}</p>
+   ${kv([['Halter',esc(d.owner)],['Status',chip(d.state,d.tone)]])}
+   <div class="acts">${d.cmd?`<button class="btn pri" data-run="${esc(d.cmd)}">Was Jarvis vorschlägt</button>`:''}<button class="btn sec" data-toast="Fahrzeugakte ${esc(d.plate)} würde sich öffnen">Fahrzeugakte</button></div>`)}
+ else if(x.type==='inv'){
+  h=pv('Rechnung','receipt',`<h2>${esc(d.nr)}</h2><p class="sub">${esc(d.cust)}</p>
+   ${kv([['Betrag',`<span class="num">${esc(d.amt)}</span>`],['Status',chip(d.state,d.tone)]])}
+   ${d.info?note(esc(d.info)):''}
+   <div class="acts">${d.cmd?`<button class="btn pri" data-run="${esc(d.cmd)}">2. Mahnung vorbereiten</button>`:''}<button class="btn sec" data-toast="Zahlungseingang für ${esc(d.nr)} erfasst">Zahlung erfassen</button></div>`)}
+ else if(x.type==='stock'){
+  const pct=Math.round(d.have/d.min*100);
+  h=pv('Lager','box',`<h2>${esc(d.name)}</h2>
+   <div class="stock"><div class="lvl"><i style="width:${Math.max(8,pct)}%"></i></div><small class="num">Bestand ${d.have} von mindestens ${d.min}</small></div>
+   ${note('Liegt unter dem Mindestbestand. Jarvis hat bei Stahlgruber schon einen Bestellvorschlag vorbereitet — Lieferung morgen früh.',true)}
+   <div class="acts"><button class="btn pri" data-run="${esc(d.cmd)}">Bestellvorschlag ansehen</button></div>`)}
+ $('#pv').innerHTML=h;wirePreview();
+ if(!DESK())openSheet();
+}
+function previewIntent(d){
+ const k=keyOf(d),done=DONE[k];
+ const doneBox=t=>`<div class="done">${ic('check')}<span>${t}</span></div>`;
+ if(d.kind==='msg'){
+  return pv('Befehl · '+esc(d.chan),'msg',`<h2>${esc(d.title)}</h2><p class="sub">${esc(d.sub)}</p>
+   ${d.warn?note(esc(d.warn),true):''}
+   <div class="draft-h">${ic('msg')}Entwurf an ${esc(d.to)} — du kannst ihn direkt ändern</div>
+   <textarea id="draft" ${done?'disabled':''}>${esc(DRAFTS[d.key])}</textarea>
+   ${d.extra&&!done?`<p class="sub" style="margin:10px 0 0">${esc(d.extra)}</p>`:''}
+   ${done?doneBox(esc(d.doneTxt)):`<div class="acts"><button class="btn pri" data-exec="${esc(k)}">${ic('check')}Senden</button><button class="btn sec" data-later>Später</button></div>`}`)}
+ if(d.kind==='move'){
+  return pv('Befehl · Planänderung','clock',`<h2>${esc(d.title)}</h2><p class="sub">${esc(d.sub)}</p>
+   <div class="tl"><div class="t">${esc(d.from)}</div><div class="old">${plate(d.plate)} Start</div>
+    ${d.plate==='HU-TR 51'?`<div class="t">10:00</div><div>Getriebeöl-Kit kommt (Stahlgruber)</div>`:''}
+    <div class="t">${esc(d.to)}</div><div class="new">${plate(d.plate)} neuer Start</div>
+    <div class="t">16:00</div><div>Abholung — bleibt</div></div>
+   ${note(d.plate==='HU-TR 51'?'Bühne 1 stünde sonst eine Stunde still. Bis zur Abholung um 16:00 bleibt genug Luft (2,5 AW).':'Die Bühne ist zu der Zeit frei. Kunde wird automatisch informiert.')}
+   ${done?doneBox(esc(d.plate)+' startet jetzt um '+esc(d.to)+'. Kevin und Samed sind informiert.'):`<div class="acts"><button class="btn pri" data-exec="${esc(k)}">${ic('check')}Übernehmen</button><button class="btn sec" data-later>Später</button></div>`}`)}
+ if(d.kind==='order'){
+  const rows=[];if(d.items.includes('filter'))rows.push(['Ölfilter MANN W 712/95','6×','40,20 €']);if(d.items.includes('dot'))rows.push(['Bremsflüssigkeit DOT 4 (1 l)','6×','46,20 €']);
+  const sum=(d.items.includes('filter')?4020:0)+(d.items.includes('dot')?4620:0);
+  return pv('Befehl · Bestellung','box',`<h2>${esc(d.title)}</h2><p class="sub">${esc(d.sub)}</p>
+   <table class="tbl"><thead><tr><th>Artikel</th><th class="r">Menge</th><th class="r">Netto</th></tr></thead>
+   <tbody>${rows.map(r=>`<tr><td>${r[0]}</td><td class="r num">${r[1]}</td><td class="r num">${r[2]}</td></tr>`).join('')}</tbody>
+   <tfoot><tr><td>Summe</td><td></td><td class="r num">${(sum/100).toLocaleString('de-DE',{minimumFractionDigits:2})} €</td></tr></tfoot></table>
+   ${note('Danach liegst du wieder über dem Mindestbestand. Bestellt vor 16 Uhr, geliefert morgen früh.')}
+   ${done?doneBox('Bestellt bei Stahlgruber · Lieferung morgen früh. Jarvis bucht den Wareneingang, sobald die Lieferung da ist.'):`<div class="acts"><button class="btn pri" data-exec="${esc(k)}">${ic('check')}Bestellen</button><button class="btn sec" data-later>Später</button></div>`}`)}
+ if(d.kind==='mahnung'){
+  return pv('Befehl · Mahnung','receipt',`<h2>${esc(d.title)}</h2><p class="sub">${esc(d.sub)}</p>
+   <div class="draft-h">${ic('msg')}E-Mail-Entwurf — frei änderbar</div>
+   <textarea id="draft" style="min-height:190px" ${done?'disabled':''}>${esc(DRAFTS.schmidt)}</textarea>
+   ${done?doneBox('2. Mahnung an Autohaus Schmidt GmbH gesendet. Jarvis prüft den Zahlungseingang täglich.'):`<div class="acts"><button class="btn pri" data-exec="${esc(k)}">${ic('check')}Mahnung senden</button><button class="btn sec" data-later>Später</button></div>`}`)}
+ if(d.kind==='numbers'){
+  return pv('Antwort · Zahlen','chart',`<h2>September läuft besser als August</h2><p class="sub">${esc(d.sub)}</p>
+   <div class="figs"><div class="fig"><small>Umsatz</small><b class="num">18.420 €</b><em>+8,5 % zum Vormonat</em></div>
+    <div class="fig"><small>Rohgewinn</small><b class="num">9.310 €</b></div>
+    <div class="fig"><small>Offene Posten</small><b class="num">2.254 €</b></div>
+    <div class="fig"><small>Effizienz</small><b class="num">112 %</b></div></div>
+   <div class="bars"><span>Sep</span><div class="b"><i style="width:92%"></i></div><span class="num">18.420 €</span>
+    <span>Aug</span><div class="b prev"><i style="width:85%"></i></div><span class="num">16.980 €</span></div>
+   ${note('Größter offener Posten: RE-2026-0118 bei Autohaus Schmidt (1.245 €). Wenn der reinkommt, halbieren sich die offenen Posten.')}
+   <div class="acts"><button class="btn sec" data-run="mahnung schmidt">Mahnung vorbereiten</button></div>`)}
+ if(d.kind==='plan'){
+  return pv('Antwort · Tagesplan','clock',`<h2>4 Fahrzeuge, ein Konflikt</h2><p class="sub">${esc(d.sub)}</p>
+   <table class="tbl"><tbody>${ORDERS.map(o=>`<tr><td>${plate(o.plate)}</td><td>${esc(o.work)}</td><td class="r">${chip(o.status,o.tone)}</td></tr>`).join('')}</tbody></table>
+   ${note('HU-TR 51 ist für 09:00 geplant, die Teile kommen erst 10:00. Soll ich auf 10:30 verschieben?',true)}
+   <div class="acts"><button class="btn pri" data-run="verschiebe tr 51 10:30">Auf 10:30 verschieben</button></div>`)}
+ if(d.kind==='call'){
+  return pv('Befehl · Rückruf','phone',`<h2>${esc(d.title)}</h2><p class="sub">${esc(d.sub)}</p>
+   ${kv([['Fahrzeug',plate('HU-BB 410')+' Seat Leon'],['Letzte Wartung','vor 13 Monaten']])}
+   ${note('Sie hat vermutlich wegen eines Termins angerufen — die Wartung ist ohnehin fällig. Freie Slots: Di 14:00, Do 11:00.')}
+   ${done?doneBox('Als erledigt markiert. Jarvis hat den Rückruf im Kundenverlauf notiert.'):`<div class="acts"><button class="btn pri" data-exec="${esc(k)}">${ic('phone')}Jetzt anrufen</button><button class="btn sec" data-later>Später</button></div>`}`)}
+ return '';
+}
+function wirePreview(){
+ $('#pv').querySelectorAll('[data-exec]').forEach(b=>b.onclick=()=>{
+  const k=b.dataset.exec;DONE[k]=true;
+  const cur=FLAT[active];
+  const cmd=QUERY.trim()||(cur&&cur.title)||'';
+  if(cmd){RECENT.unshift({t:cmd,w:'gerade eben',ok:true});RECENT=RECENT.slice(0,4)}
+  SUGGEST.forEach(s=>{if(keyOf(intent(s.cmd))===k)DONE[s.cmd]=true});
+  toast(b.textContent.trim()==='Senden'||/Mahnung/.test(b.textContent)?'Gesendet':'Erledigt');
+  if(cur)renderPreview(cur);
+  const rowEl=$('#r'+active);if(rowEl){rowEl.querySelector('.ic').innerHTML=ic('check');const rt=rowEl.querySelector('.rt');if(rt)rt.innerHTML=chip('erledigt','ok')}
+ });
+ $('#pv').querySelectorAll('[data-later]').forEach(b=>b.onclick=()=>{toast('Jarvis erinnert dich um 11:00 wieder');closeSheet()});
+ $('#pv').querySelectorAll('[data-run]').forEach(b=>b.onclick=()=>{$('#q').value=b.dataset.run;onInput();if(!DESK())setTimeout(()=>{if(FLAT[0])renderPreview(FLAT[0])},60)});
+ $('#pv').querySelectorAll('[data-toast]').forEach(b=>b.onclick=()=>toast(b.dataset.toast));
+ $('#pv').querySelectorAll('[data-close]').forEach(b=>b.onclick=closeSheet);
+}
+function openSheet(){$('#pvWrap').classList.add('on');$('#sheetBg').classList.add('on')}
+function closeSheet(){$('#pvWrap').classList.remove('on');$('#sheetBg').classList.remove('on')}
+
+/* ============ Ereignisse ============ */
+function onInput(){
+ QUERY=$('#q').value;$('#bar').classList.toggle('has',!!QUERY);
+ if(!QUERY.trim()){renderEmpty();$('#pv').innerHTML='';closeSheet();return}
+ renderResults();
+}
+$('#q').addEventListener('input',onInput);
+$('#clear').addEventListener('click',e=>{e.preventDefault();$('#q').value='';onInput();$('#q').focus()});
+$('#sheetBg').addEventListener('click',closeSheet);
+$('#results').addEventListener('click',e=>{
+ const t=e.target.closest('[data-try]');if(t){$('#q').value=t.dataset.try;onInput();if(!DESK()&&FLAT[0])renderPreview(FLAT[0]);return}
+ const r=e.target.closest('.row');if(!r)return;
+ const i=+r.dataset.i;setActive(i,false);renderPreview(FLAT[i]);
+});
+$('#results').addEventListener('mousemove',e=>{const r=e.target.closest('.row');if(r&&DESK()&&QUERY.trim()){const i=+r.dataset.i;if(i!==active)setActive(i,true)}});
+$('#q').addEventListener('keydown',e=>{
+ if(e.key==='ArrowDown'){e.preventDefault();if(FLAT.length)setActive(Math.min(FLAT.length-1,active+1),DESK()&&!!QUERY.trim())}
+ else if(e.key==='ArrowUp'){e.preventDefault();if(FLAT.length)setActive(Math.max(0,active-1),DESK()&&!!QUERY.trim())}
+ else if(e.key==='Enter'){e.preventDefault();const x=FLAT[active>=0?active:0];if(!x)return;
+  if(DESK()&&QUERY.trim()&&$('#pv').innerHTML){const ex=$('#pv [data-exec]');if(ex&&x.type==='intent'){ex.click();return}}
+  setActive(active>=0?active:0,false);renderPreview(x)}
+ else if(e.key==='Escape'){if($('#pvWrap').classList.contains('on')){closeSheet()}else{$('#q').value='';onInput()}}
+});
+document.addEventListener('keydown',e=>{
+ if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='k'){e.preventDefault();$('#q').focus();$('#q').select()}
+ else if(e.key==='/'&&document.activeElement!==$('#q')&&document.activeElement.tagName!=='TEXTAREA'){e.preventDefault();$('#q').focus()}
+ else if(e.key==='Escape'&&$('#pvWrap').classList.contains('on'))closeSheet();
+});
+matchMedia('(min-width:920px)').addEventListener('change',()=>{closeSheet();onInput()});
+renderEmpty();
+</script>
+</body>
+</html>
