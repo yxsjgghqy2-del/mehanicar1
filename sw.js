@@ -1,4 +1,4 @@
-const CACHE='mehanicar-v25';
+const CACHE='mehanicar-v26';
 const SHELL=['./','./index.html','./icon.svg','./manifest.json','./apple-touch-icon.png','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',e=>{
@@ -13,6 +13,8 @@ self.addEventListener('fetch',e=>{
  if(e.request.method!=='GET')return;
  const url=new URL(e.request.url);
  if(url.pathname.startsWith('/api/'))return;
+ /* Design-Entwürfe immer frisch aus dem Netz laden (nicht cachen) */
+ if(url.pathname.startsWith('/designs/'))return;
  e.respondWith(
   caches.match(e.request).then(cached=>{
    const fresh=fetch(e.request).then(r=>{

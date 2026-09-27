@@ -1,0 +1,785 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F3F1ED">
+<title>Jarvis · Morgenbriefing</title>
+<style>
+:root{
+ --paper:#F3F1ED;--paper-2:#E9E5DE;--sheet:#FBFAF7;--white:#FFFFFF;
+ --ink:#2A2825;--ink-2:#54504A;--ink-3:#6C675F;--rule:#DCD7CE;--rule-2:#C9C2B6;
+ --pine:#2F5D50;--pine-2:#244A3F;--pine-wash:#E1E9E4;--pine-wash-2:#CFDDD5;
+ --rust:#984830;--rust-wash:#F2E3DC;
+ --ochre:#7D5F1C;--ochre-wash:#EFE6D2;
+ --slate:#2C3E50;--slate-wash:#E0E5EA;--slate-line:rgba(255,255,255,.13);--on-slate:#EEF1F4;--on-slate-2:#A8B6C3;
+ --serif:ui-serif,"Iowan Old Style","Palatino Linotype",Georgia,serif;
+ --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+ --ease:cubic-bezier(.2,.7,.2,1);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:80px}
+body{margin:0;background:var(--paper);color:var(--ink);font:16px/1.5 var(--sans);-webkit-font-smoothing:antialiased;
+ padding:env(safe-area-inset-top) max(16px,env(safe-area-inset-right)) calc(104px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+button{font:inherit;color:inherit;-webkit-tap-highlight-color:transparent}
+:focus-visible{outline:2px solid var(--slate);outline-offset:2px;border-radius:4px}
+.ic{width:18px;height:18px;flex:none}
+.ic.sm{width:15px;height:15px}
+.num,time{font-variant-numeric:tabular-nums}
+
+/* shell */
+.shell{max-width:680px;margin:0 auto}
+.topline{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px}
+.back{display:inline-flex;align-items:center;min-height:44px;font-size:13px;color:var(--ink-3);text-decoration:none}
+.back:hover{color:var(--ink)}
+.topline span{font-size:12px;color:var(--ink-3)}
+.page{display:grid;gap:44px}
+@media(min-width:1000px){
+ .shell{max-width:1068px}
+ .page{grid-template-columns:minmax(0,680px) 300px;gap:0 88px;align-items:start}
+}
+
+/* letterhead */
+.lh{display:flex;align-items:center;gap:12px;padding:10px 0 16px;border-bottom:1px solid var(--rule)}
+.mono{width:34px;height:34px;border-radius:8px;background:var(--slate);color:#fff;display:grid;place-items:center;font:500 20px/1 var(--serif);flex:none}
+.lh-name{font-weight:650;font-size:14.5px}
+.lh-name span{font-weight:400;color:var(--ink-3)}
+.lh-meta{font-size:13px;color:var(--ink-3)}
+.greet{font:400 clamp(31px,8.4vw,48px)/1.1 var(--serif);letter-spacing:-.015em;margin:26px 0 14px}
+.brief{font-size:18px;line-height:1.75;margin:0;max-width:35em;text-wrap:pretty}
+@media(min-width:1000px){.brief{font-size:19.5px}.greet{margin-top:34px}}
+
+/* inline tokens */
+.tk{position:relative;display:inline;font:inherit;font-weight:620;color:var(--pine);background:var(--pine-wash);border:0;border-radius:5px;
+ padding:2px 4px 2px 6px;margin:0 1px;cursor:pointer;white-space:nowrap;box-shadow:inset 0 -1.5px 0 rgba(47,93,80,.38);
+ transition:background .18s,color .18s,box-shadow .18s}
+.tk::after{content:"";position:absolute;inset:-9px -2px}
+.tk:hover{background:var(--pine-wash-2)}
+.tk[aria-expanded=true]{background:var(--pine);color:#fff;box-shadow:none}
+.tk .ic{width:13px;height:13px;vertical-align:-1px;margin-left:2px;transition:transform .2s}
+.tk[aria-expanded=true] .ic{transform:rotate(180deg)}
+
+/* detail card under the brief */
+.dwrap{display:grid;grid-template-rows:0fr;transition:grid-template-rows .26s var(--ease)}
+.dwrap>div{overflow:hidden;min-height:0}
+.dwrap.open{grid-template-rows:1fr}
+.dwrap:not(.open)>div{visibility:hidden;transition:visibility 0s .26s}
+.detail{margin-top:20px;background:var(--sheet);border:1px solid var(--rule);border-top:2px solid var(--pine);border-radius:2px 2px 12px 12px;padding:14px 16px 16px}
+.detail.swap>*{animation:fade .22s var(--ease)}
+@keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+.dt-h{display:flex;align-items:flex-start;gap:10px}
+.dt-h>div{flex:1;min-width:0}
+.eb{font-size:12px;font-weight:650;color:var(--pine);letter-spacing:.02em}
+.dt-t{font:600 17px/1.3 var(--sans);margin:2px 0 0}
+.x{width:44px;height:44px;margin:-10px -10px 0 0;border:0;background:none;border-radius:8px;display:grid;place-items:center;cursor:pointer;color:var(--ink-2)}
+.x:hover{background:var(--paper-2)}
+.dt-p{font-size:15px;line-height:1.55;color:var(--ink-2);margin:8px 0 4px}
+.rows{list-style:none;margin:10px 0 0;padding:0}
+.rows>li{position:relative;padding:12px 0 12px 12px;border-top:1px solid var(--rule)}
+.rows>li::before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:2px;border-radius:1px;background:var(--st,var(--rule-2))}
+.r-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.r-top b{font-weight:620}
+.r-top .chip{margin-left:auto}
+.r-sub{font-size:14px;color:var(--ink-2);margin-top:3px}
+.r-meta{font-size:13px;color:var(--ink-3);margin-top:3px;font-variant-numeric:tabular-nums}
+.r-meta b{color:var(--ink);font-weight:620}
+.quote{font:italic 16px/1.5 var(--serif);color:var(--ink);margin:6px 0}
+.jn{display:flex;gap:8px;align-items:flex-start;font-size:14px;line-height:1.45;color:var(--ink-2);margin:4px 0 0}
+.jm{width:18px;height:18px;border-radius:4px;background:var(--slate);color:#fff;display:inline-grid;place-items:center;font:500 11px/1 var(--serif);flex:none;margin-top:1px}
+.lnk{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0;border:0;background:none;color:var(--pine);font-weight:620;font-size:14px;cursor:pointer;margin-bottom:-10px}
+.lnk-s{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--ink-3);margin-top:6px}
+.lnk-s .ic{color:var(--pine)}
+.sumrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:12px 0 2px;border-top:1.5px solid var(--ink);font-weight:650;font-variant-numeric:tabular-nums}
+.kpi{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:10px;overflow:hidden;margin:14px 0 2px}
+.kpi div{background:var(--sheet);padding:10px 12px}
+.kpi dt{font-size:12px;color:var(--ink-3)}
+.kpi dd{margin:2px 0 0;font-size:18px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.kpi small{display:block;font-size:12px;font-weight:400;color:var(--ink-3);letter-spacing:0}
+.sub{font:650 11.5px/1 var(--sans);letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);margin:20px 0 8px}
+.prep{margin:12px 0 0;padding:10px 12px;border-radius:8px;background:var(--paper);font-size:14px;color:var(--ink-2)}
+.prep span{display:block;font-size:12px;color:var(--ink-3);margin-bottom:2px}
+
+/* meters */
+.bar{display:flex;gap:2px;height:6px;margin:8px 0 4px;max-width:360px}
+.bar i{display:block;height:100%;border-radius:3px;background:var(--paper-2)}
+.bar i.f{background:var(--pine)}
+.bar i.n{background:#A9A297}
+.bar i.o{background:var(--rust)}
+
+/* chips */
+.chip{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 7px;border-radius:4px;font-size:11.5px;font-weight:650;letter-spacing:.015em;white-space:nowrap;background:var(--paper-2);color:var(--ink-2)}
+.chip .ic{width:13px;height:13px}
+.chip.area{background:transparent;border:1px solid var(--rule-2);color:var(--ink-2)}
+.s-pine{background:var(--pine-wash);color:var(--pine)}
+.s-rust{background:var(--rust-wash);color:var(--rust)}
+.s-ochre{background:var(--ochre-wash);color:var(--ochre)}
+.s-slate{background:var(--slate-wash);color:var(--slate)}
+.plate{display:inline-block;font-size:12.5px;font-weight:650;letter-spacing:.03em;line-height:1;padding:4px 6px 3px;border:1px solid #9C958A;border-radius:3px;background:var(--white);color:var(--ink);white-space:nowrap}
+
+/* sections */
+.sec{margin-top:44px}
+.sechead{display:flex;align-items:baseline;justify-content:space-between;gap:12px;border-top:1.5px solid var(--ink);padding-top:14px}
+.sechead h2,.secbar{font:650 19px/1.25 var(--sans);letter-spacing:-.005em;margin:0}
+.sechead span{font-size:13px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.ticks{display:grid;grid-template-columns:repeat(9,1fr);gap:3px;margin:12px 0 18px}
+.ticks i{height:4px;border-radius:2px;background:var(--rule);transition:background .25s}
+.ticks i.c{background:var(--ink-2)}
+.ticks i.d{background:var(--pine)}
+.barh{margin:0}
+.secbar{width:100%;display:flex;align-items:center;gap:10px;min-height:56px;padding:0;background:none;border:0;border-top:1.5px solid var(--ink);cursor:pointer;text-align:left}
+.cnt{font:650 12px/1 var(--sans);min-width:24px;height:22px;padding:0 7px;border-radius:11px;background:var(--paper-2);color:var(--ink-2);display:inline-grid;place-items:center;font-variant-numeric:tabular-nums}
+.secbar>.ic{margin-left:auto;color:var(--ink-2);transition:transform .22s}
+.secbar[aria-expanded=false]>.ic{transform:rotate(-90deg)}
+.sbody{display:grid;grid-template-rows:1fr;transition:grid-template-rows .26s var(--ease)}
+.sbody>div{overflow:hidden;min-height:0}
+.sbody.shut{grid-template-rows:0fr}
+.sbody.shut>div{visibility:hidden;transition:visibility 0s .26s}
+
+/* decision cards */
+.cards{display:grid;gap:14px}
+.dc{position:relative;background:var(--sheet);border:1px solid var(--rule);border-radius:12px;padding:14px 16px 16px 18px;box-shadow:0 1px 2px rgba(42,40,37,.05)}
+.dc::before{content:"";position:absolute;left:-1px;top:14px;bottom:14px;width:3px;border-radius:0 2px 2px 0;background:var(--stripe,var(--rule-2))}
+.dc.u-jetzt{--stripe:var(--rust)}
+.dc.u-heute{--stripe:var(--ochre)}
+.dc-top{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px}
+.dc-n{font:400 21px/1 var(--serif);color:var(--ink-3);min-width:16px;margin-right:2px}
+.dc-src{font-size:12.5px;color:var(--ink-3)}
+.dc-t{font:620 17px/1.38 var(--sans);letter-spacing:-.005em;margin:10px 0 0;outline:none}
+.why-btn{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:0 8px 0 0;background:none;border:0;color:var(--pine);font-weight:620;font-size:14.5px;cursor:pointer}
+.why-btn .ic{transition:transform .2s}
+.why-btn[aria-expanded=true] .ic{transform:rotate(180deg)}
+.why{display:grid;grid-template-rows:0fr;transition:grid-template-rows .24s var(--ease)}
+.why>div{overflow:hidden;min-height:0}
+.why.open{grid-template-rows:1fr}
+.why:not(.open)>div{visibility:hidden;transition:visibility 0s .24s}
+.why p{margin:0 0 10px;font-size:14.5px;line-height:1.55;color:var(--ink-2)}
+.facts{margin:0 0 14px;display:grid;grid-template-columns:auto 1fr;gap:5px 14px;font-size:13.5px;padding:10px 12px;border-left:2px solid var(--pine-wash-2)}
+.facts dt{color:var(--ink-3)}
+.facts dd{margin:0;font-variant-numeric:tabular-nums}
+.dlabel{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;color:var(--ink-3);margin:2px 0 7px}
+.draft{margin:0;padding:12px 14px;background:var(--paper);border:1px solid transparent;border-radius:8px;font:15px/1.55 var(--sans);color:var(--ink);white-space:pre-wrap;overflow-wrap:anywhere}
+textarea.draft{display:block;width:100%;background:var(--white);border-color:var(--pine);resize:none;min-height:120px;overflow:hidden}
+textarea.draft:focus{outline:none;box-shadow:0 0 0 3px var(--pine-wash-2)}
+.hint{font-size:12.5px;color:var(--pine);margin:6px 0 0}
+.effect{margin:12px 0 10px;font-size:13px;line-height:1.45;color:var(--ink-3)}
+.acts{display:flex;gap:8px}
+.btn{flex:1;min-height:46px;padding:0 12px;border-radius:9px;border:1px solid var(--rule-2);background:var(--white);font-weight:620;font-size:15px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;transition:background .15s,border-color .15s}
+.btn:hover{border-color:#ADA597}
+.btn.pri{flex:1.35;background:var(--pine);border-color:var(--pine);color:#fff}
+.btn.pri:hover{background:var(--pine-2)}
+.btn.pri:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{flex:.8;background:transparent;border-color:transparent;color:var(--ink-2)}
+.btn.ghost:hover{background:var(--paper-2)}
+.btn[aria-pressed=true]{border-color:var(--pine);color:var(--pine)}
+.dc.leaving{overflow:hidden;opacity:0;padding-top:0;padding-bottom:0;border-width:0;margin-bottom:-14px;
+ transition:height .26s var(--ease),opacity .18s,padding .26s var(--ease),margin .26s var(--ease)}
+.dc.enter{animation:rise .3s var(--ease) both}
+.dc.enter:nth-child(2){animation-delay:.07s}
+.dc.enter:nth-child(3){animation-delay:.14s}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.dc.flash{animation:flash 1.3s ease}
+@keyframes flash{0%,40%{box-shadow:0 0 0 3px var(--pine-wash-2)}100%{box-shadow:0 0 0 3px rgba(207,221,213,0)}}
+
+/* plan timeline */
+.tl{position:relative;height:80px;margin:2px 26px 0 22px}
+.tl-line{position:absolute;left:0;right:0;top:33px;height:2px;border-radius:1px;background:var(--rule-2)}
+.tl-tick{position:absolute;top:29px;width:1px;height:10px;background:var(--rule-2)}
+.tl-lab.up{top:4px}
+.tl-lab.up b{display:inline}
+.tl-gap{position:absolute;top:30px;height:8px;border-radius:2px;background:repeating-linear-gradient(135deg,rgba(152,72,48,.55) 0 2px,transparent 2px 5px)}
+.tl-dot{position:absolute;top:28px;width:12px;height:12px;margin-left:-6px;border-radius:50%;border:2px solid var(--ink-2);background:var(--sheet);transition:left .25s var(--ease)}
+.tl-dot.old{border-color:var(--rust)}
+.tl-dot.parts{border-radius:2px;background:var(--ink-2);transform:rotate(45deg);width:10px;height:10px;margin-left:-5px;top:29px}
+.tl-dot.new{border-color:var(--pine);background:var(--pine)}
+.tl-lab{position:absolute;top:46px;transform:translateX(-50%);text-align:center;font-size:12px;line-height:1.25;white-space:nowrap;color:var(--ink-2);transition:left .25s var(--ease)}
+.tl-lab b{display:block;font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink)}
+.tl-lab.old b{color:var(--rust);text-decoration:line-through}
+.tl-lab.new b{color:var(--pine)}
+.opts{display:flex;gap:8px;margin-top:6px}
+.opt{flex:1;min-height:50px;border:1px solid var(--rule-2);border-radius:9px;background:var(--white);font-weight:650;cursor:pointer;font-variant-numeric:tabular-nums;line-height:1.2}
+.opt small{display:block;font-weight:400;font-size:11.5px;color:var(--ink-3)}
+.opt[aria-checked=true]{border-color:var(--pine);background:var(--pine-wash);color:var(--pine)}
+
+/* order */
+.ol{list-style:none;margin:0;padding:0}
+.ol li{display:grid;grid-template-columns:1fr auto;align-items:center;gap:3px 12px;padding:10px 0;border-top:1px solid var(--rule)}
+.ol li:first-child{border-top:0;padding-top:2px}
+.ol .nm{font-weight:620;font-size:14.5px}
+.ol .am{font-weight:650;text-align:right;font-variant-numeric:tabular-nums}
+.ol .mt{font-size:12.5px;color:var(--ink-3)}
+.ol .qt{justify-self:end;font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.ol li.tot{border-top:1.5px solid var(--ink);font-weight:650}
+.step{justify-self:end;display:inline-flex;align-items:center;border:1px solid var(--rule-2);border-radius:9px;background:var(--white)}
+.step button{width:44px;height:44px;border:0;background:none;cursor:pointer;display:grid;place-items:center;border-radius:8px}
+.step button:hover{background:var(--paper)}
+.step output{min-width:30px;text-align:center;font-weight:650;font-variant-numeric:tabular-nums}
+
+/* round notes */
+.rn{display:flex;gap:12px;align-items:flex-start;padding:2px 0 18px;animation:fade .3s var(--ease)}
+.rn .ic{width:22px;height:22px;color:var(--pine);margin-top:3px}
+.rn-t{font:400 22px/1.25 var(--serif);margin:0}
+.rn-s{margin:4px 0 0;font-size:14.5px;line-height:1.5;color:var(--ink-2)}
+.fin{padding:18px 0 4px}
+.fin .rn-t{font-size:28px}
+.fin .btn{flex:none;margin-top:14px;padding:0 18px}
+
+/* rest of day */
+.day,.week{list-style:none;margin:0;padding:0}
+.day li,.week li{display:grid;grid-template-columns:54px minmax(0,1fr) auto;gap:2px 12px;align-items:start;padding:12px 0;border-top:1px solid var(--rule)}
+.day li:first-child{border-top:0;padding-top:2px}
+.tm{font-size:15px;font-weight:650;font-variant-numeric:tabular-nums;padding-top:1px}
+.tm.soft{font-size:13px;font-weight:600;color:var(--ink-3);padding-top:3px}
+.wh{font-size:15px;line-height:1.4}
+.wh .plate{margin-right:6px;vertical-align:1px}
+.mt2{font-size:13px;color:var(--ink-3);margin-top:3px}
+.day .chip,.week .chip{margin-top:1px}
+.week li{grid-template-columns:76px minmax(0,1fr) auto}
+.week .tm{font-size:14px}
+
+/* rail */
+.ledger{display:none;background:var(--slate);color:var(--on-slate);border-radius:12px;padding:14px 18px 14px}
+.lg-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:12.5px;color:var(--on-slate-2);padding-bottom:10px;border-bottom:1px solid var(--slate-line)}
+.lg-h b{color:var(--on-slate);font-weight:650;font-size:14px;font-variant-numeric:tabular-nums}
+.lg{display:grid;grid-template-columns:1fr 1fr;margin:0}
+.lg div{padding:12px 0 11px;border-bottom:1px solid var(--slate-line)}
+.lg div:nth-child(odd){padding-right:12px;border-right:1px solid var(--slate-line)}
+.lg div:nth-child(even){padding-left:14px}
+.lg dt{font-size:11.5px;color:var(--on-slate-2)}
+.lg dd{margin:2px 0 0;font-size:23px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.lg-f{margin:10px 0 0;font-size:12.5px;line-height:1.45;color:var(--on-slate-2)}
+.lg-f b{color:var(--on-slate);font-weight:650}
+.up{color:#B5D6C7}
+.log{list-style:none;margin:0;padding:0}
+.log li{display:grid;grid-template-columns:52px minmax(0,1fr);gap:10px;padding:10px 0;border-top:1px solid var(--rule);font-size:14px;line-height:1.45}
+.log time{color:var(--ink-3);font-size:13px;padding-top:1px}
+.log .ic{width:15px;height:15px;color:var(--ink-3);vertical-align:-2px;margin-right:6px}
+.log.jd .ic{color:var(--pine)}
+.log.jd time{color:var(--pine);font-weight:650}
+.log li.new{animation:hl 1.8s ease}
+@keyframes hl{0%,30%{background:var(--pine-wash)}100%{background:rgba(225,233,228,0)}}
+.rail .sub:first-child{margin-top:4px}
+@media(min-width:1000px){
+ .ledger{display:block}
+ .rail{position:sticky;top:20px;max-height:calc(100vh - 40px);overflow:auto;scrollbar-width:thin;padding:0 2px 8px}
+ .rail .sec{margin-top:22px}
+}
+
+/* sticky slate strip (mobile) */
+.strip{position:fixed;left:0;right:0;top:0;z-index:30;background:var(--slate);color:var(--on-slate);
+ padding:env(safe-area-inset-top) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left));
+ transform:translateY(-105%);visibility:hidden;transition:transform .24s var(--ease),visibility 0s .24s;box-shadow:0 6px 18px rgba(20,28,36,.16)}
+.strip.on{transform:none;visibility:visible;transition:transform .24s var(--ease)}
+.strip-in{max-width:680px;margin:0 auto;display:flex;align-items:center;min-height:58px}
+.strip .mono{width:30px;height:30px;font-size:17px;background:transparent;border:1px solid rgba(255,255,255,.3);margin-right:12px}
+.st{flex:1;display:flex;flex-direction:column;justify-content:center;min-height:48px;padding:0 0 0 12px;border:0;border-left:1px solid var(--slate-line);background:none;color:inherit;text-align:left;min-width:0}
+.st b{font-size:17px;font-weight:650;font-variant-numeric:tabular-nums;line-height:1.15}
+.st span{font-size:11px;color:var(--on-slate-2);white-space:nowrap}
+button.st{cursor:pointer}
+button.st b{text-decoration:underline;text-decoration-color:rgba(255,255,255,.35);text-underline-offset:3px}
+@media(min-width:1000px){.strip{display:none}}
+
+/* toast */
+.toast{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));z-index:40;width:min(460px,calc(100% - 32px));
+ display:flex;align-items:center;gap:10px;padding:5px 5px 5px 16px;border-radius:11px;background:var(--ink);color:#F3F1ED;font-size:14.5px;
+ box-shadow:0 10px 30px rgba(42,40,37,.25);transform:translate(-50%,140%);opacity:0;visibility:hidden;
+ transition:transform .24s var(--ease),opacity .2s,visibility 0s .24s}
+.toast.on{transform:translate(-50%,0);opacity:1;visibility:visible;transition:transform .24s var(--ease),opacity .2s}
+.toast>span{flex:1;min-width:0}
+.toast button{flex:none;min-height:44px;padding:0 14px;border:0;border-radius:8px;background:rgba(255,255,255,.1);color:#fff;font-weight:650;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.toast button:hover{background:rgba(255,255,255,.18)}
+.toast button:focus-visible{outline-color:#fff}
+
+@media(prefers-reduced-motion:reduce){
+ *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+<div class="strip" id="strip" aria-hidden="true">
+ <div class="strip-in">
+  <span class="mono" aria-hidden="true">J</span>
+  <button class="st" data-act="dec" tabindex="-1"><b id="st-dec">9</b><span>Entscheidungen</span></button>
+  <div class="st"><b>4</b><span>Fahrzeuge heute</span></div>
+  <div class="st"><b>2.254 €</b><span>Posten offen</span></div>
+ </div>
+</div>
+
+<div class="shell">
+ <div class="topline"><a class="back" href="index.html">← Alle Layouts</a><span>Entwurf 01 · Morgenbriefing</span></div>
+ <div class="page">
+  <main class="memo">
+   <header class="lh">
+    <span class="mono" aria-hidden="true">J</span>
+    <div>
+     <div class="lh-name">Jarvis <span>· Büroleitung mehanicar</span></div>
+     <div class="lh-meta">Für Samed · Montag, 28. September 2026 · <time>07:40</time></div>
+    </div>
+   </header>
+   <h1 class="greet" id="greet">Guten Morgen, Samed.</h1>
+   <p class="brief" id="brief"></p>
+   <div class="dwrap" id="dwrap"><div><section class="detail" id="detail" aria-live="polite" aria-label="Detail"></section></div></div>
+
+   <section class="sec" id="decisions" aria-labelledby="dec-h">
+    <div class="sechead"><h2 id="dec-h">Deine Entscheidungen</h2><span id="dec-meta"></span></div>
+    <div class="ticks" id="ticks" aria-hidden="true"></div>
+    <div id="roundnote"></div>
+    <div class="cards" id="cards"></div>
+   </section>
+
+   <section class="sec" aria-labelledby="rest-h">
+    <h2 class="barh" id="rest-h"><button class="secbar" aria-expanded="true" aria-controls="rest-body" data-sec>Rest des Tages <span class="cnt">6</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></h2>
+    <div class="sbody" id="rest-body"><div>
+     <ol class="day" id="day"></ol>
+     <h3 class="sub">Diese Woche</h3>
+     <ol class="week" id="week"></ol>
+    </div></div>
+   </section>
+  </main>
+
+  <aside class="rail" aria-label="Stand und Protokoll">
+   <div class="ledger">
+    <div class="lg-h"><b id="lg-time">Stand 07:40</b><span>Mo 28.09.</span></div>
+    <dl class="lg">
+     <div><dt>Entscheidungen offen</dt><dd id="lg-dec">9</dd></div>
+     <div><dt>Fahrzeuge heute</dt><dd>4</dd></div>
+     <div><dt>Neue Anfragen</dt><dd id="lg-anf">3</dd></div>
+     <div><dt>Offene Posten</dt><dd>2.254 €</dd></div>
+    </dl>
+    <p class="lg-f">September bisher <b>18.420 €</b> Umsatz, <span class="up">+8,5 %</span> zum Vormonat</p>
+   </div>
+   <section class="sec" id="sec-log" aria-labelledby="log-h">
+    <h2 class="barh" id="log-h"><button class="secbar" aria-expanded="true" aria-controls="log-body" data-sec>Protokoll <span class="cnt" id="log-cnt">4</span><svg class="ic" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button></h2>
+    <div class="sbody" id="log-body"><div>
+     <div id="justdone"></div>
+     <h3 class="sub">Über Nacht erledigt</h3>
+     <ol class="log" id="overnight"></ol>
+    </div></div>
+   </section>
+  </aside>
+ </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><span id="toast-msg"></span><button id="toast-undo" data-act="undo"></button></div>
+
+<script>
+(()=>{
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const RM=matchMedia('(prefers-reduced-motion: reduce)');
+const I={
+ chev:'<path d="M6 9l6 6 6-6"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>',
+ check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+ chat:'<path d="M4.5 5.5h15v10h-9l-4.5 4v-4h-1.5z"/>',
+ cam:'<rect x="4" y="4" width="16" height="16" rx="4.5"/><circle cx="12" cy="12" r="3.6"/>',
+ phone:'<path d="M6.5 4h3l1.6 4.2-2 1.3a10.5 10.5 0 0 0 5.4 5.4l1.3-2 4.2 1.6v3a1.5 1.5 0 0 1-1.6 1.5A15.5 15.5 0 0 1 5 5.6 1.5 1.5 0 0 1 6.5 4z"/>',
+ mail:'<rect x="3.5" y="5.5" width="17" height="13" rx="1.5"/><path d="M4 7l8 6 8-6"/>',
+ wrench:'<path d="M14.8 4.7a4.5 4.5 0 0 0-4.6 6L4.6 16.3a2 2 0 0 0 2.9 2.9l5.6-5.6a4.5 4.5 0 0 0 6-4.6l-2.6 2.6-2.5-.6-.6-2.5z"/>',
+ box:'<path d="M4 7.5 12 4l8 3.5v9L12 20l-8-3.5z"/><path d="M4 7.5l8 3.5 8-3.5M12 11v9"/>',
+ euro:'<path d="M17.5 6.8a6.3 6.3 0 1 0 0 10.4"/><path d="M4.5 10.5h8M4.5 13.5h8"/>',
+ person:'<circle cx="12" cy="8.5" r="3.5"/><path d="M5 19.5a7 7 0 0 1 14 0"/>',
+ down:'<path d="M12 5v13M6.5 12.5 12 18l5.5-5.5"/>',
+ star:'<path d="M12 4.5l2.3 4.8 5.2.7-3.8 3.6.9 5.2L12 16.3l-4.6 2.5.9-5.2-3.8-3.6 5.2-.7z"/>',
+ note:'<path d="M6.5 4h8l3 3v13h-11z"/><path d="M9.5 10.5h5M9.5 13.5h5M9.5 16.5h3"/>',
+ minus:'<path d="M6 12h12"/>',plus:'<path d="M12 6v12M6 12h12"/>',
+ undo:'<path d="M9 14 4.5 9.5 9 5"/><path d="M5 9.5h9a5.5 5.5 0 0 1 0 11h-2"/>',
+ truck:'<path d="M3.5 6.5h10v9h-10zM13.5 9.5h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.5"/><circle cx="17" cy="17.5" r="1.5"/>'
+};
+const ic=(n,c='ic')=>`<svg class="${c}" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">${I[n]}</svg>`;
+const eur=n=>{const[a,b]=n.toFixed(2).split('.');return a.replace(/\B(?=(\d{3})+(?!\d))/g,'.')+','+b+' €'};
+const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const toMin=t=>{const[h,m]=t.split(':');return h*60+ +m};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const v=x=>typeof x==='function'?x():x;
+const pl=p=>`<span class="plate">${p}</span>`;
+const chip=(t,c='')=>`<span class="chip ${c}">${t}</span>`;
+const PRICE={oel:6.90,dot:7.50};
+const total=()=>S.qty.oel*PRICE.oel+S.qty.dot*PRICE.dot;
+const URG={jetzt:['Jetzt','s-rust'],heute:['Heute','s-ochre'],woche:['Diese Woche','']};
+
+/* ---------- Jarvis-Warteschlange ---------- */
+const D={
+wolf:{area:'Kunden',ai:'person',urg:'jetzt',src:'WhatsApp · 06:52',kind:'text',ch:'chat',to:'WhatsApp an Tobias Wolf',
+ title:'Tobias Wolf antworten und Donnerstag, 09:00 auf Bühne 3 für ihn reservieren.',
+ why:'Schleifen beim Bremsen heißt meist: Die Beläge vorne sind runter, die Scheiben leiden mit. Das ist Sicherheit, deshalb steht es ganz oben. Donnerstag 09:00 auf Bühne 3 ist der früheste freie Platz – Mittwoch ist ohne Luca schon bei 94 %.',
+ facts:[['Vermutung','Bremsbeläge/-scheiben VA verschlissen'],['Priorität','Hoch · Sicherheit'],['Richtpreis','180–320 € je nach Befund'],['Termin','Do 01.10. · 09:00 · Bühne 3']],
+ draft:'Hallo Herr Wolf, danke für Ihre Nachricht! Das klingt nach verschlissenen Bremsbelägen vorne – bitte nicht zu lange warten. Passt Ihnen Donnerstag, 1.10., um 9:00 Uhr? Richtpreis je nach Befund 180–320 €. Viele Grüße, Samed – mehanicar',
+ effect:'Freigeben sendet die Nachricht per WhatsApp und reserviert Do 01.10., 09:00 auf Bühne 3.',
+ done:'Antwort an Tobias Wolf gesendet, Do 09:00 auf Bühne 3 reserviert',toast:'Antwort an Tobias Wolf gesendet.'},
+trans:{area:'Werkstatt',ai:'wrench',urg:'jetzt',src:'Tagesplan · Bühne 1',kind:'plan',
+ title:()=>`Getriebeölspülung HU-TR 51 von 09:00 auf ${S.planTime} verschieben.`,
+ why:'Das Getriebeöl-Kit von Stahlgruber kommt erst um 10:00. Bleibt es bei 09:00, steht der Mercedes eine Stunde ohne Teile auf der Bühne. Mit 10:30 ist eine halbe Stunde Puffer für die Lieferung drin, und die Abholung um 16:00 hält trotzdem.',
+ facts:[['Auftrag','AU-2026-0054 · Maria Krause'],['Umfang','Getriebeölspülung · 2,5 AW'],['Teile','Getriebeöl-Kit, kommt 10:00'],['Abholung','16:00 · bleibt']],
+ effect:()=>`Freigeben verschiebt den Start im Tagesplan auf ${S.planTime}, Bühne 1. Die Abholung um 16:00 bleibt – Frau Krause muss nichts tun.`,
+ done:()=>`HU-TR 51 auf ${S.planTime} verschoben`,toast:()=>`HU-TR 51 startet jetzt um ${S.planTime}.`},
+becker:{area:'Kunden',ai:'person',urg:'heute',src:'KV seit Freitag offen',kind:'text',ch:'chat',to:'WhatsApp an Jonas Becker',
+ title:'Jonas Becker an die KV-Freigabe erinnern, damit die Inspektion heute klappt.',
+ why:'Der Kostenvoranschlag über 214,20 € liegt seit Freitag ohne Antwort. Der Astra soll um 17:00 abgeholt werden – kommt das OK erst am Nachmittag, wird es für Inspektion und Wischerblätter eng.',
+ facts:[['Auftrag','AU-2026-0055 · HU-WZ 19'],['Fahrzeug','Opel Astra K'],['Umfang','Inspektion + Wischerblätter · 1,8 AW'],['KV','214,20 € · seit Fr beim Kunden']],
+ draft:'Hallo Herr Becker, kurze Erinnerung zum Kostenvoranschlag für Ihren Astra (214,20 €). Sollen wir die Inspektion heute wie geplant machen? Ein kurzes OK per WhatsApp genügt.',
+ effect:'Freigeben sendet die Erinnerung per WhatsApp. Sobald Herr Becker antwortet, trage ich die Freigabe ein und sage dir Bescheid.',
+ done:'KV-Erinnerung an Jonas Becker gesendet',toast:'Erinnerung an Jonas Becker gesendet.'},
+schmidt:{area:'Geld',ai:'euro',urg:'heute',src:'RE-2026-0118 · 21 Tage überfällig',kind:'text',ch:'mail',to:'E-Mail an Autohaus Schmidt GmbH · PDF',
+ title:'Autohaus Schmidt die 2. Mahnung über 1.245,00 € schicken.',
+ why:'Die Rechnung ist 21 Tage über dem Zahlungsziel, auf die erste Erinnerung kam keine Reaktion. Dazu steht ihr Audi A4 (OF-PG 304) seit Freitag abholbereit, Rechnung 620,00 € – zusammen 1.865,00 € bei einem Kunden.',
+ facts:[['Rechnung','RE-2026-0118'],['Betrag','1.245,00 €'],['Verzug','21 Tage'],['Neues Ziel','Mo 05.10.2026']],
+ draft:'Sehr geehrte Damen und Herren,\nzu unserer Rechnung RE-2026-0118 über 1.245,00 € konnten wir leider noch keinen Zahlungseingang feststellen. Bitte überweisen Sie den Betrag bis zum 05.10.2026. Sollte sich Ihre Zahlung mit diesem Schreiben überschnitten haben, betrachten Sie es bitte als gegenstandslos.\nMit freundlichen Grüßen\nSamed – mehanicar Meisterwerkstatt',
+ effect:'Freigeben sendet die 2. Mahnung als PDF per E-Mail an Autohaus Schmidt GmbH und setzt das Zahlungsziel auf 05.10.',
+ done:'2. Mahnung an Autohaus Schmidt gesendet (1.245,00 €)',toast:'2. Mahnung an Autohaus Schmidt gesendet.'},
+stahl:{area:'Lager',ai:'box',urg:'heute',src:'Bestellvorschlag · Stahlgruber',kind:'order',
+ title:()=>`Nachbestellung bei Stahlgruber über ${eur(total())} netto freigeben.`,
+ why:'Ölfilter und Bremsflüssigkeit liegen unter Mindestbestand – mit einem Ölfilter im Regal wird schon die nächste Inspektion knapp. Je 6 Stück bringen beide Fächer wieder über den Mindestbestand. Bei Freigabe heute liefert Stahlgruber morgen früh.',
+ facts:[['Ölfilter','Bestand 1 · Min. 4'],['DOT 4 (1 l)','Bestand 2 · Min. 5'],['Lieferung','morgen früh']],
+ effect:()=>`Freigeben bestellt bei Stahlgruber ${S.qty.oel}× Ölfilter und ${S.qty.dot}× DOT 4 für ${eur(total())} netto.`,
+ done:()=>`Stahlgruber-Bestellung über ${eur(total())} netto freigegeben`,toast:'Bestellung bei Stahlgruber freigegeben.'},
+koch:{area:'Kunden',ai:'person',urg:'woche',src:'HU-Erinnerung · F-KL 882',kind:'text',ch:'chat',to:'WhatsApp an Stefan Koch',
+ title:'Stefan Koch wegen der überfälligen HU an seinem Golf anschreiben.',
+ why:'Die HU für seinen VW Golf 7 (F-KL 882) war im September fällig. Ein kurzer, freundlicher Hinweis bringt meist den Termin – und für Donnerstag ist noch Platz.',
+ facts:[['Fahrzeug','VW Golf 7 · F-KL 882'],['HU fällig','09/2026'],['Vorschlag','Termin diese Woche, z. B. Do']],
+ draft:'Hallo Herr Koch, die HU für Ihren Golf (F-KL 882) war im September fällig. Sollen wir sie diese Woche noch machen? Donnerstag hätten wir Platz. Viele Grüße, Samed – mehanicar',
+ effect:'Freigeben sendet das Anschreiben per WhatsApp an Stefan Koch.',
+ done:'HU-Anschreiben an Stefan Koch gesendet',toast:'Anschreiben an Stefan Koch gesendet.'},
+braun:{area:'Kunden',ai:'person',urg:'heute',src:'Verpasster Anruf · 07:15',kind:'text',ch:'note',to:'Gesprächsnotiz für dich',primary:'Anrufen',
+ title:'Nina Braun zurückrufen und die fällige Wartung anbieten.',
+ why:'Sie hat um 07:15 angerufen, die Nummer 06181 44 27 90 gehört zu ihrem Seat Leon (HU-BB 410). Die letzte Wartung ist 13 Monate her – der Rückruf ist die beste Gelegenheit, gleich einen Termin zu machen.',
+ facts:[['Nummer','06181 44 27 90'],['Fahrzeug','Seat Leon · HU-BB 410'],['Letzte Wartung','vor 13 Monaten']],
+ draft:'Seat Leon, HU-BB 410 · letzte Wartung vor 13 Monaten\nErst fragen, warum sie angerufen hat.\nDann Wartung anbieten – z. B. Dienstag oder Donnerstag.',
+ effect:'Anrufen wählt 06181 44 27 90, die Notiz bleibt während des Gesprächs offen.',
+ done:'Nina Braun zurückgerufen',toast:'Rückruf an Nina Braun als erledigt eingetragen.'},
+hoffmann:{area:'Kunden',ai:'person',urg:'heute',src:'Instagram · gestern 21:14',kind:'text',ch:'cam',to:'Instagram-Nachricht an Lisa Hoffmann',
+ title:'Lisa Hoffmann den Festpreis für den Ölwechsel am Fiat 500 nennen.',
+ why:'Für den Fiat 500 gilt der Festpreis von 89 € inklusive Markenöl und Filter. Wer über Instagram fragt, vergleicht meist gerade – eine schnelle Antwort mit Terminangebot holt sie in die Werkstatt.',
+ facts:[['Festpreis','89 € inkl. Öl & Filter'],['Terminangebot','Di oder Do']],
+ draft:'Hallo Lisa, der Ölwechsel für deinen Fiat 500 kostet bei uns 89 € inkl. Markenöl und Filter. Diese Woche geht z. B. Dienstag oder Donnerstag – sag einfach Bescheid!',
+ effect:'Freigeben antwortet per Instagram-Direktnachricht an Lisa Hoffmann.',
+ done:'Preis-Antwort an Lisa Hoffmann gesendet',toast:'Antwort an Lisa Hoffmann gesendet.'},
+google:{area:'Kunden',ai:'person',urg:'woche',src:'Google · gestern 19:40',kind:'text',ch:'star',to:'Öffentliche Antwort auf Google',
+ title:'Die Dankes-Antwort auf die 5-Sterne-Bewertung von Maria Krause veröffentlichen.',
+ why:'Antworten auf Bewertungen zeigen Interessenten, dass hier jemand zuhört. Frau Krause ist heute ohnehin da – ihr Mercedes wird um 16:00 abgeholt.',
+ facts:[['Bewertung','5 Sterne · Maria Krause'],['Eingang','So 27.09. · 19:40']],
+ draft:'Vielen Dank für die tolle Bewertung, Frau Krause! Schön, dass Sie zufrieden waren – wir freuen uns auf Ihren nächsten Besuch in Hanau. Samed & Team mehanicar',
+ effect:'Freigeben veröffentlicht die Antwort sichtbar für alle unter der Bewertung.',
+ done:'Dankes-Antwort auf Google veröffentlicht',toast:'Antwort auf Google veröffentlicht.'}
+};
+const ORDER=['wolf','trans','becker','schmidt','stahl','koch','braun','hoffmann','google'];
+const OVERNIGHT=[['07:00','3 Terminerinnerungen für Dienstag per WhatsApp verschickt.'],['06:53','Anfrage von Tobias Wolf analysiert, Antwort vorbereitet.'],['06:30','Tagesplan erstellt, Teile-Konflikt bei HU-TR 51 erkannt.'],['So 19:40','5-Sterne-Bewertung von Maria Krause erhalten, Dankes-Antwort als Entwurf.']];
+
+let S={current:ORDER.slice(0,3),queue:ORDER.slice(3),done:[],clock:460,round:1,rounds:[],drafts:{},edited:{},planTime:'10:30',qty:{oel:6,dot:6},postponed:{}};
+const UI={why:new Set(),edit:new Set(),token:null};
+let busy=false,undoSnap=null,undoId=null,tt=0;
+const isDone=id=>S.done.some(x=>x.id===id);
+const doneAt=id=>(S.done.find(x=>x.id===id)||{}).t;
+const draftOf=id=>S.drafts[id]!=null?S.drafts[id]:D[id].draft;
+
+/* ---------- Briefing ---------- */
+const T=(k,label)=>`<button class="tk" data-tok="${k}" aria-expanded="${UI.token===k}" aria-controls="detail">${label}${ic('chev')}</button>`;
+function briefHTML(){
+ const s1=isDone('trans')
+  ?`Heute stehen ${T('autos','4 Fahrzeuge')} auf dem Plan; ${T('konflikt','HU-TR 51')} startet jetzt um ${S.planTime}, nach der Teilelieferung.`
+  :`Heute stehen ${T('autos','4 Fahrzeuge')} auf dem Plan, und es gibt einen Haken: ${T('konflikt','HU-TR 51')} soll um 9:00 starten, das Getriebeöl-Kit kommt aber erst um 10:00.`;
+ const s2=`Über Nacht kamen ${T('anfragen','3 Anfragen')} rein, `+(isDone('wolf')?'die sicherheitsrelevante ist schon beantwortet.':'eine davon ist sicherheitsrelevant.');
+ const s3=(isDone('schmidt')?`Die 2. Mahnung über ${T('geld','1.245 €')} an Autohaus Schmidt ist raus`:`Autohaus Schmidt ist mit ${T('geld','1.245 €')} seit 21 Tagen im Verzug`)
+  +(isDone('stahl')?`, die Nachbestellung für ${T('lager','2 Artikel')} kommt morgen früh.`:`, und im Lager sind ${T('lager','2 Artikel')} unter Mindestbestand.`);
+ const n=S.current.length,q=S.queue.length;let s4;
+ if(!n&&!q)s4='Alle Entscheidungen sind getroffen – ich melde mich, sobald etwas Neues reinkommt.';
+ else{
+  const tok=`<button class="tk" data-tok="dec">${n} ${n===1?'Entscheidung':'Entscheidungen'}${ic('down')}</button>`;
+  s4=`Unten ${n===1?'liegt':'liegen'} ${S.done.length?'noch ':''}${tok} für dich`+(q?`, dahinter ${q===1?'wartet eine':'warten '+q} mit weniger Eile.`:'.');
+ }
+ return [s1,s2,s3,s4].join(' ');
+}
+
+/* ---------- Detailkarten ---------- */
+const head=(eb,t)=>`<div class="dt-h"><div><div class="eb">${eb}</div><h3 class="dt-t">${t}</h3></div><button class="x" data-act="close" aria-label="Detail schließen">${ic('x')}</button></div>`;
+function linkTo(id){
+ if(S.current.includes(id))return `<button class="lnk" data-goto="${id}">Zur Entscheidung ${ic('down','ic sm')}</button>`;
+ if(isDone(id))return `<span class="lnk-s">${ic('check','ic sm')}Erledigt um ${doneAt(id)}</span>`;
+ return `<span class="lnk-s">In deiner Warteschlange, Platz ${S.current.length+S.queue.indexOf(id)+1}</span>`;
+}
+const bar=segs=>`<span class="bar" aria-hidden="true">${segs.map(([w,c])=>`<i class="${c}" style="flex:${w}"></i>`).join('')}</span>`;
+function timeline(t,resolved){
+ const p=m=>((m-480)/240*100).toFixed(2)+'%',nm=toMin(t);
+ const ticks=[480,540,600,660,720].map(m=>`<span class="tl-tick" style="left:${p(m)}"></span>`).join('');
+ return `<div class="tl" role="img" aria-label="Plan 09:00, Teile kommen 10:00, ${resolved?'neuer Start':'Vorschlag'} ${t}">
+ <span class="tl-line"></span>${ticks}<span class="tl-gap" style="left:${p(540)};width:25%"></span>
+ <span class="tl-dot old" style="left:${p(540)}"></span><span class="tl-dot parts" style="left:${p(600)}"></span><span class="tl-dot new" style="left:${p(nm)}"></span>
+ <span class="tl-lab up" style="left:${p(600)}"><b>10:00</b> Teile kommen</span>
+ <span class="tl-lab old" style="left:${p(540)}"><b>09:00</b>Plan</span>
+ <span class="tl-lab new" style="left:${p(nm)}"><b>${t}</b>${resolved?'neu':'Vorschlag'}</span></div>`;
+}
+const DET={
+autos(){
+ const tD=isDone('trans'),bD=isDone('becker');
+ return head('Heute','4 Fahrzeuge in der Werkstatt')+`<ul class="rows">
+ <li style="--st:var(--pine)"><div class="r-top">${pl('HU-SM 247')}<b>BMW 320d</b>${chip('In Arbeit · 45 %','s-pine')}</div>
+  <div class="r-sub">Bremsen VA+HA · 4,6 AW · Ali Yilmaz (Stammkunde)</div>${bar([[45,'f'],[55,'']])}
+  <div class="r-meta">AU-2026-0053 · Bühne 2 · Kevin · Teile da · fertig 11:30 · <b>932,96 €</b></div></li>
+ <li style="--st:${tD?'var(--pine)':'var(--ochre)'}"><div class="r-top">${pl('HU-TR 51')}<b>Mercedes C 220 d</b>${chip('Warten auf Teile','s-ochre')}</div>
+  <div class="r-sub">Getriebeölspülung · 2,5 AW · Maria Krause</div>
+  <div class="r-meta">AU-2026-0054 · Bühne 1 · Start ${tD?S.planTime+' (verschoben)':'09:00 – Konflikt, Teile 10:00'} · Abholung 16:00 · <b>412,34 €</b></div></li>
+ <li style="--st:var(--rust)"><div class="r-top">${pl('HU-WZ 19')}<b>Opel Astra K</b>${chip('Offen · KV','s-rust')}</div>
+  <div class="r-sub">Inspektion + Wischerblätter · 1,8 AW · Jonas Becker</div>
+  <div class="r-meta">AU-2026-0055 · KV 214,20 € seit Freitag beim Kunden${bD?' · erinnert '+doneAt('becker'):''} · Abholung 17:00</div></li>
+ <li style="--st:var(--slate)"><div class="r-top">${pl('OF-PG 304')}<b>Audi A4 Avant</b>${chip('Abholbereit','s-slate')}</div>
+  <div class="r-sub">Autohaus Schmidt GmbH · fertig seit Freitag</div>
+  <div class="r-meta">AU-2026-0048 · Rechnung <b>620,00 €</b> offen</div></li></ul>`;
+},
+konflikt(){
+ const r=isDone('trans'),t=S.planTime;
+ return head('Konflikt im Tagesplan','HU-TR 51 · Mercedes C 220 d')+
+ `<p class="dt-p">${r?`Erledigt um ${doneAt('trans')}: Start auf ${t} verschoben. Das Getriebeöl-Kit kommt um 10:00, die Abholung um 16:00 hält.`:'Die Getriebeölspülung für Maria Krause ist für 09:00 auf Bühne 1 geplant. Das Getriebeöl-Kit von Stahlgruber kommt aber erst um 10:00 – die Bühne stünde eine Stunde still.'}</p>`+
+ timeline(t,r)+`<dl class="facts"><dt>Auftrag</dt><dd>AU-2026-0054</dd><dt>Umfang</dt><dd>Getriebeölspülung · 2,5 AW</dd><dt>Abholung</dt><dd>16:00</dd><dt>Brutto</dt><dd>412,34 €</dd></dl>`+
+ `<div class="prep"><span>Liegt bereit, sobald der Mercedes fertig ist</span>„Hallo Frau Krause, Ihr Mercedes ist fertig und kann ab 16 Uhr abgeholt werden.“</div>`+linkTo('trans');
+},
+anfragen(){
+ const st=(id,c,t)=>isDone(id)?chip('beantwortet','s-pine'):chip(t,c);
+ return head('Neu seit gestern Abend','3 Anfragen')+`<ul class="rows">
+ <li style="--st:var(--rust)"><div class="r-top">${ic('chat','ic sm')}<b>Tobias Wolf</b><span class="dc-src">WhatsApp · 06:52</span>${st('wolf','s-rust','Hoch')}</div>
+  <p class="quote">„Hallo, mein Golf macht beim Bremsen so ein Schleifgeräusch. Habt ihr diese Woche noch Zeit?“</p>
+  <p class="jn"><span class="jm">J</span><span>Vermutlich Bremsbeläge/-scheiben VA verschlissen. Vorschlag Do 01.10., 09:00 auf Bühne 3, Richtpreis 180–320 €.</span></p>${linkTo('wolf')}</li>
+ <li style="--st:var(--rule-2)"><div class="r-top">${ic('cam','ic sm')}<b>Lisa Hoffmann</b><span class="dc-src">Instagram · So 21:14</span>${st('hoffmann','','Preisfrage')}</div>
+  <p class="quote">„Was kostet bei euch ein Ölwechsel für einen Fiat 500?“</p>
+  <p class="jn"><span class="jm">J</span><span>Festpreis 89 € inkl. Öl und Filter, Antwort ist vorbereitet.</span></p>${linkTo('hoffmann')}</li>
+ <li style="--st:var(--ochre)"><div class="r-top">${ic('phone','ic sm')}<b>Verpasster Anruf</b><span class="dc-src">07:15 · 06181 44 27 90</span>${isDone('braun')?chip('zurückgerufen','s-pine'):chip('Rückruf','s-ochre')}</div>
+  <p class="jn"><span class="jm">J</span><span>Erkannt: Nina Braun, Seat Leon ${pl('HU-BB 410')}. Zurückrufen – die Wartung ist fällig.</span></p>${linkTo('braun')}</li></ul>
+ <h4 class="sub">Fällige Erinnerungen</h4><ul class="rows">
+ <li style="--st:var(--rust)"><div class="r-top">${pl('F-KL 882')}<b>VW Golf 7 · Stefan Koch</b>${chip('HU überfällig','s-rust')}</div><div class="r-meta">HU war 09/2026 fällig · Anschreiben ist entworfen</div>${linkTo('koch')}</li>
+ <li style="--st:var(--ochre)"><div class="r-top">${pl('HU-BB 410')}<b>Seat Leon · Nina Braun</b>${chip('Wartung','s-ochre')}</div><div class="r-meta">Letzte Wartung vor 13 Monaten</div></li></ul>`;
+},
+geld(){
+ return head('Offene Posten','2.254,00 € stehen aus')+`<ul class="rows">
+ <li style="--st:var(--rust)"><div class="r-top"><b>Autohaus Schmidt GmbH</b>${isDone('schmidt')?chip('2. Mahnung raus','s-pine'):chip('21 Tage über Ziel','s-rust')}</div>
+  <div class="r-meta">RE-2026-0118 · <b>1.245,00 €</b></div>${bar([[14,'n'],[21,'o']])}
+  <div class="r-meta">14 Tage Ziel, dann 21 Tage Verzug · ${isDone('schmidt')?'Mahnung gesendet '+doneAt('schmidt'):'2. Mahnung ist vorbereitet'}</div>${linkTo('schmidt')}</li>
+ <li style="--st:var(--rule-2)"><div class="r-top"><b>Maria Krause</b>${chip('im Rahmen')}</div>
+  <div class="r-meta">RE-2026-0121 · <b>389,00 €</b></div>${bar([[9,'n'],[5,'']])}<div class="r-meta">Tag 9 von 14 Tagen Zahlungsziel</div></li>
+ <li style="--st:var(--slate)"><div class="r-top"><b>Autohaus Schmidt GmbH</b>${chip('bei Abholung','s-slate')}</div>
+  <div class="r-meta">AU-2026-0048 · Audi A4 ${pl('OF-PG 304')} · <b>620,00 €</b></div><div class="r-meta">Fahrzeug steht seit Freitag abholbereit</div></li></ul>
+ <div class="sumrow"><span>Offene Posten gesamt</span><span>2.254,00 €</span></div>
+ <h4 class="sub">September bisher</h4>
+ <dl class="kpi"><div><dt>Umsatz</dt><dd>18.420 €<small><span style="color:var(--pine)">+8,5 %</span> zu 16.980 €</small></dd></div>
+ <div><dt>Rohgewinn</dt><dd>9.310 €<small>nach Teilen</small></dd></div>
+ <div><dt>Effizienz</dt><dd>112 %<small>verkaufte AW zu Stempelzeit</small></dd></div>
+ <div><dt>Ø Auftragswert</dt><dd>486 €<small>brutto</small></dd></div></dl>`;
+},
+lager(){
+ const sd=isDone('stahl');
+ return head('Lager & Bestellungen','2 Artikel unter Mindestbestand')+`<ul class="rows">
+ <li style="--st:var(--rust)"><div class="r-top"><b>Ölfilter MANN W 712/95</b>${chip(sd?'bestellt':'1 von 4',sd?'s-pine':'s-rust')}</div>${bar([[1,'o'],[3,'']])}<div class="r-meta">Bestand 1 · Mindestbestand 4</div></li>
+ <li style="--st:var(--rust)"><div class="r-top"><b>Bremsflüssigkeit DOT 4 (1 l)</b>${chip(sd?'bestellt':'2 von 5',sd?'s-pine':'s-rust')}</div>${bar([[2,'o'],[3,'']])}<div class="r-meta">Bestand 2 · Mindestbestand 5</div></li></ul>
+ <div class="sumrow"><span>Bestellvorschlag Stahlgruber</span><span>${eur(total())} netto</span></div>
+ <div class="r-meta">${S.qty.oel}× Ölfilter + ${S.qty.dot}× DOT 4 · Lieferung morgen früh</div>${linkTo('stahl')}
+ <h4 class="sub">Unterwegs</h4><ul class="rows"><li style="--st:var(--pine)"><div class="r-top">${ic('truck','ic sm')}<b>Getriebeöl-Kit · Stahlgruber</b>${chip('heute 10:00','s-pine')}</div><div class="r-meta">für ${pl('HU-TR 51')} · Mercedes C 220 d</div></li></ul>`;
+}
+};
+
+/* ---------- Karten ---------- */
+function bodyHTML(id){
+ const d=D[id],ed=UI.edit.has(id),tag=S.edited[id]?chip('angepasst','s-pine'):'';
+ if(d.kind==='plan'){
+  const o=[['10:15','knapp'],['10:30','empfohlen'],['11:00','mit Puffer']];
+  return `<div class="dlabel">${ic('wrench','ic sm')}Planänderung · Bühne 1 ${tag}</div>${timeline(S.planTime,false)}`+
+  (ed?`<div class="opts" role="radiogroup" aria-label="Neue Startzeit">${o.map(([t,s])=>`<button class="opt" role="radio" aria-checked="${S.planTime===t}" data-opt="${t}">${t}<small>${s}</small></button>`).join('')}</div>`:'');
+ }
+ if(d.kind==='order'){
+  const row=(k,n,m)=>`<li><span class="nm">${n}</span><span class="am">${eur(S.qty[k]*PRICE[k])}</span><span class="mt">${m} · ${eur(PRICE[k])}/Stk.</span>`+
+   (ed?`<span class="step"><button data-step="${k}:-1" aria-label="${n}: eins weniger">${ic('minus')}</button><output aria-live="polite">${S.qty[k]}</output><button data-step="${k}:1" aria-label="${n}: eins mehr">${ic('plus')}</button></span>`:`<span class="qt">${S.qty[k]} Stück</span>`)+`</li>`;
+  return `<div class="dlabel">${ic('box','ic sm')}Bestellung · Stahlgruber ${tag}</div><ul class="ol">${row('oel','Ölfilter MANN W 712/95','Bestand 1 · Min. 4')}${row('dot','Bremsflüssigkeit DOT 4, 1 l','Bestand 2 · Min. 5')}
+  <li class="tot"><span>Summe netto</span><span class="am">${eur(total())}</span><span class="mt">Lieferung morgen früh</span></li></ul>`;
+ }
+ const txt=esc(draftOf(id));
+ return `<div class="dlabel">${ic(d.ch,'ic sm')}${d.ch==='note'?'':'Entwurf · '}${d.to} ${tag}</div>`+
+  (ed?`<textarea class="draft" id="ta-${id}" aria-label="Entwurf an ${esc(d.to)} bearbeiten">${txt}</textarea><p class="hint">Direkt im Text ändern – Freigeben nimmt deine Fassung.</p>`:`<p class="draft">${txt}</p>`);
+}
+function cardHTML(id,enter){
+ const d=D[id],w=UI.why.has(id),ed=UI.edit.has(id),u=URG[d.urg];
+ return `<article class="dc u-${d.urg}${enter?' enter':''}" id="dc-${id}" data-id="${id}" aria-labelledby="t-${id}">
+ <div class="dc-top"><span class="dc-n" aria-hidden="true">${ORDER.indexOf(id)+1}</span><span class="chip area">${ic(d.ai)}${d.area}</span>${chip(u[0],u[1])}${S.postponed[id]?chip('zurückgelegt'):''}<span class="dc-src">${d.src}</span></div>
+ <h3 class="dc-t" id="t-${id}" tabindex="-1">${v(d.title)}</h3>
+ <button class="why-btn" data-act="why" aria-expanded="${w}" aria-controls="w-${id}">Warum?${ic('chev','ic sm')}</button>
+ <div class="why${w?' open':''}" id="w-${id}"><div><p>${d.why}</p><dl class="facts">${d.facts.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join('')}</dl></div></div>
+ <div class="body">${bodyHTML(id)}</div>
+ <p class="effect">${v(d.effect)}</p>
+ <div class="acts"><button class="btn pri" data-act="ok"${d.kind==='order'&&!total()?' disabled':''}>${d.primary||'Freigeben'}</button><button class="btn" data-act="edit" aria-pressed="${ed}">${ed?'Fertig':'Anpassen'}</button><button class="btn ghost" data-act="later">Später</button></div>
+</article>`;
+}
+function roundNote(){
+ const last=S.rounds[S.rounds.length-1];if(!last)return '';
+ const r=S.round;
+ const t=r===2?'Das Dringende ist vom Tisch.':r===3?'Auch die zweite Runde ist durch.':`Runde ${r-1} ist durch.`;
+ const s=r===2?`Erledigt um ${last.t}. Die nächsten drei haben weniger Eile – ich habe sie nachgelegt.`:`Erledigt um ${last.t}. Was jetzt kommt, kann auch bis heute Nachmittag warten.`;
+ return `<div class="rn" role="status">${ic('check')}<div><p class="rn-t">${t}</p><p class="rn-s">${s}</p></div></div>`;
+}
+function finHTML(){
+ return `<div class="rn fin" role="status">${ic('check')}<div><p class="rn-t">Alles entschieden.</p><p class="rn-s">${S.done.length} Entscheidungen, fertig um ${hm(S.clock)}. Ich melde mich, sobald etwas Neues reinkommt. Als Nächstes: 10:00 Lieferung von Stahlgruber.</p><button class="btn" data-act="log">Protokoll ansehen</button></div></div>`;
+}
+function autosize(el){el.style.height='auto';el.style.height=el.scrollHeight+2+'px'}
+function renderCards(enter){
+ const all=!S.current.length&&!S.queue.length,dn=S.done.length,cn=S.current.length;
+ $('#dec-meta').textContent=`${dn} von 9 erledigt`;
+ $('#ticks').innerHTML=Array.from({length:9},(_,i)=>`<i class="${i<dn?'d':i<dn+cn?'c':''}"></i>`).join('');
+ $('#roundnote').innerHTML=all?finHTML():roundNote();
+ $('#cards').innerHTML=S.current.map(id=>cardHTML(id,enter)).join('');
+ $$('#cards textarea').forEach(autosize);
+}
+function rerenderCard(id,focusSel){
+ const old=$('#dc-'+id);if(!old)return;
+ old.outerHTML=cardHTML(id,false);
+ const c=$('#dc-'+id);c.querySelectorAll('textarea').forEach(autosize);
+ if(focusSel){const f=c.querySelector(focusSel);if(f){f.focus({preventScroll:true});if(f.tagName==='TEXTAREA'){const l=f.value.length;f.setSelectionRange(l,l)}}}
+}
+
+/* ---------- Rest des Tages ---------- */
+function renderDay(){
+ const tD=isDone('trans'),bD=isDone('becker'),wD=isDone('wolf');
+ const rows=[
+  {k:tD?toMin(S.planTime):540,tm:tD?S.planTime:'09:00',w:pl('HU-TR 51')+'Getriebeölspülung · Mercedes C 220 d',m:tD?`Bühne 1 · verschoben um ${doneAt('trans')}`:'Bühne 1 · Teile kommen erst 10:00',c:tD?['verschoben','s-pine']:['Konflikt','s-rust']},
+  {k:600,tm:'10:00',w:'Getriebeöl-Kit kommt von Stahlgruber',m:'für HU-TR 51',c:['Teile','']},
+  {k:690,tm:'11:30',w:pl('HU-SM 247')+'BMW 320d fertig · Bremsen VA+HA',m:'Bühne 2 · Kevin · läuft, 45 %',c:['In Arbeit','s-pine']},
+  {k:960,tm:'16:00',w:pl('HU-TR 51')+'Abholung Maria Krause',m:'Mercedes C 220 d · 412,34 €'},
+  {k:1020,tm:'17:00',w:pl('HU-WZ 19')+'Abholung Jonas Becker',m:bD?`Opel Astra K · KV-Erinnerung ${doneAt('becker')} gesendet`:'Opel Astra K · Inspektion wartet auf Freigabe',c:bD?['erinnert','s-ochre']:['KV offen','s-rust']},
+  {k:2000,tm:'seit Fr',soft:1,w:pl('OF-PG 304')+'Audi A4 Avant abholbereit',m:'Autohaus Schmidt · Rechnung 620,00 € offen',c:['Abholbereit','s-slate']}
+ ].sort((a,b)=>a.k-b.k);
+ $('#day').innerHTML=rows.map(r=>`<li><time class="tm${r.soft?' soft':''}">${r.tm}</time><div><div class="wh">${r.w}</div><div class="mt2">${r.m}</div></div>${r.c?chip(r.c[0],r.c[1]):'<span></span>'}</li>`).join('');
+ $('#week').innerHTML=[
+  `<li><span class="tm">Di 29.09.</span><div><div class="wh">3 Termine</div><div class="mt2">Erinnerungen sind um 07:00 raus</div></div><span></span></li>`,
+  `<li><span class="tm">Mi 30.09.</span><div><div class="wh">2 Termine · Auslastung 94 %</div>${bar([[94,'o'],[6,'']])}<div class="mt2">Luca hat Urlaub bis Fr 02.10.</div></div>${chip('Engpass','s-rust')}</li>`,
+  `<li><span class="tm">Do 01.10.</span><div><div class="wh">${wD?'09:00 Bühne 3 · Tobias Wolf':'09:00 Bühne 3 frei'}</div><div class="mt2">${wD?'Golf · Bremsen VA prüfen · 180–320 €':'Vorgesehen für Tobias Wolf (Bremsen)'}</div></div>${wD?chip('reserviert','s-pine'):chip('frei')}</li>`
+ ].join('');
+}
+function renderLog(flash){
+ const jd=$('#justdone');
+ jd.innerHTML=S.done.length?`<h3 class="sub">Gerade erledigt</h3><ol class="log jd">${S.done.map((x,i)=>`<li class="${i===0&&flash?'new':''}"><time>${x.t}</time><span>${ic('check')}${esc(x.text)}</span></li>`).join('')}</ol>`:'';
+ $('#log-cnt').textContent=OVERNIGHT.length+S.done.length;
+}
+function renderNums(){
+ const open=S.current.length+S.queue.length;
+ $('#st-dec').textContent=open;$('#lg-dec').textContent=open;
+ $('#lg-anf').textContent=3-['wolf','hoffmann','braun'].filter(isDone).length;
+ $('#lg-time').textContent='Stand '+hm(S.clock);
+}
+function render(o={}){
+ $('#brief').innerHTML=briefHTML();
+ renderCards(o.enter);renderDay();renderLog(o.flash);renderNums();
+ if(UI.token)$('#detail').innerHTML=DET[UI.token]();
+}
+
+/* ---------- Aktionen ---------- */
+function commit(id){
+ const ta=$('#ta-'+id);if(!ta)return;
+ const val=ta.value.trim();
+ if(val&&val!==D[id].draft){S.drafts[id]=val;S.edited[id]=true}else{delete S.drafts[id];delete S.edited[id]}
+}
+function collapse(el,cb){
+ if(RM.matches||!el){cb();return}
+ el.style.height=el.offsetHeight+'px';void el.offsetHeight;el.classList.add('leaving');el.style.height='0px';
+ setTimeout(cb,270);
+}
+function advance(){
+ if(S.current.length||!S.queue.length)return false;
+ S.rounds.push({n:S.round,t:hm(S.clock)});S.round++;S.current=S.queue.splice(0,3);return true;
+}
+function focusNext(){
+ const h=$('#cards .dc-t');
+ if(h)h.focus({preventScroll:true});else{const r=$('#roundnote .rn');if(r){r.tabIndex=-1;r.focus({preventScroll:true})}}
+}
+function act(id,kind){
+ if(busy)return;busy=true;
+ if(UI.edit.has(id))commit(id);
+ if(kind==='ok'&&D[id].kind==='plan'&&S.planTime!=='10:30')S.edited[id]=true;
+ if(kind==='ok'&&D[id].kind==='order'&&(S.qty.oel!==6||S.qty.dot!==6))S.edited[id]=true;
+ const snap=JSON.stringify(S),d=D[id];
+ collapse($('#dc-'+id),()=>{
+  UI.edit.delete(id);UI.why.delete(id);
+  S.current=S.current.filter(x=>x!==id);
+  let msg;
+  if(kind==='ok'){S.clock++;S.done.unshift({id,t:hm(S.clock),text:v(d.done)+(S.edited[id]?' (angepasst)':'')});msg=v(d.toast)}
+  else{S.queue.push(id);S.postponed[id]=true;msg='Auf später gelegt – kommt nach den anderen wieder.'}
+  const rolled=advance();
+  render({enter:rolled,flash:kind==='ok'});
+  focusNext();
+  toast(msg,snap,id);
+  busy=false;
+ });
+}
+function toast(msg,snap,id){
+ undoSnap=snap;undoId=id;
+ $('#toast-msg').textContent=msg;
+ $('#toast-undo').innerHTML=ic('undo','ic sm')+'Rückgängig';
+ $('#toast').classList.add('on');clearTimeout(tt);tt=setTimeout(hideToast,6000);
+}
+function hideToast(){$('#toast').classList.remove('on');undoSnap=null}
+function undo(){
+ if(!undoSnap)return;
+ S=JSON.parse(undoSnap);const id=undoId;hideToast();render();
+ const c=$('#dc-'+id);
+ if(c){c.classList.add('flash');const h=c.querySelector('.dc-t');h.focus({preventScroll:true});
+  const r=c.getBoundingClientRect();if(r.top<0||r.bottom>innerHeight)c.scrollIntoView({block:'center',behavior:RM.matches?'auto':'smooth'})}
+}
+function tok(k){
+ if(k==='dec'){goDec();return}
+ const w=$('#dwrap'),d=$('#detail');
+ if(UI.token===k){closeDetail();return}
+ const was=!!UI.token;UI.token=k;d.innerHTML=DET[k]();
+ if(was&&!RM.matches){d.classList.remove('swap');void d.offsetWidth;d.classList.add('swap')}
+ w.classList.add('open');syncTok();
+ setTimeout(()=>{const r=w.getBoundingClientRect();if(r.top>innerHeight*.62)scrollBy({top:r.top-innerHeight*.3,behavior:RM.matches?'auto':'smooth'})},RM.matches?0:120);
+}
+function closeDetail(){
+ const k=UI.token;UI.token=null;$('#dwrap').classList.remove('open');syncTok();
+ const b=$(`.tk[data-tok="${k}"]`);if(b)b.focus({preventScroll:true});
+}
+function syncTok(){$$('.tk[data-tok]').forEach(b=>{if(b.dataset.tok!=='dec')b.setAttribute('aria-expanded',b.dataset.tok===UI.token)})}
+function goDec(){
+ $('#decisions').scrollIntoView({behavior:RM.matches?'auto':'smooth',block:'start'});
+ const h=$('#cards .dc-t');if(h)h.focus({preventScroll:true});
+}
+function goTo(id){
+ const c=$('#dc-'+id);if(!c)return;
+ c.scrollIntoView({behavior:RM.matches?'auto':'smooth',block:'center'});
+ c.classList.remove('flash');void c.offsetWidth;c.classList.add('flash');
+ c.querySelector('.dc-t').focus({preventScroll:true});
+}
+
+document.addEventListener('click',e=>{
+ const t=e.target.closest('[data-tok],[data-act],[data-goto],[data-sec],[data-opt],[data-step]');if(!t)return;
+ if(t.dataset.tok){tok(t.dataset.tok);return}
+ if(t.dataset.goto){goTo(t.dataset.goto);return}
+ if(t.hasAttribute('data-sec')){
+  const open=t.getAttribute('aria-expanded')!=='true';t.setAttribute('aria-expanded',open);
+  document.getElementById(t.getAttribute('aria-controls')).classList.toggle('shut',!open);return;
+ }
+ const card=t.closest('.dc'),id=card&&card.dataset.id;
+ if(t.dataset.opt){S.planTime=t.dataset.opt;S.edited[id]=S.planTime!=='10:30';rerenderCard(id,`[data-opt="${t.dataset.opt}"]`);return}
+ if(t.dataset.step){const[k,dir]=t.dataset.step.split(':');S.qty[k]=Math.max(0,Math.min(24,S.qty[k]+ +dir));S.edited[id]=S.qty.oel!==6||S.qty.dot!==6;rerenderCard(id,`[data-step="${t.dataset.step}"]`);return}
+ switch(t.dataset.act){
+  case 'why':{const o=!UI.why.has(id);o?UI.why.add(id):UI.why.delete(id);t.setAttribute('aria-expanded',o);card.querySelector('.why').classList.toggle('open',o);break}
+  case 'edit':{
+   if(UI.edit.has(id)){commit(id);UI.edit.delete(id);rerenderCard(id,'[data-act="edit"]')}
+   else{UI.edit.add(id);rerenderCard(id,'textarea,[aria-checked="true"],[data-step]')}
+   break}
+  case 'ok':act(id,'ok');break;
+  case 'later':act(id,'later');break;
+  case 'close':closeDetail();break;
+  case 'undo':undo();break;
+  case 'dec':goDec();break;
+  case 'log':{const b=$('#sec-log');b.scrollIntoView({behavior:RM.matches?'auto':'smooth',block:'start'});b.querySelector('.secbar').focus({preventScroll:true});break}
+ }
+});
+document.addEventListener('input',e=>{
+ if(e.target.matches('textarea.draft')){autosize(e.target);const id=e.target.closest('.dc').dataset.id;S.drafts[id]=e.target.value}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&UI.token)closeDetail()});
+
+/* Schiefer-Kopfzeile erscheint, sobald die Begrüßung aus dem Bild ist */
+const strip=$('#strip');
+new IntersectionObserver(([en])=>{
+ const on=!en.isIntersecting&&en.boundingClientRect.top<0;
+ strip.classList.toggle('on',on);strip.setAttribute('aria-hidden',!on);strip.querySelector('button').tabIndex=on?0:-1;
+}).observe($('#greet'));
+
+$('#overnight').innerHTML=OVERNIGHT.map(([t,x])=>`<li><time>${t}</time><span>${ic('check')}${x}</span></li>`).join('');
+render();
+})();
+</script>
+</body>
+</html>
