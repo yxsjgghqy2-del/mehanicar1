@@ -36,6 +36,7 @@ Die Nutzung ist in 5-Stunden-Fenstern begrenzt. Ein Lauf kann also mittendrin ab
 - Im LOG unter „Offen“ immer den genauen nächsten Handgriff notieren.
 
 ## Regeln des Inhabers (hart)
+- **Sprache mit dem Inhaber: leichte Sprache.** Er ist Manager, kein Entwickler. Kurze Sätze, keine Fachwörter (kein Branch, PR, Merge, Commit, Deploy, Service Worker …). Er möchte nur wissen, was neu ist, was er davon hat und ob er etwas tun muss.
 - Design: natürlich und professionell, primär hell-gräulich. Kein „0815-KI-Look“, keine Neonfarben, keine Lila-Blau-Verläufe, keine Emojis als Icons. Die UI ist auf Deutsch und benutzt echte Werkstattbegriffe.
 - Mobile first (iPhone, Home-Bildschirm-App). Touch-Ziele mindestens 44 px.
 - Online-Terminanfragen immer mit Status `neu` anlegen, nie automatisch bestätigen.
