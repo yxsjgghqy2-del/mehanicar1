@@ -8,7 +8,7 @@ Du arbeitest als fester Mitarbeiter an **mehanicar** (Werkstatt-Management-PWA f
 - `sw.js`: Cache-Version bei jeder UI-Änderung erhöhen. `APP_VER` in `index.html` ebenfalls erhöhen.
 - Datenmigration: Jede Strukturänderung braucht eine Ergänzung in `migrate2()`. Bestehende Kundendaten dürfen nie kaputtgehen.
 - Architektur-Notizen stehen in `ROADMAP.md`, Prototypen in `/designs/` (u. a. `designs/jarvis/`).
-- Playwright: `npm i playwright --no-save` im Scratchpad, dann Chromium unter `/opt/pw-browsers/chromium` (`args:['--no-sandbox']`).
+- Test: `npm i --no-save playwright` im Repo-Root (node_modules ist per .gitignore ausgeschlossen), danach `node tests/smoke.mjs`. Der Test prüft alle Hauptansichten bei 390/1280 px und klickt einen Auftrag durch. Exit 0 heißt grün. **Schreib keine eigenen Testskripte, solange dieser reicht.** Wenn du etwas Neues baust, erweitere lieber `tests/smoke.mjs`.
 
 ## Ablauf (in dieser Reihenfolge)
 1. **Einlesen:** `docs/mitarbeiter/LOG.md` (letzte 3 Einträge), `docs/mitarbeiter/BACKLOG.md`, offene PRs. Dazu den Vercel-Deploy-Status und Runtime-Fehler prüfen, falls die Tools verfügbar sind.
@@ -20,6 +20,20 @@ Du arbeitest als fester Mitarbeiter an **mehanicar** (Werkstatt-Management-PWA f
 7. **Was ist neu:** Den Eintrag in der In-App-Liste „Was ist neu“ ergänzen (Mehr → Version). Anzeigen: Datum, Version, 1–3 Punkte in Alltagssprache.
 8. **Tagebuch:** Einen Eintrag oben in `LOG.md` schreiben: Datum, Recherche-Thema und Erkenntnis, was gebaut wurde, Test-Ergebnis, Version, was als Nächstes kommt. `BACKLOG.md` pflegen.
 9. **Release-Update:** Deine Abschlussnachricht ist das Release-Update, der Inhaber bekommt sie per E-Mail. Sie ist kurz, freundlich und auf Deutsch: „Neu in Version X“ (was und warum es hilft), Link https://mehanicar1.vercel.app, was morgen geplant ist, höchstens eine Frage, falls eine Entscheidung nötig ist.
+
+## Sparsam arbeiten (Credits)
+- **Ein Mitarbeiter, eine Aufgabe, nacheinander.** Keine parallelen Agenten oder Workflows. Das verbraucht ein Vielfaches und kollidiert in der einen `index.html`.
+- **Nicht die ganze `index.html` lesen** (über 4.500 Zeilen). Gezielt mit `grep -n` suchen und nur die betroffenen Abschnitte lesen.
+- **Recherche knapp halten:** höchstens 3 Suchen pro Lauf, Ergebnis in 3–5 Zeilen im BACKLOG. An Tagen mit Fehlerbehebung fällt die Recherche aus.
+- **Screenshots nur dort, wo sich etwas sichtbar geändert hat:** ein iPhone-Bild, dazu ein Desktop-Bild, wenn es relevant ist.
+- **Kleine Pakete** von 1–2 Stunden Umfang. Große Themen in Scheiben schneiden.
+
+## Unterbrechung und Weitermachen
+Die Nutzung ist in 5-Stunden-Fenstern begrenzt. Ein Lauf kann also mittendrin abbrechen. Deshalb:
+- **Früh sichern:** Nach jedem sinnvollen Zwischenschritt auf den Branch `claude/wip` committen und pushen, mit einer Commit-Nachricht, die sagt, was fehlt.
+- **Beim Start zuerst prüfen**, ob `claude/wip` Commits hat, die nicht in `main` sind. Wenn ja, dort weitermachen (Stand holen, fertigstellen, testen, mergen) und danach `claude/wip` auf `main` zurücksetzen.
+- `main` bekommt nur Fertiges, das den Test bestanden hat.
+- Im LOG unter „Offen“ immer den genauen nächsten Handgriff notieren.
 
 ## Regeln des Inhabers (hart)
 - Design: natürlich und professionell, primär hell-gräulich. Kein „0815-KI-Look“, keine Neonfarben, keine Lila-Blau-Verläufe, keine Emojis als Icons. Die UI ist auf Deutsch und benutzt echte Werkstattbegriffe.
