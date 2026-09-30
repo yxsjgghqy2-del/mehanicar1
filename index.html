@@ -407,6 +407,20 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 .kk-sub b{color:#fff;font-weight:700;font-variant-numeric:tabular-nums}
 .hdr.hmin .kkopf{margin-top:6px;padding:8px 12px}
 .hdr.hmin .kk-sub{display:none}
+/* Detail-Kalkulation (Entwurf 14) */
+.kdet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 14px 12px;margin-bottom:12px}
+.kgrp{margin:2px 0 8px}
+.kgt{display:flex;justify-content:space-between;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);padding:10px 0 5px;border-bottom:1.5px solid var(--line)}
+.kr{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:7px 0;font-size:12.5px;border-bottom:1px solid var(--line2)}
+.kr>span{color:var(--ink2);min-width:0}
+.kr small{color:var(--ink3);font-size:10.5px;margin-left:6px;white-space:nowrap}
+.kr b{font-weight:600;white-space:nowrap;color:var(--ink)}
+.kr.sumr>span{color:var(--ink);font-weight:600}
+.kr.neg b{color:#A05A2C}.kr.gw b{color:var(--green)}
+.kr.strong{border-top:1.5px solid var(--ink);border-bottom:none;margin-top:2px;padding-top:9px}.kr.strong>span{color:var(--ink);font-weight:700}.kr.strong b{font-weight:800;font-size:14px}
+.kr.pay{background:#2C3E50;border:none;border-radius:10px;padding:11px 12px;margin-top:8px}.kr.pay>span{color:#C9D2DA;font-weight:600}.kr.pay b{color:#fff;font-size:16px;font-weight:800}
+.kbar{height:8px;border-radius:99px;background:var(--gray-bg);overflow:hidden;display:flex;margin:10px 0 5px}.kbar i{display:block;height:100%}
+.kbl{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink3)}.kbl i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
 /* Bottom Calc-Bar */
 .calcbar{position:fixed;left:12px;right:12px;bottom:calc(var(--sab) + 10px);background:rgba(255,255,255,.9);
  backdrop-filter:blur(30px) saturate(1.3);-webkit-backdrop-filter:blur(30px) saturate(1.3);
@@ -1041,9 +1055,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.27';
+const APP_VER='2.28';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.28',d:'2026-09-30',p:['Im Auftrag unter „Kalkulation“ steht jetzt die ganze Rechnung Schritt für Schritt: Lohn mit Arbeitswerten, Teile mit Einkauf und Verkauf, Ihr Aufschlag, Rabatte, Anzahlung.','Ganz unten steht groß „Zu zahlen bei Abholung“ – und intern Ihr Gewinn mit einem Balken, wie viel davon Lohn und wie viel Teile sind.']},
  {v:'2.27',d:'2026-09-30',p:['Im Auftrag steht die Kalkulation jetzt oben in einem dunklen Kasten: Netto, MwSt, Brutto und Gewinn — beim Scrollen bleibt er sichtbar.','Darunter sehen Sie auf einen Blick die Anzahlung, was der Kunde noch zahlen muss und die Marge in Prozent.']},
  {v:'2.26',d:'2026-09-30',p:['Neu: „Was ist neu“ — unter Mehr auf die Versionsnummer tippen, dann sehen Sie hier jede Neuerung mit Datum.','Ein kleiner Punkt an der Versionsnummer zeigt, wenn es etwas Neues gibt, das Sie noch nicht angesehen haben.']},
  {v:'2.25',d:'2026-09-28',p:['Entwürfe für die neue Auftragsmaske und die Suche liegen zur Auswahl bereit.']}
@@ -1085,6 +1100,26 @@ const ordProg=a=>{if(a.status==='fertig'||a.status==='abgeholt')return 100;
  const c=a.check||[];if(c.length){return Math.round(c.filter(x=>x.done).length/c.length*90)}
  return {offen:0,arbeit:45,teile:30}[a.status]??0};
 /*TEST-END*/
+/* Zahlen für Kalk-Kopf und Detail-Kalkulation (Entwurf 14) — nur aus der Engine abgeleitet */
+function ordKalk(a){
+ const all=a.pakete.flatMap(pk=>pk.pos);
+ const arbeiten=all.filter(p=>p.typ==='arbeit'),teile=all.filter(p=>p.typ==='teil');
+ const sonst=all.filter(p=>p.typ!=='arbeit'&&p.typ!=='teil'&&posNetto(p)>0);
+ const sum=l=>l.reduce((s,p)=>s+posNetto(p),0);
+ const lohn=sum(arbeiten),teileVk=sum(teile),sonstVk=sum(sonst),teileEk=teile.reduce((s,p)=>s+posEK(p),0);
+ const posSum=lohn+teileVk+sonstVk;
+ const rabPak=a.pakete.reduce((s,pk)=>s+rabCt(pakBrutto(pk),pk.rabatt),0);
+ const rabOrd=rabCt(ordSub(a),a.rabatt);
+ const netto=ordNetto(a),mwst=ordMwst(a),brutto=ordBrutto(a),gewinn=ordGewinn(a);
+ const offenNetto=ordOffenNetto(a),offenBr=offenNetto+Math.round(offenNetto*S.settings.mwst/100);
+ const abgerBr=Math.max(0,brutto-offenBr);
+ const restAnz=Math.max(0,(a.anzahlungCt||0)-(a.anzVerrCt||0));
+ const zuZahlen=Math.max(0,offenBr-restAnz);
+ const marge=netto?Math.round(gewinn/netto*100):0;
+ const lohnPct=lohn+teileVk?Math.round(lohn/(lohn+teileVk)*100):0;
+ return {arbeiten,teile,sonst,lohn,teileVk,sonstVk,teileEk,posSum,rabPak,rabOrd,netto,mwst,brutto,gewinn,offenNetto,abgerBr,restAnz,zuZahlen,marge,lohnPct,
+  aw:arbeiten.reduce((s,p)=>s+(p.aw||0)*(p.menge||1),0)};
+}
 
 /* ============ 4. SHELL, ROUTER, KOMPONENTEN ============ */
 let route={v:'planung'},navSlideDir=0,skipNextSlide=false,riseNext=false;
@@ -1669,7 +1704,36 @@ function vAuftrag(id){
   const discTog=(f,pid,rab)=>`<input class="priceinp" style="width:58px" inputmode="decimal" value="${rab.typ==='pct'?String(rab.wert).replace('.',','):fmtIn(rab.wert)}" data-f="${f}-w" data-oid="${a.id}" ${pid?`data-pid="${pid}"`:''}>
    <div class="disc-tog"><button class="${rab.typ==='eur'?'on':''}" data-act="${f}-t" data-oid="${a.id}" ${pid?`data-pid="${pid}"`:''} data-t="eur">€</button>
    <button class="${rab.typ==='pct'?'on':''}" data-act="${f}-t" data-oid="${a.id}" ${pid?`data-pid="${pid}"`:''} data-t="pct">%</button></div>`;
-  return a.pakete.map(pk=>`<div class="calc-pak">
+  const K=ordKalk(a),kr=(l,sub,v,cls='')=>`<div class="kr ${cls}"><span>${l}${sub?`<small>${sub}</small>`:''}</span><b class="num">${v}</b></div>`;
+  const satz=p=>p.awSatz||a.awCt||S.settings.awCt;
+  const detail=`<div class="kdet">
+   ${K.arbeiten.length?`<div class="kgrp"><div class="kgt"><span>Arbeitslohn</span><span class="num">${fmt(K.lohn)}</span></div>
+    ${K.arbeiten.map(p=>kr(esc(p.bez),p.aw?pct1(p.aw*(p.menge||1))+' AW × '+fmt(satz(p)):'',fmt(posNetto(p)))).join('')}
+    ${kr('Summe Lohn',pct1(K.aw)+' AW gesamt',fmt(K.lohn),'sumr')}</div>`:''}
+   ${K.teile.length?`<div class="kgrp"><div class="kgt"><span>Teile & Material</span><span class="num">${fmt(K.teileVk)}</span></div>
+    ${K.teile.map(p=>kr(esc(p.bez),(p.menge||1)+' × EK '+fmt(p.ekCt)+' → VK '+fmt(p.vkCt),fmt(posNetto(p)))).join('')}
+    ${kr('Teile-Aufschlag','VK − EK','+ '+fmt(K.teileVk-K.teileEk),'gw')}</div>`:''}
+   ${K.sonst.length?`<div class="kgrp"><div class="kgt"><span>Sonstiges</span><span class="num">${fmt(K.sonstVk)}</span></div>
+    ${K.sonst.map(p=>kr(esc(p.bez),'',fmt(posNetto(p)))).join('')}</div>`:''}
+   ${a.pakete.length>1?`<div class="kgrp"><div class="kgt"><span>Pakete</span></div>
+    ${a.pakete.map(pk=>kr(esc(pk.name),pk.pos.length+' Position'+(pk.pos.length!==1?'en':'')+(pk.abger?' · abgerechnet':''),fmt(pakNetto(pk)))).join('')}</div>`:''}
+   <div class="kgrp"><div class="kgt"><span>Abzüge & Summen</span></div>
+    ${kr('Zwischensumme','',fmt(K.posSum))}
+    ${K.rabPak?kr('Rabatt auf Pakete','','− '+fmt(K.rabPak),'neg'):''}
+    ${K.rabOrd?kr('Rabatt auf Auftrag',a.rabatt.typ==='pct'?String(a.rabatt.wert).replace('.',',')+' %':'','− '+fmt(K.rabOrd),'neg'):''}
+    ${kr('Netto','',fmt(K.netto))}
+    ${kr('MwSt '+S.settings.mwst+' %','',fmt(K.mwst))}
+    ${kr('Brutto','',fmt(K.brutto),'strong')}
+    ${K.abgerBr?kr('Bereits abgerechnet','Rechnungen','− '+fmt(K.abgerBr),'neg'):''}
+    ${K.restAnz?kr('Anzahlung erhalten',a.anzVerrCt?'noch nicht verrechnet':'','− '+fmt(K.restAnz),'neg'):''}
+    ${kr('Zu zahlen bei Abholung','',fmt(K.zuZahlen),'pay')}</div>
+   <div class="kgrp"><div class="kgt"><span>Ertrag (intern)</span></div>
+    ${kr('Wareneinsatz','EK Teile','− '+fmt(K.teileEk))}
+    ${kr('Deckungsbeitrag',K.marge+' % vom Netto',fmt(K.gewinn),K.gewinn<0?'neg':'gw')}
+    ${K.lohn+K.teileVk?`<div class="kbar" role="img" aria-label="Lohn ${K.lohnPct} %, Teile ${100-K.lohnPct} %"><i style="width:${K.lohnPct}%;background:#2C3E50"></i><i style="width:${100-K.lohnPct}%;background:#7FA3C4"></i></div>
+    <div class="kbl"><span><i style="background:#2C3E50"></i>Lohn ${K.lohnPct} %</span><span><i style="background:#7FA3C4"></i>Teile ${100-K.lohnPct} %</span></div>`:''}</div></div>
+   <div class="lbl">Preise & Rabatte anpassen</div>`;
+  return detail+a.pakete.map(pk=>`<div class="calc-pak">
    <div class="calc-ph"><span class="ct">${esc(pk.name)}</span><span class="tag ${KLASS[pk.klass][1]}">${KLASS[pk.klass][0].split(' ')[0]}</span></div>
    ${pk.pos.map(p=>`<div class="calc-row"><div class="cn">${esc(p.bez)}
      <div class="csub">${p.typ==='arbeit'?'Arbeit'+(p.aw?' · '+pct1(p.aw)+' AW':''):'Teil · EK '+fmt(p.ekCt)+' → <span class="gain">+'+fmt((p.vkCt-p.ekCt)*(p.menge||1))+'</span>'}${p.ext?' · Erweiterung':''}</div></div>
@@ -1831,15 +1895,11 @@ function vAuftrag(id){
   <input type="file" accept="image/*,video/*,.pdf,application/pdf,.heic,.heif" multiple id="photoinp" style="display:none">`;
  const side=a.notiz?`<button class="hd-note" data-act="goto-orga" data-oid="${a.id}"><span class="nb">!</span>Notiz</button>`:'';
  /* Kalk-Kopf (Entwurf 14): klebt oben, zeigt Summen, Anzahlung, offenen Betrag und Marge */
- const kNetto=ordNetto(a),kGew=ordGewinn(a);
- const restAnz=Math.max(0,(a.anzahlungCt||0)-(a.anzVerrCt||0));
- const offenBr=offen+Math.round(offen*S.settings.mwst/100);
- const zuZahlen=Math.max(0,offenBr-restAnz);
- const marge=kNetto?Math.round(kGew/kNetto*100):0;
+ const K=ordKalk(a);
  const kopf=`<div class="kkopf" aria-label="Kalkulation">
-  <div class="kk-grid"><div>Netto<b class="num">${fmt(kNetto)}</b></div><div>MwSt ${S.settings.mwst} %<b class="num">${fmt(ordMwst(a))}</b></div>
-   <div>Brutto<b class="num">${fmt(ordBrutto(a))}</b></div><div class="gw${kGew<0?' neg':''}">Gewinn<b class="num">${fmt(kGew)}</b></div></div>
-  <div class="kk-sub">${restAnz?`<span>Anzahlung <b class="num">− ${fmt(restAnz)}</b></span>`:''}<span>Noch offen <b class="num">${fmt(zuZahlen)}</b></span><span>Marge <b class="num">${marge} %</b></span></div></div>`;
+  <div class="kk-grid"><div>Netto<b class="num">${fmt(K.netto)}</b></div><div>MwSt ${S.settings.mwst} %<b class="num">${fmt(K.mwst)}</b></div>
+   <div>Brutto<b class="num">${fmt(K.brutto)}</b></div><div class="gw${K.gewinn<0?' neg':''}">Gewinn<b class="num">${fmt(K.gewinn)}</b></div></div>
+  <div class="kk-sub">${K.restAnz?`<span>Anzahlung <b class="num">− ${fmt(K.restAnz)}</b></span>`:''}<span>Noch offen <b class="num">${fmt(K.zuZahlen)}</b></span><span>Marge <b class="num">${K.marge} %</b></span></div></div>`;
  return shell(inner,{title:a.nr,eyebrow:'Auftrag · '+esc(f.kennz||''),back:1,side,bar,hideNav:true,ctx:'auftrag',kopf})+
   `<div class="calcbar">
    <div class="bbtns"><button class="bb bb-2nd" data-act="print-kv" data-oid="${a.id}">PDF</button>

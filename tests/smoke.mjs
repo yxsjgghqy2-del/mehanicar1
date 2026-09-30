@@ -46,6 +46,17 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       return el ? el.innerText.includes(fmt(ordBrutto(a))) : null; }, aid);
     if (kk !== true) errs.push('Kalk-Kopf fehlt oder Brutto falsch: ' + kk);
     if (shotDir) await page.screenshot({ path: `${shotDir}/auftrag-${w}.png` });
+    // Detail-Kalkulation: Modus „Kalkulation“, Summen müssen zur Engine passen
+    await page.click('[data-act="calc-mode"][data-m="calc"]', { timeout: 2000 }).catch(() => errs.push('Kalkulation-Knopf fehlt'));
+    await page.waitForTimeout(150);
+    const kd = await page.evaluate(id => { const a = auftrag(id), K = ordKalk(a), el = document.querySelector('.kdet');
+      if (!el) return 'fehlt';
+      if (K.posSum - K.rabPak - K.rabOrd !== K.netto) return 'Summe passt nicht: ' + JSON.stringify(K);
+      const pay = el.querySelector('.kr.pay b'); return pay && pay.textContent === fmt(K.zuZahlen) ? true : 'Zu zahlen falsch'; }, aid);
+    if (kd !== true) errs.push('Detail-Kalkulation: ' + kd);
+    if (shotDir) { await page.evaluate(() => document.querySelector('.kdet').scrollIntoView()); await page.screenshot({ path: `${shotDir}/kalk-${w}.png` }); }
+    await page.click('[data-act="calc-mode"][data-m="over"]', { timeout: 2000 }).catch(() => {});
+    await page.waitForTimeout(100);
     const n = await page.$$eval('button', b => b.length);
     for (let i = 0; i < Math.min(n, 25); i++) {
       const btns = await page.$$('button:visible');
