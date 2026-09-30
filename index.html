@@ -419,6 +419,11 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 .kr.neg b{color:#A05A2C}.kr.gw b{color:var(--green)}
 .kr.strong{border-top:1.5px solid var(--ink);border-bottom:none;margin-top:2px;padding-top:9px}.kr.strong>span{color:var(--ink);font-weight:700}.kr.strong b{font-weight:800;font-size:14px}
 .kr.pay{background:#2C3E50;border:none;border-radius:10px;padding:11px 12px;margin-top:8px}.kr.pay>span{color:#C9D2DA;font-weight:600}.kr.pay b{color:#fff;font-size:16px;font-weight:800}
+.krab{flex-wrap:wrap;align-items:center}.krab>span:first-child{flex:1 1 auto}
+.rabq{display:flex;gap:6px;order:3;width:100%;margin-top:6px}
+.rabq button{flex:1;min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:10px;font-size:12px;font-weight:700;color:var(--ink2);background:var(--bg)}
+.rabq button.on{background:#2C3E50;border-color:#2C3E50;color:#fff}
+.khint{font-size:11px;line-height:1.5;color:var(--ink3);margin-top:8px}
 .kbar{height:8px;border-radius:99px;background:var(--gray-bg);overflow:hidden;display:flex;margin:10px 0 5px}.kbar i{display:block;height:100%}
 .kbl{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink3)}.kbl i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:5px}
 /* Bottom Calc-Bar */
@@ -1055,9 +1060,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.28';
+const APP_VER='2.29';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.29',d:'2026-09-30',p:['Rabatt mit einem Tipp: In der Kalkulation eines Auftrags können Sie jetzt direkt 5 % oder 10 % Rabatt auf den ganzen Auftrag geben – oder mit 0 % wieder wegnehmen.','Alle Summen, die Anzeige oben und „Zu zahlen bei Abholung“ rechnen sofort mit.']},
  {v:'2.28',d:'2026-09-30',p:['Im Auftrag unter „Kalkulation“ steht jetzt die ganze Rechnung Schritt für Schritt: Lohn mit Arbeitswerten, Teile mit Einkauf und Verkauf, Ihr Aufschlag, Rabatte, Anzahlung.','Ganz unten steht groß „Zu zahlen bei Abholung“ – und intern Ihr Gewinn mit einem Balken, wie viel davon Lohn und wie viel Teile sind.']},
  {v:'2.27',d:'2026-09-30',p:['Im Auftrag steht die Kalkulation jetzt oben in einem dunklen Kasten: Netto, MwSt, Brutto und Gewinn — beim Scrollen bleibt er sichtbar.','Darunter sehen Sie auf einen Blick die Anzahlung, was der Kunde noch zahlen muss und die Marge in Prozent.']},
  {v:'2.26',d:'2026-09-30',p:['Neu: „Was ist neu“ — unter Mehr auf die Versionsnummer tippen, dann sehen Sie hier jede Neuerung mit Datum.','Ein kleiner Punkt an der Versionsnummer zeigt, wenn es etwas Neues gibt, das Sie noch nicht angesehen haben.']},
@@ -1112,12 +1118,15 @@ function ordKalk(a){
  const rabOrd=rabCt(ordSub(a),a.rabatt);
  const netto=ordNetto(a),mwst=ordMwst(a),brutto=ordBrutto(a),gewinn=ordGewinn(a);
  const offenNetto=ordOffenNetto(a),offenBr=offenNetto+Math.round(offenNetto*S.settings.mwst/100);
- const abgerBr=Math.max(0,brutto-offenBr);
+ /* Bereits abgerechnet: echte Rechnungsbeträge; ohne Rechnungen (z. B. Altdaten) aus den abgerechneten Paketen abgeleitet */
+ const reBr=(S.rechnungen||[]).filter(r=>r.auftragId===a.id).reduce((s,r)=>s+(r.bruttoCt||0),0);
+ const abgerBr=reBr||(a.pakete.some(pk=>pk.abger)?Math.max(0,brutto-offenBr):0);
+ const rabNurOffen=abgerBr>0&&Math.abs(brutto-abgerBr-offenBr)>1;
  const restAnz=Math.max(0,(a.anzahlungCt||0)-(a.anzVerrCt||0));
  const zuZahlen=Math.max(0,offenBr-restAnz);
  const marge=netto?Math.round(gewinn/netto*100):0;
  const lohnPct=lohn+teileVk?Math.round(lohn/(lohn+teileVk)*100):0;
- return {arbeiten,teile,sonst,lohn,teileVk,sonstVk,teileEk,posSum,rabPak,rabOrd,netto,mwst,brutto,gewinn,offenNetto,abgerBr,restAnz,zuZahlen,marge,lohnPct,
+ return {arbeiten,teile,sonst,lohn,teileVk,sonstVk,teileEk,posSum,rabPak,rabOrd,netto,mwst,brutto,gewinn,offenNetto,abgerBr,rabNurOffen,restAnz,zuZahlen,marge,lohnPct,
   aw:arbeiten.reduce((s,p)=>s+(p.aw||0)*(p.menge||1),0)};
 }
 
@@ -1720,13 +1729,15 @@ function vAuftrag(id){
    <div class="kgrp"><div class="kgt"><span>Abzüge & Summen</span></div>
     ${kr('Zwischensumme','',fmt(K.posSum))}
     ${K.rabPak?kr('Rabatt auf Pakete','','− '+fmt(K.rabPak),'neg'):''}
-    ${K.rabOrd?kr('Rabatt auf Auftrag',a.rabatt.typ==='pct'?String(a.rabatt.wert).replace('.',',')+' %':'','− '+fmt(K.rabOrd),'neg'):''}
+    ${(()=>{const r=a.rabatt||{typ:'eur',wert:0},on=v=>(r.wert||0)===v&&(v===0||r.typ==='pct');
+     return `<div class="kr neg krab"><span>Rabatt auf Auftrag</span><span class="rabq" role="group" aria-label="Rabatt auf Auftrag">${[0,5,10].map(v=>`<button class="${on(v)?'on':''}" data-act="orab-q" data-oid="${a.id}" data-r="${v}" aria-pressed="${on(v)}">${v} %</button>`).join('')}</span><b class="num">${K.rabOrd?'− '+fmt(K.rabOrd):'—'}</b></div>`})()}
     ${kr('Netto','',fmt(K.netto))}
     ${kr('MwSt '+S.settings.mwst+' %','',fmt(K.mwst))}
     ${kr('Brutto','',fmt(K.brutto),'strong')}
     ${K.abgerBr?kr('Bereits abgerechnet','Rechnungen','− '+fmt(K.abgerBr),'neg'):''}
     ${K.restAnz?kr('Anzahlung erhalten',a.anzVerrCt?'noch nicht verrechnet':'','− '+fmt(K.restAnz),'neg'):''}
-    ${kr('Zu zahlen bei Abholung','',fmt(K.zuZahlen),'pay')}</div>
+    ${kr('Zu zahlen bei Abholung','',fmt(K.zuZahlen),'pay')}
+    ${K.rabNurOffen?'<div class="khint">Ein nachträglich geänderter Rabatt gilt nur für die noch nicht abgerechneten Pakete. Deshalb ergibt Brutto minus Abgerechnetes hier nicht genau den offenen Betrag.</div>':''}</div>
    <div class="kgrp"><div class="kgt"><span>Ertrag (intern)</span></div>
     ${kr('Wareneinsatz','EK Teile','− '+fmt(K.teileEk))}
     ${kr('Deckungsbeitrag',K.marge+' % vom Netto',fmt(K.gewinn),K.gewinn<0?'neg':'gw')}
@@ -2005,6 +2016,8 @@ FSET['orab-w']=el=>{const a=auftrag(el.dataset.oid);a.rabatt=a.rabatt||{typ:'eur
  a.rabatt.wert=Math.max(0,a.rabatt.typ==='pct'?parseFloat(String(el.value).replace(',','.'))||0:parseEuro(el.value));save();render()};
 ACT['prab-t']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  pk.rabatt=pk.rabatt||{typ:'eur',wert:0};if(pk.rabatt.typ!==el.dataset.t){pk.rabatt.typ=el.dataset.t;pk.rabatt.wert=0}save();render()};
+ACT['orab-q']=el=>{const a=auftrag(el.dataset.oid);const r=Number(el.dataset.r)||0;
+ a.rabatt=r?{typ:'pct',wert:r}:{typ:'eur',wert:0};save();render();toast(r?'Rabatt '+r+' % auf den Auftrag':'Auftragsrabatt entfernt')};
 ACT['orab-t']=el=>{const a=auftrag(el.dataset.oid);a.rabatt=a.rabatt||{typ:'eur',wert:0};
  if(a.rabatt.typ!==el.dataset.t){a.rabatt.typ=el.dataset.t;a.rabatt.wert=0}save();render()};
 
