@@ -41,6 +41,11 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   if (aid) {
     await page.evaluate(id => nav('auftrag', id), aid);
     await page.waitForTimeout(200);
+    // Kalk-Kopf: muss da sein und Brutto wie die Engine zeigen
+    const kk = await page.evaluate(id => { const el = document.querySelector('.hdr .kkopf'); const a = auftrag(id);
+      return el ? el.innerText.includes(fmt(ordBrutto(a))) : null; }, aid);
+    if (kk !== true) errs.push('Kalk-Kopf fehlt oder Brutto falsch: ' + kk);
+    if (shotDir) await page.screenshot({ path: `${shotDir}/auftrag-${w}.png` });
     const n = await page.$$eval('button', b => b.length);
     for (let i = 0; i < Math.min(n, 25); i++) {
       const btns = await page.$$('button:visible');
