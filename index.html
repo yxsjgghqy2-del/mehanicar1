@@ -127,6 +127,13 @@ input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink);outlin
 .te-sys .inf{width:15px;height:15px;border-radius:50%;border:1.2px solid var(--ink3);color:var(--ink3);font-size:9.5px;font-weight:700;display:grid;place-items:center;flex-shrink:0;align-self:center}
 .te-sys.x .inf{background:var(--blue);border-color:var(--blue);color:#fff}
 .gain{color:var(--green);font-weight:650}
+.vers-btn{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;min-height:44px;padding:6px 16px;border-radius:12px;color:var(--ink3);font:inherit;position:relative}
+.vers-btn:active{background:var(--gray-bg)}
+.vers-sub{font-size:11px;font-weight:600;color:var(--ink2);text-decoration:underline;text-underline-offset:2px}
+.vers-dot{position:absolute;top:8px;right:6px;width:7px;height:7px;border-radius:50%;background:var(--red)}
+.wn-item{padding:12px 0;border-bottom:1px solid var(--line)}.wn-item:last-child{border-bottom:0}
+.wn-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}.wn-h b{font-size:14px}.wn-h>span:not(.tag){font-size:12px;color:var(--ink3)}
+.wn-item ul{margin:0;padding-left:18px;font-size:13px;line-height:1.55;color:var(--ink2)}.wn-item li{margin:3px 0}
 .empty{text-align:center;padding:52px 20px;color:var(--ink3);font-size:13px;line-height:1.65}
 .empty b{color:var(--ink2);font-size:15px;display:block;margin-bottom:6px}
 
@@ -1024,7 +1031,12 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.25';
+const APP_VER='2.26';
+/* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
+const WHATSNEW=[
+ {v:'2.26',d:'2026-09-30',p:['Neu: „Was ist neu“ — unter Mehr auf die Versionsnummer tippen, dann sehen Sie hier jede Neuerung mit Datum.','Ein kleiner Punkt an der Versionsnummer zeigt, wenn es etwas Neues gibt, das Sie noch nicht angesehen haben.']},
+ {v:'2.25',d:'2026-09-28',p:['Entwürfe für die neue Auftragsmaske und die Suche liegen zur Auswahl bereit.']}
+];
 const KLASS={tb:['Techn. Beanstandung','t-red'],kw:['Kundenwunsch','t-blue'],so:['Sonstige','t-gray']};
 const ZAHLER={kunde:'Kunde',vers:'Versicherung',gar:'Garantie',intern:'Intern / Kulanz',son:'Sonstiges'};
 const ZAHLER_KURZ={kunde:'K',vers:'V',gar:'G',intern:'I',son:'S'};
@@ -2638,9 +2650,15 @@ function vMehr(){
   ${[['termine','Terminkalender',IC.plan,(S.termine||[]).filter(t=>t.datum>=todayISO()).length+' anstehende Termine'],['lager','Lager',IC.box,S.lager.length+' Artikel im Bestand'],['kalender','Kapazität',IC.grid,'10-Tage-Plan · Mitarbeiter'],['bestellungen','Bestellungen',IC.truck,(S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen').length||'Keine')+' offen'],['kampagnen','Kampagnen',IC.mega,S.kampagnen.length+' Kampagnen gesendet'],['apdb','Arbeitspositionen',IC.book,(S.apDb||[]).length+' Positionen · '+(S.apKombi||[]).length+' Kombis'],['pakvorlagen','Paket-Vorlagen',IC.stack,(S.pakVorlagen||[]).length+' Vorlagen'],['team','Team',IC.team,S.mitarbeiter.length+' Mitarbeiter'],['personal','Personalwesen',IC.team,(S.krankmeldungen||[]).filter(k=>k.von<=todayISO()&&k.bis>=todayISO()).length+' aktive Krankmeldungen'],['fahrzeuge','Fahrzeuge',IC.car,S.fahrzeuge.length+' Fahrzeuge'],['finanzen','Finanzen',IC.fin,S.rechnungen.length+' Rechnungen'],['einstellungen','Einstellungen',IC.gear,'Firma, Preise, Werkstatt, Daten']].map(([v,l,ic,sub])=>
    `<div class="lrow" data-act="open" data-v="${v}"><div class="av" style="background:var(--gray-bg);color:var(--ink2)">${ic}</div>
     <div class="lt"><b>${l}</b><span>${sub}</span></div><span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')}</div>
-  <div style="text-align:center;font-size:10.5px;color:var(--ink3);margin-top:18px;line-height:1.7">mehanicar · Version ${APP_VER}<br>${memOnly?'<span style="color:var(--red)">Achtung: Speicher blockiert — Daten gehen beim Schließen verloren</span>':((S.settings.sync&&S.settings.sync.on)?'Cloud-Backup aktiv — jede Änderung wird automatisch gesichert':'Daten nur lokal — Cloud-Backup in den Einstellungen aktivierbar')}</div>`;
+  <div style="text-align:center;font-size:10.5px;color:var(--ink3);margin-top:18px;line-height:1.7"><button class="vers-btn" data-act="whatsnew" aria-label="Was ist neu in Version ${APP_VER}">mehanicar · Version ${APP_VER}${S.settings.seenVer!==APP_VER?'<span class="vers-dot" aria-hidden="true"></span>':''}<span class="vers-sub">Was ist neu?</span></button><br>${memOnly?'<span style="color:var(--red)">Achtung: Speicher blockiert — Daten gehen beim Schließen verloren</span>':((S.settings.sync&&S.settings.sync.on)?'Cloud-Backup aktiv — jede Änderung wird automatisch gesichert':'Daten nur lokal — Cloud-Backup in den Einstellungen aktivierbar')}</div>`;
  return shell(inner,{title:'Mehr',eyebrow:'mehanicar'});
 }
+ACT.whatsnew=()=>{
+ const dt=iso=>{const [y,m,d]=iso.split('-');return d+'.'+m+'.'+y};
+ sheet('Was ist neu',WHATSNEW.map((e,i)=>`
+  <div class="wn-item${i?'':' wn-cur'}"><div class="wn-h"><b>Version ${esc(e.v)}</b><span>${dt(e.d)}</span>${i?'':'<span class="tag t-green">Aktuell</span>'}</div>
+   <ul>${e.p.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div>`).join(''));
+ if(S.settings.seenVer!==APP_VER){S.settings.seenVer=APP_VER;save();const d=$('.vers-dot');if(d)d.remove()}};
 let finSec={umsatz:true,gewinn:true,offen:true,mitarb:true,kunden:true,status:true,rechnung:true};
 function vFinanzen(){
  const now=new Date(),mKey=d=>d.slice(0,7);

@@ -27,6 +27,15 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     if (sw > w + 1) errs.push(`${v}: horizontales Scrollen (${sw}px bei ${w}px)`);
     if (shotDir && w === 390) await page.screenshot({ path: `${shotDir}/${v}.png` });
   }
+  // „Was ist neu“: Mehr → Versionsnummer antippen, Liste muss erscheinen, Punkt verschwinden
+  await page.evaluate(() => nav('mehr'));
+  await page.waitForTimeout(120);
+  await page.click('[data-act="whatsnew"]', { timeout: 2000 }).catch(e => errs.push('Was ist neu: Knopf fehlt'));
+  await page.waitForTimeout(150);
+  const wn = await page.evaluate(() => ({ items: document.querySelectorAll('#sheetbg .wn-item').length, dot: !!document.querySelector('.vers-dot'), seen: S.settings.seenVer === APP_VER }));
+  if (!wn.items || wn.dot || !wn.seen) errs.push('Was ist neu: ' + JSON.stringify(wn));
+  if (shotDir) await page.screenshot({ path: `${shotDir}/whatsnew-${w}.png` });
+  await page.evaluate(() => closeSheet());
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {
