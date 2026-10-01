@@ -267,6 +267,23 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 .sec.open>.sec-b{max-height:7000px}
 .sec-in{padding:0 15px 15px}
 .dotmark{width:7px;height:7px;border-radius:50%;background:var(--red);display:inline-block}
+.hd-search{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;background:var(--card);border:1px solid var(--line);flex-shrink:0}
+.hd-search svg{width:19px;height:19px;stroke:var(--ink2);fill:none;stroke-width:2;stroke-linecap:round}
+.gs-bg{position:fixed;inset:0;z-index:70;background:var(--bg);animation:fadeIn .15s ease}
+.gs{max-width:720px;margin:0 auto;height:100%;display:flex;flex-direction:column}
+.gs-top{display:flex;align-items:center;gap:10px;padding:calc(var(--sat) + 12px) 16px 10px}
+.gs-bar{flex:1;margin:0!important;min-height:44px}
+.gs-bar input{font-size:16px;min-width:0}
+.gs-x{min-height:44px;padding:0 6px;font-size:14px;font-weight:650;color:var(--ink)}
+.gs-res{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:4px 16px calc(var(--sab) + 24px)}
+.gs-leer{color:var(--ink3);font-size:13px;line-height:1.6;padding:24px 4px;text-align:center}
+.gs-grp{margin-bottom:14px}
+.gs-gt{display:flex;justify-content:space-between;font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3);padding:6px 4px}
+.gs-row{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;text-align:left;min-height:52px;padding:9px 13px;background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:6px;font:inherit;color:var(--ink)}
+.gs-row:active{transform:scale(.99)}
+.gs-row b{font-size:14px;font-weight:650}
+.gs-row span{font-size:12px;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.gs-mehr{font-size:11.5px;color:var(--ink3);padding:2px 4px}
 .hd-note{display:flex;align-items:center;gap:5px;background:var(--red-bg);color:var(--red);
  border:1px solid rgba(224,53,59,.3);border-radius:8px;padding:5px 8px;font-size:10.5px;font-weight:600;animation:fadeUp .3s ease}
 .hd-note .nb{width:15px;height:17px;border:1.5px solid var(--red);border-radius:3px;display:grid;place-items:center;
@@ -1060,9 +1077,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.29';
+const APP_VER='2.30';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.30',d:'2026-10-01',p:['Neue Suche: Oben rechts auf die Lupe tippen und Name, Kennzeichen, Auftragsnummer oder Telefonnummer eintippen – Kunden, Fahrzeuge und Aufträge erscheinen sofort.','Kennzeichen finden Sie auch ohne Leerzeichen und Bindestrich, zum Beispiel „sm247“.']},
  {v:'2.29',d:'2026-09-30',p:['Rabatt mit einem Tipp: In der Kalkulation eines Auftrags können Sie jetzt direkt 5 % oder 10 % Rabatt auf den ganzen Auftrag geben – oder mit 0 % wieder wegnehmen.','Alle Summen, die Anzeige oben und „Zu zahlen bei Abholung“ rechnen sofort mit.']},
  {v:'2.28',d:'2026-09-30',p:['Im Auftrag unter „Kalkulation“ steht jetzt die ganze Rechnung Schritt für Schritt: Lohn mit Arbeitswerten, Teile mit Einkauf und Verkauf, Ihr Aufschlag, Rabatte, Anzahlung.','Ganz unten steht groß „Zu zahlen bei Abholung“ – und intern Ihr Gewinn mit einem Balken, wie viel davon Lohn und wie viel Teile sind.']},
  {v:'2.27',d:'2026-09-30',p:['Im Auftrag steht die Kalkulation jetzt oben in einem dunklen Kasten: Netto, MwSt, Brutto und Gewinn — beim Scrollen bleibt er sichtbar.','Darunter sehen Sie auf einen Blick die Anzahlung, was der Kunde noch zahlen muss und die Marge in Prozent.']},
@@ -1145,7 +1163,7 @@ function shell(inner,{title,eyebrow,back,side='',hideNav=false,bar='',ctx='',kop
  <div class="hdr${ctx?' ctx-'+ctx:''}"><div class="hdr-row">
   ${back?`<button class="back-btn" data-act="back" aria-label="Zurück"></button>`:''}
   <div>${eyebrow?`<div class="eyebrow">${eyebrow}</div>`:''}<h1>${title}</h1></div>
-  <div class="hdr-side">${side}</div>
+  <div class="hdr-side">${side}${back?'':`<button class="hd-search" data-act="gsuche" aria-label="Alles durchsuchen">${IC.search}</button>`}</div>
  </div>${bar?`<div class="hdr-bar-wrap">${bar}</div>`:''}${kopf}</div>
  <div class="main" id="main">${inner}</div>
  ${hideNav?'':`<div class="nav">${NAVITEMS.map(([v,l,ic])=>{const isOn=route.v===v||(v==='mehr'&&['fahrzeuge','fahrzeug','finanzen','einstellungen','kalender','buchen','lager','bestellungen','kampagnen','team','personal','impressum','datenschutz','apdb','pakvorlagen'].includes(route.v));const badge=v==='anfragen'&&(S.anfragen||[]).filter(q=>q.status==='neu').length>0?'<i class="nav-badge"></i>':'';return`<button data-act="nav" data-v="${v}" class="${isOn?'on':''}" style="position:relative"><span class="nic">${ic}</span>${l}${badge}</button>`}).join('')}</div>`}`;
@@ -1171,6 +1189,40 @@ function sheet(title,body,foot=''){
  return w;
 }
 function closeSheet(){const s=$('#sheetbg');if(s)s.remove()}
+/* Globale Suche (Backlog A3): Kunden, Fahrzeuge, Aufträge — Kennzeichen auch kompakt („hu sm247“, „sm247“) */
+const sNorm=s=>String(s??'').toLowerCase().replace(/[\s\-.\/]/g,'');
+function gSucheTreffer(q){
+ const toks=String(q).toLowerCase().split(/\s+/).map(sNorm).filter(Boolean);
+ if(!toks.length)return null;
+ const hit=parts=>{const all=sNorm(parts.join(' '));return toks.every(t=>all.includes(t))};
+ const kun=S.kunden.filter(k=>hit([k.name,k.ansprechpartner,k.tel,k.email,k.adresse,...S.fahrzeuge.filter(f=>f.kundeId===k.id).map(f=>f.kennz)]))
+  .map(k=>({v:'kunde',id:k.id,t:k.name,s:[k.tel,S.fahrzeuge.filter(f=>f.kundeId===k.id).map(f=>f.kennz).join(', ')].filter(Boolean).join(' · ')}));
+ const fz=S.fahrzeuge.filter(f=>hit([f.kennz,f.marke,f.modell,f.vin,(kunde(f.kundeId)||{}).name]))
+  .map(f=>({v:'fahrzeug',id:f.id,t:f.kennz||'Fahrzeug',s:[[f.marke,f.modell].filter(Boolean).join(' '),(kunde(f.kundeId)||{}).name].filter(Boolean).join(' · ')}));
+ const au=S.auftraege.filter(a=>hit([a.nr,(kunde(a.kundeId)||{}).name,(fzg(a.fzgId)||{}).kennz,...a.pakete.map(p=>p.name)]))
+  .sort((x,y)=>(y.annahme||'').localeCompare(x.annahme||''))
+  .map(a=>({v:'auftrag',id:a.id,t:a.nr+' · '+((fzg(a.fzgId)||{}).kennz||''),s:[(kunde(a.kundeId)||{}).name,a.pakete.map(p=>p.name).join(', '),statL(a.status)[1]].filter(Boolean).join(' · ')}));
+ return [['Kunden',kun],['Fahrzeuge',fz],['Aufträge',au]].filter(g=>g[1].length);
+}
+function gSucheListe(q){
+ const g=gSucheTreffer(q);
+ if(!g)return '<div class="gs-leer">Name, Kennzeichen (auch ohne Leerzeichen), Auftragsnummer oder Telefonnummer eintippen.</div>';
+ if(!g.length)return `<div class="gs-leer">Nichts gefunden für „${esc(q)}“.</div>`;
+ return g.map(([l,list])=>`<div class="gs-grp"><div class="gs-gt">${l}<span>${list.length}</span></div>
+  ${list.slice(0,8).map(r=>`<button class="gs-row" data-act="gsuche-go" data-v="${r.v}" data-id="${r.id}"><b>${esc(r.t)}</b><span>${esc(r.s)}</span></button>`).join('')}
+  ${list.length>8?`<div class="gs-mehr">+ ${list.length-8} weitere — Suche genauer eingeben</div>`:''}</div>`).join('');
+}
+function closeSuche(){const s=$('#gsuche');if(s)s.remove()}
+function openSuche(){closeSuche();
+ const w=document.createElement('div');w.id='gsuche';w.className='gs-bg';
+ w.innerHTML=`<div class="gs" role="dialog" aria-label="Suche"><div class="gs-top"><div class="searchbar gs-bar">${IC.search}<input type="search" id="gs-in" placeholder="Alles durchsuchen" autocomplete="off" enterkeyhint="search" aria-label="Suchbegriff"></div>
+  <button class="gs-x" data-act="gsuche-zu">Fertig</button></div><div class="gs-res" id="gs-res">${gSucheListe('')}</div></div>`;
+ document.body.appendChild(w);
+ const inp=w.querySelector('#gs-in'),res=w.querySelector('#gs-res');
+ inp.addEventListener('input',()=>{res.innerHTML=gSucheListe(inp.value)});
+ inp.addEventListener('keydown',e=>{if(e.key==='Escape')closeSuche();if(e.key==='Enter'){const b=res.querySelector('.gs-row');if(b)b.click()}});
+ setTimeout(()=>inp.focus(),30)}
+document.addEventListener('keydown',e=>{if((e.key==='k'&&(e.metaKey||e.ctrlKey))||(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||''))){e.preventDefault();openSuche()}});
 function confirmBox(title,msg,okLabel,onOk,danger=true){
  const w=document.createElement('div');w.className='confirm-bg';
  w.innerHTML=`<div class="confirm"><h3>${title}</h3><p>${msg}</p>
@@ -1230,6 +1282,9 @@ ACT.nav=el=>nav(el.dataset.v==='mehr'?'mehr':el.dataset.v);
 ACT.back=()=>{if(route._from&&route._from.v&&route._from.v!==route.v){const f=route._from;route={v:f.v,id:f.id};window.scrollTo(0,0);render()}else nav(route.v==='auftrag'?'auftraege':route.v==='kunde'?'kunden':route.v==='fahrzeug'?'fahrzeuge':'planung')};
 ACT['sheet-close']=()=>closeSheet();
 ACT.open=el=>nav(el.dataset.v,el.dataset.id);
+ACT.gsuche=()=>openSuche();
+ACT['gsuche-zu']=()=>closeSuche();
+ACT['gsuche-go']=el=>{closeSuche();nav(el.dataset.v,el.dataset.id)};
 ACT.tel=el=>{const k=kunde(el.dataset.id);if(k&&k.tel)location.href='tel:'+k.tel.replace(/\s/g,'')};
 ACT.wa=el=>{const k=kunde(el.dataset.id);if(k&&k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+(el.dataset.msg?'?text='+encodeURIComponent(el.dataset.msg):'')};
 ACT.mail=el=>{const k=kunde(el.dataset.id);if(k&&k.email)location.href='mailto:'+k.email};

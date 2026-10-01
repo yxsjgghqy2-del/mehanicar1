@@ -36,6 +36,21 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   if (!wn.items || wn.dot || !wn.seen) errs.push('Was ist neu: ' + JSON.stringify(wn));
   if (shotDir) await page.screenshot({ path: `${shotDir}/whatsnew-${w}.png` });
   await page.evaluate(() => closeSheet());
+  // Globale Suche: Lupe → „sm247“ (kompaktes Kennzeichen) → Treffer antippen
+  await page.evaluate(() => nav('planung'));
+  await page.waitForTimeout(120);
+  await page.click('[data-act="gsuche"]', { timeout: 2000 }).catch(() => errs.push('Such-Lupe fehlt'));
+  await page.fill('#gs-in', 'sm247').catch(() => errs.push('Suchfeld fehlt'));
+  await page.waitForTimeout(150);
+  const gs = await page.evaluate(() => [...document.querySelectorAll('#gsuche .gs-gt')].map(e => e.firstChild.textContent));
+  if (!gs.includes('Fahrzeuge') || !gs.includes('Aufträge')) errs.push('Suche „sm247“: Gruppen ' + JSON.stringify(gs));
+  if (shotDir) await page.screenshot({ path: `${shotDir}/suche-${w}.png` });
+  const swS = await page.evaluate(() => document.documentElement.scrollWidth);
+  if (swS > w + 1) errs.push(`Suche: horizontales Scrollen (${swS}px)`);
+  await page.click('#gsuche .gs-row', { timeout: 2000 }).catch(() => errs.push('Suchtreffer nicht antippbar'));
+  await page.waitForTimeout(150);
+  const gsNach = await page.evaluate(() => ({ zu: !document.getElementById('gsuche'), v: route.v }));
+  if (!gsNach.zu || !['kunde', 'fahrzeug', 'auftrag'].includes(gsNach.v)) errs.push('Suchtreffer öffnet nichts: ' + JSON.stringify(gsNach));
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {
