@@ -62,6 +62,24 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   await page.waitForTimeout(150);
   if (!(await page.evaluate(() => !!document.getElementById('lg-t')))) errs.push('Lager-Treffer öffnet kein Teil');
   await page.evaluate(() => closeSheet());
+  // Suche Scheibe 3: Schnellbefehle
+  await page.evaluate(() => openSuche());
+  await page.fill('#gs-in', 'neuer auftrag').catch(() => errs.push('Suchfeld fehlt (3)'));
+  await page.waitForTimeout(120);
+  await page.click('#gsuche .gs-row[data-a="ord-new"]', { timeout: 2000 }).catch(() => errs.push('Befehl „neuer auftrag“ fehlt'));
+  await page.waitForTimeout(150);
+  if (!(await page.evaluate(() => (document.querySelector('#sheetbg h2') || {}).textContent === 'Neuer Auftrag'))) errs.push('„neuer auftrag“ öffnet keine Maske');
+  await page.evaluate(() => closeSheet());
+  const beVor = await page.evaluate(() => S.bestellungen.length);
+  await page.evaluate(() => openSuche());
+  await page.fill('#gs-in', 'bestell bremsbel');
+  await page.waitForTimeout(120);
+  if (shotDir) await page.screenshot({ path: `${shotDir}/befehl-${w}.png` });
+  await page.click('#gsuche .gs-row[data-a="gs-bestell"]', { timeout: 2000 }).catch(() => errs.push('Befehl „bestell …“ ohne Treffer'));
+  await page.click('.confirm-bg [data-c="1"]', { timeout: 2000 }).catch(() => errs.push('Bestell-Rückfrage fehlt'));
+  await page.waitForTimeout(150);
+  const beNach = await page.evaluate(() => ({ n: S.bestellungen.length, v: route.v }));
+  if (beNach.n !== beVor + 1 || beNach.v !== 'bestellungen') errs.push('„bestell …“ legt keine Bestellung an: ' + JSON.stringify(beNach));
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {
