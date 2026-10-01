@@ -1077,9 +1077,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.30';
+const APP_VER='2.31';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.31',d:'2026-10-01',p:['Die Suche findet jetzt viel mehr: einzelne Arbeiten und Teile in Aufträgen, Rechnungen, Termine, Anfragen und das Lager.','Beispiel: „brems“ zeigt alle Bremsen-Aufträge, die Anfrage wegen quietschender Bremsen und die Bremsscheiben im Regal – ein Tipp öffnet den Treffer.']},
  {v:'2.30',d:'2026-10-01',p:['Neue Suche: Oben rechts auf die Lupe tippen und Name, Kennzeichen, Auftragsnummer oder Telefonnummer eintippen – Kunden, Fahrzeuge und Aufträge erscheinen sofort.','Kennzeichen finden Sie auch ohne Leerzeichen und Bindestrich, zum Beispiel „sm247“.']},
  {v:'2.29',d:'2026-09-30',p:['Rabatt mit einem Tipp: In der Kalkulation eines Auftrags können Sie jetzt direkt 5 % oder 10 % Rabatt auf den ganzen Auftrag geben – oder mit 0 % wieder wegnehmen.','Alle Summen, die Anzeige oben und „Zu zahlen bei Abholung“ rechnen sofort mit.']},
  {v:'2.28',d:'2026-09-30',p:['Im Auftrag unter „Kalkulation“ steht jetzt die ganze Rechnung Schritt für Schritt: Lohn mit Arbeitswerten, Teile mit Einkauf und Verkauf, Ihr Aufschlag, Rabatte, Anzahlung.','Ganz unten steht groß „Zu zahlen bei Abholung“ – und intern Ihr Gewinn mit einem Balken, wie viel davon Lohn und wie viel Teile sind.']},
@@ -1202,14 +1203,24 @@ function gSucheTreffer(q){
  const au=S.auftraege.filter(a=>hit([a.nr,(kunde(a.kundeId)||{}).name,(fzg(a.fzgId)||{}).kennz,...a.pakete.map(p=>p.name)]))
   .sort((x,y)=>(y.annahme||'').localeCompare(x.annahme||''))
   .map(a=>({v:'auftrag',id:a.id,t:a.nr+' · '+((fzg(a.fzgId)||{}).kennz||''),s:[(kunde(a.kundeId)||{}).name,a.pakete.map(p=>p.name).join(', '),statL(a.status)[1]].filter(Boolean).join(' · ')}));
- return [['Kunden',kun],['Fahrzeuge',fz],['Aufträge',au]].filter(g=>g[1].length);
+ const auKurz=a=>[a.nr,(fzg(a.fzgId)||{}).kennz,(kunde(a.kundeId)||{}).name].filter(Boolean).join(' · ');
+ const pos=S.auftraege.flatMap(a=>a.pakete.flatMap(pk=>pk.pos.filter(p=>hit([p.bez,p.artnr,p.abhilfe])).map(p=>({v:'auftrag',id:a.id,t:p.bez,s:auKurz(a)+(posNetto(p)?' · '+fmt(posNetto(p)):'')}))));
+ const re=(S.rechnungen||[]).filter(r=>{const a=auftrag(r.auftragId)||{};return hit([r.nr,(kunde(a.kundeId)||{}).name,(fzg(a.fzgId)||{}).kennz])})
+  .slice().reverse().map(r=>{const a=auftrag(r.auftragId);return {v:'auftrag',id:a?a.id:'',t:r.nr,s:[dLabel(r.datum),a?(kunde(a.kundeId)||{}).name:'',fmt(r.bruttoCt),r.bezahlt?'bezahlt':'offen'].filter(Boolean).join(' · ')}}).filter(r=>r.id);
+ const te=(S.termine||[]).filter(t=>hit([t.titel,t.notiz,(kunde(t.kundeId)||{}).name]))
+  .sort((x,y)=>(y.datum||'').localeCompare(x.datum||'')).map(t=>({a:'termin-open',id:t.id,t:t.titel,s:[dLabel(t.datum)+(t.von?' '+t.von:''),(kunde(t.kundeId)||{}).name].filter(Boolean).join(' · ')}));
+ const an=(S.anfragen||[]).filter(x=>hit([x.name,x.tel,x.betreff,x.original,x.notiz]))
+  .map(x=>({v:'anfrage',id:x.id,t:x.betreff||x.name||'Anfrage',s:[x.name,x.status].filter(Boolean).join(' · ')}));
+ const la=(S.lager||[]).filter(l=>hit([l.teil,l.artnr,l.herst,l.ort]))
+  .map(l=>({a:'lager-edit',id:l.id,t:l.teil,s:[l.herst,l.artnr,'Bestand '+l.bestand,l.ort].filter(Boolean).join(' · ')}));
+ return [['Kunden',kun],['Fahrzeuge',fz],['Aufträge',au],['Arbeiten & Teile in Aufträgen',pos],['Rechnungen',re],['Termine',te],['Anfragen',an],['Lager',la]].filter(g=>g[1].length);
 }
 function gSucheListe(q){
  const g=gSucheTreffer(q);
- if(!g)return '<div class="gs-leer">Name, Kennzeichen (auch ohne Leerzeichen), Auftragsnummer oder Telefonnummer eintippen.</div>';
+ if(!g)return '<div class="gs-leer">Name, Kennzeichen (auch ohne Leerzeichen), Auftrags- oder Rechnungsnummer, Telefonnummer, Arbeit oder Teil eintippen.</div>';
  if(!g.length)return `<div class="gs-leer">Nichts gefunden für „${esc(q)}“.</div>`;
  return g.map(([l,list])=>`<div class="gs-grp"><div class="gs-gt">${l}<span>${list.length}</span></div>
-  ${list.slice(0,8).map(r=>`<button class="gs-row" data-act="gsuche-go" data-v="${r.v}" data-id="${r.id}"><b>${esc(r.t)}</b><span>${esc(r.s)}</span></button>`).join('')}
+  ${list.slice(0,8).map(r=>`<button class="gs-row" data-act="gsuche-go" ${r.a?`data-a="${r.a}"`:`data-v="${r.v}"`} data-id="${r.id}"><b>${esc(r.t)}</b><span>${esc(r.s)}</span></button>`).join('')}
   ${list.length>8?`<div class="gs-mehr">+ ${list.length-8} weitere — Suche genauer eingeben</div>`:''}</div>`).join('');
 }
 function closeSuche(){const s=$('#gsuche');if(s)s.remove()}
@@ -1284,7 +1295,7 @@ ACT['sheet-close']=()=>closeSheet();
 ACT.open=el=>nav(el.dataset.v,el.dataset.id);
 ACT.gsuche=()=>openSuche();
 ACT['gsuche-zu']=()=>closeSuche();
-ACT['gsuche-go']=el=>{closeSuche();nav(el.dataset.v,el.dataset.id)};
+ACT['gsuche-go']=el=>{closeSuche();if(el.dataset.a&&ACT[el.dataset.a])ACT[el.dataset.a](el);else nav(el.dataset.v,el.dataset.id)};
 ACT.tel=el=>{const k=kunde(el.dataset.id);if(k&&k.tel)location.href='tel:'+k.tel.replace(/\s/g,'')};
 ACT.wa=el=>{const k=kunde(el.dataset.id);if(k&&k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+(el.dataset.msg?'?text='+encodeURIComponent(el.dataset.msg):'')};
 ACT.mail=el=>{const k=kunde(el.dataset.id);if(k&&k.email)location.href='mailto:'+k.email};
