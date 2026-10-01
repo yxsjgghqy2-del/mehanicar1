@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 01.10.2026 (2. Lauf) — Version 2.31: Starke Suchleiste, Scheibe 2
+- **Recherche:** entfallen (heute schon erledigt).
+- **Gebaut:** `gSucheTreffer` hat neue Gruppen: Arbeiten & Teile in Aufträgen (→ Auftrag), Rechnungen (→ Auftrag), Termine (→ `termin-open`), Anfragen (→ Anfrage), Lager (→ `lager-edit`). Treffer mit `data-a` rufen den passenden Handler auf, sonst `nav`.
+- **Test:** Smoke-Test grün (390/1280), sucht „brems“, prüft die Gruppen und öffnet den Lager-Treffer. SW v32.
+- **Offen / nächster Handgriff:** A3 Scheibe 3, Schnellbefehle in der Suche (z. B. „neuer auftrag“, „bestell dot4“ → Bestellliste), danach A4 Anlege-Masken.
+
 ## 01.10.2026 — Version 2.30: Starke Suchleiste, Scheibe 1
 - **Recherche (a) Konkurrenz:** Aktuelle Werkstattsoftware (SmartWerkstatt, easyWerkstatt, Zeitmechanik) hat als Standard: digitale Annahme mit Schadensfotos, Kundenportal, in dem der Kunde Zusatzarbeiten inkl. Video-Check freigibt, Live-Status für das Büro. → C-Idee „Kunden-Statusseite“ geschärft. Quellen: fuer-gruender.de (Vergleich 09/2026), smartwerkstatt.cloud.
 - **Gebaut:** Lupe (44 px) im Kopf aller Hauptseiten, außerdem Strg/⌘+K oder „/“ am Desktop. Öffnet eine Vollbild-Suche mit Live-Treffern, gruppiert nach Kunden, Fahrzeugen und Aufträgen (je max. 8). Kennzeichen werden ohne Leerzeichen und Bindestrich verglichen („sm247“ findet „HU-SM 247“), mehrere Wörter müssen alle passen. Enter öffnet den ersten Treffer, Esc schließt. Code: `gSucheTreffer`/`openSuche` nach `closeSheet`.

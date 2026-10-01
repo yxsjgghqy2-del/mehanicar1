@@ -51,6 +51,17 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   await page.waitForTimeout(150);
   const gsNach = await page.evaluate(() => ({ zu: !document.getElementById('gsuche'), v: route.v }));
   if (!gsNach.zu || !['kunde', 'fahrzeug', 'auftrag'].includes(gsNach.v)) errs.push('Suchtreffer öffnet nichts: ' + JSON.stringify(gsNach));
+  // Suche Scheibe 2: „brems“ → Positionen, Anfragen, Lager; Lager-Treffer öffnet das Teil
+  await page.evaluate(() => { nav('planung'); openSuche(); });
+  await page.fill('#gs-in', 'brems').catch(() => errs.push('Suchfeld fehlt (2)'));
+  await page.waitForTimeout(150);
+  const gs2 = await page.evaluate(() => [...document.querySelectorAll('#gsuche .gs-gt')].map(e => e.firstChild.textContent));
+  for (const g of ['Arbeiten & Teile in Aufträgen', 'Anfragen', 'Lager']) if (!gs2.includes(g)) errs.push('Suche „brems“: Gruppe fehlt ' + g);
+  if (shotDir) await page.screenshot({ path: `${shotDir}/suche2-${w}.png` });
+  await page.click('#gsuche .gs-row[data-a="lager-edit"]', { timeout: 2000 }).catch(() => errs.push('Lager-Treffer fehlt'));
+  await page.waitForTimeout(150);
+  if (!(await page.evaluate(() => !!document.getElementById('lg-t')))) errs.push('Lager-Treffer öffnet kein Teil');
+  await page.evaluate(() => closeSheet());
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {
