@@ -424,6 +424,25 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 .kk-sub b{color:#fff;font-weight:700;font-variant-numeric:tabular-nums}
 .hdr.hmin .kkopf{margin-top:6px;padding:8px 12px}
 .hdr.hmin .kk-sub{display:none}
+/* Anlege-Masken (Entwurf 14): Vorschau-Kopf + aufklappbare Balken */
+.mkopf{display:flex;align-items:center;gap:12px;background:#2C3E50;color:#ECF0F3;border-radius:14px;padding:13px 14px;margin:2px 0 12px}
+.mk-av{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-weight:800;font-size:15px;flex-shrink:0}
+.mk-tx{flex:1;min-width:0}.mk-tx b{display:block;font-size:15px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk-tx span{display:block;font-size:11.5px;color:rgba(236,240,243,.72);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mk-tag{font-size:10px;border:1px solid rgba(255,255,255,.4);border-radius:7px;padding:3px 8px;flex-shrink:0}
+.msec{background:var(--card);border:1px solid var(--line);border-radius:12px;margin-bottom:9px;overflow:hidden}
+.msec>summary{list-style:none;display:flex;align-items:center;gap:9px;min-height:48px;padding:0 14px;cursor:pointer;font-size:13px;font-weight:700}
+.msec>summary::-webkit-details-marker{display:none}
+.msec .mm{margin-left:auto;font-size:11px;font-weight:500;color:var(--ink3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:55%}
+.msec .chev{width:7px;height:7px;border-right:1.6px solid var(--ink3);border-bottom:1.6px solid var(--ink3);transform:rotate(45deg);transition:transform .2s;flex-shrink:0}
+.msec[open] .chev{transform:rotate(225deg)}
+.msec-b{padding:2px 14px 14px}
+.mchk{display:flex;align-items:center;gap:8px;min-height:44px;font-size:13px;color:var(--ink)}
+.mseg{display:flex;gap:6px}.mseg label{flex:1}
+.mseg input{position:absolute;opacity:0;pointer-events:none}
+.mseg span{display:grid;place-items:center;min-height:44px;border:1px solid var(--line);border-radius:10px;font-size:12.5px;font-weight:650;color:var(--ink2);background:var(--bg)}
+.mseg input:checked+span{background:#2C3E50;border-color:#2C3E50;color:#fff}
+.mseg input:focus-visible+span{outline:2px solid var(--blue);outline-offset:2px}
 /* Detail-Kalkulation (Entwurf 14) */
 .kdet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 14px 12px;margin-bottom:12px}
 .kgrp{margin:2px 0 8px}
@@ -1077,9 +1096,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.32';
+const APP_VER='2.33';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.33',d:'2026-10-01',p:['Neue Kunden-Eingabe: Oben zeigt eine dunkle Karte schon beim Tippen, wie der Kunde später aussieht.','Statt einem langen Formular gibt es Bereiche zum Auf- und Zuklappen: Person, Kontakt, Adresse und Werkstatt-Infos. Die Zahlungsmoral wählen Sie mit einem Tipp.']},
  {v:'2.32',d:'2026-10-01',p:['Kurzbefehle in der Suche: „neuer auftrag“, „neuer kunde“, „neuer termin“ oder „bestellliste“ eintippen und antippen – schon geht es los.','„bestell“ plus Teilename (z. B. „bestell bremsbeläge“) legt nach einer Rückfrage direkt eine Bestellung für dieses Teil an. Verschickt wird dabei nichts.']},
  {v:'2.31',d:'2026-10-01',p:['Die Suche findet jetzt viel mehr: einzelne Arbeiten und Teile in Aufträgen, Rechnungen, Termine, Anfragen und das Lager.','Beispiel: „brems“ zeigt alle Bremsen-Aufträge, die Anfrage wegen quietschender Bremsen und die Bremsscheiben im Regal – ein Tipp öffnet den Treffer.']},
  {v:'2.30',d:'2026-10-01',p:['Neue Suche: Oben rechts auf die Lupe tippen und Name, Kennzeichen, Auftragsnummer oder Telefonnummer eintippen – Kunden, Fahrzeuge und Aufträge erscheinen sofort.','Kennzeichen finden Sie auch ohne Leerzeichen und Bindestrich, zum Beispiel „sm247“.']},
@@ -2585,28 +2605,38 @@ function vKunde(id){
    <button class="btn btn-danger" data-act="kunde-del" data-id="${k.id}">Löschen</button></div></div>`;
  return shell(inner,{title:esc(k.name),eyebrow:'Kunde',back:1,hideNav:false,ctx:'kunde'});
 }
+/* Anlege-Masken im Stil von Entwurf 14: dunkler Vorschau-Kopf + aufklappbare Balken */
+const mSec=(t,mini,open,body)=>`<details class="msec"${open?' open':''}><summary><span class="mt">${t}</span><span class="mm">${mini||''}</span><span class="chev"></span></summary><div class="msec-b">${body}</div></details>`;
+const mIni=n=>String(n||'').trim().split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0]).join('').toUpperCase()||'?';
 ACT['kunde-edit']=el=>{kunNorm();const k=el.dataset.id?kunde(el.dataset.id):null;
- sheet(k?'Kunde bearbeiten':'Neuer Kunde',`
-  <div class="lbl" style="margin-top:0">Person</div>
+ const has=(...f)=>k&&f.some(x=>k[x]);
+ const w=sheet(k?'Kunde bearbeiten':'Neuer Kunde',`
+  <div class="mkopf" aria-live="polite"><div class="mk-av" id="mk-av">${mIni(k&&k.name)}</div>
+   <div class="mk-tx"><b id="mk-n">${k?esc(k.name):'Neuer Kunde'}</b><span id="mk-s">${k?esc([k.tel,k.ort].filter(Boolean).join(' · ')):'Name eintragen — Rest optional'}</span></div>
+   ${k&&k.stamm?'<span class="mk-tag">Stammkunde</span>':''}</div>
+  ${mSec('Person','',true,`
   <div class="row2"><div class="fld"><label>Vorname</label><input id="ku-vn" value="${k?esc(k.vorname||''):''}" placeholder="Max" autocomplete="off"></div>
    <div class="fld"><label>Nachname *</label><input id="ku-nn" value="${k?esc(k.nachname||''):''}" placeholder="Mustermann" autocomplete="off"></div></div>
   <div class="fld"><label>Firma (optional)</label><input id="ku-fa" value="${k?esc(k.firma||''):''}" placeholder="z. B. Autohaus Schmidt GmbH"></div>
-  <div class="fld"><label>Ansprechpartner (bei Firma)</label><input id="ku-ap" value="${k?esc(k.ansprechpartner||''):''}" placeholder="Vor- und Nachname"></div>
-  <div class="lbl">Kontakt</div>
+  <div class="fld" style="margin-bottom:0"><label>Ansprechpartner (bei Firma)</label><input id="ku-ap" value="${k?esc(k.ansprechpartner||''):''}" placeholder="Vor- und Nachname"></div>`)}
+  ${mSec('Kontakt',k?esc([k.tel,k.email].filter(Boolean).length+' von 2'):'',true,`
   <div class="row2"><div class="fld"><label>Telefon</label><input id="ku-t" inputmode="tel" value="${k?esc(k.tel):''}" placeholder="+49 170 1234567"></div>
    <div class="fld"><label>E-Mail</label><input id="ku-e" inputmode="email" value="${k?esc(k.email):''}" placeholder="name@mail.de"></div></div>
-  <div class="lbl">Adresse (für Rechnungen)</div>
+  <label class="mchk"><input type="checkbox" id="ku-w" ${!k||k.wa?'checked':''}> Per WhatsApp erreichbar</label>`)}
+  ${mSec('Adresse',has('ort')?esc(k.ort):'für Rechnungen',has('strasse','plz','ort'),`
   <div class="fld"><label>Straße und Hausnummer</label><input id="ku-str" value="${k?esc(k.strasse||''):''}" placeholder="Hauptstraße 12"></div>
-  <div class="row2" style="grid-template-columns:110px 1fr"><div class="fld"><label>PLZ</label><input id="ku-plz" inputmode="numeric" value="${k?esc(k.plz||''):''}" placeholder="63450"></div>
-   <div class="fld"><label>Ort</label><input id="ku-ort" value="${k?esc(k.ort||''):''}" placeholder="Hanau"></div></div>
-  <div class="lbl">Sonstiges</div>
-  <div class="row2"><div class="fld"><label>Zahlungsmoral</label><div class="selwrap"><select id="ku-m">
-    ${['Gut','Mittel','Schlecht'].map(m=>`<option ${k&&k.moral===m?'selected':''}>${m}</option>`).join('')}</select></div></div>
-   <div class="fld"><label>Optionen</label><div style="display:flex;gap:12px;padding:11px 2px">
-    <label style="display:flex;gap:6px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--ink)"><input type="checkbox" id="ku-s" ${k&&k.stamm?'checked':''}> Stammkunde</label>
-    <label style="display:flex;gap:6px;font-size:12px;text-transform:none;letter-spacing:0;color:var(--ink)"><input type="checkbox" id="ku-w" ${!k||k.wa?'checked':''}> WhatsApp</label></div></div></div>
-  <div class="fld"><label>Notiz</label><textarea id="ku-no" rows="2" placeholder="z. B. möchte alte Teile sehen">${k?esc(k.notiz):''}</textarea></div>
-  <button class="btn btn-main" style="width:100%" data-act="kunde-save" ${k?`data-id="${k.id}"`:''}>Speichern</button>`)};
+  <div class="row2" style="grid-template-columns:110px 1fr"><div class="fld" style="margin-bottom:0"><label>PLZ</label><input id="ku-plz" inputmode="numeric" value="${k?esc(k.plz||''):''}" placeholder="63450"></div>
+   <div class="fld" style="margin-bottom:0"><label>Ort</label><input id="ku-ort" value="${k?esc(k.ort||''):''}" placeholder="Hanau"></div></div>`)}
+  ${mSec('Werkstatt-Infos',k?esc(k.moral||''):'Zahlungsmoral, Notiz',has('notiz'),`
+  <div class="fld"><label>Zahlungsmoral</label><div class="mseg" role="radiogroup" aria-label="Zahlungsmoral">${['Gut','Mittel','Schlecht'].map(m=>`<label><input type="radio" name="ku-m" value="${m}" ${(k?k.moral:'Gut')===m?'checked':''}><span>${m}</span></label>`).join('')}</div></div>
+  <label class="mchk"><input type="checkbox" id="ku-s" ${k&&k.stamm?'checked':''}> Stammkunde</label>
+  <div class="fld" style="margin:10px 0 0"><label>Notiz</label><textarea id="ku-no" rows="2" placeholder="z. B. möchte alte Teile sehen">${k?esc(k.notiz):''}</textarea></div>`)}
+  <button class="btn btn-main" style="width:100%;margin-top:6px" data-act="kunde-save" ${k?`data-id="${k.id}"`:''}>Speichern</button>`);
+ /* Vorschau-Kopf live mitschreiben */
+ const upd=()=>{const n=kunName($('#ku-vn').value.trim(),$('#ku-nn').value.trim(),$('#ku-fa').value.trim());
+  $('#mk-n').textContent=n||'Neuer Kunde';$('#mk-av').textContent=mIni(n);
+  $('#mk-s').textContent=[$('#ku-t').value.trim(),$('#ku-ort').value.trim()].filter(Boolean).join(' · ')||'Name eintragen — Rest optional'};
+ w.addEventListener('input',upd)};
 ACT['kunde-save']=el=>{
  const vn=$('#ku-vn').value.trim(),nn=$('#ku-nn').value.trim(),fa=$('#ku-fa').value.trim();
  if(!nn&&!vn&&!fa)return toast('Nachname oder Firma eintragen',true);
@@ -2614,7 +2644,7 @@ ACT['kunde-save']=el=>{
  const vals={vorname:vn,nachname:nn,firma:fa,ansprechpartner:$('#ku-ap').value.trim(),name:kunName(vn,nn,fa),
   tel:$('#ku-t').value.trim(),email:$('#ku-e').value.trim(),
   strasse:str,plz:plz,ort:ort,adresse:kunAdresse(str,plz,ort),
-  moral:$('#ku-m').value,stamm:$('#ku-s').checked,wa:$('#ku-w').checked,notiz:$('#ku-no').value.trim()};
+  moral:($('input[name="ku-m"]:checked')||{}).value||'Gut',stamm:$('#ku-s').checked,wa:$('#ku-w').checked,notiz:$('#ku-no').value.trim()};
  if(el.dataset.id)Object.assign(kunde(el.dataset.id),vals);
  else S.kunden.push({id:'k'+uid(),created:Date.now(),...vals});
  save();closeSheet();render();toast('Gespeichert')};

@@ -80,6 +80,22 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   await page.waitForTimeout(150);
   const beNach = await page.evaluate(() => ({ n: S.bestellungen.length, v: route.v }));
   if (beNach.n !== beVor + 1 || beNach.v !== 'bestellungen') errs.push('„bestell …“ legt keine Bestellung an: ' + JSON.stringify(beNach));
+  // Kunden-Maske (Entwurf 14): Vorschau-Kopf, aufklappbare Balken, Speichern
+  await page.evaluate(() => { nav('kunden'); ACT['kunde-edit']({ dataset: {} }); });
+  await page.waitForTimeout(150);
+  await page.fill('#ku-vn', 'Test');
+  await page.fill('#ku-nn', 'Prüfkunde');
+  await page.fill('#ku-t', '0170 111');
+  const mk = await page.evaluate(() => document.getElementById('mk-n').textContent + '|' + document.getElementById('mk-av').textContent);
+  if (mk !== 'Test Prüfkunde|TP') errs.push('Kunden-Maske: Vorschau falsch ' + mk);
+  await page.click('details.msec:has(.mseg) > summary').catch(() => errs.push('Balken „Werkstatt-Infos“ fehlt'));
+  await page.click('.mseg label:has(input[value="Mittel"])').catch(() => errs.push('Zahlungsmoral-Knopf fehlt'));
+  if (shotDir) await page.screenshot({ path: `${shotDir}/kunde-neu-${w}.png` });
+  await page.click('[data-act="kunde-save"]');
+  await page.waitForTimeout(150);
+  const kn = await page.evaluate(() => { const k = S.kunden.find(x => x.name === 'Test Prüfkunde'); const r = k ? k.moral + '|' + k.tel : null;
+    if (k) { S.kunden = S.kunden.filter(x => x !== k); save(); render(); } return r; });
+  if (kn !== 'Mittel|0170 111') errs.push('Kunden-Maske speichert falsch: ' + kn);
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {

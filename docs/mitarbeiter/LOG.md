@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 01.10.2026 (4. Lauf) — Version 2.33: Anlege-Masken, Scheibe 1 (Kunde)
+- **Recherche:** entfallen (heute schon erledigt).
+- **Gebaut:** Die Kunden-Maske (`kunde-edit`) hat jetzt einen dunklen Vorschau-Kopf (Initialen, Name, Telefon · Ort, live per `input`-Listener) und aufklappbare Balken über `<details class="msec">`: Person, Kontakt, Adresse, Werkstatt-Infos. Beim Bearbeiten sind gefüllte Bereiche offen. Die Zahlungsmoral ist jetzt eine Knopfreihe (`.mseg`, Radio, 44 px) statt Auswahlliste. Die Feld-IDs sind unverändert, `kunde-save` liest nur die Moral neu aus. Neue Helfer `mSec` und `mIni` sind für die nächsten Masken wiederverwendbar.
+- **Test:** Smoke-Test grün (390/1280), legt einen Testkunden an (Vorschau, Moral „Mittel“), prüft ihn und löscht ihn wieder. SW v34.
+- **Offen / nächster Handgriff:** Scheibe 2: Fahrzeug-Maske (`fzg-edit` o. ä. suchen) mit `mSec`, im Kopf Kennzeichen + Marke/Modell. Danach Scheibe 3: Positions-Maske.
+
 ## 01.10.2026 (3. Lauf) — Version 2.32: Starke Suchleiste, Scheibe 3 (Schnellbefehle)
 - **Recherche:** entfallen (heute schon erledigt).
 - **Gebaut:** Gruppe „Schnellbefehle“ ganz oben in der Suche (`GS_CMDS`): neuer Auftrag / Kunde / Termin, Bestellliste. „bestell <teil>“ zeigt passende Lagerteile. Nach einer Rückfrage (`confirmBox`) wird eine Bestellung mit Menge wie in der Bestellliste angelegt (`ACT['gs-bestell']`), danach öffnet sich „Bestellungen“. Es wird nichts verschickt.

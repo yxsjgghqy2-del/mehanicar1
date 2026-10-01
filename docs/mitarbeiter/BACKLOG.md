@@ -3,7 +3,7 @@
 Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Jede Idee hat eine Herkunft (Inhaber / Recherche / Fehlerfund).
 
 ## A — Wünsche des Inhabers
-4. **Anlege-Masken Kunde/Fahrzeug/Position** modernisieren, im Stil der gewählten Auftragsmaske (14) mit aufklappbaren Balken. Der Inhaber mag keine langweiligen Nur-Formular-Masken.
+4. **Anlege-Masken Kunde/Fahrzeug/Position** modernisieren, im Stil der gewählten Auftragsmaske (14) mit aufklappbaren Balken. Der Inhaber mag keine langweiligen Nur-Formular-Masken. **Scheibe 1 (Kunde) erledigt in 2.33.** Als Nächstes: Fahrzeug, dann Position.
 
 ## B — Qualität & Pflichten
 5. **E-Rechnung vorbereiten:** Seit 01.01.2025 müssen Unternehmen E-Rechnungen im B2B-Verkehr empfangen können. Ab 2027 bzw. 2028 gilt die Ausstellungspflicht, abhängig vom Umsatz. Zu prüfen ist ein ZUGFeRD/XRechnung-Export für Firmenkunden wie das Autohaus Schmidt. *(Recherche nötig)*
