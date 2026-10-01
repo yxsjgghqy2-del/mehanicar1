@@ -1077,9 +1077,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.31';
+const APP_VER='2.32';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.32',d:'2026-10-01',p:['Kurzbefehle in der Suche: „neuer auftrag“, „neuer kunde“, „neuer termin“ oder „bestellliste“ eintippen und antippen – schon geht es los.','„bestell“ plus Teilename (z. B. „bestell bremsbeläge“) legt nach einer Rückfrage direkt eine Bestellung für dieses Teil an. Verschickt wird dabei nichts.']},
  {v:'2.31',d:'2026-10-01',p:['Die Suche findet jetzt viel mehr: einzelne Arbeiten und Teile in Aufträgen, Rechnungen, Termine, Anfragen und das Lager.','Beispiel: „brems“ zeigt alle Bremsen-Aufträge, die Anfrage wegen quietschender Bremsen und die Bremsscheiben im Regal – ein Tipp öffnet den Treffer.']},
  {v:'2.30',d:'2026-10-01',p:['Neue Suche: Oben rechts auf die Lupe tippen und Name, Kennzeichen, Auftragsnummer oder Telefonnummer eintippen – Kunden, Fahrzeuge und Aufträge erscheinen sofort.','Kennzeichen finden Sie auch ohne Leerzeichen und Bindestrich, zum Beispiel „sm247“.']},
  {v:'2.29',d:'2026-09-30',p:['Rabatt mit einem Tipp: In der Kalkulation eines Auftrags können Sie jetzt direkt 5 % oder 10 % Rabatt auf den ganzen Auftrag geben – oder mit 0 % wieder wegnehmen.','Alle Summen, die Anzeige oben und „Zu zahlen bei Abholung“ rechnen sofort mit.']},
@@ -1192,6 +1193,12 @@ function sheet(title,body,foot=''){
 function closeSheet(){const s=$('#sheetbg');if(s)s.remove()}
 /* Globale Suche (Backlog A3): Kunden, Fahrzeuge, Aufträge — Kennzeichen auch kompakt („hu sm247“, „sm247“) */
 const sNorm=s=>String(s??'').toLowerCase().replace(/[\s\-.\/]/g,'');
+const GS_CMDS=[
+ {k:['neuer auftrag','auftrag anlegen','neu auftrag'],a:'ord-new',t:'Neuen Auftrag anlegen',s:'Kunde, Fahrzeug und Arbeiten erfassen'},
+ {k:['neuer kunde','kunde anlegen','neu kunde'],a:'kunde-edit',t:'Neuen Kunden anlegen',s:'Name, Telefon, Adresse'},
+ {k:['neuer termin','termin anlegen','neu termin'],a:'termin-new',t:'Neuen Termin anlegen',s:'Heute, 09:00 Uhr — änderbar'},
+ {k:['bestellliste','bestellung','bestell'],a:'lager-orderlist',t:'Bestellliste anzeigen',s:'Alle Teile unter Mindestbestand'}];
+const gsBestellMenge=l=>Math.max(1,(l.minBestand||0)*2-(l.bestand||0));
 function gSucheTreffer(q){
  const toks=String(q).toLowerCase().split(/\s+/).map(sNorm).filter(Boolean);
  if(!toks.length)return null;
@@ -1213,7 +1220,15 @@ function gSucheTreffer(q){
   .map(x=>({v:'anfrage',id:x.id,t:x.betreff||x.name||'Anfrage',s:[x.name,x.status].filter(Boolean).join(' · ')}));
  const la=(S.lager||[]).filter(l=>hit([l.teil,l.artnr,l.herst,l.ort]))
   .map(l=>({a:'lager-edit',id:l.id,t:l.teil,s:[l.herst,l.artnr,'Bestand '+l.bestand,l.ort].filter(Boolean).join(' · ')}));
- return [['Kunden',kun],['Fahrzeuge',fz],['Aufträge',au],['Arbeiten & Teile in Aufträgen',pos],['Rechnungen',re],['Termine',te],['Anfragen',an],['Lager',la]].filter(g=>g[1].length);
+ /* Schnellbefehle: „neuer auftrag“, „neuer kunde“, „neuer termin“, „bestellliste“, „bestell dot4“ */
+ const ql=String(q).toLowerCase().trim().replace(/\s+/g,' ');
+ const cmd=[];
+ if(ql.length>=3)GS_CMDS.forEach(c=>{if(c.k.some(k=>k.startsWith(ql)||ql.startsWith(k)))cmd.push({a:c.a,id:'',t:c.t,s:c.s})});
+ const bm=ql.match(/^bestell\w*\s+(.+)$/);
+ if(bm){const bt=bm[1].split(' ').map(sNorm).filter(Boolean);
+  (S.lager||[]).filter(l=>{const all=sNorm([l.teil,l.artnr,l.herst].join(' '));return bt.every(t=>all.includes(t))}).slice(0,5)
+   .reverse().forEach(l=>cmd.unshift({a:'gs-bestell',id:l.id,t:l.teil+' bestellen',s:gsBestellMenge(l)+' Stk · EK '+fmt(l.ekCt*gsBestellMenge(l))+' · Bestand '+l.bestand}))}
+ return [['Schnellbefehle',cmd],['Kunden',kun],['Fahrzeuge',fz],['Aufträge',au],['Arbeiten & Teile in Aufträgen',pos],['Rechnungen',re],['Termine',te],['Anfragen',an],['Lager',la]].filter(g=>g[1].length);
 }
 function gSucheListe(q){
  const g=gSucheTreffer(q);
@@ -1295,6 +1310,12 @@ ACT['sheet-close']=()=>closeSheet();
 ACT.open=el=>nav(el.dataset.v,el.dataset.id);
 ACT.gsuche=()=>openSuche();
 ACT['gsuche-zu']=()=>closeSuche();
+ACT['gs-bestell']=el=>{const l=lagerT(el.dataset.id);if(!l)return;const menge=gsBestellMenge(l);
+ confirmBox('Bestellung anlegen?',esc(menge+' × '+l.teil)+(l.artnr?' ('+esc(l.artnr)+')':'')+' — Einkauf '+fmt(l.ekCt*menge)+'. Die Bestellung wird nur in mehanicar angelegt, nichts wird verschickt.','Anlegen',()=>{
+  const y=new Date().getFullYear();S.settings.nextBe=S.settings.nextBe||1;
+  const b={id:'b'+uid(),nr:'BE-'+y+'-'+String(S.settings.nextBe++).padStart(4,'0'),ts:Date.now(),
+   pos:[{lagerId:l.id,teil:l.teil,artnr:l.artnr||'',menge,ekCt:l.ekCt,da:0}]};
+  S.bestellungen.push(b);save();nav('bestellungen');toast('Bestellung '+b.nr+' angelegt')},false)};
 ACT['gsuche-go']=el=>{closeSuche();if(el.dataset.a&&ACT[el.dataset.a])ACT[el.dataset.a](el);else nav(el.dataset.v,el.dataset.id)};
 ACT.tel=el=>{const k=kunde(el.dataset.id);if(k&&k.tel)location.href='tel:'+k.tel.replace(/\s/g,'')};
 ACT.wa=el=>{const k=kunde(el.dataset.id);if(k&&k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+(el.dataset.msg?'?text='+encodeURIComponent(el.dataset.msg):'')};

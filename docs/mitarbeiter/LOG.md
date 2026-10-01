@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 01.10.2026 (3. Lauf) — Version 2.32: Starke Suchleiste, Scheibe 3 (Schnellbefehle)
+- **Recherche:** entfallen (heute schon erledigt).
+- **Gebaut:** Gruppe „Schnellbefehle“ ganz oben in der Suche (`GS_CMDS`): neuer Auftrag / Kunde / Termin, Bestellliste. „bestell <teil>“ zeigt passende Lagerteile. Nach einer Rückfrage (`confirmBox`) wird eine Bestellung mit Menge wie in der Bestellliste angelegt (`ACT['gs-bestell']`), danach öffnet sich „Bestellungen“. Es wird nichts verschickt.
+- **Test:** Smoke-Test grün (390/1280), prüft dass „neuer auftrag“ die Maske öffnet und „bestell bremsbel“ eine Bestellung anlegt. SW v33.
+- **A3 Suchleiste damit abgeschlossen.**
+- **Offen / nächster Handgriff:** A4 Anlege-Masken (Kunde zuerst) im Stil von Entwurf 14 mit aufklappbaren Balken. Erst die bestehende `kunde-edit`-Maske lesen.
+
 ## 01.10.2026 (2. Lauf) — Version 2.31: Starke Suchleiste, Scheibe 2
 - **Recherche:** entfallen (heute schon erledigt).
 - **Gebaut:** `gSucheTreffer` hat neue Gruppen: Arbeiten & Teile in Aufträgen (→ Auftrag), Rechnungen (→ Auftrag), Termine (→ `termin-open`), Anfragen (→ Anfrage), Lager (→ `lager-edit`). Treffer mit `data-a` rufen den passenden Handler auf, sonst `nav`.
