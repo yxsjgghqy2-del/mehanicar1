@@ -96,6 +96,24 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   const kn = await page.evaluate(() => { const k = S.kunden.find(x => x.name === 'Test Prüfkunde'); const r = k ? k.moral + '|' + k.tel : null;
     if (k) { S.kunden = S.kunden.filter(x => x !== k); save(); render(); } return r; });
   if (kn !== 'Mittel|0170 111') errs.push('Kunden-Maske speichert falsch: ' + kn);
+  // Fahrzeug-Maske (Entwurf 14): Kennzeichen-Vorschau, Halter wählen, Speichern
+  await page.evaluate(() => { nav('fahrzeuge'); ACT['fzg-edit']({ dataset: {} }); });
+  await page.waitForTimeout(150);
+  await page.fill('#fzk-q', 'yilmaz').catch(() => errs.push('Fahrzeug-Maske: Halter-Suche fehlt'));
+  await page.waitForTimeout(100);
+  await page.click('#fzk-res [data-kid]').catch(() => errs.push('Fahrzeug-Maske: Halter nicht wählbar'));
+  await page.fill('#fz-kz', 'hu-tt 99');
+  await page.fill('#fz-ma', 'VW');
+  await page.fill('#fz-mo', 'Golf');
+  await page.waitForTimeout(80);
+  const fk = await page.evaluate(() => [document.getElementById('mk-kz').textContent, document.getElementById('mk-n').textContent, document.getElementById('mk-s').textContent].join('|'));
+  if (fk !== 'HU-TT 99|VW Golf|Ali Yilmaz') errs.push('Fahrzeug-Maske: Vorschau falsch ' + fk);
+  if (shotDir) await page.screenshot({ path: `${shotDir}/fzg-neu-${w}.png` });
+  await page.click('[data-act="fzg-save"]');
+  await page.waitForTimeout(150);
+  const fn = await page.evaluate(() => { const f = S.fahrzeuge.find(x => x.kennz === 'HU-TT 99'); const r = f ? f.marke + '|' + (kunde(f.kundeId) || {}).name : null;
+    if (f) { S.fahrzeuge = S.fahrzeuge.filter(x => x !== f); save(); render(); } return r; });
+  if (fn !== 'VW|Ali Yilmaz') errs.push('Fahrzeug-Maske speichert falsch: ' + fn);
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {

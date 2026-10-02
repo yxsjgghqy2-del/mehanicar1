@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 02.10.2026 — Version 2.34: Anlege-Masken, Scheibe 2 (Fahrzeug)
+- **Recherche (b) iOS/Safari/PWA:** Ab iOS 26 öffnet jede zum Home-Bildschirm hinzugefügte Seite als Web-App. Seit iOS 16.4 gibt es Push und App-Icon-Badges (Badge API, braucht Mitteilungs-Erlaubnis), seit Safari 18.4 Declarative Web Push und Screen Wake Lock. → Zwei Ideen ins BACKLOG (C). Quellen: mobiloud.com (PWA iOS Guide 2026), en.wikipedia.org/wiki/IOS_26.
+- **Gebaut:** Die Fahrzeug-Maske (`fzg-edit`) hat einen dunklen Vorschau-Kopf mit Kennzeichen als Nummernschild (`.mk-plate`), Marke/Modell und Halter, live über input/click/change. Neue Balken: Halter, Fahrzeug, Technik, HU & Wartung, Farbe & Zustand. Die IDs sind unverändert. Beim Schein-Scan löst `setV` jetzt ein `input`-Event aus, damit die Vorschau mitzieht (geprüft: die betroffenen Felder haben kein `data-input`/`data-f`).
+- **Test:** Smoke-Test grün (390/1280), legt ein Testfahrzeug mit Halter-Suche an, prüft die Vorschau und löscht es wieder. SW v35.
+- **Offen / nächster Handgriff:** Scheibe 3, Positions-Maske (`pos-edit` / `add-arbeit` / `add-teil`) mit `mSec` und Kopf (Bezeichnung + Preis, bei Teilen EK→VK + Aufschlag).
+
 ## 01.10.2026 (4. Lauf) — Version 2.33: Anlege-Masken, Scheibe 1 (Kunde)
 - **Recherche:** entfallen (heute schon erledigt).
 - **Gebaut:** Die Kunden-Maske (`kunde-edit`) hat jetzt einen dunklen Vorschau-Kopf (Initialen, Name, Telefon · Ort, live per `input`-Listener) und aufklappbare Balken über `<details class="msec">`: Person, Kontakt, Adresse, Werkstatt-Infos. Beim Bearbeiten sind gefüllte Bereiche offen. Die Zahlungsmoral ist jetzt eine Knopfreihe (`.mseg`, Radio, 44 px) statt Auswahlliste. Die Feld-IDs sind unverändert, `kunde-save` liest nur die Moral neu aus. Neue Helfer `mSec` und `mIni` sind für die nächsten Masken wiederverwendbar.
