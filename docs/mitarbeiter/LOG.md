@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 02.10.2026 (2. Lauf) — Version 2.35: Anlege-Masken, Scheibe 3 (Position)
+- **Recherche:** entfallen (heute schon erledigt).
+- **Gebaut:** `posSheet` (Arbeit/Teil neu und bearbeiten) hat einen Vorschau-Kopf: Bezeichnung, Gesamtpreis, bei Arbeit „AW × Satz“, bei Teil „Menge × EK → VK“ und Aufschlag in € und %. Neue Balken: Arbeit/Teil & Preis (offen), Rabatt & Abrechnung, Bestellung (nur Teile), Notizen. Gefüllte Bereiche sind beim Bearbeiten offen. Bei Teilen steht EK jetzt in der Preiszeile (Menge/EK/VK). Alle IDs sind unverändert, `pos-save` wurde nicht angefasst.
+- **Test:** Smoke-Test grün (390/1280), prüft die Arbeit-Vorschau (2 AW × Satz), den Teil-Aufschlag und dass Speichern ohne Änderung die Werte nicht verändert. SW v36.
+- **A4 Anlege-Masken damit abgeschlossen.** Rest-Kleinigkeit: Das Blatt „Teil hinzufügen“ aus dem Lager (`add-teil`) ist noch im alten Stil, eventuell später angleichen.
+- **Offen / nächster Handgriff:** B5 E-Rechnung, Scheibe 1: Recherche (Pflichten 2025/2027/2028, ZUGFeRD vs. XRechnung, Mindestangaben) → Konzept unter `docs/` und Entscheidungsfrage an den Inhaber (betrifft nur Firmenkunden).
+
 ## 02.10.2026 — Version 2.34: Anlege-Masken, Scheibe 2 (Fahrzeug)
 - **Recherche (b) iOS/Safari/PWA:** Ab iOS 26 öffnet jede zum Home-Bildschirm hinzugefügte Seite als Web-App. Seit iOS 16.4 gibt es Push und App-Icon-Badges (Badge API, braucht Mitteilungs-Erlaubnis), seit Safari 18.4 Declarative Web Push und Screen Wake Lock. → Zwei Ideen ins BACKLOG (C). Quellen: mobiloud.com (PWA iOS Guide 2026), en.wikipedia.org/wiki/IOS_26.
 - **Gebaut:** Die Fahrzeug-Maske (`fzg-edit`) hat einen dunklen Vorschau-Kopf mit Kennzeichen als Nummernschild (`.mk-plate`), Marke/Modell und Halter, live über input/click/change. Neue Balken: Halter, Fahrzeug, Technik, HU & Wartung, Farbe & Zustand. Die IDs sind unverändert. Beim Schein-Scan löst `setV` jetzt ein `input`-Event aus, damit die Vorschau mitzieht (geprüft: die betroffenen Felder haben kein `data-input`/`data-f`).

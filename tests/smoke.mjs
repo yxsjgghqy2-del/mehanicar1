@@ -114,6 +114,33 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   const fn = await page.evaluate(() => { const f = S.fahrzeuge.find(x => x.kennz === 'HU-TT 99'); const r = f ? f.marke + '|' + (kunde(f.kundeId) || {}).name : null;
     if (f) { S.fahrzeuge = S.fahrzeuge.filter(x => x !== f); save(); render(); } return r; });
   if (fn !== 'VW|Ali Yilmaz') errs.push('Fahrzeug-Maske speichert falsch: ' + fn);
+  // Positions-Maske (Entwurf 14): Arbeit neu (AW × Satz) und Teil bearbeiten (Aufschlag im Kopf)
+  {
+    const ids = await page.evaluate(() => { const a = S.auftraege.find(o => o.pakete.some(pk => pk.pos.some(p => p.typ === 'teil')));
+      const pk = a.pakete.find(pk => pk.pos.some(p => p.typ === 'teil')); const t = pk.pos.find(p => p.typ === 'teil');
+      return { oid: a.id, pid: pk.id, xid: t.id, ek: t.ekCt, vk: t.vkCt, m: t.menge || 1 }; });
+    await page.evaluate(i => { nav('auftrag', i.oid); ACT['add-arbeit']({ dataset: { oid: i.oid, pid: i.pid } }); }, ids);
+    await page.waitForTimeout(150);
+    await page.fill('#ps-b', 'Testarbeit');
+    await page.fill('#ps-aw', '2');
+    await page.waitForTimeout(80);
+    const pa = await page.evaluate(() => [document.getElementById('mk-n').textContent, document.getElementById('mk-p').textContent, fmt(2 * (parseEuro(document.getElementById('ps-aws').value)))].join('|'));
+    const [pn, pp, soll] = pa.split('|');
+    if (pn !== 'Testarbeit' || pp !== soll) errs.push('Positions-Maske Arbeit: Vorschau falsch ' + pa);
+    await page.evaluate(() => closeSheet());
+    await page.evaluate(i => ACT['pos-edit']({ dataset: { oid: i.oid, pid: i.pid, xid: i.xid } }), ids);
+    await page.waitForTimeout(120);
+    const pt = await page.evaluate(() => document.getElementById('mk-g').textContent);
+    const sollG = '+ ' + await page.evaluate(i => fmt((i.vk - i.ek) * i.m), ids);
+    if (!pt.startsWith(sollG)) errs.push('Positions-Maske Teil: Aufschlag falsch ' + pt + ' statt ' + sollG);
+    if (shotDir) await page.screenshot({ path: `${shotDir}/pos-teil-${w}.png` });
+    await page.click('[data-act="pos-save"]');
+    await page.waitForTimeout(120);
+    const ps = await page.evaluate(i => { const t = auftrag(i.oid).pakete.find(p => p.id === i.pid).pos.find(p => p.id === i.xid);
+      return t.ekCt === i.ek && t.vkCt === i.vk && (t.menge || 1) === i.m; }, ids);
+    if (!ps) errs.push('Positions-Maske: Speichern verändert unveränderte Werte');
+    await page.evaluate(() => closeSheet());
+  }
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {
