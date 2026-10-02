@@ -6,7 +6,7 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
 - *(aktuell keine offenen Inhaber-Wünsche — neue Wünsche hier oben eintragen)*
 
 ## B — Qualität & Pflichten
-5. **E-Rechnung vorbereiten:** Seit 01.01.2025 müssen Unternehmen E-Rechnungen im B2B-Verkehr empfangen können. Ab 2027 bzw. 2028 gilt die Ausstellungspflicht, abhängig vom Umsatz. Zu prüfen ist ein ZUGFeRD/XRechnung-Export für Firmenkunden wie das Autohaus Schmidt. *(Recherche nötig)*
+5. **E-Rechnung** — Konzept steht in `docs/e-rechnung.md` (02.10.2026). Pflicht gilt nur für Firmenkunden: ab 2028, bei > 800.000 € Vorjahresumsatz schon ab 2027. **Wartet auf Antwort des Inhabers (Umsatz 2026 über 800.000 €?).** Scheibe 1 (Kundenfeld USt-IdNr. + Hinweis bei Firmenrechnungen > 250 €) kann unabhängig davon gebaut werden.
 6. **Backup-Erinnerung verbessern**, weil die Daten nur lokal liegen: Hinweis, wenn Cloud-Backup aus ist und länger als 7 Tage nicht gesichert wurde.
 7. **Barrierefreiheit prüfen:** Kontraste, Fokusreihenfolge, Beschriftungen der Icon-Buttons.
 

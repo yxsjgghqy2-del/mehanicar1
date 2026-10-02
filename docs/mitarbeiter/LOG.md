@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 02.10.2026 (4. Lauf) — E-Rechnung: Recherche + Konzept (keine App-Änderung)
+- **Recherche (d) Recht & Pflichten:** Empfang seit 2025 Pflicht (E-Mail-Postfach reicht). Ausstellen an Firmenkunden ab 2027 bei Vorjahresumsatz > 800.000 €, sonst ab 2028. B2C und Kleinbetragsrechnungen ≤ 250 € sind ausgenommen. Formate: XRechnung oder ZUGFeRD (EN 16931). Quellen in `docs/e-rechnung.md`.
+- **Erstellt:** `docs/e-rechnung.md` mit Pflichten-Tabelle, Plan in 4 Scheiben (Firmenkunde/USt-IdNr → XRechnung-CII-Export im Browser → Validator-Test → optional ZUGFeRD) und einer Frage an den Inhaber.
+- **Test:** Keine App-Änderung, Smoke-Test nicht nötig. Version bleibt 2.36.
+- **Offen / nächster Handgriff:** E-Rechnung Scheibe 1 (Kundenfeld „USt-IdNr.“ in `kunde-edit` + Hinweis an Firmenrechnungen > 250 €). Die Antwort des Inhabers entscheidet über das Tempo.
+
 ## 02.10.2026 (3. Lauf) — Version 2.36: „Teil hinzufügen“ im neuen Stil
 - **Recherche:** entfallen (heute schon erledigt).
 - **Gebaut:** `add-teil` hat einen Vorschau-Kopf (Bezeichnung, Menge × EK → VK, Summe, Aufschlag € / %, Lagerhinweis „Lager: n da“ oder „nur n im Lager — wird bestellt“). Balken: „Aus dem Lager“ und „Teil & Preis“. IDs sind unverändert, `teil-save` wurde nicht angefasst.
