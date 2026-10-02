@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 02.10.2026 (3. Lauf) — Version 2.36: „Teil hinzufügen“ im neuen Stil
+- **Recherche:** entfallen (heute schon erledigt).
+- **Gebaut:** `add-teil` hat einen Vorschau-Kopf (Bezeichnung, Menge × EK → VK, Summe, Aufschlag € / %, Lagerhinweis „Lager: n da“ oder „nur n im Lager — wird bestellt“). Balken: „Aus dem Lager“ und „Teil & Preis“. IDs sind unverändert, `teil-save` wurde nicht angefasst.
+- **Test:** Smoke-Test grün (390/1280), wählt ein Lagerteil, prüft die Vorschau, fügt das Teil hinzu und prüft Bestand −1. Danach wird zurückgesetzt. SW v37.
+- **Offen / nächster Handgriff:** B5 E-Rechnung, Scheibe 1: Recherche (Pflichten 2025/2027/2028, ZUGFeRD vs. XRechnung, Pflichtangaben) → Konzept `docs/e-rechnung.md` → Frage an den Inhaber.
+
 ## 02.10.2026 (2. Lauf) — Version 2.35: Anlege-Masken, Scheibe 3 (Position)
 - **Recherche:** entfallen (heute schon erledigt).
 - **Gebaut:** `posSheet` (Arbeit/Teil neu und bearbeiten) hat einen Vorschau-Kopf: Bezeichnung, Gesamtpreis, bei Arbeit „AW × Satz“, bei Teil „Menge × EK → VK“ und Aufschlag in € und %. Neue Balken: Arbeit/Teil & Preis (offen), Rabatt & Abrechnung, Bestellung (nur Teile), Notizen. Gefüllte Bereiche sind beim Bearbeiten offen. Bei Teilen steht EK jetzt in der Preiszeile (Menge/EK/VK). Alle IDs sind unverändert, `pos-save` wurde nicht angefasst.

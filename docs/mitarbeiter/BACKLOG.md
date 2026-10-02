@@ -4,7 +4,6 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
 
 ## A — Wünsche des Inhabers
 - *(aktuell keine offenen Inhaber-Wünsche — neue Wünsche hier oben eintragen)*
-- Kleinigkeit: Blatt „Teil hinzufügen“ aus dem Lager an den neuen Masken-Stil angleichen.
 
 ## B — Qualität & Pflichten
 5. **E-Rechnung vorbereiten:** Seit 01.01.2025 müssen Unternehmen E-Rechnungen im B2B-Verkehr empfangen können. Ab 2027 bzw. 2028 gilt die Ausstellungspflicht, abhängig vom Umsatz. Zu prüfen ist ein ZUGFeRD/XRechnung-Export für Firmenkunden wie das Autohaus Schmidt. *(Recherche nötig)*

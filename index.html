@@ -1100,9 +1100,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.35';
+const APP_VER='2.36';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.36',d:'2026-10-02',p:['„Teil hinzufügen“ aus dem Lager im neuen Stil: Oben sehen Sie sofort Preis, Aufschlag und ob genug im Regal liegt – oder ob das Teil bestellt werden muss.']},
  {v:'2.35',d:'2026-10-02',p:['Neue Eingabe für Arbeiten und Teile im Auftrag: Oben sehen Sie sofort den Preis – bei Arbeiten die Arbeitswerte, bei Teilen Einkauf, Verkauf und Ihren Aufschlag in Euro und Prozent.','Rabatt, Zahler, Bestellung und Notizen liegen in Bereichen zum Aufklappen – sie stören nur, wenn Sie sie brauchen.']},
  {v:'2.34',d:'2026-10-02',p:['Neue Fahrzeug-Eingabe: Oben sehen Sie das Kennzeichen wie ein echtes Nummernschild, dazu Marke, Modell und Halter – schon beim Tippen.','Die Angaben sind in Bereiche zum Auf- und Zuklappen sortiert: Halter, Fahrzeug, Technik, HU & Wartung, Farbe & Zustand. Auch der Fahrzeugschein-Scan füllt die Vorschau gleich mit aus.']},
  {v:'2.33',d:'2026-10-01',p:['Neue Kunden-Eingabe: Oben zeigt eine dunkle Karte schon beim Tippen, wie der Kunde später aussieht.','Statt einem langen Formular gibt es Bereiche zum Auf- und Zuklappen: Person, Kontakt, Adresse und Werkstatt-Infos. Die Zahlungsmoral wählen Sie mit einem Tipp.']},
@@ -2238,18 +2239,28 @@ ACT['text-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id==
  save();closeSheet();render();toast('Textposition hinzugefügt')};
 ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  sheet('Teil hinzufügen',`
-  <div class="fld"><label>Aus dem Lager</label><div class="selwrap"><select id="pt-l">
+  <div class="mkopf" aria-live="polite"><div class="mk-av">T</div>
+   <div class="mk-tx"><b id="mk-n">Neues Teil</b><span id="mk-s">Aus dem Lager wählen oder frei eintragen</span></div>
+   <div class="mk-sum"><b id="mk-p" class="num"></b><span id="mk-g"></span></div></div>
+  ${mSec('Aus dem Lager',S.lager.length+' Teile',true,`<div class="fld" style="margin-bottom:0"><div class="selwrap"><select id="pt-l" aria-label="Teil aus dem Lager">
    <option value="">— Freies Teil (ohne Lager) —</option>
-   ${S.lager.map(l=>`<option value="${l.id}">${esc(l.teil)} · Bestand ${l.bestand} · ${fmt(l.vkCt)}</option>`).join('')}</select></div></div>
+   ${S.lager.map(l=>`<option value="${l.id}">${esc(l.teil)} · Bestand ${l.bestand} · ${fmt(l.vkCt)}</option>`).join('')}</select></div></div>`)}
+  ${mSec('Teil & Preis','',true,`
   <div class="fld"><label>Bezeichnung *</label><input id="pt-b" placeholder="Teilname"></div>
   <div class="row3">
-   <div class="fld"><label>Menge</label><input id="pt-m" inputmode="numeric" value="1"></div>
-   <div class="fld"><label>EK / Stück €</label><input id="pt-ek" inputmode="decimal" value="0,00"></div>
-   <div class="fld"><label>VK / Stück €</label><input id="pt-vk" inputmode="decimal" value="0,00"></div></div>
+   <div class="fld" style="margin-bottom:0"><label>Menge</label><input id="pt-m" inputmode="numeric" value="1"></div>
+   <div class="fld" style="margin-bottom:0"><label>EK / Stück €</label><input id="pt-ek" inputmode="decimal" value="0,00"></div>
+   <div class="fld" style="margin-bottom:0"><label>VK / Stück €</label><input id="pt-vk" inputmode="decimal" value="0,00"></div></div>`)}
   ${ordFreigegeben(a)?`<div style="font-size:11px;background:var(--amber-bg);border:1px solid rgba(194,113,10,.3);border-radius:9px;padding:8px 11px;margin-bottom:12px;color:var(--amber)">Auftrag ist freigegeben — dieses Teil wird automatisch als <b>Erweiterung</b> protokolliert.</div>`:''}
-  <button class="btn btn-main" style="width:100%" data-act="teil-save" data-oid="${a.id}" data-pid="${pk.id}">Hinzufügen</button>`);
- $('#pt-l').addEventListener('change',e=>{const l=lagerT(e.target.value);if(!l)return;
-  $('#pt-b').value=l.teil;$('#pt-ek').value=fmtIn(l.ekCt);$('#pt-vk').value=fmtIn(l.vkCt)})};
+  <button class="btn btn-main" style="width:100%;margin-top:6px" data-act="teil-save" data-oid="${a.id}" data-pid="${pk.id}">Hinzufügen</button>`);
+ /* Vorschau-Kopf: Menge × EK → VK, Summe, Aufschlag, Lagerbestand */
+ const pv=()=>{const m=Math.max(1,parseInt($('#pt-m').value)||1),ek=parseEuro($('#pt-ek').value)||0,vk=parseEuro($('#pt-vk').value)||0,l=lagerT($('#pt-l').value);
+  $('#mk-n').textContent=$('#pt-b').value.trim()||'Neues Teil';
+  $('#mk-s').textContent=m+' × EK '+fmt(ek)+' → VK '+fmt(vk)+(l?' · '+(l.bestand>=m?'Lager: '+l.bestand+' da':'nur '+l.bestand+' im Lager — wird bestellt'):'');
+  $('#mk-p').textContent=fmt(vk*m);$('#mk-g').textContent=(vk-ek>=0?'+ ':'− ')+fmt(Math.abs(vk-ek)*m)+(ek?' ('+Math.round((vk-ek)/ek*100)+' %)':'')};
+ $('#pt-l').addEventListener('change',e=>{const l=lagerT(e.target.value);if(l){
+  $('#pt-b').value=l.teil;$('#pt-ek').value=fmtIn(l.ekCt);$('#pt-vk').value=fmtIn(l.vkCt)}pv()});
+ $('#sheetbg').addEventListener('input',pv);pv()};
 ACT['teil-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const bez=$('#pt-b').value.trim();if(!bez)return toast('Bezeichnung fehlt',true);
  const lid=$('#pt-l').value||null,menge=Math.max(1,parseInt($('#pt-m').value)||1);

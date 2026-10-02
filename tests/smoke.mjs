@@ -140,6 +140,23 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       return t.ekCt === i.ek && t.vkCt === i.vk && (t.menge || 1) === i.m; }, ids);
     if (!ps) errs.push('Positions-Maske: Speichern verändert unveränderte Werte');
     await page.evaluate(() => closeSheet());
+    // „Teil hinzufügen“ aus dem Lager: Vorschau + Hinzufügen
+    const lid = await page.evaluate(() => (S.lager.find(l => l.bestand >= 1) || {}).id);
+    const posVor = await page.evaluate(i => auftrag(i.oid).pakete.find(p => p.id === i.pid).pos.length, ids);
+    const bestVor = await page.evaluate(id => lagerT(id).bestand, lid);
+    await page.evaluate(i => ACT['add-teil']({ dataset: { oid: i.oid, pid: i.pid } }), ids);
+    await page.waitForTimeout(120);
+    await page.selectOption('#pt-l', lid);
+    await page.waitForTimeout(80);
+    const at = await page.evaluate(id => { const l = lagerT(id); return document.getElementById('mk-n').textContent === l.teil && document.getElementById('mk-p').textContent === fmt(l.vkCt); }, lid);
+    if (!at) errs.push('Teil hinzufügen: Vorschau falsch');
+    if (shotDir) await page.screenshot({ path: `${shotDir}/teil-neu-${w}.png` });
+    await page.click('[data-act="teil-save"]');
+    await page.waitForTimeout(120);
+    const atN = await page.evaluate(([i, id]) => { const pk = auftrag(i.oid).pakete.find(p => p.id === i.pid); const x = pk.pos[pk.pos.length - 1];
+      const r = { n: pk.pos.length, lid: x.lagerId, best: lagerT(id).bestand };
+      pk.pos.pop(); lagerT(id).bestand += 1; save(); render(); return r; }, [ids, lid]);
+    if (atN.n !== posVor + 1 || atN.lid !== lid || atN.best !== bestVor - 1) errs.push('Teil hinzufügen speichert falsch: ' + JSON.stringify(atN));
   }
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
