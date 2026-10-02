@@ -427,6 +427,8 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 /* Anlege-Masken (Entwurf 14): Vorschau-Kopf + aufklappbare Balken */
 .mkopf{display:flex;align-items:center;gap:12px;background:#2C3E50;color:#ECF0F3;border-radius:14px;padding:13px 14px;margin:2px 0 12px}
 .mk-av{width:44px;height:44px;border-radius:12px;background:rgba(255,255,255,.14);display:grid;place-items:center;font-weight:800;font-size:15px;flex-shrink:0}
+.mk-plate{flex-shrink:0;min-width:96px;max-width:46%;height:40px;padding:0 10px 0 18px;display:flex;align-items:center;justify-content:center;background:#fff;color:#16161A;border:2px solid #16161A;border-radius:7px;font-weight:800;font-size:15px;letter-spacing:.04em;position:relative;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:ui-monospace,'SF Mono',monospace}
+.mk-plate::before{content:'';position:absolute;left:0;top:0;bottom:0;width:11px;background:#1F4FB4}
 .mk-tx{flex:1;min-width:0}.mk-tx b{display:block;font-size:15px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mk-tx span{display:block;font-size:11.5px;color:rgba(236,240,243,.72);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .mk-tag{font-size:10px;border:1px solid rgba(255,255,255,.4);border-radius:7px;padding:3px 8px;flex-shrink:0}
@@ -1096,9 +1098,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.33';
+const APP_VER='2.34';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.34',d:'2026-10-02',p:['Neue Fahrzeug-Eingabe: Oben sehen Sie das Kennzeichen wie ein echtes Nummernschild, dazu Marke, Modell und Halter – schon beim Tippen.','Die Angaben sind in Bereiche zum Auf- und Zuklappen sortiert: Halter, Fahrzeug, Technik, HU & Wartung, Farbe & Zustand. Auch der Fahrzeugschein-Scan füllt die Vorschau gleich mit aus.']},
  {v:'2.33',d:'2026-10-01',p:['Neue Kunden-Eingabe: Oben zeigt eine dunkle Karte schon beim Tippen, wie der Kunde später aussieht.','Statt einem langen Formular gibt es Bereiche zum Auf- und Zuklappen: Person, Kontakt, Adresse und Werkstatt-Infos. Die Zahlungsmoral wählen Sie mit einem Tipp.']},
  {v:'2.32',d:'2026-10-01',p:['Kurzbefehle in der Suche: „neuer auftrag“, „neuer kunde“, „neuer termin“ oder „bestellliste“ eintippen und antippen – schon geht es los.','„bestell“ plus Teilename (z. B. „bestell bremsbeläge“) legt nach einer Rückfrage direkt eine Bestellung für dieses Teil an. Verschickt wird dabei nichts.']},
  {v:'2.31',d:'2026-10-01',p:['Die Suche findet jetzt viel mehr: einzelne Arbeiten und Teile in Aufträgen, Rechnungen, Termine, Anfragen und das Lager.','Beispiel: „brems“ zeigt alle Bremsen-Aufträge, die Anfrage wegen quietschender Bremsen und die Bremsscheiben im Regal – ein Tipp öffnet den Treffer.']},
@@ -2694,38 +2697,45 @@ function vFahrzeug(id){
 let fzgPick=null;
 ACT['fzg-edit']=el=>{const f=el.dataset.id?fzg(el.dataset.id):null;
  const preK=f?kunde(f.kundeId):null;
- sheet(f?'Fahrzeug bearbeiten':'Neues Fahrzeug',`
-  <button class="btn btn-2nd" style="width:100%;margin-bottom:13px" data-act="schein-scan">
+ const fmo=x=>x?[x.marke,x.modell].filter(Boolean).join(' '):'';
+ const w=sheet(f?'Fahrzeug bearbeiten':'Neues Fahrzeug',`
+  <div class="mkopf" aria-live="polite"><div class="mk-plate" id="mk-kz">${f?esc(f.kennz):'HU-'}</div>
+   <div class="mk-tx"><b id="mk-n">${f&&fmo(f)?esc(fmo(f)):'Neues Fahrzeug'}</b><span id="mk-s">${preK?esc(preK.name):'Halter wählen'}</span></div></div>
+  <button class="btn btn-2nd" style="width:100%;margin-bottom:11px" data-act="schein-scan">
    <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>&nbsp;Fahrzeugschein-Scan</button>
   <input type="file" accept="image/*,.pdf,application/pdf,.heic,.heif" id="scheininp" style="display:none">
   <div id="schein-status"></div>
-  <div class="lbl" style="margin-top:0">Halter *</div>
-  ${S.kunden.length?kPickerHtml('fzk',preK):'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:12px">Noch keine Kunden vorhanden — bitte zuerst unter Kunden anlegen.</div>'}
-  <div class="lbl">Fahrzeug</div>
-  <div class="row2"><div class="fld"><label>Kennzeichen *</label><input id="fz-kz" style="text-transform:uppercase" value="${f?esc(f.kennz):''}"></div>
-   <div class="fld"><label>Marke</label><input id="fz-ma" value="${f?esc(f.marke):''}"></div></div>
-  <div class="row2"><div class="fld"><label>Modell</label><input id="fz-mo" value="${f?esc(f.modell):''}"></div>
-   <div class="fld"><label>FIN / Fahrgestellnummer</label><input id="fz-v" value="${f?esc(f.vin):''}" style="font-family:ui-monospace,monospace;font-size:12px"></div></div>
+  ${mSec('Halter *',preK?esc(preK.name):'',!preK,S.kunden.length?kPickerHtml('fzk',preK):'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px">Noch keine Kunden vorhanden — bitte zuerst unter Kunden anlegen.</div>')}
+  ${mSec('Fahrzeug','',true,`
+  <div class="fld"><label>Kennzeichen *</label><input id="fz-kz" style="text-transform:uppercase" value="${f?esc(f.kennz):''}" placeholder="HU-AB 123" autocomplete="off"></div>
+  <div class="row2"><div class="fld" style="margin-bottom:0"><label>Marke</label><input id="fz-ma" value="${f?esc(f.marke):''}" placeholder="z. B. BMW"></div>
+   <div class="fld" style="margin-bottom:0"><label>Modell</label><input id="fz-mo" value="${f?esc(f.modell):''}" placeholder="z. B. 320d"></div></div>`)}
+  ${mSec('Technik',f?esc([f.bj,f.kraftstoff,f.km!=null?f.km.toLocaleString('de-DE')+' km':''].filter(Boolean).join(' · ')):'FIN, Baujahr, km',true,`
+  <div class="fld"><label>FIN / Fahrgestellnummer</label><input id="fz-v" value="${f?esc(f.vin):''}" style="font-family:ui-monospace,monospace;font-size:12px" autocomplete="off"></div>
   <div class="row2"><div class="fld"><label>Baujahr</label><input id="fz-bj" inputmode="numeric" value="${f&&f.bj?f.bj:''}"></div>
    <div class="fld"><label>Kilometerstand</label><input id="fz-km" inputmode="numeric" value="${f&&f.km!=null?f.km:''}"></div></div>
-  <div class="row2"><div class="fld"><label>HU fällig</label><input type="month" id="fz-hu" value="${f?f.hu:''}"></div>
-   <div class="fld"><label>Kraftstoff</label><div class="selwrap"><select id="fz-kr"><option value="">—</option>${['Benzin','Diesel','Hybrid','Elektro','LPG/CNG'].map(v=>`<option ${f&&f.kraftstoff===v?'selected':''}>${v}</option>`).join('')}</select></div></div></div>
-  <div class="fld"><label>Letzte Wartung (optional)</label><input type="date" id="fz-wart" value="${f?(f.wartung||''):''}"></div>
-  <div class="sec" style="animation:none;margin:0 0 11px">
-   <div class="sec-h" data-act="sec-plain" style="padding:10px 12px"><span class="t" style="font-size:12px">Weitere Fahrzeugdaten (optional)</span><span class="chev"></span></div>
-   <div class="sec-b"><div class="sec-in" style="padding:0 12px 12px">
+  <div class="fld" style="margin-bottom:0"><label>Kraftstoff</label><div class="selwrap"><select id="fz-kr"><option value="">—</option>${['Benzin','Diesel','Hybrid','Elektro','LPG/CNG'].map(v=>`<option ${f&&f.kraftstoff===v?'selected':''}>${v}</option>`).join('')}</select></div></div>`)}
+  ${mSec('HU & Wartung',f&&f.hu?'HU '+esc(f.hu.split('-').reverse().join('/')):'',!!(f&&(f.hu||f.wartung)),`
+  <div class="row2"><div class="fld" style="margin-bottom:0"><label>HU fällig</label><input type="month" id="fz-hu" value="${f?f.hu:''}"></div>
+   <div class="fld" style="margin-bottom:0"><label>Letzte Wartung</label><input type="date" id="fz-wart" value="${f?(f.wartung||''):''}"></div></div>`)}
+  ${mSec('Farbe & Zustand','optional',!!(f&&(f.farbe||f.zustand)),`
     <div class="fld"><label>Farbe</label><input id="fz-fa" value="${f?esc(f.farbe||''):''}" placeholder="z. B. Alpinweiß"></div>
-    <div class="fld"><label>Fahrzeugzustand</label><div class="selwrap"><select id="fz-zustand" onchange="document.getElementById('fz-ztxt-wrap').style.display=this.value==='son'?'block':'none'">
+    <div class="fld" style="margin-bottom:0"><label>Fahrzeugzustand</label><div class="selwrap"><select id="fz-zustand" onchange="document.getElementById('fz-ztxt-wrap').style.display=this.value==='son'?'block':'none'">
      <option value="">—</option>
      <option value="gut" ${f&&f.zustand==='gut'?'selected':''}>Gut</option>
      <option value="rep" ${f&&f.zustand==='rep'?'selected':''}>Reparaturbedürftig</option>
      <option value="totalschaden" ${f&&f.zustand==='totalschaden'?'selected':''}>Totalschaden</option>
      <option value="son" ${f&&f.zustand==='son'?'selected':''}>Sonstiges</option>
     </select></div></div>
-    <div id="fz-ztxt-wrap" style="display:${f&&f.zustand==='son'?'block':'none'}"><div class="fld"><label>Sonstiges Zustand — was?</label><input id="fz-ztxt" value="${f?esc(f.zustandTxt||''):''}"></div></div>
-   </div></div></div>
-  <button class="btn btn-main" style="width:100%" data-act="fzg-save" ${f?`data-id="${f.id}"`:''}>Speichern</button>`);
- fzgPick=S.kunden.length?bindKPicker('fzk',null,preK):null};
+    <div id="fz-ztxt-wrap" style="display:${f&&f.zustand==='son'?'block':'none'}"><div class="fld" style="margin:10px 0 0"><label>Sonstiges Zustand — was?</label><input id="fz-ztxt" value="${f?esc(f.zustandTxt||''):''}"></div></div>`)}
+  <button class="btn btn-main" style="width:100%;margin-top:6px" data-act="fzg-save" ${f?`data-id="${f.id}"`:''}>Speichern</button>`);
+ fzgPick=S.kunden.length?bindKPicker('fzk',null,preK):null;
+ /* Vorschau-Kopf live mitschreiben (auch nach Schein-Scan und Halter-Wahl) */
+ const upd=()=>{const kz=$('#fz-kz');if(!kz)return;const h=fzgPick&&fzgPick.get();
+  $('#mk-kz').textContent=kz.value.trim().toUpperCase()||'HU-';
+  $('#mk-n').textContent=[$('#fz-ma').value.trim(),$('#fz-mo').value.trim()].filter(Boolean).join(' ')||'Neues Fahrzeug';
+  $('#mk-s').textContent=h?h.name:'Halter wählen'};
+ w.addEventListener('input',upd);w.addEventListener('click',()=>setTimeout(upd,0));w.addEventListener('change',upd)};
 ACT['fzg-save']=el=>{const kz=$('#fz-kz').value.trim().toUpperCase();if(!kz)return toast('Kennzeichen fehlt',true);
  const halter=fzgPick?fzgPick.get():null;
  if(!halter)return toast('Halter wählen — oben Kunden suchen',true);
@@ -2770,7 +2780,7 @@ ACT['schein-scan']=el=>{
    clearTimeout(to);
    if(!r.ok){const j=await r.json().catch(()=>({}));throw new Error(j.error||('HTTP '+r.status))}
    const {fields:fl={}}=await r.json();
-   const setV=(id,v)=>{const n=$(id);if(n&&v&&!n.value)n.value=v};
+   const setV=(id,v)=>{const n=$(id);if(n&&v&&!n.value){n.value=v;n.dispatchEvent(new Event('input',{bubbles:true}))}};
    if(inp.dataset.mode==='ord'){
     setV('#no-fk',(fl.kennzeichen||'').toUpperCase());
     setV('#no-fma',fl.marke||'');setV('#no-fmo',fl.modell||'');
