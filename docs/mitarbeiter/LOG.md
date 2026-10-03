@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 03.10.2026 (2. Lauf) — Version 2.38: Backup-Erinnerung verbessert
+- **Recherche:** entfallen (heute schon erledigt).
+- **Fehlerfund:** Die wiederherstellbare JSON-Sicherung (`data-export`) hat `lastBackup` nicht gesetzt. Nur der Excel-Export hat die Erinnerung zurückgesetzt. Behoben.
+- **Gebaut:** `bkStatus()` als zentrale Logik: fällig, wenn Cloud-Backup aus ist und 15 Änderungen oder 7 Tage seit der letzten Sicherung erreicht sind. Ohne jede Sicherung zählt `S.meta.since` (neu, wird in `migrate2` gesetzt). „X“ pausiert jetzt 24 h (`S.meta.bkSnooze`, gespeichert) statt nur bis zum nächsten App-Start. Die Warnzeile in der Planung bietet „Jetzt sichern“ (JSON, wieder einspielbar) mit 44-px-Knöpfen. Neue Karte „Datensicherung“ unter „Mehr“ mit „Letzte Sicherung vor X Tagen“ und Knopf, ausgeblendet bei funktionierendem Cloud-Backup.
+- **Test:** Smoke-Test grün (390/1280). Er prüft: Hinweis nach 8 Tagen, Ausblenden, Karte in „Mehr“, „Jetzt sichern“ setzt zurück. SW v39.
+- **Offen / nächster Handgriff:** B7 Barrierefreiheit (Icon-Knöpfe ohne Beschriftung finden: `grep 'data-act' | grep -v aria-label` bei reinen Icon-Buttons, Kontraste `--ink3`). E-Rechnung Scheibe 2 nach Antwort des Inhabers.
+
 ## 03.10.2026 — Version 2.37: E-Rechnung, Scheibe 1 (Firmenkunde vorbereiten)
 - **Recherche (c) UX mobile Business-Apps:** Für umkehrbare Aktionen empfiehlt die aktuelle Praxis „Rückgängig“-Toast statt „Sind Sie sicher?“-Dialog, weil Dialoge zum blinden Wegtippen erziehen. Außerdem: einhändige Bedienung, 48-px-Ziele, gut sichtbarer Status. → Idee ins BACKLOG (C). Quellen: smashingmagazine.com (Dangerous Actions, 2024), dolfy.ai (Confirmation Dialog Problem), team400.ai (Field Service Design Patterns).
 - **Gebaut:** In der Kunden-Maske gibt es das neue Feld „USt-IdNr.“. Es wird beim Speichern großgeschrieben und Leerzeichen werden entfernt (`k.ustid`). Die Kundenakte zeigt die USt-IdNr. und bei Firmen den Hinweis „E-Rechnung ab 2028 nötig“. In der Rechnungsliste steht die Markierung „E-Rechnung“ bei Firmenkunden über 250 € brutto (`eReNoetig`). Auf der gedruckten Rechnung steht die USt-IdNr. des Kunden unter der Adresse. Neues optionales Feld, keine Migration nötig.
