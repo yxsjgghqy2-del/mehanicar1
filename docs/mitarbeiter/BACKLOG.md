@@ -14,7 +14,6 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
 - **Kunden-Statusseite per Link mit Freigabe von Zusatzarbeiten** („Ihr Auto ist fertig“, Erweiterung per Foto/Video freigeben) — Wettbewerber (SmartWerkstatt u. a.) bieten Kundenportal mit Freigabe + Video-Check als Standard. *(Recherche 01.10.2026, Quelle: fuer-gruender.de Vergleich 09/2026, smartwerkstatt.cloud)*
 - Teile-Preisvergleich / Bestellstatus
 - Wiederkehrende Wartungsverträge
-- **„Rückgängig“ statt „Sind Sie sicher?“** bei umkehrbaren Aktionen (z. B. Paket abrechnen, Status ändern, Position löschen → Toast mit „Rückgängig“ für ~6 s). Echte Löschungen mit Datenverlust behalten den Dialog. *(Recherche 03.10.2026, Smashing Magazine / dolfy.ai)*
 - **Zahl am App-Symbol** für neue Anfragen (Badge API, iOS ab 16.4 bei Home-Bildschirm-App, braucht Mitteilungs-Erlaubnis). Klein und schnell umsetzbar. *(Recherche 02.10.2026, mobiloud.com)*
 - **Bildschirm bleibt an** im Werkstatt-Modus (Screen Wake Lock, Safari 18.4+), z. B. während der Zeiterfassung oder Checkliste. *(Recherche 02.10.2026)*
 
