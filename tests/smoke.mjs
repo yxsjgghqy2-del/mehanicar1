@@ -11,6 +11,15 @@ const URL = 'file://' + ROOT + '/index.html';
 const VIEWS = ['planung', 'auftraege', 'kunden', 'termine', 'anfragen', 'mehr', 'fahrzeuge', 'lager', 'finanzen', 'einstellungen', 'kalender', 'bestellungen', 'team', 'apdb', 'pakvorlagen'];
 const shotDir = process.env.SHOTS || null;
 
+// Barrierefreiheit: sichtbare Knöpfe brauchen einen Namen (Text, aria-label oder title)
+async function a11y(page, errs, wo) {
+  const ohneName = await page.evaluate(() => [...document.querySelectorAll('button, [role="button"]')].filter(b => {
+    const r = b.getBoundingClientRect(); if (!r.width || !r.height) return false;
+    return !(b.innerText || '').trim() && !b.getAttribute('aria-label') && !b.getAttribute('title');
+  }).map(b => (b.dataset.act || b.className || b.outerHTML.slice(0, 40))));
+  if (ohneName.length) errs.push(`${wo}: Knöpfe ohne Beschriftung: ${[...new Set(ohneName)].join(', ')}`);
+}
+
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
 let fail = 0;
 for (const [w, h] of [[390, 844], [1280, 800]]) {
@@ -26,6 +35,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     const sw = await page.evaluate(() => document.documentElement.scrollWidth);
     if (sw > w + 1) errs.push(`${v}: horizontales Scrollen (${sw}px bei ${w}px)`);
     if (shotDir && w === 390) await page.screenshot({ path: `${shotDir}/${v}.png` });
+    await a11y(page, errs, v);
   }
   // „Was ist neu“: Mehr → Versionsnummer antippen, Liste muss erscheinen, Punkt verschwinden
   await page.evaluate(() => nav('mehr'));
@@ -188,6 +198,9 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   if (aid) {
     await page.evaluate(id => nav('auftrag', id), aid);
     await page.waitForTimeout(200);
+    await a11y(page, errs, 'auftrag');
+    await page.evaluate(() => ACT['kunde-edit']({ dataset: {} })); await page.waitForTimeout(100);
+    await a11y(page, errs, 'kunden-maske'); await page.evaluate(() => closeSheet());
     // Kalk-Kopf: muss da sein und Brutto wie die Engine zeigen
     const kk = await page.evaluate(id => { const el = document.querySelector('.hdr .kkopf'); const a = auftrag(id);
       return el ? el.innerText.includes(fmt(ordBrutto(a))) : null; }, aid);
@@ -228,7 +241,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   } else errs.push('Kein Auftrag in den Demo-Daten gefunden');
   const ver = await page.evaluate(() => typeof APP_VER !== 'undefined' ? APP_VER : '?');
   console.log(`${w}px · Version ${ver} · Fehler: ${errs.length}`);
-  errs.slice(0, 8).forEach(e => console.log('   ' + e));
+  errs.slice(0, 40).forEach(e => console.log('   ' + e));
   fail += errs.length;
 }
 await browser.close();

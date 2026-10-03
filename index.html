@@ -15,7 +15,7 @@
 /* ============ DESIGN TOKENS ============ */
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
- --bg:#F2F2F7;--card:#FFFFFF;--ink:#16161A;--ink2:#6B6B73;--ink3:#A6A6AE;
+ --bg:#F2F2F7;--card:#FFFFFF;--ink:#16161A;--ink2:#6B6B73;--ink3:#74747C;
  --line:rgba(22,22,26,.09);--line2:rgba(22,22,26,.06);
  --blue:#0E9C8E;--green:#0E8F4E;--amber:#C2710A;--red:#E0353B;--violet:#6B4DD6;
  --blue-bg:rgba(14,156,142,.1);--green-bg:rgba(14,143,78,.10);--amber-bg:rgba(194,113,10,.11);
@@ -492,7 +492,8 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 .sheet-h{display:flex;align-items:center;padding:16px 16px 8px;gap:10px}
 .sheet-h .grab{position:absolute;top:8px;left:50%;transform:translateX(-50%);width:36px;height:4px;border-radius:2px;background:var(--line)}
 .sheet-h h2{font-size:16px;font-weight:750;flex:1}
-.sheet-x{width:28px;height:28px;border-radius:50%;background:var(--gray-bg);display:grid;place-items:center;color:var(--ink2);font-size:13px}
+.sheet-x::after{content:"";position:absolute;inset:-8px}
+.sheet-x{position:relative;width:28px;height:28px;border-radius:50%;background:var(--gray-bg);display:grid;place-items:center;color:var(--ink2);font-size:13px}
 .sheet-b{overflow-y:auto;padding:6px 16px 20px;-webkit-overflow-scrolling:touch}
 .confirm-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:70;display:grid;place-items:center;animation:fadeIn .18s ease;padding:24px}
 .confirm{background:var(--card);border-radius:18px;padding:20px;width:100%;max-width:320px;animation:cardSpring .35s var(--spring)}
@@ -713,7 +714,7 @@ body.theme-dark .searchbar{background:rgba(28,30,29,.75);border-color:rgba(255,2
  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
 body.theme-dark .sheet{background:rgba(16,16,21,.88);backdrop-filter:blur(34px) saturate(1.3);-webkit-backdrop-filter:blur(34px) saturate(1.3)}
 body.theme-light{
- --bg:#F4F4F6;--card:#FFFFFF;--ink:#16161A;--ink2:#6B6B73;--ink3:#A6A6AE;
+ --bg:#F4F4F6;--card:#FFFFFF;--ink:#16161A;--ink2:#6B6B73;--ink3:#74747C;
  --line:rgba(22,22,26,.07);--line2:rgba(22,22,26,.05);
  --blue:#0E9C8E;--green:#0E8F4E;--amber:#C2710A;--red:#E0353B;--violet:#6B4DD6;
  --blue-bg:rgba(14,156,142,.1);--green-bg:rgba(14,143,78,.10);--amber-bg:rgba(194,113,10,.11);
@@ -1106,9 +1107,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.38';
+const APP_VER='2.39';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.39',d:'2026-10-03',p:['Besser lesbar: Die graue Zusatzschrift im hellen Modus ist etwas dunkler – gerade draußen oder bei Sonne gut zu erkennen.','Kleine „x“-Knöpfe (Schließen, Entfernen) lassen sich leichter treffen und werden von der iPhone-Vorlesefunktion richtig angesagt.']},
  {v:'2.38',d:'2026-10-03',p:['Bessere Erinnerung an die Datensicherung: Wenn länger als 7 Tage nicht gesichert wurde, meldet sich die App – auch wenn Sie noch nie gesichert haben. „X“ blendet sie für einen Tag aus.','Unter „Mehr“ sehen Sie jetzt immer, wann zuletzt gesichert wurde, und können mit einem Tipp sichern. Diese Sicherungsdatei lässt sich später wieder einspielen.']},
  {v:'2.37',d:'2026-10-03',p:['Vorbereitung E-Rechnung: Bei Firmenkunden können Sie jetzt die USt-IdNr. eintragen – sie steht dann auch auf der Rechnung.','Rechnungen an Firmen über 250 € sind in der Liste mit „E-Rechnung“ markiert. So sehen Sie, welche Kunden das später betrifft. Privatkunden ändert sich nichts.']},
  {v:'2.36',d:'2026-10-02',p:['„Teil hinzufügen“ aus dem Lager im neuen Stil: Oben sehen Sie sofort Preis, Aufschlag und ob genug im Regal liegt – oder ob das Teil bestellt werden muss.']},
@@ -1211,7 +1213,7 @@ function sheet(title,body,foot=''){
  closeSheet();
  const w=document.createElement('div');w.className='sheet-bg';w.id='sheetbg';
  w.innerHTML=`<div class="sheet"><div class="sheet-h" style="position:relative"><div class="grab"></div><h2>${title}</h2>
-  <button class="sheet-x" data-act="sheet-close">${xIco(13)}</button></div><div class="sheet-b">${body}${foot}</div></div>`;
+  <button class="sheet-x" data-act="sheet-close" aria-label="Schließen">${xIco(13)}</button></div><div class="sheet-b">${body}${foot}</div></div>`;
  w.addEventListener('click',e=>{if(e.target===w)closeSheet()});
  document.body.appendChild(w);
  const sh=w.querySelector('.sheet'),grab=w.querySelector('.grab');
@@ -1963,13 +1965,13 @@ function vAuftrag(id){
   <div class="lbl">Checkliste · ${clDone} von ${(a.check||[]).length}</div>
   ${(a.check||[]).map((c,i)=>`<div class="cl ${c.done?'done':''}" data-act="cl-tog" data-oid="${a.id}" data-i="${i}">
    <div class="cb"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><span class="ct">${esc(c.t)}</span>
-   <button style="color:var(--ink3);font-size:15px;padding:8px 10px;margin:-8px -6px" data-act="cl-del" data-oid="${a.id}" data-i="${i}">${xIco(13)}</button></div>`).join('')}
+   <button style="color:var(--ink3);font-size:15px;min-width:44px;min-height:44px;display:inline-grid;place-items:center;margin:-8px -6px" aria-label="Checklisten-Punkt entfernen" data-act="cl-del" data-oid="${a.id}" data-i="${i}">${xIco(13)}</button></div>`).join('')}
   ${(a.check||[]).length?`<div class="prog"><i style="width:${(a.check.length?clDone/a.check.length*100:0)}%"></i></div>`:''}
   <button class="btn-ghost" style="width:100%;margin-top:10px" data-act="cl-add" data-oid="${a.id}">+ Prüfpunkt</button>
   <div class="lbl">Dokumente</div>
   ${(a.docs||[]).map((d,i)=>`<div class="doc-row"><div class="doc-ic">${esc(d.typ)}</div>
    <div style="flex:1">${esc(d.name)}</div>
-   <button style="color:var(--ink3);padding:4px" data-act="doc-del" data-oid="${a.id}" data-i="${i}">${xIco(13)}</button></div>`).join('')||'<div style="font-size:11.5px;color:var(--ink3);padding:4px 0">Keine Dokumente</div>'}
+   <button style="color:var(--ink3);min-width:44px;min-height:44px;display:inline-grid;place-items:center;margin:-6px -8px" aria-label="Dokument entfernen" data-act="doc-del" data-oid="${a.id}" data-i="${i}">${xIco(13)}</button></div>`).join('')||'<div style="font-size:11.5px;color:var(--ink3);padding:4px 0">Keine Dokumente</div>'}
   <button class="btn-ghost" style="width:100%;margin-top:8px" data-act="doc-add" data-oid="${a.id}">+ Dokument vermerken</button>`);
 
  /* --- Organisation --- */
@@ -2912,7 +2914,7 @@ function vMehr(){
     <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#0A5FFF,#5B8DEF);display:grid;place-items:center;flex-shrink:0"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><rect x="4" y="15" width="16" height="6" rx="2"/></svg></div>
     <div style="flex:1"><b style="font-size:13px">Als App installieren</b>
      <div style="font-size:11px;color:var(--ink3);line-height:1.5;margin-top:2px">${isIOS?'Safari: Teilen-Symbol → „Zum Home-Bildschirm" — dann läuft mehanicar wie eine echte App, auch offline.':'Browser-Menü → „App installieren" bzw. „Zum Startbildschirm hinzufügen".'}</div></div>
-    <button style="color:var(--ink3);padding:6px;font-size:14px;flex-shrink:0" data-act="install-hint-done">${xIco(13)}</button></div></div>`:'';
+    <button style="color:var(--ink3);min-width:44px;min-height:44px;display:inline-grid;place-items:center;font-size:14px;flex-shrink:0" aria-label="Hinweis ausblenden" data-act="install-hint-done">${xIco(13)}</button></div></div>`:'';
  const bk=bkStatus();
  const bkCard=bk.cloud&&!bk.broken?'':`<div class="card bk-card${bk.due?' due':''}"><div class="bk-t"><b>Datensicherung</b><span>${bk.txt}</span></div><button class="btn btn-sm ${bk.due?'btn-main':'btn-2nd'}" data-act="data-export">Jetzt sichern</button></div>`;
  const inner=`${installHint}${bkCard}<div class="card stag">
@@ -3058,7 +3060,7 @@ function vEinstellungen(){
     return tpls.map((t,i)=>`<div class="kv" style="align-items:flex-start;flex-direction:column;gap:4px">
      <div style="display:flex;align-items:center;gap:6px;width:100%"><input class="priceinp" style="width:90px;flex-shrink:0" value="${esc(t.l)}" data-f="watpl-l" data-i="${i}">
       <input class="priceinp" style="flex:1" value="${esc(t.m)}" data-f="watpl-m" data-i="${i}">
-      <button style="color:var(--red);padding:6px;font-size:14px;flex-shrink:0" data-act="watpl-del" data-i="${i}">${xIco(13)}</button></div></div>`).join('')})()}
+      <button style="color:var(--red);min-width:44px;min-height:44px;display:inline-grid;place-items:center;font-size:14px;flex-shrink:0" aria-label="Vorlage löschen" data-act="watpl-del" data-i="${i}">${xIco(13)}</button></div></div>`).join('')})()}
    <button class="btn-ghost" style="width:100%;margin-top:6px" data-act="watpl-add">+ Template hinzufügen</button></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Anfragen & KI</div>
    <div class="kv"><span class="k">Anfragen-Benachrichtigung</span><span class="v"><label style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" ${st.pushAnfragen?'checked':''} data-f="set-push-anfr" style="accent-color:var(--blue);width:18px;height:18px"><span>${st.pushAnfragen?'aktiviert':'deaktiviert'}</span></label></span></div>
