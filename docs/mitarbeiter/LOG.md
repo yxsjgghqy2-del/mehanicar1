@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 03.10.2026 — Version 2.37: E-Rechnung, Scheibe 1 (Firmenkunde vorbereiten)
+- **Recherche (c) UX mobile Business-Apps:** Für umkehrbare Aktionen empfiehlt die aktuelle Praxis „Rückgängig“-Toast statt „Sind Sie sicher?“-Dialog, weil Dialoge zum blinden Wegtippen erziehen. Außerdem: einhändige Bedienung, 48-px-Ziele, gut sichtbarer Status. → Idee ins BACKLOG (C). Quellen: smashingmagazine.com (Dangerous Actions, 2024), dolfy.ai (Confirmation Dialog Problem), team400.ai (Field Service Design Patterns).
+- **Gebaut:** In der Kunden-Maske gibt es das neue Feld „USt-IdNr.“. Es wird beim Speichern großgeschrieben und Leerzeichen werden entfernt (`k.ustid`). Die Kundenakte zeigt die USt-IdNr. und bei Firmen den Hinweis „E-Rechnung ab 2028 nötig“. In der Rechnungsliste steht die Markierung „E-Rechnung“ bei Firmenkunden über 250 € brutto (`eReNoetig`). Auf der gedruckten Rechnung steht die USt-IdNr. des Kunden unter der Adresse. Neues optionales Feld, keine Migration nötig.
+- **Test:** Smoke-Test grün (390/1280). Er prüft die USt-IdNr.-Normalisierung und `eReNoetig` (privat / Firma > 250 € / Firma = 250 €). SW v38.
+- **Offen / nächster Handgriff:** E-Rechnung Scheibe 2, XRechnung-Export (CII-XML) mit Pflichtfeld-Prüfung. Vorher die Antwort des Inhabers abwarten (Umsatz > 800.000 €?), bis dahin B6 Backup-Erinnerung.
+
 ## 02.10.2026 (4. Lauf) — E-Rechnung: Recherche + Konzept (keine App-Änderung)
 - **Recherche (d) Recht & Pflichten:** Empfang seit 2025 Pflicht (E-Mail-Postfach reicht). Ausstellen an Firmenkunden ab 2027 bei Vorjahresumsatz > 800.000 €, sonst ab 2028. B2C und Kleinbetragsrechnungen ≤ 250 € sind ausgenommen. Formate: XRechnung oder ZUGFeRD (EN 16931). Quellen in `docs/e-rechnung.md`.
 - **Erstellt:** `docs/e-rechnung.md` mit Pflichten-Tabelle, Plan in 4 Scheiben (Firmenkunde/USt-IdNr → XRechnung-CII-Export im Browser → Validator-Test → optional ZUGFeRD) und einer Frage an den Inhaber.

@@ -86,6 +86,8 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   await page.fill('#ku-vn', 'Test');
   await page.fill('#ku-nn', 'Prüfkunde');
   await page.fill('#ku-t', '0170 111');
+  await page.fill('#ku-fa', 'Prüf GmbH');
+  await page.fill('#ku-ust', ' de 123 456 789');
   const mk = await page.evaluate(() => document.getElementById('mk-n').textContent + '|' + document.getElementById('mk-av').textContent);
   if (mk !== 'Test Prüfkunde|TP') errs.push('Kunden-Maske: Vorschau falsch ' + mk);
   await page.click('details.msec:has(.mseg) > summary').catch(() => errs.push('Balken „Werkstatt-Infos“ fehlt'));
@@ -93,9 +95,9 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   if (shotDir) await page.screenshot({ path: `${shotDir}/kunde-neu-${w}.png` });
   await page.click('[data-act="kunde-save"]');
   await page.waitForTimeout(150);
-  const kn = await page.evaluate(() => { const k = S.kunden.find(x => x.name === 'Test Prüfkunde'); const r = k ? k.moral + '|' + k.tel : null;
+  const kn = await page.evaluate(() => { const k = S.kunden.find(x => x.name === 'Test Prüfkunde'); const r = k ? k.moral + '|' + k.tel + '|' + k.ustid : null;
     if (k) { S.kunden = S.kunden.filter(x => x !== k); save(); render(); } return r; });
-  if (kn !== 'Mittel|0170 111') errs.push('Kunden-Maske speichert falsch: ' + kn);
+  if (kn !== 'Mittel|0170 111|DE123456789') errs.push('Kunden-Maske speichert falsch: ' + kn);
   // Fahrzeug-Maske (Entwurf 14): Kennzeichen-Vorschau, Halter wählen, Speichern
   await page.evaluate(() => { nav('fahrzeuge'); ACT['fzg-edit']({ dataset: {} }); });
   await page.waitForTimeout(150);
@@ -158,6 +160,12 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       pk.pos.pop(); lagerT(id).bestand += 1; save(); render(); return r; }, [ids, lid]);
     if (atN.n !== posVor + 1 || atN.lid !== lid || atN.best !== bestVor - 1) errs.push('Teil hinzufügen speichert falsch: ' + JSON.stringify(atN));
   }
+  // E-Rechnung: Markierung nur für Firmenkunden über 250 € brutto
+  const ere = await page.evaluate(() => { const a = S.auftraege[0], k = kunde(a.kundeId), alt = k.firma;
+    const r = { auftragId: a.id, bruttoCt: 30000 };
+    k.firma = ''; const privat = eReNoetig(r); k.firma = 'Test GmbH'; const firma = eReNoetig(r);
+    const klein = eReNoetig({ auftragId: a.id, bruttoCt: 25000 }); k.firma = alt; return [privat, firma, klein].join(','); });
+  if (ere !== 'false,true,false') errs.push('E-Rechnung-Markierung falsch: ' + ere);
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {
