@@ -7,7 +7,7 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
 
 ## B — Qualität & Pflichten
 5. **E-Rechnung** — Konzept steht in `docs/e-rechnung.md` (02.10.2026). Pflicht gilt nur für Firmenkunden: ab 2028, bei > 800.000 € Vorjahresumsatz schon ab 2027. **Wartet auf Antwort des Inhabers (Umsatz 2026 über 800.000 €?).** Scheibe 1 (USt-IdNr. + Markierung) erledigt in 2.37. Scheibe 2 (XRechnung-Export) nach Antwort des Inhabers, bis dahin Punkt 7.
-7. **Barrierefreiheit prüfen:** Kontraste, Fokusreihenfolge, Beschriftungen der Icon-Buttons.
+7. **Barrierefreiheit Runde 2:** Fokusreihenfolge in Sheets, Fokus zurück nach Schließen, Labels mit `for=` verbinden. *(Runde 1 — Icon-Beschriftungen, 44 px, Kontrast — erledigt in 2.39; Prüfung läuft im Smoke-Test mit.)*
 
 ## C — Ideen (aus Recherche, noch zu bewerten)
 - Digitale Fahrzeugannahme mit Schadensfotos am Fahrzeugschema

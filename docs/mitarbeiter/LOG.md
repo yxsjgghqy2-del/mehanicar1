@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 03.10.2026 (3. Lauf) — Version 2.39: Barrierefreiheit (Runde 1)
+- **Recherche:** entfallen (heute schon erledigt).
+- **Gebaut:** Neue Prüfung `a11y()` in `tests/smoke.mjs`. Sie meldet sichtbare Knöpfe ohne Text, `aria-label` oder `title` in allen Hauptansichten, im Auftrag und in der Kunden-Maske. Gefunden und behoben: `sheet-close`, `cl-del`, `doc-del`, `install-hint-done`, `watpl-del`. Sie haben jetzt `aria-label` und 44 px (Sheet-„x“ über eine unsichtbare Trefferfläche, sieht aus wie vorher). Kontrast: `--ink3` im hellen Modus von #A6A6AE (2,4:1) auf #74747C (≈4,7:1 auf Weiß) angehoben, der dunkle Modus war schon ok (5,1:1).
+- **Test:** Smoke-Test grün (390/1280), 0 Knöpfe ohne Beschriftung. SW v40.
+- **Offen / nächster Handgriff:** Barrierefreiheit Runde 2 (optional): Fokusreihenfolge in Sheets und Fokus zurück nach dem Schließen, Formular-Labels mit `for=` verbinden. Sonst eine C-Idee nehmen: „Rückgängig“ statt „Sind Sie sicher?“ oder Zahl am App-Symbol. E-Rechnung Scheibe 2 nach Antwort des Inhabers.
+
 ## 03.10.2026 (2. Lauf) — Version 2.38: Backup-Erinnerung verbessert
 - **Recherche:** entfallen (heute schon erledigt).
 - **Fehlerfund:** Die wiederherstellbare JSON-Sicherung (`data-export`) hat `lastBackup` nicht gesetzt. Nur der Excel-Export hat die Erinnerung zurückgesetzt. Behoben.
