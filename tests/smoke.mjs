@@ -193,6 +193,26 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   const bkNach = await page.evaluate(() => ({ alt: Date.now() - S.meta.lastBackup, due: bkStatus().due }));
   if (bkNach.alt > 5000 || bkNach.due) errs.push('„Jetzt sichern“ setzt die Erinnerung nicht zurück: ' + JSON.stringify(bkNach));
   await page.evaluate(m => { S.meta = JSON.parse(m); save(); render(); }, bkAlt);
+  // „Rückgängig“ statt Rückfrage: Position löschen → weg → Rückgängig → wieder da; nach anderer Änderung gesperrt
+  {
+    const u = await page.evaluate(() => { const a = S.auftraege.find(o => o.pakete.some(pk => pk.pos.length > 1)); const pk = a.pakete.find(p => p.pos.length > 1);
+      nav('auftrag', a.id); return { oid: a.id, pid: pk.id, xid: pk.pos[0].id, n: pk.pos.length }; });
+    const anz = () => page.evaluate(i => auftrag(i.oid).pakete.find(p => p.id === i.pid).pos.length, u);
+    await page.evaluate(i => ACT['pos-del']({ dataset: { oid: i.oid, pid: i.pid, xid: i.xid } }), u);
+    await page.waitForTimeout(100);
+    if (await page.$('.confirm-bg')) errs.push('Position löschen fragt noch nach');
+    if ((await anz()) !== u.n - 1) errs.push('Position löschen: nicht gelöscht');
+    if (shotDir && w === 390) await page.screenshot({ path: `${shotDir}/rueckgaengig.png` });
+    await page.click('.toast-undo button').catch(() => errs.push('Rückgängig-Knopf fehlt'));
+    await page.waitForTimeout(100);
+    if ((await anz()) !== u.n) errs.push('Rückgängig stellt die Position nicht wieder her');
+    await page.evaluate(i => ACT['pos-del']({ dataset: { oid: i.oid, pid: i.pid, xid: i.xid } }), u);
+    await page.evaluate(() => { S.settings.firma.tel = S.settings.firma.tel; save(); });
+    await page.click('.toast-undo button').catch(() => {});
+    await page.waitForTimeout(100);
+    if ((await anz()) !== u.n - 1) errs.push('Rückgängig nach anderer Änderung nicht gesperrt');
+    await page.evaluate(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
+  }
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {

@@ -502,6 +502,9 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 .toast{position:fixed;bottom:calc(68px + var(--sab));left:50%;transform:translateX(-50%);background:#1D1D1F;color:#fff;
  padding:11px 18px;border-radius:12px;font-size:12.5px;font-weight:600;z-index:80;animation:toastIn .4s var(--spring);
  max-width:86%;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.toast-undo{display:flex;align-items:center;gap:14px;pointer-events:auto;padding-right:8px;text-align:left;width:max-content;max-width:min(92vw,440px)}
+.toast-undo span{flex:1;min-width:0}
+.toast-undo button{color:#9CC7FF;font-weight:700;font-size:13px;min-height:44px;padding:0 10px}
 .toast.err{background:var(--red)}
 
 /* Liste generisch */
@@ -1088,7 +1091,9 @@ function apKombiFor(pk){
  return out.slice(0,2);
 }
 let saveT=null;
+let saveN=0;
 function save(){
+ saveN++;
  if(saveT)clearTimeout(saveT);
  saveT=setTimeout(()=>{S.meta=S.meta||{changes:0,lastBackup:null};S.meta.changes=(S.meta.changes||0)+1;S.meta.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));scheduleSync()}catch(e){memOnly=true;console.warn('Speicher voll oder blockiert — Daten nur im Arbeitsspeicher',e)}},120);
 }
@@ -1107,9 +1112,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.39';
+const APP_VER='2.40';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.40',d:'2026-10-03',p:['Weniger Nachfragen: Beim Löschen einer Position im Auftrag, eines Kommunikations-Eintrags, einer Arbeitsposition, eines Kombi-Vorschlags oder einer Paket-Vorlage fragt die App nicht mehr nach. Stattdessen erscheint unten 6 Sekunden lang „Rückgängig“.','Wichtige Löschungen (Auftrag, Kunde, Fahrzeug, Lagerteil, Foto, Rechnung) fragen weiterhin sicherheitshalber nach.']},
  {v:'2.39',d:'2026-10-03',p:['Besser lesbar: Die graue Zusatzschrift im hellen Modus ist etwas dunkler – gerade draußen oder bei Sonne gut zu erkennen.','Kleine „x“-Knöpfe (Schließen, Entfernen) lassen sich leichter treffen und werden von der iPhone-Vorlesefunktion richtig angesagt.']},
  {v:'2.38',d:'2026-10-03',p:['Bessere Erinnerung an die Datensicherung: Wenn länger als 7 Tage nicht gesichert wurde, meldet sich die App – auch wenn Sie noch nie gesichert haben. „X“ blendet sie für einen Tag aus.','Unter „Mehr“ sehen Sie jetzt immer, wann zuletzt gesichert wurde, und können mit einem Tipp sichern. Diese Sicherungsdatei lässt sich später wieder einspielen.']},
  {v:'2.37',d:'2026-10-03',p:['Vorbereitung E-Rechnung: Bei Firmenkunden können Sie jetzt die USt-IdNr. eintragen – sie steht dann auch auf der Rechnung.','Rechnungen an Firmen über 250 € sind in der Liste mit „E-Rechnung“ markiert. So sehen Sie, welche Kunden das später betrifft. Privatkunden ändert sich nichts.']},
@@ -1294,6 +1300,19 @@ function openSuche(){closeSuche();
  inp.addEventListener('keydown',e=>{if(e.key==='Escape')closeSuche();if(e.key==='Enter'){const b=res.querySelector('.gs-row');if(b)b.click()}});
  setTimeout(()=>inp.focus(),30)}
 document.addEventListener('keydown',e=>{if((e.key==='k'&&(e.metaKey||e.ctrlKey))||(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||''))){e.preventDefault();openSuche()}});
+/* „Rückgängig“ statt Rückfrage (für umkehrbare, häufige Aktionen): Stand merken, ausführen, 6 s Rückgängig-Knopf.
+   Wurde inzwischen etwas anderes gespeichert, ist Rückgängig gesperrt, damit nichts Neues verloren geht. */
+function mitRueckgaengig(label,fn){
+ const snap=JSON.stringify(S);fn();save();const n=saveN;closeSheet();render();
+ const old=$('.toast');if(old)old.remove();
+ const t=document.createElement('div');t.className='toast toast-undo';t.setAttribute('role','status');
+ t.innerHTML=`<span>${esc(label)}</span><button type="button">Rückgängig</button>`;
+ document.body.appendChild(t);
+ const weg=()=>{t.style.transition='opacity .3s';t.style.opacity='0';setTimeout(()=>t.remove(),320)};
+ const tm=setTimeout(weg,6000);
+ t.querySelector('button').onclick=()=>{clearTimeout(tm);t.remove();
+  if(saveN!==n)return toast('Inzwischen geändert — Rückgängig nicht mehr möglich',true);
+  S=JSON.parse(snap);save();render();toast('Rückgängig gemacht')}}
 function confirmBox(title,msg,okLabel,onOk,danger=true){
  const w=document.createElement('div');w.className='confirm-bg';
  w.innerHTML=`<div class="confirm"><h3>${title}</h3><p>${msg}</p>
@@ -2358,11 +2377,10 @@ ACT['add-kombi']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id==
   const hit=(S.apDb||[]).find(e=>e.bez.toLowerCase()===el.dataset.bez.toLowerCase());
   if(hit&&aw){aw.value=String(hit.aw).replace('.',',');aw.dispatchEvent(new Event('input'))}},120)};
 ACT['pos-del']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),x=pk.pos.find(p=>p.id===el.dataset.xid);
- confirmBox('Position löschen?','„'+esc(x.bez)+'" wird entfernt.'+(x.lagerId&&x.best==='lager'?' Der Lagerbestand wird zurückgebucht.':''),'Löschen',()=>{
+ mitRueckgaengig('„'+x.bez+'“ gelöscht',()=>{
   if(x.lagerId&&x.best==='lager'){const l=lagerT(x.lagerId);if(l)l.bestand+=(x.menge||1)}
   pk.pos=pk.pos.filter(p=>p.id!==x.id);
-  logUnlockEdit(a,pk,'Position „'+x.bez+'" gelöscht ('+fmt(posNetto(x))+').');
-  save();closeSheet();render();toast('Gelöscht')})};
+  logUnlockEdit(a,pk,'Position „'+x.bez+'" gelöscht ('+fmt(posNetto(x))+').')})};
 function logExtension(a,pk,x,vorherCt){
  pk.ext=true;const kid='m'+uid();x.extKommId=kid;
  a.komm.push({id:kid,kanal:'man',ts:Date.now(),
@@ -2396,8 +2414,7 @@ ACT['komm-save']=el=>{const a=auftrag(el.dataset.oid);
    vorherCt:null,nachherCt:null,bezug:$('#km-p').value||null,status:'man',orig:null})}
  save();closeSheet();render();toast('Eintrag gespeichert')};
 ACT['komm-del']=el=>{const a=auftrag(el.dataset.oid);
- confirmBox('Eintrag löschen?','Der Kommunikations-Eintrag wird entfernt.','Löschen',()=>{
-  a.komm=a.komm.filter(x=>x.id!==el.dataset.mid);save();closeSheet();render()})};
+ mitRueckgaengig('Eintrag gelöscht',()=>{a.komm=a.komm.filter(x=>x.id!==el.dataset.mid)})};
 ACT['komm-src']=el=>{const a=auftrag(el.dataset.oid),m=a.komm.find(x=>x.id===el.dataset.mid),k=kunde(a.kundeId);
  if(el.dataset.s==='wa'&&k&&k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'');
  else if(el.dataset.s==='mail'&&k&&k.email)location.href='mailto:'+k.email;
@@ -4141,8 +4158,7 @@ ACT['apdb-save']=el=>{
  if(old){const hit=S.apDb.find(x=>x.bez===old);Object.assign(hit,{bez,aw,byMarke})}
  else{if(S.apDb.some(x=>x.bez.toLowerCase()===bez.toLowerCase()))return toast('Gibt es schon',true);S.apDb.push({bez,aw,byMarke})}
  save();closeSheet();render();toast('Gespeichert')};
-ACT['apdb-del']=el=>{confirmBox('Position löschen?','„'+esc(el.dataset.bez)+'" wird aus der Datenbank entfernt.','Löschen',()=>{
- S.apDb=S.apDb.filter(x=>x.bez!==el.dataset.bez);save();closeSheet();render()})};
+ACT['apdb-del']=el=>{const bez=el.dataset.bez;mitRueckgaengig('„'+bez+'“ entfernt',()=>{S.apDb=S.apDb.filter(x=>x.bez!==bez)})};
 ACT['apkombi-new']=()=>apkombiSheet(null,-1);
 ACT['apkombi-edit']=el=>apkombiSheet(S.apKombi[+el.dataset.i],+el.dataset.i);
 function apkombiSheet(r,i){
@@ -4163,8 +4179,7 @@ ACT['apkombi-save']=el=>{
  if(i>=0)S.apKombi[i]={keywords:kw,partner};else S.apKombi.push({keywords:kw,partner});
  save();closeSheet();render();toast('Gespeichert')};
 ACT['apkombi-del']=el=>{const i=+el.dataset.i;
- confirmBox('Regel löschen?','Dieser Kombi-Vorschlag wird entfernt.','Löschen',()=>{
-  S.apKombi.splice(i,1);save();closeSheet();render()})};
+ mitRueckgaengig('Kombi-Vorschlag entfernt',()=>{S.apKombi.splice(i,1)})};
 
 /* ============ PAKET-VORLAGEN ============ */
 function vPakVorlagen(){
@@ -4229,8 +4244,7 @@ ACT['pvorlage-save']=el=>{
  if(el.dataset.id)Object.assign(S.pakVorlagen.find(t=>t.id===el.dataset.id),vals);
  else S.pakVorlagen.push({id:'tpl'+uid(),...vals});
  save();closeSheet();render();toast('Vorlage gespeichert')};
-ACT['pvorlage-del']=el=>{confirmBox('Vorlage löschen?','Diese Paketvorlage wird entfernt.','Löschen',()=>{
- S.pakVorlagen=S.pakVorlagen.filter(t=>t.id!==el.dataset.id);save();closeSheet();render()})};
+ACT['pvorlage-del']=el=>{const id=el.dataset.id;mitRueckgaengig('Vorlage entfernt',()=>{S.pakVorlagen=S.pakVorlagen.filter(t=>t.id!==id)})};
 /* Vorlage in laufenden Auftrag einfügen */
 ACT['pak-from-vorlage']=el=>{const a=auftrag(el.dataset.oid);
  if(!S.pakVorlagen||!S.pakVorlagen.length)return toast('Noch keine Vorlagen angelegt — unter Mehr → Paket-Vorlagen',true);

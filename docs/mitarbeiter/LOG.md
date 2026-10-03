@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 03.10.2026 (4. Lauf) — Version 2.40: „Rückgängig“ statt Rückfrage
+- **Recherche:** entfallen (heute schon erledigt). Umsetzung der C-Idee vom Vormittag, im Release-Update angekündigt.
+- **Gebaut:** `mitRueckgaengig(label, fn)` merkt sich den Stand (`JSON.stringify(S)`), führt aus, speichert und zeigt 6 s einen Toast mit „Rückgängig“ (44 px). Schutz: Der neue Zähler `saveN` in `save()` sperrt Rückgängig, sobald inzwischen etwas anderes gespeichert wurde. Umgestellt: `pos-del`, `komm-del`, `apdb-del`, `apkombi-del`, `pvorlage-del`. Mit Dialog bleiben: Auftrag, Paket, Kunde, Fahrzeug, Lagerteil, Foto, Anfrage, Bestellung, Mitarbeiter, Rechnung, Daten löschen.
+- **Test:** Smoke-Test grün (390/1280). Er prüft: Löschen ohne Dialog, Rückgängig stellt wieder her, Rückgängig nach anderer Änderung ist gesperrt. SW v41.
+- **Offen / nächster Handgriff:** B7 Barrierefreiheit Runde 2 (Fokus in Sheets). E-Rechnung Scheibe 2 nach Antwort des Inhabers.
+
 ## 03.10.2026 (3. Lauf) — Version 2.39: Barrierefreiheit (Runde 1)
 - **Recherche:** entfallen (heute schon erledigt).
 - **Gebaut:** Neue Prüfung `a11y()` in `tests/smoke.mjs`. Sie meldet sichtbare Knöpfe ohne Text, `aria-label` oder `title` in allen Hauptansichten, im Auftrag und in der Kunden-Maske. Gefunden und behoben: `sheet-close`, `cl-del`, `doc-del`, `install-hint-done`, `watpl-del`. Sie haben jetzt `aria-label` und 44 px (Sheet-„x“ über eine unsichtbare Trefferfläche, sieht aus wie vorher). Kontrast: `--ink3` im hellen Modus von #A6A6AE (2,4:1) auf #74747C (≈4,7:1 auf Weiß) angehoben, der dunkle Modus war schon ok (5,1:1).
