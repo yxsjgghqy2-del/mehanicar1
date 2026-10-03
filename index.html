@@ -447,6 +447,11 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 .mseg span{display:grid;place-items:center;min-height:44px;border:1px solid var(--line);border-radius:10px;font-size:12.5px;font-weight:650;color:var(--ink2);background:var(--bg)}
 .mseg input:checked+span{background:#2C3E50;border-color:#2C3E50;color:#fff}
 .mseg input:focus-visible+span{outline:2px solid var(--blue);outline-offset:2px}
+/* Datensicherung-Karte (Mehr) */
+.bk-card{display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:12px}
+.bk-card.due{border-color:rgba(194,113,10,.45);background:var(--amber-bg)}
+.bk-t{flex:1;min-width:0}.bk-t b{display:block;font-size:13px}.bk-t span{display:block;font-size:11.5px;color:var(--ink2);margin-top:2px}
+.bk-card .btn{flex-shrink:0;min-height:44px}
 /* Detail-Kalkulation (Entwurf 14) */
 .kdet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 14px 12px;margin-bottom:12px}
 .kgrp{margin:2px 0 8px}
@@ -1025,6 +1030,7 @@ function migrate2(){
  S.krankmeldungen=S.krankmeldungen||[];S.urlaub=S.urlaub||[];S.termine=S.termine||[];
  S.bestellungen=S.bestellungen||[];S.kampagnen=S.kampagnen||[];
  S.meta=S.meta||{changes:0,lastBackup:null};
+ if(!S.meta.since)S.meta.since=Date.now(); /* für Backup-Erinnerung: seit wann wird die App genutzt */
  if(!S.apDb||!S.apDb.length)S.apDb=AP_SEED.map(([bez,aw])=>({bez,aw}));
  (S.apDb||[]).forEach(e=>{if(e.byMarke===undefined)e.byMarke={}});
  if(S.settings.awTeiler===undefined)S.settings.awTeiler=1;
@@ -1100,9 +1106,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.37';
+const APP_VER='2.38';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.38',d:'2026-10-03',p:['Bessere Erinnerung an die Datensicherung: Wenn länger als 7 Tage nicht gesichert wurde, meldet sich die App – auch wenn Sie noch nie gesichert haben. „X“ blendet sie für einen Tag aus.','Unter „Mehr“ sehen Sie jetzt immer, wann zuletzt gesichert wurde, und können mit einem Tipp sichern. Diese Sicherungsdatei lässt sich später wieder einspielen.']},
  {v:'2.37',d:'2026-10-03',p:['Vorbereitung E-Rechnung: Bei Firmenkunden können Sie jetzt die USt-IdNr. eintragen – sie steht dann auch auf der Rechnung.','Rechnungen an Firmen über 250 € sind in der Liste mit „E-Rechnung“ markiert. So sehen Sie, welche Kunden das später betrifft. Privatkunden ändert sich nichts.']},
  {v:'2.36',d:'2026-10-02',p:['„Teil hinzufügen“ aus dem Lager im neuen Stil: Oben sehen Sie sofort Preis, Aufschlag und ob genug im Regal liegt – oder ob das Teil bestellt werden muss.']},
  {v:'2.35',d:'2026-10-02',p:['Neue Eingabe für Arbeiten und Teile im Auftrag: Oben sehen Sie sofort den Preis – bei Arbeiten die Arbeitswerte, bei Teilen Einkauf, Verkauf und Ihren Aufschlag in Euro und Prozent.','Rabatt, Zahler, Bestellung und Notizen liegen in Bereichen zum Aufklappen – sie stören nur, wenn Sie sie brauchen.']},
@@ -1222,6 +1229,12 @@ function closeSheet(){const s=$('#sheetbg');if(s)s.remove()}
 /* Globale Suche (Backlog A3): Kunden, Fahrzeuge, Aufträge — Kennzeichen auch kompakt („hu sm247“, „sm247“) */
 /* E-Rechnung (docs/e-rechnung.md): Pflicht für Rechnungen an Firmenkunden über 250 € brutto (ab 2028, bei > 800.000 € Umsatz ab 2027) */
 const eReNoetig=r=>{const a=auftrag(r.auftragId),k=a?kunde(a.kundeId):null;return !!(k&&k.firma&&r.bruttoCt>25000)};
+/* Backup-Erinnerung: fällig, wenn Cloud-Backup aus ist und >7 Tage (oder 15 Änderungen) nicht gesichert wurde; „später“ pausiert 24 h */
+function bkStatus(){const m=S.meta||{},sc=S.settings.sync||{},hasData=!!(S.auftraege.length||S.kunden.length);
+ const broken=!!(sc.on&&syncState.err),ref=m.lastBackup||m.since||Date.now(),tage=Math.floor((Date.now()-ref)/86400000);
+ const due=hasData&&!(m.bkSnooze>Date.now())&&(broken||(!sc.on&&((m.changes||0)>=15||tage>=7)));
+ const txt=broken?'Cloud-Backup gestört — Daten evtl. ungesichert.':m.lastBackup?('Letzte Sicherung vor '+(tage<1?'weniger als einem Tag':tage===1?'1 Tag':tage+' Tagen')):'Noch keine Sicherung gemacht';
+ return {due,broken,tage,txt,cloud:!!sc.on}}
 const sNorm=s=>String(s??'').toLowerCase().replace(/[\s\-.\/]/g,'');
 const GS_CMDS=[
  {k:['neuer auftrag','auftrag anlegen','neu auftrag'],a:'ord-new',t:'Neuen Auftrag anlegen',s:'Kunde, Fahrzeug und Arbeiten erfassen'},
@@ -1430,11 +1443,10 @@ function vPlanung(){
    <div class="kpi"><b class="num${over>0?' lo':' ok'}">${over}</b><span>Überfällig</span></div>
    <div class="kpi"><b class="num${offenCt>0?' warn':''}">${fmt(offenCt).replace(' €','')}<small style="font-size:10px;font-weight:600"> €</small></b><span>Offen</span></div>
    <div class="kpi">${(()=>{const avg=effs.length?Math.round(effs.reduce((a,b)=>a+b,0)/effs.length):null;return`<b class="num${avg===null?'':avg>=100?' hi':avg>=80?' ok':' lo'}">${avg!==null?avg+' %':'—'}</b>`})()}<span>Effizienz</span></div></div>
-  ${(()=>{const m=S.meta||{};const hasData=S.auftraege.length||S.kunden.length;
-   const sc=S.settings.sync||{};const syncOk=sc.on&&!syncState.err;const syncBroken=sc.on&&syncState.err;const due=hasData&&!window._bkDismiss&&(syncBroken||(!sc.on&&((m.changes||0)>=15||(m.lastBackup&&Date.now()-m.lastBackup>7*86400000))));
-   return due?`<div class="warnrow" style="display:flex;align-items:center;gap:10px"><span style="flex:1">${syncBroken?'Cloud-Backup gestört — Daten evtl. ungesichert.':'Backup empfohlen — '+(m.lastBackup?'letzte Sicherung '+dLabel(new Date(m.lastBackup).toISOString().slice(0,10)):'noch keine Sicherung')+'.'}</span>
-    <button class="btn btn-sm" style="background:var(--amber);color:#fff;flex-shrink:0" data-act="${syncBroken?'sync-now':'data-xlsx'}">${syncBroken?'Erneut sichern':'Excel-Backup'}</button>
-    <button style="color:var(--amber);padding:6px;font-size:14px" data-act="bk-dismiss">${xIco(13)}</button></div>`:''})()}
+  ${(()=>{const bk=bkStatus();
+   return bk.due?`<div class="warnrow" style="display:flex;align-items:center;gap:10px"><span style="flex:1">${bk.broken?bk.txt:bk.txt+' — Daten liegen nur auf diesem Gerät. Bitte jetzt sichern.'}</span>
+    <button class="btn btn-sm" style="background:var(--amber);color:#fff;flex-shrink:0;min-height:44px" data-act="${bk.broken?'sync-now':'data-export'}">${bk.broken?'Erneut sichern':'Jetzt sichern'}</button>
+    <button style="color:var(--amber);min-width:44px;min-height:44px;font-size:14px" data-act="bk-dismiss" aria-label="Erinnerung für einen Tag ausblenden">${xIco(13)}</button></div>`:''})()}
   ${(()=>{ /* „Jetzt wichtig" — priorisierte Tagesaufgaben */
    const items=[];
    const overOrds=heute.filter(a=>a.abgabe<t&&!['fertig','abgeholt'].includes(a.status));
@@ -2901,7 +2913,9 @@ function vMehr(){
     <div style="flex:1"><b style="font-size:13px">Als App installieren</b>
      <div style="font-size:11px;color:var(--ink3);line-height:1.5;margin-top:2px">${isIOS?'Safari: Teilen-Symbol → „Zum Home-Bildschirm" — dann läuft mehanicar wie eine echte App, auch offline.':'Browser-Menü → „App installieren" bzw. „Zum Startbildschirm hinzufügen".'}</div></div>
     <button style="color:var(--ink3);padding:6px;font-size:14px;flex-shrink:0" data-act="install-hint-done">${xIco(13)}</button></div></div>`:'';
- const inner=`${installHint}<div class="card stag">
+ const bk=bkStatus();
+ const bkCard=bk.cloud&&!bk.broken?'':`<div class="card bk-card${bk.due?' due':''}"><div class="bk-t"><b>Datensicherung</b><span>${bk.txt}</span></div><button class="btn btn-sm ${bk.due?'btn-main':'btn-2nd'}" data-act="data-export">Jetzt sichern</button></div>`;
+ const inner=`${installHint}${bkCard}<div class="card stag">
   ${[['termine','Terminkalender',IC.plan,(S.termine||[]).filter(t=>t.datum>=todayISO()).length+' anstehende Termine'],['lager','Lager',IC.box,S.lager.length+' Artikel im Bestand'],['kalender','Kapazität',IC.grid,'10-Tage-Plan · Mitarbeiter'],['bestellungen','Bestellungen',IC.truck,(S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen').length||'Keine')+' offen'],['kampagnen','Kampagnen',IC.mega,S.kampagnen.length+' Kampagnen gesendet'],['apdb','Arbeitspositionen',IC.book,(S.apDb||[]).length+' Positionen · '+(S.apKombi||[]).length+' Kombis'],['pakvorlagen','Paket-Vorlagen',IC.stack,(S.pakVorlagen||[]).length+' Vorlagen'],['team','Team',IC.team,S.mitarbeiter.length+' Mitarbeiter'],['personal','Personalwesen',IC.team,(S.krankmeldungen||[]).filter(k=>k.von<=todayISO()&&k.bis>=todayISO()).length+' aktive Krankmeldungen'],['fahrzeuge','Fahrzeuge',IC.car,S.fahrzeuge.length+' Fahrzeuge'],['finanzen','Finanzen',IC.fin,S.rechnungen.length+' Rechnungen'],['einstellungen','Einstellungen',IC.gear,'Firma, Preise, Werkstatt, Daten']].map(([v,l,ic,sub])=>
    `<div class="lrow" data-act="open" data-v="${v}"><div class="av" style="background:var(--gray-bg);color:var(--ink2)">${ic}</div>
     <div class="lt"><b>${l}</b><span>${sub}</span></div><span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')}</div>
@@ -3126,7 +3140,8 @@ ACT['watpl-del']=el=>{if(!S.settings.waTemplates)S.settings.waTemplates=[...watp
 ACT['watpl-add']=()=>{if(!S.settings.waTemplates)S.settings.waTemplates=[...watplDflt()];S.settings.waTemplates.push({l:'Neu',m:'Ihre Nachricht hier...'});save();render()};
 ACT['data-export']=()=>{const blob=new Blob([JSON.stringify(S,null,1)],{type:'application/json'});
  const a=document.createElement('a');a.href=URL.createObjectURL(blob);
- a.download='mehanicar-sicherung-'+todayISO()+'.json';a.click();toast('Sicherung erstellt')};
+ a.download='mehanicar-sicherung-'+todayISO()+'.json';a.click();
+ S.meta=S.meta||{};S.meta.lastBackup=Date.now();S.meta.changes=0;save();render();toast('Sicherung erstellt — Datei in „Dateien“ oder iCloud ablegen')};
 ACT['data-import']=()=>$('#importinp').click();
 ACT['demo-reset']=()=>confirmBox('Demo-Daten laden?','Aktuelle Daten werden durch die Beispieldaten ersetzt.','Neu laden',()=>{
  S=seed();S.settings.onboarded=true;kunNorm();migrate2();save();route={v:'planung',id:null};render();toast('Demo-Daten geladen')});
@@ -3225,7 +3240,7 @@ function backupSheets(){
    m.preisCt!=null?eur(m.preisCt):'',m.nachherCt!=null?eur(m.nachherCt):''])}));
  return [{name:'Aufträge',rows:ordRows},{name:'Positionen',rows:posRows},{name:'Kunden',rows:kunRows},
   {name:'Fahrzeuge',rows:fzgRows},{name:'Lager',rows:lagRows},{name:'Rechnungen',rows:reRows},{name:'Kommunikation',rows:komRows}]}
-ACT['bk-dismiss']=()=>{window._bkDismiss=true;render()};
+ACT['bk-dismiss']=()=>{S.meta=S.meta||{};S.meta.bkSnooze=Date.now()+86400000;save();render();toast('Erinnerung morgen wieder')};
 ACT['data-xlsx']=()=>{
  try{const bytes=buildXlsx(backupSheets());
   const blob=new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'});

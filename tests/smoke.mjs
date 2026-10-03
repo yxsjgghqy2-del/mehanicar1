@@ -166,6 +166,23 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     k.firma = ''; const privat = eReNoetig(r); k.firma = 'Test GmbH'; const firma = eReNoetig(r);
     const klein = eReNoetig({ auftragId: a.id, bruttoCt: 25000 }); k.firma = alt; return [privat, firma, klein].join(','); });
   if (ere !== 'false,true,false') errs.push('E-Rechnung-Markierung falsch: ' + ere);
+  // Backup-Erinnerung: 8 Tage ohne Sicherung → Hinweis; „Jetzt sichern“ setzt zurück; „X“ pausiert 24 h
+  const bkAlt = await page.evaluate(() => JSON.stringify(S.meta));
+  await page.evaluate(() => { S.meta.lastBackup = Date.now() - 8 * 86400000; S.meta.changes = 0; delete S.meta.bkSnooze; S.settings.sync = S.settings.sync || {}; S.settings.sync.on = false; nav('planung'); });
+  await page.waitForTimeout(100);
+  if (!(await page.$('[data-act="bk-dismiss"]'))) errs.push('Backup-Erinnerung erscheint nicht nach 8 Tagen');
+  await page.click('[data-act="bk-dismiss"]').catch(() => {});
+  await page.waitForTimeout(80);
+  if (await page.$('[data-act="bk-dismiss"]')) errs.push('Backup-Erinnerung lässt sich nicht ausblenden');
+  await page.evaluate(() => { delete S.meta.bkSnooze; nav('mehr'); });
+  await page.waitForTimeout(80);
+  if (!(await page.$('.bk-card.due'))) errs.push('Mehr: Sicherungs-Karte fehlt');
+  if (shotDir && w === 390) await page.screenshot({ path: `${shotDir}/backup-mehr.png` });
+  await page.click('.bk-card [data-act="data-export"]').catch(() => errs.push('Mehr: Sichern-Knopf fehlt'));
+  await page.waitForTimeout(150);
+  const bkNach = await page.evaluate(() => ({ alt: Date.now() - S.meta.lastBackup, due: bkStatus().due }));
+  if (bkNach.alt > 5000 || bkNach.due) errs.push('„Jetzt sichern“ setzt die Erinnerung nicht zurück: ' + JSON.stringify(bkNach));
+  await page.evaluate(m => { S.meta = JSON.parse(m); save(); render(); }, bkAlt);
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {

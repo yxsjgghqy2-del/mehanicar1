@@ -6,8 +6,7 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
 - *(aktuell keine offenen Inhaber-Wünsche — neue Wünsche hier oben eintragen)*
 
 ## B — Qualität & Pflichten
-5. **E-Rechnung** — Konzept steht in `docs/e-rechnung.md` (02.10.2026). Pflicht gilt nur für Firmenkunden: ab 2028, bei > 800.000 € Vorjahresumsatz schon ab 2027. **Wartet auf Antwort des Inhabers (Umsatz 2026 über 800.000 €?).** Scheibe 1 (USt-IdNr. + Markierung) erledigt in 2.37. Scheibe 2 (XRechnung-Export) nach Antwort des Inhabers, bis dahin Punkt 6.
-6. **Backup-Erinnerung verbessern**, weil die Daten nur lokal liegen: Hinweis, wenn Cloud-Backup aus ist und länger als 7 Tage nicht gesichert wurde.
+5. **E-Rechnung** — Konzept steht in `docs/e-rechnung.md` (02.10.2026). Pflicht gilt nur für Firmenkunden: ab 2028, bei > 800.000 € Vorjahresumsatz schon ab 2027. **Wartet auf Antwort des Inhabers (Umsatz 2026 über 800.000 €?).** Scheibe 1 (USt-IdNr. + Markierung) erledigt in 2.37. Scheibe 2 (XRechnung-Export) nach Antwort des Inhabers, bis dahin Punkt 7.
 7. **Barrierefreiheit prüfen:** Kontraste, Fokusreihenfolge, Beschriftungen der Icon-Buttons.
 
 ## C — Ideen (aus Recherche, noch zu bewerten)
