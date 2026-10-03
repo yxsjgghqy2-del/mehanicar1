@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 03.10.2026 (abends) — Neuer Dauerauftrag: Design
+- **Inhaber:** „Kümmere dich auch regelmäßig um das Design.“ → in BACKLOG (A) und ROUTINE.md aufgenommen: jeder 3. Lauf ist ein Design-Lauf.
+- **Gesundheitscheck:** Live 2.40, Smoke-Test grün (390/1280), Wecker aktiv (3:47/9:47/15:47/21:47 Berlin).
+- **Offen / nächster Handgriff:** Nächster Lauf = Design-Lauf, Startseite „Planung“ (390 px hell + dunkel).
+
 ## 03.10.2026 (4. Lauf) — Version 2.40: „Rückgängig“ statt Rückfrage
 - **Recherche:** entfallen (heute schon erledigt). Umsetzung der C-Idee vom Vormittag, im Release-Update angekündigt.
 - **Gebaut:** `mitRueckgaengig(label, fn)` merkt sich den Stand (`JSON.stringify(S)`), führt aus, speichert und zeigt 6 s einen Toast mit „Rückgängig“ (44 px). Schutz: Der neue Zähler `saveN` in `save()` sperrt Rückgängig, sobald inzwischen etwas anderes gespeichert wurde. Umgestellt: `pos-del`, `komm-del`, `apdb-del`, `apkombi-del`, `pvorlage-del`. Mit Dialog bleiben: Auftrag, Paket, Kunde, Fahrzeug, Lagerteil, Foto, Anfrage, Bestellung, Mitarbeiter, Rechnung, Daten löschen.

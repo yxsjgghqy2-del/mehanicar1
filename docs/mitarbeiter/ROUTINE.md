@@ -21,6 +21,11 @@ Du arbeitest als fester Mitarbeiter an **mehanicar** (Werkstatt-Management-PWA f
 8. **Tagebuch:** Einen Eintrag oben in `LOG.md` schreiben: Datum, Recherche-Thema und Erkenntnis, was gebaut wurde, Test-Ergebnis, Version, was als Nächstes kommt. `BACKLOG.md` pflegen.
 9. **Release-Update:** Deine Abschlussnachricht ist das Release-Update, der Inhaber bekommt sie per E-Mail. Sie ist kurz, freundlich und auf Deutsch: „Neu in Version X“ (was und warum es hilft), Link https://mehanicar1.vercel.app, was morgen geplant ist, höchstens eine Frage, falls eine Entscheidung nötig ist.
 
+## Design-Pflege (Wunsch des Inhabers, 03.10.2026)
+- **Jeder 3. Lauf ist ein Design-Lauf.** Zähle dafür die Einträge in LOG.md seit dem letzten Eintrag mit „Design“ im Titel.
+- In einem Design-Lauf nimmst du dir eine Ansicht vor, schaust sie bei 390 px hell und dunkel an (Screenshot über `SHOTS=… node tests/smoke.mjs`) und verbesserst sichtbar: Abstände, Schriftgrößen, Ausrichtung, Farben, einheitliche Knöpfe und Karten im Stil von Entwurf 14.
+- Keine großen Umbauten ohne Rückfrage. Größere Richtungswechsel legst du als Vorschlag unter `/designs/` ab und fragst im Update nach.
+
 ## Sparsam arbeiten (Credits)
 - **Ein Mitarbeiter, eine Aufgabe, nacheinander.** Keine parallelen Agenten oder Workflows. Das verbraucht ein Vielfaches und kollidiert in der einen `index.html`.
 - **Nicht die ganze `index.html` lesen** (über 4.500 Zeilen). Gezielt mit `grep -n` suchen und nur die betroffenen Abschnitte lesen.
