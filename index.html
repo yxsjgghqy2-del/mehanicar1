@@ -1100,9 +1100,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.36';
+const APP_VER='2.37';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.37',d:'2026-10-03',p:['Vorbereitung E-Rechnung: Bei Firmenkunden können Sie jetzt die USt-IdNr. eintragen – sie steht dann auch auf der Rechnung.','Rechnungen an Firmen über 250 € sind in der Liste mit „E-Rechnung“ markiert. So sehen Sie, welche Kunden das später betrifft. Privatkunden ändert sich nichts.']},
  {v:'2.36',d:'2026-10-02',p:['„Teil hinzufügen“ aus dem Lager im neuen Stil: Oben sehen Sie sofort Preis, Aufschlag und ob genug im Regal liegt – oder ob das Teil bestellt werden muss.']},
  {v:'2.35',d:'2026-10-02',p:['Neue Eingabe für Arbeiten und Teile im Auftrag: Oben sehen Sie sofort den Preis – bei Arbeiten die Arbeitswerte, bei Teilen Einkauf, Verkauf und Ihren Aufschlag in Euro und Prozent.','Rabatt, Zahler, Bestellung und Notizen liegen in Bereichen zum Aufklappen – sie stören nur, wenn Sie sie brauchen.']},
  {v:'2.34',d:'2026-10-02',p:['Neue Fahrzeug-Eingabe: Oben sehen Sie das Kennzeichen wie ein echtes Nummernschild, dazu Marke, Modell und Halter – schon beim Tippen.','Die Angaben sind in Bereiche zum Auf- und Zuklappen sortiert: Halter, Fahrzeug, Technik, HU & Wartung, Farbe & Zustand. Auch der Fahrzeugschein-Scan füllt die Vorschau gleich mit aus.']},
@@ -1219,6 +1220,8 @@ function sheet(title,body,foot=''){
 }
 function closeSheet(){const s=$('#sheetbg');if(s)s.remove()}
 /* Globale Suche (Backlog A3): Kunden, Fahrzeuge, Aufträge — Kennzeichen auch kompakt („hu sm247“, „sm247“) */
+/* E-Rechnung (docs/e-rechnung.md): Pflicht für Rechnungen an Firmenkunden über 250 € brutto (ab 2028, bei > 800.000 € Umsatz ab 2027) */
+const eReNoetig=r=>{const a=auftrag(r.auftragId),k=a?kunde(a.kundeId):null;return !!(k&&k.firma&&r.bruttoCt>25000)};
 const sNorm=s=>String(s??'').toLowerCase().replace(/[\s\-.\/]/g,'');
 const GS_CMDS=[
  {k:['neuer auftrag','auftrag anlegen','neu auftrag'],a:'ord-new',t:'Neuen Auftrag anlegen',s:'Kunde, Fahrzeug und Arbeiten erfassen'},
@@ -2537,7 +2540,7 @@ function buildInvoiceHtml(a,pakIds,reNr){
     Rechnungsdatum: ${new Date().toLocaleDateString('de-DE')}<br>Leistungsdatum: ${new Date((a.abgabe||todayISO())+'T00:00').toLocaleDateString('de-DE')}<br>Auftrag: ${a.nr}<br>Fahrzeug: ${esc(f.kennz||'')} · ${esc((f.marke||'')+' '+(f.modell||''))}<br>
     ${a.kmAn!=null?'KM: '+a.kmAn.toLocaleString('de-DE'):''}</div></div>
   <div class="small" style="margin-bottom:4px">Kunde</div>
-  <div><b>${esc(k.name||'')}</b>${k.ansprechpartner?'<br>z. Hd. '+esc(k.ansprechpartner):''}<br><span class="small">${esc(k.adresse||'')}</span></div>
+  <div><b>${esc(k.name||'')}</b>${k.ansprechpartner?'<br>z. Hd. '+esc(k.ansprechpartner):''}<br><span class="small">${esc(k.adresse||'')}${k.ustid?'<br>USt-IdNr.: '+esc(k.ustid):''}</span></div>
   <table><tr><th>Position</th><th class="tr">Menge</th><th class="tr">Einzel</th><th class="tr">Gesamt</th></tr>${rows}</table>
   <div class="tots">
    ${ordRabAnteil?`<div><span>Rabatt Auftrag</span><span>– ${fmt(ordRabAnteil)}</span></div>`:''}
@@ -2614,6 +2617,8 @@ function vKunde(id){
   <div class="card" style="padding:15px">
    ${k.firma&&k.firma!==k.name?`<div class="kv"><span class="k">Firma</span><span class="v">${esc(k.firma)}</span></div>`:''}
    ${k.ansprechpartner?`<div class="kv"><span class="k">Ansprechpartner</span><span class="v">${esc(k.ansprechpartner)}</span></div>`:''}
+   ${k.ustid?`<div class="kv"><span class="k">USt-IdNr.</span><span class="v num">${esc(k.ustid)}</span></div>`:''}
+   ${k.firma?`<div class="kv"><span class="k">E-Rechnung</span><span class="v"><span class="tag t-amber" title="Rechnungen über 250 € an Firmen müssen ab 2028 als E-Rechnung kommen">ab 2028 nötig</span></span></div>`:''}
    <div class="kv"><span class="k">Telefon</span><span class="v num">${esc(k.tel||'—')}</span></div>
    <div class="kv"><span class="k">WhatsApp</span><span class="v">${k.wa?'<span class="tag t-green">verknüpft</span>':'<span class="tag t-gray">nein</span>'}</span></div>
    <div class="kv"><span class="k">E-Mail</span><span class="v">${esc(k.email||'—')}</span></div>
@@ -2651,7 +2656,8 @@ ACT['kunde-edit']=el=>{kunNorm();const k=el.dataset.id?kunde(el.dataset.id):null
   <div class="row2"><div class="fld"><label>Vorname</label><input id="ku-vn" value="${k?esc(k.vorname||''):''}" placeholder="Max" autocomplete="off"></div>
    <div class="fld"><label>Nachname *</label><input id="ku-nn" value="${k?esc(k.nachname||''):''}" placeholder="Mustermann" autocomplete="off"></div></div>
   <div class="fld"><label>Firma (optional)</label><input id="ku-fa" value="${k?esc(k.firma||''):''}" placeholder="z. B. Autohaus Schmidt GmbH"></div>
-  <div class="fld" style="margin-bottom:0"><label>Ansprechpartner (bei Firma)</label><input id="ku-ap" value="${k?esc(k.ansprechpartner||''):''}" placeholder="Vor- und Nachname"></div>`)}
+  <div class="fld"><label>Ansprechpartner (bei Firma)</label><input id="ku-ap" value="${k?esc(k.ansprechpartner||''):''}" placeholder="Vor- und Nachname"></div>
+  <div class="fld" style="margin-bottom:0"><label>USt-IdNr. (bei Firma, für E-Rechnung)</label><input id="ku-ust" value="${k?esc(k.ustid||''):''}" placeholder="DE123456789" autocomplete="off" style="text-transform:uppercase"></div>`)}
   ${mSec('Kontakt',k?esc([k.tel,k.email].filter(Boolean).length+' von 2'):'',true,`
   <div class="row2"><div class="fld"><label>Telefon</label><input id="ku-t" inputmode="tel" value="${k?esc(k.tel):''}" placeholder="+49 170 1234567"></div>
    <div class="fld"><label>E-Mail</label><input id="ku-e" inputmode="email" value="${k?esc(k.email):''}" placeholder="name@mail.de"></div></div>
@@ -2674,7 +2680,7 @@ ACT['kunde-save']=el=>{
  const vn=$('#ku-vn').value.trim(),nn=$('#ku-nn').value.trim(),fa=$('#ku-fa').value.trim();
  if(!nn&&!vn&&!fa)return toast('Nachname oder Firma eintragen',true);
  const str=$('#ku-str').value.trim(),plz=$('#ku-plz').value.trim(),ort=$('#ku-ort').value.trim();
- const vals={vorname:vn,nachname:nn,firma:fa,ansprechpartner:$('#ku-ap').value.trim(),name:kunName(vn,nn,fa),
+ const vals={vorname:vn,nachname:nn,firma:fa,ansprechpartner:$('#ku-ap').value.trim(),ustid:$('#ku-ust').value.trim().toUpperCase().replace(/\s/g,''),name:kunName(vn,nn,fa),
   tel:$('#ku-t').value.trim(),email:$('#ku-e').value.trim(),
   strasse:str,plz:plz,ort:ort,adresse:kunAdresse(str,plz,ort),
   moral:($('input[name="ku-m"]:checked')||{}).value||'Gut',stamm:$('#ku-s').checked,wa:$('#ku-w').checked,notiz:$('#ku-no').value.trim()};
@@ -2988,7 +2994,7 @@ function vFinanzen(){
   <div class="card">${S.rechnungen.slice().reverse().slice(0,20).map(r=>{const a=auftrag(r.auftragId);const k=a?kunde(a.kundeId):null;
     const od=!r.bezahlt&&(Date.parse(todayISO())-Date.parse(r.datum))/86400000>14;
     return `<div class="lrow" style="cursor:default">
-    <div class="lt" ${a?`data-act="open" data-v="auftrag" data-id="${a.id}" style="cursor:pointer"`:''}><b>${r.nr}${od?' <span class="tag t-red" style="font-size:8.5px">überfällig</span>':''}</b>
+    <div class="lt" ${a?`data-act="open" data-v="auftrag" data-id="${a.id}" style="cursor:pointer"`:''}><b>${r.nr}${od?' <span class="tag t-red" style="font-size:8.5px">überfällig</span>':''}${eReNoetig(r)?' <span class="tag t-amber" style="font-size:8.5px" title="Firmenkunde, über 250 € — ab 2028 als E-Rechnung nötig">E-Rechnung</span>':''}</b>
     <span>${dLabel(r.datum)} · ${esc(k?k.name:'—')} · <span class="num">${fmt(r.bruttoCt)}</span> · <span class="num" style="color:var(--green)">DB ${fmt(r.gewinnCt||0)}</span></span></div>
     <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
      ${od?`<button class="btn btn-sm" style="background:var(--amber);color:#fff" data-act="re-mahn" data-id="${r.id}">Mahnen</button>`:''}
