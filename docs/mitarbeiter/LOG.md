@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 04.10.2026 — Version 2.41: Design-Lauf 1 (Startseite „Planung“)
+- **Recherche:** entfallen (Design-Lauf).
+- **Befund (390 px hell/dunkel):** Im hellen Modus war „Heute“ ein dunkler Block (`.fix`, `.sw-row.dark`) und brach den hellen Stil. Die KPI-Kacheln waren unausgewogen: Zahlen 33 px, „Überfällig“ leer unter der 0. Der Lime-Akzent („alles im Plan“, Rechnungs-Knopf) wirkt fast neonfarben. Das ist ein Richtungsthema, nicht angefasst, siehe Offen.
+- **Gebaut:** Im hellen Modus (theme-light oder auto + hell) werden `.fix` und `.sw-row.dark` zur hellen Karte, mit Textfarben aus den Tokens. Der dunkle Modus ist unverändert. KPI-Zahlen von 33 auf 29 px. Unterzeilen „alles pünktlich / Abgabe verpasst“, „noch nicht abgerechnet“, „AW zu Arbeitszeit“. Smoke-Test macht jetzt Bilder `planung-hell.png` / `planung-dunkel.png`, wenn SHOTS gesetzt ist.
+- **Test:** Smoke-Test grün (390/1280). SW v42.
+- **Offen / nächster Handgriff:** Normaler Lauf: B7 Barrierefreiheit Runde 2. Nächster Design-Lauf: Kundenliste. Den Lime-Akzent als Vorschlag unter `/designs/` zeigen (z. B. gedecktes Blau oder Petrol) und den Inhaber fragen.
+
 ## 03.10.2026 (abends) — Neuer Dauerauftrag: Design
 - **Inhaber:** „Kümmere dich auch regelmäßig um das Design.“ → in BACKLOG (A) und ROUTINE.md aufgenommen: jeder 3. Lauf ist ein Design-Lauf.
 - **Gesundheitscheck:** Live 2.40, Smoke-Test grün (390/1280), Wecker aktiv (3:47/9:47/15:47/21:47 Berlin).
