@@ -228,6 +228,18 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   await page.waitForTimeout(100);
   const zu = await page.evaluate(() => ({ zu: !document.getElementById('sheetbg'), fokus: document.activeElement.dataset.act || document.activeElement.tagName }));
   if (!zu.zu || zu.fokus !== 'kunde-edit') errs.push('Esc/Fokus zurück falsch: ' + JSON.stringify(zu));
+  // Bildschirm bleibt an: Stechuhr Start → Wake Lock angefordert, Pause → freigegeben (mit simuliertem navigator.wakeLock)
+  {
+    const wl = await page.evaluate(async () => {
+      const log = { req: 0, rel: 0 };
+      Object.defineProperty(navigator, 'wakeLock', { configurable: true, value: { request: async () => { log.req++; const l = new EventTarget(); l.release = async () => { log.rel++; l.dispatchEvent(new Event('release')); }; return l; } } });
+      S.auftraege.forEach(a => { if (a.timerStart) { a.zeiten.push({ start: a.timerStart, end: Date.now() }); a.timerStart = null; } }); render();
+      const a = S.auftraege[0]; ACT['timer-tog']({ dataset: { oid: a.id } }); await new Promise(r => setTimeout(r, 50));
+      const an = log.req; ACT['timer-tog']({ dataset: { oid: a.id } }); await new Promise(r => setTimeout(r, 50));
+      return { an, rel: log.rel };
+    });
+    if (wl.an !== 1 || wl.rel !== 1) errs.push('Bildschirm-an-Sperre falsch: ' + JSON.stringify(wl));
+  }
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {

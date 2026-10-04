@@ -14,7 +14,6 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
 - Teile-Preisvergleich / Bestellstatus
 - Wiederkehrende Wartungsverträge
 - **Zahl am App-Symbol** für neue Anfragen (Badge API, iOS ab 16.4 bei Home-Bildschirm-App, braucht Mitteilungs-Erlaubnis). Klein und schnell umsetzbar. *(Recherche 02.10.2026, mobiloud.com)*
-- **Bildschirm bleibt an** im Werkstatt-Modus (Screen Wake Lock, Safari 18.4+), z. B. während der Zeiterfassung oder Checkliste. *(Recherche 02.10.2026)*
 
 ## Bekannte Hinweise
 - `ANTHROPIC_API_KEY` in Vercel muss der Inhaber setzen, sonst laufen KI-Einschätzung und Schein-Scan nur regelbasiert. Nicht selbst ändern.

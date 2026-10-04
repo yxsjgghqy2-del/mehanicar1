@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 04.10.2026 (4. Lauf) — Version 2.44: Bildschirm bleibt an bei laufender Stechuhr
+- **Recherche:** entfallen (C-Idee vom 02.10. umgesetzt).
+- **Gebaut:** `syncWakeLock()` läuft nach jedem Render und bei `visibilitychange`. Läuft in irgendeinem Auftrag `timerStart` und ist die App sichtbar, wird `navigator.wakeLock.request('screen')` angefordert, sonst freigegeben. Sicher gegen ein Wettrennen bei noch laufender Anforderung. Ohne Wake-Lock-Unterstützung passiert nichts. Unter der Stechuhr steht der Hinweis „Bildschirm bleibt an, solange die Zeit läuft“. Keine Erlaubnis nötig, keine Daten-Migration.
+- **Test:** Smoke-Test grün (390/1280), mit simuliertem `navigator.wakeLock`: Start → 1 Anforderung, Pause → 1 Freigabe. SW v45.
+- **Offen / nächster Handgriff:** Nächster Lauf ist ein Design-Lauf: Finanzen. Antworten des Inhabers offen: Akzentfarbe A/B/C und Umsatz > 800.000 €.
+
 ## 04.10.2026 (3. Lauf) — Version 2.43: Design-Lauf 2 (Kundenliste) + Farbvorschlag
 - **Recherche:** entfallen (Design-Lauf).
 - **Befund:** Kürzel-Kreise in 5 bunten Farben (zufällig nach Name) wirkten unruhig, Firmenkunden waren nicht erkennbar.
