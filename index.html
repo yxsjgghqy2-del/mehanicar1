@@ -248,7 +248,7 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 .kpi{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:13px 14px 12px;text-align:left;
  display:flex;flex-direction:column;gap:6px;min-height:88px;overflow:hidden}
 .kpi span{order:0;font-size:10px;color:var(--ink2);font-weight:600;letter-spacing:.03em}
-.kpi b{order:1;display:block;font-size:33px;font-weight:300;letter-spacing:-.05em;line-height:1.04;
+.kpi b{order:1;display:block;font-size:29px;font-weight:300;letter-spacing:-.04em;line-height:1.04;
  white-space:nowrap;overflow:hidden;max-width:100%;font-variant-numeric:tabular-nums;margin-top:4px}
 .kpi b small,.kpi b .u{font-size:13px;font-weight:400;color:var(--ink3);letter-spacing:0;margin-left:3px;font-style:normal}
 .kpi .spark{order:2;margin-top:auto;color:var(--ink3);min-height:26px}
@@ -452,6 +452,19 @@ input[type=date],input[type=time],input[type=month],input[type=datetime-local]{-
 .bk-card.due{border-color:rgba(194,113,10,.45);background:var(--amber-bg)}
 .bk-t{flex:1;min-width:0}.bk-t b{display:block;font-size:13px}.bk-t span{display:block;font-size:11.5px;color:var(--ink2);margin-top:2px}
 .bk-card .btn{flex-shrink:0;min-height:44px}
+/* Planung im hellen Modus: „Heute“-Block als helle Karte statt dunkler Fläche (Design-Lauf 04.10.2026) */
+body.theme-light .fix{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+body.theme-light .fix-h .t{opacity:1;color:var(--ink3)}body.theme-light .fix-h .ok{color:var(--green)}body.theme-light .fix-h .warn{color:var(--red)}
+body.theme-light .sw-row.dark{background:var(--bg);color:var(--ink);border:1px solid var(--line2)}
+body.theme-light .sw-row.dark .modell{color:var(--ink3)}body.theme-light .sw-row.dark .sub{color:var(--ink2)}body.theme-light .sw-row.dark .zeit{color:var(--ink2)}
+body.theme-light .sw-row.dark .sub b{color:var(--ink2)!important}body.theme-light .fix .fix-leer{color:var(--ink3)!important}
+@media (prefers-color-scheme:light){
+body:not(.theme-dark) .fix{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+body:not(.theme-dark) .fix-h .t{opacity:1;color:var(--ink3)}body:not(.theme-dark) .fix-h .ok{color:var(--green)}body:not(.theme-dark) .fix-h .warn{color:var(--red)}
+body:not(.theme-dark) .sw-row.dark{background:var(--bg);color:var(--ink);border:1px solid var(--line2)}
+body:not(.theme-dark) .sw-row.dark .modell{color:var(--ink3)}body:not(.theme-dark) .sw-row.dark .sub{color:var(--ink2)}body:not(.theme-dark) .sw-row.dark .zeit{color:var(--ink2)}
+body:not(.theme-dark) .sw-row.dark .sub b{color:var(--ink2)!important}body:not(.theme-dark) .fix .fix-leer{color:var(--ink3)!important}
+}
 /* Detail-Kalkulation (Entwurf 14) */
 .kdet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 14px 12px;margin-bottom:12px}
 .kgrp{margin:2px 0 8px}
@@ -1112,9 +1125,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.40';
+const APP_VER='2.41';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.41',d:'2026-10-04',p:['Startseite aufgeräumt: Im hellen Modus ist die Liste „Heute“ jetzt eine helle Karte statt eines dunklen Blocks – ruhiger und einheitlicher.','Die vier Zahlen-Kacheln oben sind ausgewogener und erklären kurz, was die Zahl bedeutet (z. B. „alles pünktlich“, „noch nicht abgerechnet“).']},
  {v:'2.40',d:'2026-10-03',p:['Weniger Nachfragen: Beim Löschen einer Position im Auftrag, eines Kommunikations-Eintrags, einer Arbeitsposition, eines Kombi-Vorschlags oder einer Paket-Vorlage fragt die App nicht mehr nach. Stattdessen erscheint unten 6 Sekunden lang „Rückgängig“.','Wichtige Löschungen (Auftrag, Kunde, Fahrzeug, Lagerteil, Foto, Rechnung) fragen weiterhin sicherheitshalber nach.']},
  {v:'2.39',d:'2026-10-03',p:['Besser lesbar: Die graue Zusatzschrift im hellen Modus ist etwas dunkler – gerade draußen oder bei Sonne gut zu erkennen.','Kleine „x“-Knöpfe (Schließen, Entfernen) lassen sich leichter treffen und werden von der iPhone-Vorlesefunktion richtig angesagt.']},
  {v:'2.38',d:'2026-10-03',p:['Bessere Erinnerung an die Datensicherung: Wenn länger als 7 Tage nicht gesichert wurde, meldet sich die App – auch wenn Sie noch nie gesichert haben. „X“ blendet sie für einen Tag aus.','Unter „Mehr“ sehen Sie jetzt immer, wann zuletzt gesichert wurde, und können mit einem Tipp sichern. Diese Sicherungsdatei lässt sich später wieder einspielen.']},
@@ -1461,9 +1475,9 @@ function vPlanung(){
  const inner=`
   <div class="kpis stag">
    <div class="kpi"><b class="num${heute.length>0?' hi':''}">${heute.length}</b><span>Heute</span>${dlt!==0?`<span class="ktrend ${dlt>0?'up':'dn'}">${dlt>0?'+':''}${dlt} vs. gestern</span>`:''}<div class="spark" data-spark="${spark7.join(',')}"></div></div>
-   <div class="kpi"><b class="num${over>0?' lo':' ok'}">${over}</b><span>Überfällig</span></div>
-   <div class="kpi"><b class="num${offenCt>0?' warn':''}">${fmt(offenCt).replace(' €','')}<small style="font-size:10px;font-weight:600"> €</small></b><span>Offen</span></div>
-   <div class="kpi">${(()=>{const avg=effs.length?Math.round(effs.reduce((a,b)=>a+b,0)/effs.length):null;return`<b class="num${avg===null?'':avg>=100?' hi':avg>=80?' ok':' lo'}">${avg!==null?avg+' %':'—'}</b>`})()}<span>Effizienz</span></div></div>
+   <div class="kpi"><b class="num${over>0?' lo':' ok'}">${over}</b><span>Überfällig</span><span class="ktrend ${over>0?'dn':'up'}">${over>0?'Abgabe verpasst':'alles pünktlich'}</span></div>
+   <div class="kpi"><b class="num${offenCt>0?' warn':''}">${fmt(offenCt).replace(' €','')}<small style="font-size:10px;font-weight:600"> €</small></b><span>Offen</span><span class="ktrend">noch nicht abgerechnet</span></div>
+   <div class="kpi">${(()=>{const avg=effs.length?Math.round(effs.reduce((a,b)=>a+b,0)/effs.length):null;return`<b class="num${avg===null?'':avg>=100?' hi':avg>=80?' ok':' lo'}">${avg!==null?avg+' %':'—'}</b>`})()}<span>Effizienz</span><span class="ktrend">AW zu Arbeitszeit</span></div></div>
   ${(()=>{const bk=bkStatus();
    return bk.due?`<div class="warnrow" style="display:flex;align-items:center;gap:10px"><span style="flex:1">${bk.broken?bk.txt:bk.txt+' — Daten liegen nur auf diesem Gerät. Bitte jetzt sichern.'}</span>
     <button class="btn btn-sm" style="background:var(--amber);color:#fff;flex-shrink:0;min-height:44px" data-act="${bk.broken?'sync-now':'data-export'}">${bk.broken?'Erneut sichern':'Jetzt sichern'}</button>
@@ -1497,7 +1511,7 @@ function vPlanung(){
   <div class="fix">
    <div class="fix-h"><span class="t">Heute · ${['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'][now.getDay()]}</span>
    <span class="${over?'warn':'ok'}">${over?over+' überfällig':'alles im Plan'}</span></div>
-   ${heute.length?heute.map(a=>planRow(a,true)).join(''):'<div style="padding:10px 4px;font-size:12px;color:rgba(255,255,255,.4)">Keine Abgaben heute</div>'}
+   ${heute.length?heute.map(a=>planRow(a,true)).join(''):'<div class="fix-leer" style="padding:10px 4px;font-size:12px;color:rgba(255,255,255,.4)">Keine Abgaben heute</div>'}
   </div>
   ${!act.length?`<div class="card" style="padding:22px;text-align:center"><b style="font-size:14px">Noch keine Aufträge</b><div style="font-size:12px;color:var(--ink3);margin:6px 0 14px;line-height:1.5">Lege unter „Aufträge" mit + den ersten an — Kunde und Fahrzeug entstehen dabei gleich mit.</div><button class="btn btn-main" style="width:100%" data-act="ord-new">Ersten Auftrag anlegen</button></div>`:''}
   <div style="display:none">
