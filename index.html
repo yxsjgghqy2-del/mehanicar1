@@ -465,6 +465,10 @@ body:not(.theme-dark) .sw-row.dark{background:var(--bg);color:var(--ink);border:
 body:not(.theme-dark) .sw-row.dark .modell{color:var(--ink3)}body:not(.theme-dark) .sw-row.dark .sub{color:var(--ink2)}body:not(.theme-dark) .sw-row.dark .zeit{color:var(--ink2)}
 body:not(.theme-dark) .sw-row.dark .sub b{color:var(--ink2)!important}body:not(.theme-dark) .fix .fix-leer{color:var(--ink3)!important}
 }
+.kav-privat{background:var(--gray-bg);color:var(--ink2)}
+.kav-firma{background:rgba(44,62,80,.12);color:#2C3E50}
+body.theme-dark .kav-firma{background:rgba(143,170,196,.16);color:#AFC3D6}
+@media (prefers-color-scheme:dark){body:not(.theme-light) .kav-firma{background:rgba(143,170,196,.16);color:#AFC3D6}}
 /* Detail-Kalkulation (Entwurf 14) */
 .kdet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 14px 12px;margin-bottom:12px}
 .kgrp{margin:2px 0 8px}
@@ -1125,9 +1129,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.42';
+const APP_VER='2.43';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.43',d:'2026-10-04',p:['Kundenliste ruhiger: Die Kürzel-Kreise sind nicht mehr bunt, sondern einheitlich – Firmenkunden in Schiefergrau, Privatkunden in Hellgrau.','Firmenkunden tragen jetzt ein kleines „Firma“-Schild, so erkennen Sie sie sofort.']},
  {v:'2.42',d:'2026-10-04',p:['Fenster lassen sich besser bedienen: Nach dem Schließen sind Sie wieder genau dort, wo Sie vorher waren. Am Computer schließt die Esc-Taste Fenster und Rückfragen.','Die Vorlesefunktion des iPhones nennt jetzt bei jedem Eingabefeld die passende Beschriftung, und ein Tipp auf die Beschriftung springt direkt ins Feld.']},
  {v:'2.41',d:'2026-10-04',p:['Startseite aufgeräumt: Im hellen Modus ist die Liste „Heute“ jetzt eine helle Karte statt eines dunklen Blocks – ruhiger und einheitlicher.','Die vier Zahlen-Kacheln oben sind ausgewogener und erklären kurz, was die Zahl bedeutet (z. B. „alles pünktlich“, „noch nicht abgerechnet“).']},
  {v:'2.40',d:'2026-10-03',p:['Weniger Nachfragen: Beim Löschen einer Position im Auftrag, eines Kommunikations-Eintrags, einer Arbeitsposition, eines Kombi-Vorschlags oder einer Paket-Vorlage fragt die App nicht mehr nach. Stattdessen erscheint unten 6 Sekunden lang „Rückgängig“.','Wichtige Löschungen (Auftrag, Kunde, Fahrzeug, Lagerteil, Foto, Rechnung) fragen weiterhin sicherheitshalber nach.']},
@@ -2637,11 +2642,10 @@ function kundeRow(k){
  const fz=S.fahrzeuge.filter(f=>f.kundeId===k.id);
  const ords=S.auftraege.filter(a=>a.kundeId===k.id);
  const ini=k.name.split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase();
- const AVC=['#0A5FFF','#0E8F4E','#C2710A','#6B4DD6','#E0353B'];
- const col=AVC[(k.name.charCodeAt(0)+(k.name.charCodeAt(1)||0))%AVC.length];
+ /* Design-Lauf 04.10.: ruhige, einheitliche Kürzel statt bunter Kreise — Firmen in Schiefer, Privat in Grau */
  return `<div class="lrow" data-act="open" data-v="kunde" data-id="${k.id}">
-  <div class="av" style="background:${col}16;color:${col}">${ini}</div>
-  <div class="lt"><b>${esc(k.name)}${k.stamm?' <span class="tag t-green" style="font-size:8.5px;vertical-align:1px">Stamm</span>':''}</b>
+  <div class="av kav-${k.firma?'firma':'privat'}">${ini}</div>
+  <div class="lt"><b>${esc(k.name)}${k.firma?' <span class="tag t-gray" style="font-size:8.5px;vertical-align:1px">Firma</span>':''}${k.stamm?' <span class="tag t-green" style="font-size:8.5px;vertical-align:1px">Stamm</span>':''}</b>
   <span>${k.firma&&k.firma!==k.name?esc(k.firma)+' · ':''}${fz.map(f=>f.kennz).join(', ')||'kein Fahrzeug'}</span></div>
   <div class="lr"><b class="num">${ords.length}</b><span>Aufträge</span></div></div>`;
 }

@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Akzentfarbe — Vorschlag</title>
+<style>
+:root{--bg:#F2F2F7;--card:#fff;--ink:#16161A;--ink2:#6B6B73;--line:rgba(22,22,26,.09)}
+*{box-sizing:border-box;margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:20px 16px 40px}
+h1{font-size:22px;letter-spacing:-.02em}
+.intro{font-size:14px;color:var(--ink2);line-height:1.55;margin:6px 0 18px;max-width:640px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.opt{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px}
+.opt h2{font-size:15px;display:flex;align-items:center;gap:8px}
+.opt h2 i{width:14px;height:14px;border-radius:4px;display:inline-block}
+.opt p{font-size:12.5px;color:var(--ink2);margin:4px 0 12px;line-height:1.5}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.ph{border-radius:14px;padding:12px;position:relative;min-height:230px;display:flex;flex-direction:column;gap:10px}
+.ph.l{background:#F2F2F7;color:#16161A;border:1px solid var(--line)}
+.ph.d{background:#0B0C0B;color:#F5F6F2}
+.ph small{font-size:9px;text-transform:uppercase;letter-spacing:.08em;opacity:.55;font-weight:700}
+.row{border-radius:10px;padding:9px 10px;font-size:11.5px;display:flex;justify-content:space-between;align-items:center}
+.ph.l .row{background:#fff;border:1px solid var(--line)}.ph.d .row{background:#1B1D1C}
+.tag{font-size:9.5px;font-weight:700;border-radius:999px;padding:3px 8px}
+.btn{border-radius:11px;padding:11px;text-align:center;font-weight:700;font-size:12.5px;margin-top:auto}
+.nav{display:flex;gap:4px;border-radius:14px;padding:4px;font-size:9px;font-weight:700;justify-content:space-between}
+.ph.l .nav{background:#fff;border:1px solid var(--line)}.ph.d .nav{background:#17181A}
+.nav span{flex:1;text-align:center;padding:6px 0;border-radius:9px;opacity:.6}
+.nav span.on{opacity:1}
+.fab{position:absolute;right:10px;top:8px;width:38px;height:38px;border-radius:12px;display:grid;place-items:center;font-size:22px;font-weight:400}
+.q{margin-top:22px;background:#2C3E50;color:#ECF0F3;border-radius:16px;padding:16px;font-size:14px;line-height:1.6;max-width:640px}
+.q b{color:#fff}
+</style></head><body>
+<h1>Welche Akzentfarbe gefällt Ihnen?</h1>
+<p class="intro">Die Akzentfarbe sieht man auf dem Knopf „Rechnung erstellen“, auf dem runden „+“, beim gewählten Menüpunkt und bei kleinen Hinweisen. Heute ist sie ein helles Gelbgrün. Darunter stehen zwei ruhigere Vorschläge, jeweils hell und dunkel. Ihre Wahl tauscht die Farbe überall in der App auf einmal.</p>
+<div class="grid" id="g"></div>
+<div class="q"><b>Ihre Wahl:</b> Antworten Sie einfach mit <b>A</b>, <b>B</b> oder <b>C</b>. Bei A bleibt alles, wie es ist.</div>
+<script>
+const O=[
+ {k:'A',n:'Gelbgrün (heute)',t:'Auffällig und frisch, wirkt aber schnell grell, vor allem im dunklen Modus.',l:{a:'#D9E97A',i:'#15180A'},d:{a:'#D7FF72',i:'#13170F'}},
+ {k:'B',n:'Petrol',t:'Ruhig und hochwertig, passt gut zum Grau. Gut lesbar mit weißer Schrift.',l:{a:'#1F6F78',i:'#FFFFFF'},d:{a:'#5FB3BA',i:'#0B1A1C'}},
+ {k:'C',n:'Werkstatt-Blau',t:'Klassisch und vertrauenswürdig, wie viele Markenwerkstätten. Passt zum Schiefer der Kalkulation.',l:{a:'#2F5D9E',i:'#FFFFFF'},d:{a:'#7FA8E0',i:'#0C1626'}}];
+const ph=(m,c)=>`<div class="ph ${m}"><small>${m==='l'?'Hell':'Dunkel'}</small>
+ <div class="row"><span><b>HU-SM 247</b> · Bremsen</span><span class="tag" style="background:${c.a}26;color:${m==='l'?'#16161A':c.a}">fertig</span></div>
+ <div class="row"><span>Zu zahlen</span><b>554,46 €</b></div>
+ <div class="fab" style="background:${c.a};color:${c.i}">+</div>
+ <div class="btn" style="background:${c.a};color:${c.i}">Rechnung erstellen</div>
+ <div class="nav"><span class="on" style="background:${c.a}2E;color:${m==='l'?'#16161A':c.a}">Planung</span><span>Aufträge</span><span>Kunden</span></div></div>`;
+document.getElementById('g').innerHTML=O.map(o=>`<div class="opt"><h2><i style="background:${o.l.a}"></i>${o.k} · ${o.n}</h2><p>${o.t}</p><div class="pair">${ph('l',o.l)}${ph('d',o.d)}</div></div>`).join('');
+</script>
+</body></html>
