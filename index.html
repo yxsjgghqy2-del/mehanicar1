@@ -469,6 +469,7 @@ body:not(.theme-dark) .sw-row.dark .sub b{color:var(--ink2)!important}body:not(.
 .kav-firma{background:rgba(44,62,80,.12);color:#2C3E50}
 body.theme-dark .kav-firma{background:rgba(143,170,196,.16);color:#AFC3D6}
 @media (prefers-color-scheme:dark){body:not(.theme-light) .kav-firma{background:rgba(143,170,196,.16);color:#AFC3D6}}
+.wl-hint{font-size:11px;color:var(--ink3);margin-top:8px;text-align:center}
 /* Detail-Kalkulation (Entwurf 14) */
 .kdet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 14px 12px;margin-bottom:12px}
 .kgrp{margin:2px 0 8px}
@@ -1129,9 +1130,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.43';
+const APP_VER='2.44';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.44',d:'2026-10-04',p:['Bildschirm bleibt an: Solange in einem Auftrag die Zeiterfassung läuft, geht das Display nicht mehr aus. Sie müssen das Handy also nicht ständig neu entsperren, wenn es in der Werkstatt liegt.','Sobald Sie die Zeit pausieren oder den Auftrag fertig melden, verhält sich der Bildschirm wieder ganz normal.']},
  {v:'2.43',d:'2026-10-04',p:['Kundenliste ruhiger: Die Kürzel-Kreise sind nicht mehr bunt, sondern einheitlich – Firmenkunden in Schiefergrau, Privatkunden in Hellgrau.','Firmenkunden tragen jetzt ein kleines „Firma“-Schild, so erkennen Sie sie sofort.']},
  {v:'2.42',d:'2026-10-04',p:['Fenster lassen sich besser bedienen: Nach dem Schließen sind Sie wieder genau dort, wo Sie vorher waren. Am Computer schließt die Esc-Taste Fenster und Rückfragen.','Die Vorlesefunktion des iPhones nennt jetzt bei jedem Eingabefeld die passende Beschriftung, und ein Tipp auf die Beschriftung springt direkt ins Feld.']},
  {v:'2.41',d:'2026-10-04',p:['Startseite aufgeräumt: Im hellen Modus ist die Liste „Heute“ jetzt eine helle Karte statt eines dunklen Blocks – ruhiger und einheitlicher.','Die vier Zahlen-Kacheln oben sind ausgewogener und erklären kurz, was die Zahl bedeutet (z. B. „alles pünktlich“, „noch nicht abgerechnet“).']},
@@ -2011,7 +2013,8 @@ function vAuftrag(id){
     <div>Effizienz<b class="num ${eff?(eff>=100?'hi':'lo'):''}" data-eff="${a.id}">${eff?eff+' %':'—'}</b></div></div>
    <div class="tbtns">
     <button class="tbtn" style="background:${a.timerStart?'var(--amber)':'var(--green)'};color:#fff" data-act="timer-tog" data-oid="${a.id}">${a.timerStart?'Pause':'Start'}</button>
-    <button class="tbtn" style="background:var(--bg);color:var(--ink2);border:1px solid var(--line)" data-act="timer-reset" data-oid="${a.id}">Zurücksetzen</button></div></div>
+    <button class="tbtn" style="background:var(--bg);color:var(--ink2);border:1px solid var(--line)" data-act="timer-reset" data-oid="${a.id}">Zurücksetzen</button></div>
+   ${a.timerStart&&('wakeLock' in navigator)?'<div class="wl-hint">Bildschirm bleibt an, solange die Zeit läuft.</div>':''}</div>
   <div class="lbl">Checkliste · ${clDone} von ${(a.check||[]).length}</div>
   ${(a.check||[]).map((c,i)=>`<div class="cl ${c.done?'done':''}" data-act="cl-tog" data-oid="${a.id}" data-i="${i}">
    <div class="cb"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><span class="ct">${esc(c.t)}</span>
@@ -4690,6 +4693,15 @@ function renderErrScreen(err){
 function render(){
  try{renderInner()}catch(err){console.error('RENDER-FEHLER:',err);renderErrScreen(err)}
 }
+/* Bildschirm bleibt an, solange in einem Auftrag die Stechuhr läuft (Screen Wake Lock, Safari ab 18.4) — ohne Erlaubnis-Abfrage */
+let wakeLk=null;
+function syncWakeLock(){
+ if(!('wakeLock' in navigator))return;
+ const want=document.visibilityState==='visible'&&S&&S.auftraege.some(a=>a.timerStart);
+ if(want&&!wakeLk){wakeLk='…';navigator.wakeLock.request('screen').then(l=>{if(!(document.visibilityState==='visible'&&S.auftraege.some(a=>a.timerStart))){wakeLk=null;l.release().catch(()=>{});return}
+  wakeLk=l;l.addEventListener('release',()=>{if(wakeLk===l)wakeLk=null})}).catch(()=>{wakeLk=null})}
+ else if(!want&&wakeLk&&wakeLk!=='…'){const l=wakeLk;wakeLk=null;l.release().catch(()=>{})}}
+document.addEventListener('visibilitychange',()=>syncWakeLock());
 function renderInner(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
@@ -4698,6 +4710,7 @@ function renderInner(){
  if(!S.settings.onboarded&&!['buchen','impressum','datenschutz'].includes(route.v)){app.innerHTML=vOnboarding();return}
  app.innerHTML=(V[route.v]||vPlanung)();
  linkLabels(app);
+ syncWakeLock();
  if(riseNext){
   app.classList.add('tsUp');
   setTimeout(()=>app.classList.remove('tsUp'),420);
