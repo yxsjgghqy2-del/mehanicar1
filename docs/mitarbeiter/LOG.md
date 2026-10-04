@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 04.10.2026 (3. Lauf) — Version 2.43: Design-Lauf 2 (Kundenliste) + Farbvorschlag
+- **Recherche:** entfallen (Design-Lauf).
+- **Befund:** Kürzel-Kreise in 5 bunten Farben (zufällig nach Name) wirkten unruhig, Firmenkunden waren nicht erkennbar.
+- **Gebaut:** Einheitliche Kürzel (`.kav-privat` grau, `.kav-firma` Schiefer, dunkel gedämpftes Blaugrau) und das Schild „Firma“ in der Kundenliste. Vorschlagsseite `designs/akzent.html` mit A Gelbgrün (heute), B Petrol, C Werkstatt-Blau, je hell/dunkel an Knopf, „+“, Menü und Schild. Die Akzentfarbe liegt zentral in `--acc` / `--acc-ink` / `--acc-bg` (Zeilen ~23, 664, 702, 738), ein Wechsel ist also schnell. Smoke-Test macht jetzt auch `kunden-hell/-dunkel.png`.
+- **Test:** Smoke-Test grün (390/1280). Vorschlagsseite: 0 JS-Fehler, kein horizontales Scrollen. SW v44.
+- **Offen / nächster Handgriff:** Antwort des Inhabers zur Akzentfarbe (A/B/C) abwarten. Bei B oder C die 4 `--acc`-Blöcke tauschen und Kontrast prüfen (weiße Schrift auf Akzent ≥ 4,5:1). Nächster normaler Lauf: C-Idee „Zahl am App-Symbol“ oder „Bildschirm bleibt an“. Nächster Design-Lauf: Finanzen.
+
 ## 04.10.2026 (2. Lauf) — Version 2.42: Barrierefreiheit Runde 2
 - **Recherche:** entfallen (Fortsetzung B7).
 - **Gebaut:** `sheet()` setzt `role="dialog" aria-modal` und `aria-labelledby`, merkt sich den Auslöser und setzt den Fokus auf den Blatt-Titel. Bewusst nicht auf das erste Eingabefeld, weil sonst auf dem iPhone die Tastatur aufspringt. `closeSheet()` gibt den Fokus an den Auslöser zurück. Globale Esc-Taste schließt Rückfrage oder Blatt. `linkLabels()` verbindet nach jedem Render und in jedem Blatt `.fld > label` per `for` mit dem Feld (vergibt bei Bedarf eine ID). Die 10 runden „+“-Knöpfe haben jetzt sprechende `aria-label` („Neuer Kunde“ usw.).
