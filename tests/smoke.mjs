@@ -214,6 +214,20 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     if ((await anz()) !== u.n - 1) errs.push('Rückgängig nach anderer Änderung nicht gesperrt');
     await page.evaluate(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
   }
+  // Barrierefreiheit Runde 2: Fokus ins Blatt, Labels verbunden, Esc schließt, Fokus zurück zum Auslöser
+  await page.evaluate(() => nav('kunden'));
+  await page.waitForTimeout(100);
+  await page.focus('.fab[data-act="kunde-edit"]').catch(() => {});
+  await page.keyboard.press('Enter');
+  await page.waitForTimeout(200);
+  const fo = await page.evaluate(() => ({ drin: !!document.activeElement.closest('#sheetbg'), dialog: !!document.querySelector('#sheetbg [role="dialog"][aria-modal="true"]'),
+    label: (document.querySelector('label[for="ku-nn"]') || {}).textContent || '' }));
+  if (!fo.drin || !fo.dialog) errs.push('Blatt: Fokus/Dialog fehlt ' + JSON.stringify(fo));
+  if (!fo.label.includes('Nachname')) errs.push('Blatt: Label nicht mit Feld verbunden');
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(100);
+  const zu = await page.evaluate(() => ({ zu: !document.getElementById('sheetbg'), fokus: document.activeElement.dataset.act || document.activeElement.tagName }));
+  if (!zu.zu || zu.fokus !== 'kunde-edit') errs.push('Esc/Fokus zurück falsch: ' + JSON.stringify(zu));
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {

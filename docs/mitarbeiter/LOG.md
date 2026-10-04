@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 04.10.2026 (2. Lauf) — Version 2.42: Barrierefreiheit Runde 2
+- **Recherche:** entfallen (Fortsetzung B7).
+- **Gebaut:** `sheet()` setzt `role="dialog" aria-modal` und `aria-labelledby`, merkt sich den Auslöser und setzt den Fokus auf den Blatt-Titel. Bewusst nicht auf das erste Eingabefeld, weil sonst auf dem iPhone die Tastatur aufspringt. `closeSheet()` gibt den Fokus an den Auslöser zurück. Globale Esc-Taste schließt Rückfrage oder Blatt. `linkLabels()` verbindet nach jedem Render und in jedem Blatt `.fld > label` per `for` mit dem Feld (vergibt bei Bedarf eine ID). Die 10 runden „+“-Knöpfe haben jetzt sprechende `aria-label` („Neuer Kunde“ usw.).
+- **Test:** Smoke-Test grün (390/1280). Er prüft: Fokus im Blatt, Dialog-Rolle, Label verbunden, Esc schließt, Fokus zurück auf „+“. SW v43.
+- **B7 damit abgeschlossen.**
+- **Offen / nächster Handgriff:** Nächster Lauf ist ein Design-Lauf: Kundenliste, plus Farbvorschlag statt Lime unter `/designs/akzent.html` (nur Vorschlag, Frage an den Inhaber). E-Rechnung Scheibe 2 nach Antwort.
+
 ## 04.10.2026 — Version 2.41: Design-Lauf 1 (Startseite „Planung“)
 - **Recherche:** entfallen (Design-Lauf).
 - **Befund (390 px hell/dunkel):** Im hellen Modus war „Heute“ ein dunkler Block (`.fix`, `.sw-row.dark`) und brach den hellen Stil. Die KPI-Kacheln waren unausgewogen: Zahlen 33 px, „Überfällig“ leer unter der 0. Der Lime-Akzent („alles im Plan“, Rechnungs-Knopf) wirkt fast neonfarben. Das ist ein Richtungsthema, nicht angefasst, siehe Offen.
