@@ -470,6 +470,11 @@ body:not(.theme-dark) .sw-row.dark .sub b{color:var(--ink2)!important}body:not(.
 body.theme-dark .kav-firma{background:rgba(143,170,196,.16);color:#AFC3D6}
 @media (prefers-color-scheme:dark){body:not(.theme-light) .kav-firma{background:rgba(143,170,196,.16);color:#AFC3D6}}
 .wl-hint{font-size:11px;color:var(--ink3);margin-top:8px;text-align:center}
+.fchip{min-height:36px;padding:0 12px;border-radius:999px;border:1px dashed var(--line);background:transparent;color:var(--ink3);font:inherit;font-size:12px;font-weight:600}
+.fchip.on{background:var(--gray-bg);border:1px solid transparent;color:var(--ink)}
+.fin-leer{font-size:12px;color:var(--ink3);line-height:1.5;margin:-2px 0 8px}
+.fin-leg{display:flex;gap:16px;justify-content:center;font-size:11px;color:var(--ink2);margin-top:10px}
+.fin-leg i{display:inline-block;width:9px;height:9px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 /* Detail-Kalkulation (Entwurf 14) */
 .kdet{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:4px 14px 12px;margin-bottom:12px}
 .kgrp{margin:2px 0 8px}
@@ -1130,9 +1135,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.44';
+const APP_VER='2.45';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.45',d:'2026-10-05',p:['Finanzen übersichtlicher: Die Schalter „Sichtbare Bereiche“ sind jetzt klar als Knöpfe erkennbar – eingeschaltete sind dunkel mit Häkchen.','Das Diagramm erklärt seine Farben (Blau = Umsatz, Grün = Gewinn) und sagt deutlich, wenn noch keine Rechnungen da sind.']},
  {v:'2.44',d:'2026-10-04',p:['Bildschirm bleibt an: Solange in einem Auftrag die Zeiterfassung läuft, geht das Display nicht mehr aus. Sie müssen das Handy also nicht ständig neu entsperren, wenn es in der Werkstatt liegt.','Sobald Sie die Zeit pausieren oder den Auftrag fertig melden, verhält sich der Bildschirm wieder ganz normal.']},
  {v:'2.43',d:'2026-10-04',p:['Kundenliste ruhiger: Die Kürzel-Kreise sind nicht mehr bunt, sondern einheitlich – Firmenkunden in Schiefergrau, Privatkunden in Hellgrau.','Firmenkunden tragen jetzt ein kleines „Firma“-Schild, so erkennen Sie sie sofort.']},
  {v:'2.42',d:'2026-10-04',p:['Fenster lassen sich besser bedienen: Nach dem Schließen sind Sie wieder genau dort, wo Sie vorher waren. Am Computer schließt die Esc-Taste Fenster und Rückfragen.','Die Vorlesefunktion des iPhones nennt jetzt bei jedem Eingabefeld die passende Beschriftung, und ein Tipp auf die Beschriftung springt direkt ins Feld.']},
@@ -3011,11 +3017,11 @@ function vFinanzen(){
  /* Statusverteilung */
  const statCt={};S.auftraege.forEach(a=>statCt[a.status]=(statCt[a.status]||0)+1);
 
- const togBtn=(k,l)=>`<button class="tag" style="cursor:pointer;font-family:inherit;opacity:${finSec[k]?1:.45};margin:3px" data-act="fin-tog" data-k="${k}">${l}</button>`;
+ const togBtn=(k,l)=>`<button class="fchip${finSec[k]?' on':''}" data-act="fin-tog" data-k="${k}" aria-pressed="${!!finSec[k]}">${finSec[k]?'✓ ':''}${l}</button>`;
  const inner=`
  <div style="margin-bottom:12px">
   <div style="font-size:10px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px">Sichtbare Bereiche</div>
-  <div style="display:flex;flex-wrap:wrap">
+  <div style="display:flex;flex-wrap:wrap;gap:6px">
    ${togBtn('umsatz','Monatsübersicht')}${togBtn('gewinn','Kennzahlen')}${togBtn('offen','Offene Posten')}${togBtn('mitarb','Nach Mitarbeiter')}${togBtn('kunden','Top Kunden')}${togBtn('status','Statusverteilung')}${togBtn('rechnung','Rechnungsliste')}</div></div>
  ${finSec.umsatz?`<div class="kpis stag">
    <div class="kpi"><b class="num">${fmt(umsatzM)}</b><span>Umsatz / Monat</span>
@@ -3024,12 +3030,14 @@ function vFinanzen(){
    <div class="kpi"><b class="num">${fmt(gewinnM)}</b><span>Gewinn / Monat</span><div class="spark" data-spark="${months.map(m=>m.g).join(',')}"></div></div>
    <div class="kpi" style="grid-column:1/-1"><b class="num" style="color:var(--ink2)">${fmt(mwstM)}</b><span>MwSt / Monat</span></div></div>
   <div class="card" style="padding:14px;margin-bottom:12px"><div class="lbl" style="margin-top:0">Umsatz & Gewinn — letzte 6 Monate</div>
+   ${months.some(m=>m.u)?'':'<div class="fin-leer">Noch keine Rechnungen in den letzten 6 Monaten — sobald Sie abrechnen, erscheint hier der Verlauf.</div>'}
    <div class="bars" style="height:100px">${months.map(m=>`<div class="barw">
     <div style="display:flex;align-items:flex-end;gap:2px;flex:1;width:100%;justify-content:center">
      <div class="bar" style="height:${Math.max(3,m.u/maxU*100)}%;flex:1;background:linear-gradient(180deg,#5E97FF,#0A5FFF)"></div>
      <div class="bar" style="height:${Math.max(3,m.g/maxU*100)}%;flex:1;background:linear-gradient(180deg,#5ECC8A,#0E8F4E)"></div>
     </div>
-    <span>${m.lbl}</span>${m.n?`<span style="font-size:8px;color:var(--ink3)">${m.n} Re.</span>`:''}</div>`).join('')}</div></div>`:''}
+    <span>${m.lbl}</span>${m.n?`<span style="font-size:8px;color:var(--ink3)">${m.n} Re.</span>`:''}</div>`).join('')}</div>
+   <div class="fin-leg"><span><i style="background:#0A5FFF"></i>Umsatz (brutto)</span><span><i style="background:#0E8F4E"></i>Gewinn</span></div></div>`:''}
  ${finSec.gewinn?`<div class="kpis stag" style="grid-template-columns:1fr 1fr">
    <div class="kpi"><b class="num">${effs.length?Math.round(effs.reduce((a,b)=>a+b,0)/effs.length)+' %':'—'}</b><span>Ø Effizienz</span></div>
    <div class="kpi"><b class="num">${fmt(avgOrd)}</b><span>Ø Auftragswert brutto</span></div>

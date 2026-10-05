@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 05.10.2026 — Version 2.45: Design-Lauf 3 (Finanzen)
+- **Recherche:** entfallen (Design-Lauf).
+- **Befund:** Die Schalter „Sichtbare Bereiche“ (`.tag` ohne Hintergrund) wirkten wie Fließtext, und ihr Zustand war nur an der Deckkraft erkennbar. Das Diagramm zeigte ohne Rechnungen nur leere Balken und hatte keine Legende.
+- **Gebaut:** `.fchip` mit 36 px: an = graue Fläche mit ✓, aus = gestrichelter Rand, dazu `aria-pressed`. Leerhinweis im Diagramm (`.fin-leer`) und Legende Umsatz/Gewinn (`.fin-leg`). Smoke-Test macht jetzt auch `finanzen-hell/-dunkel.png`.
+- **Test:** Smoke-Test grün (390/1280). SW v46.
+- **Offen / nächster Handgriff:** Normaler Lauf: C-Idee „Zahl am App-Symbol“ (Badge API) oder Recherche-Thema (e) Kfz-Branche. Nächster Design-Lauf: Einstellungen. Antworten des Inhabers offen: Akzentfarbe A/B/C, Umsatz > 800.000 €.
+
 ## 04.10.2026 (4. Lauf) — Version 2.44: Bildschirm bleibt an bei laufender Stechuhr
 - **Recherche:** entfallen (C-Idee vom 02.10. umgesetzt).
 - **Gebaut:** `syncWakeLock()` läuft nach jedem Render und bei `visibilitychange`. Läuft in irgendeinem Auftrag `timerStart` und ist die App sichtbar, wird `navigator.wakeLock.request('screen')` angefordert, sonst freigegeben. Sicher gegen ein Wettrennen bei noch laufender Anforderung. Ohne Wake-Lock-Unterstützung passiert nichts. Unter der Stechuhr steht der Hinweis „Bildschirm bleibt an, solange die Zeit läuft“. Keine Erlaubnis nötig, keine Daten-Migration.
