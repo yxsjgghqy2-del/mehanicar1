@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 05.10.2026 (3. Lauf) — Version 2.47: Design-Lauf 4 (Einstellungen) + Fehlerbehebung
+- **Fehlerfund (eigener aus 2.46):** In den Einstellungen wurde der Knopf „Einschalten“ (Zahl am App-Symbol) zu einer senkrechten Buchstabenspalte gestaucht, weil `.kv .k` `flex-shrink:0` hat und der lange Beschreibungstext keinen Platz ließ. Behoben mit `.kv.kv-flex` (Beschriftung darf schrumpfen) und `.kv .v .btn{white-space:nowrap}`. Die 2.46 war seit ca. 6 h live, betroffen war nur dieser eine Knopf.
+- **Lehre / neue Prüfung:** `a11y()` im Smoke-Test meldet jetzt „gestauchte Knöpfe“ (kurzer Text, Höhe > 64 px und > 1,5 × Breite). Gegenprobe: Ohne die Korrektur schlägt der Test an.
+- **Design:** Platzhalter-Texte jetzt dünn und hellgrau (`::placeholder` font-weight 400), sie wirkten sonst wie echte Eingaben. Die Bilder im Smoke-Test warten jetzt, bis die Einblend-Animation fertig ist.
+- **Test:** Smoke-Test grün (390/1280). SW v48.
+- **Offen / nächster Handgriff:** Normaler Lauf: Recherche (e) Kfz-Branche + passende Kleinigkeit, oder C-Idee. Nächster Design-Lauf: Auftragsliste. Antworten des Inhabers offen: Akzentfarbe A/B/C, Umsatz > 800.000 €.
+
 ## 05.10.2026 (2. Lauf) — Version 2.46: Zahl am App-Symbol
 - **Recherche:** entfallen (C-Idee vom 02.10. umgesetzt).
 - **Gebaut:** `syncBadge()` nach jedem Render setzt `navigator.setAppBadge(n)` mit n = Anfragen mit Status „neu“, aber nur bei `S.settings.badge` (neues optionales Feld, Standard aus). In Einstellungen → Erscheinungsbild gibt es „Zahl am App-Symbol“ mit Knopf Einschalten/Ausschalten. Die Mitteilungs-Erlaubnis (auf iOS nötig) wird nur auf diesen Tipp abgefragt, bei „gesperrt“ kommt ein Hinweis. Ohne Badge-Unterstützung steht dort „auf diesem Gerät nicht möglich“. Grenze: Die Zahl wird nur aktualisiert, wenn die App läuft, es gibt kein Push. Das steht ehrlich im „Was ist neu“.

@@ -18,6 +18,12 @@ async function a11y(page, errs, wo) {
     return !(b.innerText || '').trim() && !b.getAttribute('aria-label') && !b.getAttribute('title');
   }).map(b => (b.dataset.act || b.className || b.outerHTML.slice(0, 40))));
   if (ohneName.length) errs.push(`${wo}: Knöpfe ohne Beschriftung: ${[...new Set(ohneName)].join(', ')}`);
+  // Gestauchte Knöpfe: kurzer Text, aber viel höher als breit (Text bricht Buchstabe für Buchstabe um)
+  const gestaucht = await page.evaluate(() => [...document.querySelectorAll('button')].filter(b => {
+    const r = b.getBoundingClientRect(); const t = (b.innerText || '').trim();
+    return r.width > 0 && t.length > 2 && t.length < 25 && r.height > 64 && r.height > r.width * 1.5;
+  }).map(b => (b.innerText || '').trim().replace(/\s+/g, '')));
+  if (gestaucht.length) errs.push(`${wo}: gestauchte Knöpfe: ${gestaucht.join(', ')}`);
 }
 
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
@@ -39,7 +45,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     const sw = await page.evaluate(() => document.documentElement.scrollWidth);
     if (sw > w + 1) errs.push(`${v}: horizontales Scrollen (${sw}px bei ${w}px)`);
     if (shotDir && w === 390) await page.screenshot({ path: `${shotDir}/${v}.png` });
-    if (shotDir && w === 390 && ['planung','kunden','finanzen'].includes(v)) { await page.evaluate(() => { applyTheme('light'); render(); }); await page.screenshot({ path: `${shotDir}/${v}-hell.png`, fullPage: true }); await page.evaluate(() => { applyTheme(S.settings.theme); render(); }); await page.screenshot({ path: `${shotDir}/${v}-dunkel.png`, fullPage: true }); }
+    if (shotDir && w === 390 && ['planung','kunden','finanzen','einstellungen'].includes(v)) { await page.evaluate(() => { applyTheme('light'); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-hell.png`, fullPage: true }); await page.evaluate(() => { applyTheme(S.settings.theme); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-dunkel.png`, fullPage: true }); }
     await a11y(page, errs, v);
   }
   // „Was ist neu“: Mehr → Versionsnummer antippen, Liste muss erscheinen, Punkt verschwinden
