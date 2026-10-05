@@ -13,7 +13,6 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
 - **Kunden-Statusseite per Link mit Freigabe von Zusatzarbeiten** („Ihr Auto ist fertig“, Erweiterung per Foto/Video freigeben) — Wettbewerber (SmartWerkstatt u. a.) bieten Kundenportal mit Freigabe + Video-Check als Standard. *(Recherche 01.10.2026, Quelle: fuer-gruender.de Vergleich 09/2026, smartwerkstatt.cloud)*
 - Teile-Preisvergleich / Bestellstatus
 - Wiederkehrende Wartungsverträge
-- **Zahl am App-Symbol** für neue Anfragen (Badge API, iOS ab 16.4 bei Home-Bildschirm-App, braucht Mitteilungs-Erlaubnis). Klein und schnell umsetzbar. *(Recherche 02.10.2026, mobiloud.com)*
 
 ## Bekannte Hinweise
 - `ANTHROPIC_API_KEY` in Vercel muss der Inhaber setzen, sonst laufen KI-Einschätzung und Schein-Scan nur regelbasiert. Nicht selbst ändern.

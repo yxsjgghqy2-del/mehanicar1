@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 05.10.2026 (2. Lauf) — Version 2.46: Zahl am App-Symbol
+- **Recherche:** entfallen (C-Idee vom 02.10. umgesetzt).
+- **Gebaut:** `syncBadge()` nach jedem Render setzt `navigator.setAppBadge(n)` mit n = Anfragen mit Status „neu“, aber nur bei `S.settings.badge` (neues optionales Feld, Standard aus). In Einstellungen → Erscheinungsbild gibt es „Zahl am App-Symbol“ mit Knopf Einschalten/Ausschalten. Die Mitteilungs-Erlaubnis (auf iOS nötig) wird nur auf diesen Tipp abgefragt, bei „gesperrt“ kommt ein Hinweis. Ohne Badge-Unterstützung steht dort „auf diesem Gerät nicht möglich“. Grenze: Die Zahl wird nur aktualisiert, wenn die App läuft, es gibt kein Push. Das steht ehrlich im „Was ist neu“.
+- **Test-Fund:** Der Smoke-Test rief echtes Cloud-Backup (Supabase) auf. In dieser Umgebung ist der Host gesperrt, deshalb gab es zeitweise einen Konsolenfehler. Der Test beantwortet externe Aufrufe jetzt lokal (`ctx.route`), damit ist er unabhängig vom Netz. Mit `NETLOG=1` werden fehlgeschlagene Netz-Aufrufe ausgegeben.
+- **Test:** Smoke-Test grün (390/1280), mit simuliertem `setAppBadge`: aus → 0, ein → Anzahl neuer Anfragen, aus → 0. SW v47.
+- **Offen / nächster Handgriff:** Nächster Lauf ist ein Design-Lauf: Einstellungen. Antworten des Inhabers offen: Akzentfarbe A/B/C, Umsatz > 800.000 €.
+
 ## 05.10.2026 — Version 2.45: Design-Lauf 3 (Finanzen)
 - **Recherche:** entfallen (Design-Lauf).
 - **Befund:** Die Schalter „Sichtbare Bereiche“ (`.tag` ohne Hintergrund) wirkten wie Fließtext, und ihr Zustand war nur an der Deckkraft erkennbar. Das Diagramm zeigte ohne Rechnungen nur leere Balken und hatte keine Legende.
