@@ -958,7 +958,7 @@ function seed(){
    komm:[],fotos:[],check:[],docs:[],zeiten:[],timerStart:null,notiz:'',erinnerung:'',erinnerungDat:null,sig:null,pinned:false,created:now-3600000*10}
  ];
  const Q=[
-  {id:'q1',ts:now-3600000*1.2,kanal:'ab',name:'Unbekannt (0176 4433221)',tel:'+491764433221',betreff:'Bremsen',original:'Ja hallo, hier Weber — meine Bremsen quietschen vorne ganz stark, seit gestern. Können Sie mich bitte dringend zurückrufen? Danke.',origUrl:'',notiz:'',status:'neu',prio:'hoch',grund:'Sicherheitsrelevant — Kunde nicht warten lassen.',kiQuelle:'regel',antwort:'Guten Tag, wir nehmen das ernst — bei sicherheitsrelevanten Themen sollten Sie nicht lange fahren. Wir können Ihr Fahrzeug kurzfristig ansehen: Passt Ihnen morgen 8:00 oder 13:30 Uhr? Freundliche Grüße, Ihre mehanicar Meisterwerkstatt',wertCt:55000,followUp:t,auftragId:null,wonTs:null},
+  {id:'q1',ts:now-3600000*1.2,kanal:'ab',name:'Unbekannt (0176 4433221)',tel:'+491764433221',betreff:'Bremsen',original:'Ja hallo, hier Weber — meine Bremsen quietschen vorne ganz stark, seit gestern. Können Sie mich bitte dringend zurückrufen? Danke.',origUrl:'',notiz:'',status:'neu',prio:'hoch',grund:'Sicherheitsrelevant — Kunde nicht warten lassen.',kiQuelle:'regel',antwort:'Guten Tag, wir nehmen das ernst — bei sicherheitsrelevanten Themen sollten Sie nicht lange fahren. Wir können Ihr Fahrzeug kurzfristig ansehen: Passt Ihnen morgen 8:00 oder 13:30 Uhr? Freundliche Grüße, '+wsGruss(),wertCt:55000,followUp:t,auftragId:null,wonTs:null},
   {id:'q2',ts:now-3600000*26,kanal:'wa',name:'Sandra Klein',tel:'+491515556677',betreff:'HU / TÜV',original:'Hallo, mein Polo braucht nächsten Monat TÜV — was kostet die Vorbereitung bei euch?',origUrl:'',notiz:'',status:'beantwortet',prio:'mittel',grund:'Termingebunden — heute reagieren.',kiQuelle:'regel',antwort:'Guten Tag Frau Klein, vielen Dank für Ihre Anfrage! HU-Vorbereitung inklusive Vorführung übernehmen wir gerne — wir melden uns heute mit zwei Terminvorschlägen.',wertCt:42000,followUp:addDays(t,2),auftragId:null,wonTs:null},
   {id:'q3',ts:now-86400000*3,kanal:'ig',name:'markus.hu63',tel:'',betreff:'Klimaservice',original:'Hi, macht ihr auch Klimaservice? Golf 6, kühlt kaum noch. Was würde das kosten?',origUrl:'',notiz:'Über Instagram-DM',status:'gewonnen',prio:'niedrig',grund:'Standardanliegen.',kiQuelle:null,antwort:'',wertCt:15000,followUp:null,auftragId:null,wonTs:now-86400000*3}];
  const BU={a1:1,a2:2,a4:1,a5:3};A.forEach(a=>{a.buehne=BU[a.id]||null;a.reviewSent=false});
@@ -1137,9 +1137,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.47';
+const APP_VER='2.48';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.48',d:'2026-10-05',p:['HU- und Wartungs-Erinnerungen an Kunden unterschreiben jetzt mit Ihrem Werkstattnamen aus den Einstellungen statt mit „mehanicar Meisterwerkstatt“.','Auf der Startseite steht nur noch „überfällig“, wenn es wirklich überfällig ist – sonst „bald fällig“, mit dem Tipp, Kunden 4–6 Wochen vorher anzuschreiben.']},
  {v:'2.47',d:'2026-10-05',p:['Fehler behoben: In den Einstellungen war der Knopf „Einschalten“ für die Zahl am App-Symbol zusammengequetscht – jetzt ist er normal breit.','Beispieltexte in leeren Feldern (z. B. „z. B. Inspektion“) sind jetzt hellgrau und dünn, damit man sie nicht für echte Eingaben hält.']},
  {v:'2.46',d:'2026-10-05',p:['Neu: Zahl am App-Symbol – auf dem Home-Bildschirm sehen Sie, wie viele Kundenanfragen noch unbeantwortet sind (Stand: letztes Öffnen der App).','Einschalten unter Mehr → Einstellungen → „Zahl am App-Symbol“. Das iPhone fragt dann einmal, ob mehanicar Mitteilungen anzeigen darf.']},
  {v:'2.45',d:'2026-10-05',p:['Finanzen übersichtlicher: Die Schalter „Sichtbare Bereiche“ sind jetzt klar als Knöpfe erkennbar – eingeschaltete sind dunkel mit Häkchen.','Das Diagramm erklärt seine Farben (Blau = Umsatz, Grün = Gewinn) und sagt deutlich, wenn noch keine Rechnungen da sind.']},
@@ -1286,6 +1287,8 @@ function bkStatus(){const m=S.meta||{},sc=S.settings.sync||{},hasData=!!(S.auftr
  const due=hasData&&!(m.bkSnooze>Date.now())&&(broken||(!sc.on&&((m.changes||0)>=15||tage>=7)));
  const txt=broken?'Cloud-Backup gestört — Daten evtl. ungesichert.':m.lastBackup?('Letzte Sicherung vor '+(tage<1?'weniger als einem Tag':tage===1?'1 Tag':tage+' Tagen')):'Noch keine Sicherung gemacht';
  return {due,broken,tage,txt,cloud:!!sc.on}}
+/* Gruß mit echtem Werkstattnamen aus den Einstellungen (statt fest „mehanicar Meisterwerkstatt“) */
+const wsGruss=()=>'Ihre '+((S&&S.settings.firma&&S.settings.firma.name)||'Werkstatt');
 const sNorm=s=>String(s??'').toLowerCase().replace(/[\s\-.\/]/g,'');
 const GS_CMDS=[
  {k:['neuer auftrag','auftrag anlegen','neu auftrag'],a:'ord-new',t:'Neuen Auftrag anlegen',s:'Kunde, Fahrzeug und Arbeiten erfassen'},
@@ -1534,8 +1537,9 @@ function vPlanung(){
     s:fmt(mahnRe.reduce((s,r)=>s+r.bruttoCt,0))+' offen seit über '+(S.settings.mahnTage||14)+' Tagen',
     act:'data-act="open" data-v="finanzen"'})}
    const rad=radarItems().filter(r=>r.prio<=1);
-   if(rad.length){items.push({c:'var(--violet)',bg:'var(--violet-bg)',t:rad.length+'× HU/Erinnerung überfällig',
-    s:'Kunden anschreiben — unter Anfragen → Wartung & HU',act:'data-act="nav" data-v="anfragen"'})}
+   if(rad.length){const ueb=rad.filter(r=>r.prio===0).length;
+    items.push({c:'var(--violet)',bg:'var(--violet-bg)',t:rad.length+'× HU/Wartung '+(ueb===rad.length?'überfällig':'bald fällig'),
+    s:'Jetzt anschreiben — 4–6 Wochen vorher bringt die meisten Termine (Anfragen → Wartung & HU)',act:'data-act="nav" data-v="anfragen"'})}
    return items.length?`<div class="card" style="padding:13px 15px;margin-bottom:12px">
     <div class="lbl" style="margin-top:0">Jetzt wichtig</div>
     ${items.slice(0,4).map((it,i)=>`<div class="lrow" style="padding:9px 0;border-bottom:${i<Math.min(items.length,4)-1?'1px solid var(--line2)':'none'}" ${it.act}>
@@ -3423,7 +3427,7 @@ function ruleAnalyze(txt){
  else if(hit(['reifen','räder'])){wert=32000;betreff='Reifen / Räder'}
  else betreff=(txt||'').split(/\s+/).slice(0,4).join(' ');
  const anrede=prio==='hoch'?'wir nehmen das ernst — bei sicherheitsrelevanten Themen sollten Sie nicht lange fahren.':'vielen Dank für Ihre Anfrage.';
- const antwort='Guten Tag, '+anrede+' Wir können Ihr Fahrzeug kurzfristig ansehen: Passt Ihnen morgen 8:00 oder 13:30 Uhr? Vor jeder Arbeit erhalten Sie einen festen Preis. Freundliche Grüße, Ihre mehanicar Meisterwerkstatt';
+ const antwort='Guten Tag, '+anrede+' Wir können Ihr Fahrzeug kurzfristig ansehen: Passt Ihnen morgen 8:00 oder 13:30 Uhr? Vor jeder Arbeit erhalten Sie einen festen Preis. Freundliche Grüße, '+wsGruss();
  return{prio,grund,antwort,wert,betreff,quelle:'regel'};
 }
 /*TEST-RULE-END*/
@@ -3460,20 +3464,20 @@ function radarItems(){
    const diff=(y-+t.slice(0,4))*12+(m-+t.slice(5,7));
    if(diff<=3&&diff>=-1)out.push({key:'hu:'+f.id,typKey:'hu',typ:'HU fällig',tag:diff<=0?'überfällig':'in '+diff+' Mon.',
     tcls:diff<=1?'t-red':'t-amber',f,k,prio:diff<=0?0:diff,
-    msg:'Guten Tag '+k.name+', die Hauptuntersuchung Ihres '+f.marke+' '+f.modell+' ('+f.kennz+') ist im '+String(m).padStart(2,'0')+'/'+y+' fällig. Wir bereiten vor und führen vor — passt Ihnen ein Termin in der kommenden Woche? Ihre mehanicar Meisterwerkstatt'})}
+    msg:'Guten Tag '+k.name+', die Hauptuntersuchung Ihres '+f.marke+' '+f.modell+' ('+f.kennz+') ist im '+String(m).padStart(2,'0')+'/'+y+' fällig. Wir bereiten vor und führen vor — passt Ihnen ein Termin in der kommenden Woche? '+wsGruss()})}
   if(fresh('sv:'+f.id)){const last=[f.wartung||'',...S.auftraege.filter(a=>a.fzgId===f.id&&a.status==='abgeholt')
     .map(a=>a.abgabe||a.annahme)].filter(Boolean).sort().pop();
    if(last&&(Date.parse(t)-Date.parse(last))/86400000>330)
     out.push({key:'sv:'+f.id,typKey:'sv',typ:'Service fällig',tag:'letzter Besuch vor '+Math.round((Date.parse(t)-Date.parse(last))/86400000/30)+' Mon.',
      tcls:'t-blue',f,k,prio:9,
-     msg:'Guten Tag '+k.name+', der letzte Service Ihres '+f.kennz+' liegt fast ein Jahr zurück. Gerne planen wir einen Wartungstermin ein — wann passt es Ihnen? Ihre mehanicar Meisterwerkstatt'})}});
+     msg:'Guten Tag '+k.name+', der letzte Service Ihres '+f.kennz+' liegt fast ein Jahr zurück. Gerne planen wir einen Wartungstermin ein — wann passt es Ihnen? '+wsGruss()})}});
  S.auftraege.forEach(a=>{if(!a.erinnerung||!a.erinnerungDat)return;
   if(a.erinnerungDat>addDays(t,30)||!fresh('er:'+a.id))return;
   const k=kunde(a.kundeId);if(!k)return;const f=fzg(a.fzgId)||{};
   out.push({key:'er:'+a.id,typKey:'er',typ:'Erinnerung',extra:a.erinnerung,
    tag:a.erinnerungDat<t?'überfällig':'am '+dLabel(a.erinnerungDat),
    tcls:a.erinnerungDat<t?'t-red':'t-blue',f,k,prio:a.erinnerungDat<t?1:5,
-   msg:'Guten Tag '+k.name+', wir hatten uns für Ihr Fahrzeug '+(f.kennz||'')+' notiert: „'+a.erinnerung+'". Sollen wir dafür einen Termin einplanen? Ihre mehanicar Meisterwerkstatt'})});
+   msg:'Guten Tag '+k.name+', wir hatten uns für Ihr Fahrzeug '+(f.kennz||'')+' notiert: „'+a.erinnerung+'". Sollen wir dafür einen Termin einplanen? '+wsGruss()})});
  return out.sort((a,b)=>a.prio-b.prio)}
 /* ---- Ansicht ---- */
 function vAnfragen(){
@@ -4080,17 +4084,17 @@ const KFILTER={
   .map(a=>a.abgabe||a.annahme).sort().pop();return !last||(Date.parse(todayISO())-Date.parse(last))/86400000>180})],
  offen:['Offene Anfragen',(k)=>S.anfragen.some(q=>q.status==='neu'&&S.kunden.some(x=>x.tel===q.tel&&x.id===k.id))]};
 const KAMP_TPL={
- alle:'Guten Tag {name}, kurze Info aus Ihrer Werkstatt — was dürfen wir für Sie und Ihr Fahrzeug {kennz} tun? Ihre mehanicar Meisterwerkstatt',
- stamm:'Guten Tag {name}, als Stammkunde sind Sie uns besonders wichtig. Haben Sie ein Anliegen zu {kennz}? Wir sind für Sie da. Ihre mehanicar Meisterwerkstatt',
- hu:'Guten Tag {name}, die Hauptuntersuchung Ihres Fahrzeugs {kennz} steht bald an. Wir bereiten Ihr Fahrzeug gerne vor und führen es beim TÜV vor — alles aus einer Hand. Termin gewünscht? Ihre mehanicar Meisterwerkstatt',
- service:'Guten Tag {name}, der letzte Service Ihres {kennz} liegt fast ein Jahr zurück. Damit Sie weiterhin sicher unterwegs sind, empfehlen wir einen Wartungstermin. Wann passt es Ihnen? Ihre mehanicar Meisterwerkstatt',
- inaktiv:'Guten Tag {name}, wir vermissen Sie in unserer Werkstatt! Gibt es etwas, das wir für Sie und Ihr Fahrzeug {kennz} tun können? Wir freuen uns auf Ihren Besuch. Ihre mehanicar Meisterwerkstatt',
- offen:'Guten Tag {name}, wir haben Ihre Anfrage erhalten und melden uns umgehend. Bitte haben Sie noch etwas Geduld — wir kommen gerne auf Sie zu. Ihre mehanicar Meisterwerkstatt'};
+ alle:'Guten Tag {name}, kurze Info aus Ihrer Werkstatt — was dürfen wir für Sie und Ihr Fahrzeug {kennz} tun? Ihre {firma}',
+ stamm:'Guten Tag {name}, als Stammkunde sind Sie uns besonders wichtig. Haben Sie ein Anliegen zu {kennz}? Wir sind für Sie da. Ihre {firma}',
+ hu:'Guten Tag {name}, die Hauptuntersuchung Ihres Fahrzeugs {kennz} steht bald an. Wir bereiten Ihr Fahrzeug gerne vor und führen es beim TÜV vor — alles aus einer Hand. Termin gewünscht? Ihre {firma}',
+ service:'Guten Tag {name}, der letzte Service Ihres {kennz} liegt fast ein Jahr zurück. Damit Sie weiterhin sicher unterwegs sind, empfehlen wir einen Wartungstermin. Wann passt es Ihnen? Ihre {firma}',
+ inaktiv:'Guten Tag {name}, wir vermissen Sie in unserer Werkstatt! Gibt es etwas, das wir für Sie und Ihr Fahrzeug {kennz} tun können? Wir freuen uns auf Ihren Besuch. Ihre {firma}',
+ offen:'Guten Tag {name}, wir haben Ihre Anfrage erhalten und melden uns umgehend. Bitte haben Sie noch etwas Geduld — wir kommen gerne auf Sie zu. Ihre {firma}'};
 function kampEmpf(){const fn=KFILTER[kampFilter][1];
  return S.kunden.filter(k=>(k.tel||k.email)&&fn(k,S.fahrzeuge.filter(f=>f.kundeId===k.id)))
   .map(k=>({k,f:S.fahrzeuge.find(f=>f.kundeId===k.id)}))}
 function kampDefault(){return KAMP_TPL[kampFilter]||KAMP_TPL.alle}
-function kampFill(t,k,f){return(t||'').replace(/{name}/g,k.name).replace(/{kennz}/g,f?f.kennz:'Ihres Fahrzeugs')}
+function kampFill(t,k,f){return(t||'').replace(/{name}/g,k.name).replace(/{kennz}/g,f?f.kennz:'Ihres Fahrzeugs').replace(/{firma}/g,(S.settings.firma&&S.settings.firma.name)||'Werkstatt').replace(/Ihre mehanicar Meisterwerkstatt/g,wsGruss())}
 function vKampagnen(){
  const emp=kampEmpf();const txt=kampTxt??kampDefault();
  const sent=emp.filter(({k})=>kampSent[k.id]).length;

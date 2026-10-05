@@ -264,6 +264,15 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (bd.aus !== 0 || !bd.knopf || bd.an !== bd.neu || bd.wieder !== 0) errs.push('Zahl am App-Symbol falsch: ' + JSON.stringify(bd));
   }
+  // Erinnerungen unterschreiben mit dem Werkstattnamen aus den Einstellungen
+  {
+    const gr = await page.evaluate(() => { const alt = S.settings.firma.name; S.settings.firma.name = 'Kfz Test Hanau';
+      const f = S.fahrzeuge.find(x => kunde(x.kundeId)); const altHu = f.hu; const d = new Date(); d.setMonth(d.getMonth() + 1);
+      f.hu = d.toISOString().slice(0, 7); const it = radarItems().find(r => r.key === 'hu:' + f.id);
+      const kamp = kampFill(KAMP_TPL.hu, kunde(f.kundeId), f); f.hu = altHu; S.settings.firma.name = alt;
+      return { radar: it ? it.msg.endsWith('Ihre Kfz Test Hanau') : 'kein HU-Eintrag', kamp: kamp.includes('Kfz Test Hanau') && !kamp.includes('{firma}') }; });
+    if (gr.radar !== true || gr.kamp !== true) errs.push('Werkstattname in Erinnerung fehlt: ' + JSON.stringify(gr));
+  }
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {

@@ -11,6 +11,7 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
 ## C — Ideen (aus Recherche, noch zu bewerten)
 - Digitale Fahrzeugannahme mit Schadensfotos am Fahrzeugschema
 - **Kunden-Statusseite per Link mit Freigabe von Zusatzarbeiten** („Ihr Auto ist fertig“, Erweiterung per Foto/Video freigeben) — Wettbewerber (SmartWerkstatt u. a.) bieten Kundenportal mit Freigabe + Video-Check als Standard. *(Recherche 01.10.2026, Quelle: fuer-gruender.de Vergleich 09/2026, smartwerkstatt.cloud)*
+- **Fälligkeiten-Einblick für Kunden** (HU, Service) per Link, passt zur Kunden-Statusseite. 56 % der Kunden wünschen das, 17 % der Werkstätten bieten es. *(Recherche 05.10.2026, DEKRA/Ipsos via catama-software.de)*
 - Teile-Preisvergleich / Bestellstatus
 - Wiederkehrende Wartungsverträge
 

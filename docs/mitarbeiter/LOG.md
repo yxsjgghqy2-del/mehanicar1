@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 05.10.2026 (4. Lauf) — Version 2.48: HU-/Wartungs-Erinnerungen mit eigenem Werkstattnamen
+- **Recherche (e) Kfz-Branche:** Laut DEKRA/Ipsos-Studie 2026 wünschen sich 56 % der Autobesitzer Einblick in Service- und HU-Fälligkeiten, aber nur 17 % der Werkstätten bieten das an. HU/AU-Erinnerungen 4–6 Wochen vorher führen laut Ratgeber zu über 80 % Buchungen. Quellen: catama-software.de (DEKRA/Ipsos-Studie, Ratgeber automatische Erinnerungen), autohaus.de. → Die Funktion gibt es in mehanicar schon (Anfragen → Wartung & HU), deshalb Feinschliff statt Neubau.
+- **Gebaut:** `wsGruss()` gibt „Ihre <Werkstattname aus Einstellungen>“ zurück. Alle festen Signaturen „Ihre mehanicar Meisterwerkstatt“ in Erinnerungs- und Antworttexten sind ersetzt, in den Kampagnen-Vorlagen steht jetzt der Platzhalter `{firma}` (`kampFill` ersetzt ihn, auch für alte gespeicherte Texte). Startseite: „überfällig“ nur noch bei echt überfälligen Einträgen, sonst „bald fällig“ mit Hinweis auf 4–6 Wochen Vorlauf.
+- **Test:** Smoke-Test grün (390/1280), prüft Werkstattname in Radar-HU-Nachricht und Kampagnen-Vorlage. SW v49.
+- **Offen / nächster Handgriff:** Nächster Lauf ist ein Design-Lauf: Auftragsliste. C-Idee aus Recherche: Kunden-Statusseite / Fälligkeiten-Einblick per Link (größer, erst Konzept). Antworten des Inhabers offen: Akzentfarbe A/B/C, Umsatz > 800.000 €.
+
 ## 05.10.2026 (3. Lauf) — Version 2.47: Design-Lauf 4 (Einstellungen) + Fehlerbehebung
 - **Fehlerfund (eigener aus 2.46):** In den Einstellungen wurde der Knopf „Einschalten“ (Zahl am App-Symbol) zu einer senkrechten Buchstabenspalte gestaucht, weil `.kv .k` `flex-shrink:0` hat und der lange Beschreibungstext keinen Platz ließ. Behoben mit `.kv.kv-flex` (Beschriftung darf schrumpfen) und `.kv .v .btn{white-space:nowrap}`. Die 2.46 war seit ca. 6 h live, betroffen war nur dieser eine Knopf.
 - **Lehre / neue Prüfung:** `a11y()` im Smoke-Test meldet jetzt „gestauchte Knöpfe“ (kurzer Text, Höhe > 64 px und > 1,5 × Breite). Gegenprobe: Ohne die Korrektur schlägt der Test an.
