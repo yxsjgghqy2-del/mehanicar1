@@ -23,9 +23,13 @@ async function a11y(page, errs, wo) {
 const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
 let fail = 0;
 for (const [w, h] of [[390, 844], [1280, 800]]) {
-  const page = await (await browser.newContext({ viewport: { width: w, height: h } })).newPage();
+  const ctx = await browser.newContext({ viewport: { width: w, height: h } });
+  // Test ohne Internet: Cloud-Backup (Supabase) und andere externe Aufrufe lokal beantworten
+  await ctx.route(/^https?:\/\/(?!localhost)/, r => r.fulfill({ status: 200, contentType: 'application/json', body: '[]' }));
+  const page = await ctx.newPage();
   const errs = [];
   page.on('pageerror', e => errs.push(e.message));
+  page.on('requestfailed', r => { if (process.env.NETLOG) console.log('   Netz fehlgeschlagen: ' + r.url().slice(0, 120)); });
   page.on('console', m => { if (m.type() === 'error') errs.push('console: ' + m.text()); });
   await page.goto(URL);
   await page.evaluate(() => { S.settings.onboarded = true; save(); render(); });
@@ -239,6 +243,20 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       return { an, rel: log.rel };
     });
     if (wl.an !== 1 || wl.rel !== 1) errs.push('Bildschirm-an-Sperre falsch: ' + JSON.stringify(wl));
+  }
+  // Zahl am App-Symbol: aus → keine Zahl; einschalten → Zahl = neue Anfragen; ausschalten → Zahl weg
+  {
+    const bd = await page.evaluate(async () => {
+      const log = []; navigator.setAppBadge = async n => log.push(n); navigator.clearAppBadge = async () => log.push(0);
+      window.Notification = { permission: 'granted', requestPermission: async () => 'granted' };
+      S.settings.badge = false; render(); const aus = log[log.length - 1];
+      nav('einstellungen'); await new Promise(r => setTimeout(r, 50));
+      const knopf = !!document.querySelector('[data-act="badge-tog"]');
+      await ACT['badge-tog'](); const neu = (S.anfragen || []).filter(q => q.status === 'neu').length; const an = log[log.length - 1];
+      await ACT['badge-tog'](); const wieder = log[log.length - 1];
+      return { aus, knopf, an, neu, wieder };
+    });
+    if (bd.aus !== 0 || !bd.knopf || bd.an !== bd.neu || bd.wieder !== 0) errs.push('Zahl am App-Symbol falsch: ' + JSON.stringify(bd));
   }
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);

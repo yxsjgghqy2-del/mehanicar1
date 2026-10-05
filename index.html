@@ -1135,9 +1135,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.45';
+const APP_VER='2.46';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.46',d:'2026-10-05',p:['Neu: Zahl am App-Symbol – auf dem Home-Bildschirm sehen Sie, wie viele Kundenanfragen noch unbeantwortet sind (Stand: letztes Öffnen der App).','Einschalten unter Mehr → Einstellungen → „Zahl am App-Symbol“. Das iPhone fragt dann einmal, ob mehanicar Mitteilungen anzeigen darf.']},
  {v:'2.45',d:'2026-10-05',p:['Finanzen übersichtlicher: Die Schalter „Sichtbare Bereiche“ sind jetzt klar als Knöpfe erkennbar – eingeschaltete sind dunkel mit Häkchen.','Das Diagramm erklärt seine Farben (Blau = Umsatz, Grün = Gewinn) und sagt deutlich, wenn noch keine Rechnungen da sind.']},
  {v:'2.44',d:'2026-10-04',p:['Bildschirm bleibt an: Solange in einem Auftrag die Zeiterfassung läuft, geht das Display nicht mehr aus. Sie müssen das Handy also nicht ständig neu entsperren, wenn es in der Werkstatt liegt.','Sobald Sie die Zeit pausieren oder den Auftrag fertig melden, verhält sich der Bildschirm wieder ganz normal.']},
  {v:'2.43',d:'2026-10-04',p:['Kundenliste ruhiger: Die Kürzel-Kreise sind nicht mehr bunt, sondern einheitlich – Firmenkunden in Schiefergrau, Privatkunden in Hellgrau.','Firmenkunden tragen jetzt ein kleines „Firma“-Schild, so erkennen Sie sie sofort.']},
@@ -1411,6 +1412,12 @@ ACT.nav=el=>nav(el.dataset.v==='mehr'?'mehr':el.dataset.v);
 ACT.back=()=>{if(route._from&&route._from.v&&route._from.v!==route.v){const f=route._from;route={v:f.v,id:f.id};window.scrollTo(0,0);render()}else nav(route.v==='auftrag'?'auftraege':route.v==='kunde'?'kunden':route.v==='fahrzeug'?'fahrzeuge':'planung')};
 ACT['sheet-close']=()=>closeSheet();
 ACT.open=el=>nav(el.dataset.v,el.dataset.id);
+ACT['badge-tog']=async()=>{
+ if(S.settings.badge){S.settings.badge=false;save();render();return toast('Zahl am App-Symbol ausgeschaltet')}
+ /* iOS verlangt dafür die Mitteilungs-Erlaubnis — wir fragen nur hier, auf ausdrücklichen Tipp */
+ if('Notification' in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
+ if('Notification' in window&&Notification.permission==='denied')return toast('Mitteilungen sind für mehanicar gesperrt — in den iPhone-Einstellungen erlauben',true);
+ S.settings.badge=true;save();render();toast('Eingeschaltet — neue Anfragen erscheinen als Zahl am Symbol')};
 ACT.gsuche=()=>openSuche();
 ACT['gsuche-zu']=()=>closeSuche();
 ACT['gs-bestell']=el=>{const l=lagerT(el.dataset.id);if(!l)return;const menge=gsBestellMenge(l);
@@ -3089,7 +3096,10 @@ function vEinstellungen(){
      <button class="${thm==='light'?'on':''}" data-act="theme-set" data-v="light">Hell</button>
      <button class="${thm==='auto'?'on':''}" data-act="theme-set" data-v="auto">Auto</button>
      <button class="${thm==='dark'?'on':''}" data-act="theme-set" data-v="dark">Dunkel</button>
-    </div></span></div></div>
+    </div></span></div>
+   <div class="kv"><span class="k">Zahl am App-Symbol<br><span style="font-size:11px;color:var(--ink3)">zeigt neue Anfragen am Symbol auf dem Home-Bildschirm</span></span><span class="v">
+    ${!badgeOK()?'<span style="font-size:11.5px;color:var(--ink3)">auf diesem Gerät nicht möglich</span>'
+     :`<button class="btn btn-sm ${st.badge?'btn-2nd':'btn-main'}" style="min-height:40px" data-act="badge-tog">${st.badge?'Ausschalten':'Einschalten'}</button>`}</span></div></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Kalkulation & Preise</div>
    <div class="kv"><span class="k">Stundensatz €</span><span class="v"><input class="priceinp" inputmode="decimal" value="${fmtIn(st.stundensatzCt)}" data-f="set-stundensatz"></span></div>
    <div class="kv"><span class="k">AW-Teiler (AW pro Stunde)</span><span class="v"><input class="priceinp" style="width:64px" inputmode="decimal" value="${pct1(st.awTeiler||1)}" data-f="set-teiler"></span></div>
@@ -4710,6 +4720,10 @@ function syncWakeLock(){
   wakeLk=l;l.addEventListener('release',()=>{if(wakeLk===l)wakeLk=null})}).catch(()=>{wakeLk=null})}
  else if(!want&&wakeLk&&wakeLk!=='…'){const l=wakeLk;wakeLk=null;l.release().catch(()=>{})}}
 document.addEventListener('visibilitychange',()=>syncWakeLock());
+/* Zahl am App-Symbol = neue Anfragen (Badge API; iOS: nur Home-Bildschirm-App mit Mitteilungs-Erlaubnis). Nur wenn in den Einstellungen eingeschaltet. */
+const badgeOK=()=>'setAppBadge' in navigator;
+function syncBadge(){if(!badgeOK()||!S)return;const n=S.settings.badge?(S.anfragen||[]).filter(q=>q.status==='neu').length:0;
+ try{(n?navigator.setAppBadge(n):navigator.clearAppBadge()).catch(()=>{})}catch(e){}}
 function renderInner(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
@@ -4719,6 +4733,7 @@ function renderInner(){
  app.innerHTML=(V[route.v]||vPlanung)();
  linkLabels(app);
  syncWakeLock();
+ syncBadge();
  if(riseNext){
   app.classList.add('tsUp');
   setTimeout(()=>app.classList.remove('tsUp'),420);
