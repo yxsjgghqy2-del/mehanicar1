@@ -1140,9 +1140,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.49';
+const APP_VER='2.50';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.50',d:'2026-10-06',p:['Neu im Auftrag: „Status an Kunden senden“. Die App schreibt die Nachricht fertig – Stand der Arbeit, wann das Auto voraussichtlich fertig ist, bei fertigen Autos der Betrag zur Abholung und die nächste HU.','Sie können den Text vor dem Senden ändern. Ein Tipp öffnet WhatsApp, und die Nachricht landet automatisch in der Kommunikation des Auftrags.']},
  {v:'2.49',d:'2026-10-06',p:['Auftragsliste aufgeräumt: Rechts steht jetzt der Preis, darunter der Status als kleines farbiges Schild und die Arbeitswerte dezent – kein Durcheinander mehr.','Der rote Punkt hinter der Auftragsnummer bedeutet „Notiz vorhanden“ – das wird jetzt auch so angesagt.']},
  {v:'2.48',d:'2026-10-05',p:['HU- und Wartungs-Erinnerungen an Kunden unterschreiben jetzt mit Ihrem Werkstattnamen aus den Einstellungen statt mit „mehanicar Meisterwerkstatt“.','Auf der Startseite steht nur noch „überfällig“, wenn es wirklich überfällig ist – sonst „bald fällig“, mit dem Tipp, Kunden 4–6 Wochen vorher anzuschreiben.']},
  {v:'2.47',d:'2026-10-05',p:['Fehler behoben: In den Einstellungen war der Knopf „Einschalten“ für die Zahl am App-Symbol zusammengequetscht – jetzt ist er normal breit.','Beispieltexte in leeren Feldern (z. B. „z. B. Inspektion“) sind jetzt hellgrau und dünn, damit man sie nicht für echte Eingaben hält.']},
@@ -1828,6 +1829,7 @@ function vAuftrag(id){
    <button class="abtn" data-act="tel" data-id="${k.id}">Anrufen</button>
    <button class="abtn" data-act="wa" data-id="${k.id}">WhatsApp</button>
    <button class="abtn" data-act="mail" data-id="${k.id}">E-Mail</button></div>
+  <button class="btn btn-2nd" style="width:100%;margin-top:12px;min-height:44px" data-act="status-msg" data-oid="${a.id}">Status an Kunden senden</button>
   <div class="lbl">Schnellnachricht (WhatsApp + Protokoll)</div>
   <div class="chips">${(()=>{const dflt=[{l:'Fahrzeug fertig',m:'Ihr Fahrzeug ist fertig und kann abgeholt werden.'},{l:'Angebot bereit',m:'Das Angebot liegt bereit — melden Sie sich bei Fragen.'},{l:'Teile verzögert',m:'Die bestellten Teile verzögern sich leider etwas.'},{l:'Termin morgen',m:'Freundliche Erinnerung: Ihr Termin bei uns ist morgen. Bitte melden Sie sich bei Fragen.'}];
    const tpls=S.settings.waTemplates&&S.settings.waTemplates.length?S.settings.waTemplates:dflt;
@@ -2188,6 +2190,30 @@ ACT['chip-wa']=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId);
  save();el.classList.add('sent');const t=el.textContent;el.textContent='✓ Gesendet';
  setTimeout(()=>{el.classList.remove('sent');el.textContent=t},1600);
  if(k&&k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(filled)};
+
+/* Kunden-Status per WhatsApp (Kundenportal Stufe A, docs/kundenportal.md) — ohne Server, Text vor dem Senden änderbar */
+function statusMsg(a){
+ const k=kunde(a.kundeId)||{},f=fzg(a.fzgId)||{},fz=[[f.marke,f.modell].filter(Boolean).join(' '),f.kennz?'('+f.kennz+')':''].filter(Boolean).join(' ')||'Ihr Fahrzeug';
+ const teilEta=a.pakete.flatMap(pk=>pk.pos).filter(p=>p.best==='bestellt'&&p.eta).map(p=>p.eta).sort().pop();
+ const st={offen:'wir haben Ihr Fahrzeug angenommen und beginnen in Kürze',arbeit:'wir arbeiten gerade daran',
+  teile:'wir warten noch auf Ersatzteile'+(teilEta?' (Lieferung voraussichtlich '+dLabel(teilEta)+')':''),
+  fertig:'Ihr Fahrzeug ist fertig und kann abgeholt werden',abgeholt:'vielen Dank für Ihren Besuch'}[a.status]||ordStatusLabel(a);
+ const z=[];
+ if(!['fertig','abgeholt'].includes(a.status)&&a.abgabe)z.push('Voraussichtlich fertig: '+dLabel(a.abgabe)+(a.abgabeZeit?' um '+a.abgabeZeit+' Uhr':'')+'.');
+ if(a.status==='fertig'){const K=ordKalk(a);if(K.zuZahlen>0)z.push('Zu zahlen bei Abholung: '+fmt(K.zuZahlen)+'.')}
+ if(f.hu){const[y,m]=f.hu.split('-');z.push('Nächste Hauptuntersuchung: '+m+'/'+y+'.')}
+ const tel=(S.settings.firma||{}).tel;
+ return 'Guten Tag'+(k.name?' '+k.name:'')+', kurzer Stand zu Ihrem '+fz+': '+st+'. '+z.join(' ')+(tel?' Bei Fragen erreichen Sie uns unter '+tel+'.':'')+' '+wsGruss()}
+ACT['status-msg']=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId)||{};
+ sheet('Status an Kunden senden',`
+  <div class="fld"><label>Nachricht — vor dem Senden änderbar</label><textarea id="st-msg" rows="7">${esc(statusMsg(a))}</textarea></div>
+  ${k.tel?'':'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:10px">Beim Kunden ist keine Telefonnummer hinterlegt — die Nachricht wird nur kopiert.</div>'}
+  <button class="btn btn-main" style="width:100%" data-act="status-send" data-oid="${a.id}">${k.tel?'Per WhatsApp senden':'Text kopieren'}</button>`)};
+ACT['status-send']=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId)||{};const txt=($('#st-msg').value||'').trim();if(!txt)return toast('Nachricht ist leer',true);
+ a.komm.push({id:'m'+uid(),kanal:'wa',ts:Date.now(),txt:'Status gesendet: „'+txt+'"',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'man',orig:'wa'});
+ save();closeSheet();render();
+ if(k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(txt);
+ else{try{navigator.clipboard.writeText(txt)}catch(e){}toast('Text kopiert')}};
 
 /* Feld-Änderungen */
 FSET['o-kmab']=el=>{const a=auftrag(el.dataset.oid);const v=parseInt(String(el.value).replace(/\D/g,''));a.kmAb=isNaN(v)?null:v;save()};
