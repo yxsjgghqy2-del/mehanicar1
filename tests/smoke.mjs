@@ -273,6 +273,22 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       return { radar: it ? it.msg.endsWith('Ihre Kfz Test Hanau') : 'kein HU-Eintrag', kamp: kamp.includes('Kfz Test Hanau') && !kamp.includes('{firma}') }; });
     if (gr.radar !== true || gr.kamp !== true) errs.push('Werkstattname in Erinnerung fehlt: ' + JSON.stringify(gr));
   }
+  // Status an Kunden senden (Kundenportal Stufe A)
+  {
+    const sm = await page.evaluate(async () => {
+      const a = S.auftraege.find(o => o.status === 'arbeit'), b = S.auftraege.find(o => o.status === 'fertig');
+      const ma = statusMsg(a), mb = statusMsg(b);
+      const k = kunde(a.kundeId), tel = k.tel; k.tel = ''; const vor = a.komm.length;
+      nav('auftrag', a.id); await new Promise(r => setTimeout(r, 80));
+      document.querySelector('[data-act="status-msg"]').click(); await new Promise(r => setTimeout(r, 80));
+      const feld = !!document.getElementById('st-msg');
+      document.querySelector('[data-act="status-send"]').click(); await new Promise(r => setTimeout(r, 80));
+      const log = a.komm.length === vor + 1 && a.komm[a.komm.length - 1].txt.startsWith('Status gesendet');
+      a.komm.pop(); k.tel = tel; save(); render();
+      return { arbeit: ma.includes('arbeiten gerade') && ma.includes('Voraussichtlich fertig'), fertig: mb.includes('abgeholt werden'), feld, log };
+    });
+    if (!sm.arbeit || !sm.fertig || !sm.feld || !sm.log) errs.push('Status an Kunden senden: ' + JSON.stringify(sm));
+  }
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);
   if (aid) {

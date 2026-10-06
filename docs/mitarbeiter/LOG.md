@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 06.10.2026 (3. Lauf) — Version 2.50: Kundenportal Stufe A („Status an Kunden senden“)
+- **Recherche:** entfallen (Umsetzung von `docs/kundenportal.md`, Stufe A).
+- **Gebaut:** `statusMsg(a)` schreibt einen fertigen Text: Gruß mit Kundenname, Fahrzeug + Kennzeichen, Status in Alltagssprache (bei „Wartet auf Teile“ mit Liefertermin aus bestellten Teilen), „voraussichtlich fertig“ aus `abgabe`/`abgabeZeit`, bei „fertig“ „Zu zahlen bei Abholung“ aus `ordKalk`, nächste HU, Werkstatt-Telefon, `wsGruss()`. Knopf „Status an Kunden senden“ im Kunden-Bereich des Auftrags öffnet ein Blatt mit änderbarem Text. „Per WhatsApp senden“ protokolliert in `a.komm` und öffnet wa.me. Ohne Telefonnummer wird der Text kopiert. Kein Server, keine neuen Daten im Netz.
+- **Test:** Smoke-Test grün (390/1280). Er prüft Textinhalt für „In Arbeit“ und „Fertig“ sowie den Ablauf Knopf → Blatt → Senden → Protokolleintrag. SW v51.
+- **Offen / nächster Handgriff:** Nächster Lauf ist ein Design-Lauf: Termine. Stufe B (Statusseite per Link) nur nach Zustimmung des Inhabers. Weitere offene Antworten: Akzentfarbe A/B/C, Umsatz > 800.000 €.
+
 ## 06.10.2026 (2. Lauf) — Konzept Kunden-Statusseite (keine App-Änderung)
 - **Erstellt:** `docs/kundenportal.md`. Begründung aus den Recherchen 01.10. und 05.10. Datensparsame Feldliste: gekürztes Kennzeichen, Status, HU-Monat, Service-Schätzung, Werkstatt-Kontakt, **kein** Name, keine Preise und keine Fotos. Drei Stufen: A WhatsApp-Status-Knopf ohne Server, B Link-Statusseite mit eigener Supabase-Tabelle `status_links` (128-Bit-Schlüssel, nur per Schlüssel lesbar, Ablauf 30 Tage nach Abholung, getrennt von der Gesamt-Sicherung), C Freigabe von Zusatzarbeiten über den Link.
 - **Technischer Befund:** Das Cloud-Backup speichert den ganzen Stand `S` in einer Zeile. Eine öffentliche Seite darf auf keinen Fall darauf zugreifen, deshalb ist eine eigene Tabelle Pflicht.
