@@ -45,7 +45,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     const sw = await page.evaluate(() => document.documentElement.scrollWidth);
     if (sw > w + 1) errs.push(`${v}: horizontales Scrollen (${sw}px bei ${w}px)`);
     if (shotDir && w === 390) await page.screenshot({ path: `${shotDir}/${v}.png` });
-    if (shotDir && w === 390 && ['planung','kunden','finanzen','einstellungen','auftraege'].includes(v)) { await page.evaluate(() => { applyTheme('light'); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-hell.png`, fullPage: true }); await page.evaluate(() => { applyTheme(S.settings.theme); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-dunkel.png`, fullPage: true }); }
+    if (shotDir && w === 390 && ['planung','kunden','finanzen','einstellungen','auftraege','termine'].includes(v)) { await page.evaluate(() => { applyTheme('light'); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-hell.png`, fullPage: true }); await page.evaluate(() => { applyTheme(S.settings.theme); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-dunkel.png`, fullPage: true }); }
     await a11y(page, errs, v);
   }
   // „Was ist neu“: Mehr → Versionsnummer antippen, Liste muss erscheinen, Punkt verschwinden
@@ -288,6 +288,18 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       return { arbeit: ma.includes('arbeiten gerade') && ma.includes('Voraussichtlich fertig'), fertig: mb.includes('abgeholt werden'), feld, log };
     });
     if (!sm.arbeit || !sm.fertig || !sm.feld || !sm.log) errs.push('Status an Kunden senden: ' + JSON.stringify(sm));
+  }
+  // Terminkalender: alle 7 Tage sichtbar, Heute-Knopf
+  {
+    const tk = await page.evaluate(async () => {
+      nav('termine'); await new Promise(r => setTimeout(r, 80));
+      const hd = [...document.querySelectorAll('.kal-hd-cell')], sc = hd[0] && hd[0].closest('[style*="overflow-x"]');
+      const alle = hd.length === 7 && (window.innerWidth > 500 || hd[6].getBoundingClientRect().right <= sc.getBoundingClientRect().right + 1);
+      document.querySelector('[data-act="term-woche"][data-d="1"]').click(); await new Promise(r => setTimeout(r, 80));
+      const btn = document.querySelector('[data-act="term-heute"]'); btn && btn.click(); await new Promise(r => setTimeout(r, 80));
+      return { alle, heute: !!btn && termWoche === 0 && !document.querySelector('[data-act="term-heute"]') };
+    });
+    if (!tk.alle || !tk.heute) errs.push('Terminkalender: ' + JSON.stringify(tk));
   }
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);

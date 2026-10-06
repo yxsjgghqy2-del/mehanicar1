@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 06.10.2026 (4. Lauf) — Version 2.51: Design-Lauf Terminkalender
+- **Achtung:** GitHub-Zugang in dieser Sitzung fehlt (git fetch/push und GitHub-Werkzeuge abgelehnt: kein GitHub-Konto verbunden). Arbeit liegt fertig auf dem lokalen Zweig `claude/termine-design`, noch nicht live. Live ist weiter 2.50.
+- **Gebaut:** Wochenraster passt bei 390 px ohne Seitwärts-Wischen (7 Tage, Spalten `flex:1;min-width:0`, min-width 330). Sa/So leicht grau, heutiger Tag in Akzent-Türkis statt altem Blau. Uhrzeiten 10 px statt 8,5 px, Termine 10 px mit Uhrzeit oben. Kopf: Wochentag klein, Tageszahl groß. Knopf „Heute“ (nur in anderen Wochen). Pfeile mit aria-label. Buchungslink-Karte mit normaler Überschrift und lesbarer Schrift (12 px), Text in Sie-Form und Hinweis, dass erst der Inhaber bestätigt.
+- **Test:** Smoke-Test grün (390/1280), neue Prüfung „alle 7 Tage sichtbar + Heute-Knopf“. Screenshots hell/dunkel angesehen. SW v52.
+- **Offen / nächster Handgriff:** Sobald GitHub wieder geht: Zweig hochladen, PR, mergen, live prüfen. Danach nächstes Paket. Antworten des Inhabers offen: Akzentfarbe A/B/C, Umsatz > 800.000 €, Kundenportal Stufe B.
+
 ## 06.10.2026 (3. Lauf) — Version 2.50: Kundenportal Stufe A („Status an Kunden senden“)
 - **Recherche:** entfallen (Umsetzung von `docs/kundenportal.md`, Stufe A).
 - **Gebaut:** `statusMsg(a)` schreibt einen fertigen Text: Gruß mit Kundenname, Fahrzeug + Kennzeichen, Status in Alltagssprache (bei „Wartet auf Teile“ mit Liefertermin aus bestellten Teilen), „voraussichtlich fertig“ aus `abgabe`/`abgabeZeit`, bei „fertig“ „Zu zahlen bei Abholung“ aus `ordKalk`, nächste HU, Werkstatt-Telefon, `wsGruss()`. Knopf „Status an Kunden senden“ im Kunden-Bereich des Auftrags öffnet ein Blatt mit änderbarem Text. „Per WhatsApp senden“ protokolliert in `a.komm` und öffnet wa.me. Ohne Telefonnummer wird der Text kopiert. Kein Server, keine neuen Daten im Netz.

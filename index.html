@@ -592,13 +592,22 @@ body.theme-dark .kav-firma{background:rgba(143,170,196,.16);color:#AFC3D6}
 .search-kachel.sel{border-color:var(--blue);background:var(--blue-bg)}
 
 /* ============ TERMINKALENDER ============ */
-.kal-time{font-size:8.5px;font-weight:700;color:var(--ink3);padding:5px 4px 0;text-align:right;background:var(--bg);border-right:1px solid var(--line2);width:34px;flex-shrink:0}
-.kal-cell{border-left:1px solid var(--line2);min-height:48px;padding:2px;overflow:hidden;cursor:pointer;transition:background .12s}
+.kal-time{font-size:10px;font-weight:600;color:var(--ink3);padding:4px 5px 0 0;text-align:right;background:var(--bg);border-right:1px solid var(--line2);width:30px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.kal-cell{flex:1;min-width:0;border-left:1px solid var(--line2);min-height:44px;padding:2px;overflow:hidden;cursor:pointer;transition:background .12s}
 .kal-cell:active{background:var(--bg)}
-.kal-cell.today{background:rgba(10,95,255,.03);border-left-color:rgba(10,95,255,.3)}
-.kal-hd-cell{font-size:10px;font-weight:700;text-align:center;padding:7px 2px;border-left:1px solid var(--line2)}
+.kal-cell.we,.kal-hd-cell.we{background:color-mix(in srgb,var(--ink3) 6%,transparent)}
+.kal-cell.today{background:color-mix(in srgb,var(--blue) 7%,transparent)}
+.kal-hd-cell .kd{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-top:1px;font-variant-numeric:tabular-nums}
+.kal-hd-cell.today .kd{color:var(--blue)}
+.kal-nav{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.kal-nav b{flex:1;text-align:center;font-size:14px}
+.kal-nav .btn{min-height:44px;padding:0 14px}
+.blink{padding:14px}
+.blink code{flex:1;font-size:12px;color:var(--ink2);word-break:break-all;background:var(--bg);border-radius:8px;padding:8px 10px}
+.blink p{font-size:12.5px;color:var(--ink3);margin:8px 0 0;line-height:1.5}
+.kal-hd-cell{flex:1;min-width:0;font-size:10.5px;font-weight:600;color:var(--ink3);text-align:center;padding:7px 0;border-left:1px solid var(--line2)}
 .kal-hd-cell.today{color:var(--blue)}
-.kal-evt{border-radius:5px;padding:2px 5px;font-size:9px;font-weight:700;cursor:pointer;margin-bottom:2px;color:#fff;display:block;width:100%;text-align:left;border:none;font-family:inherit;line-height:1.3;transition:filter .12s}
+.kal-evt{border-radius:5px;padding:3px 4px;font-size:10px;overflow:hidden;text-overflow:ellipsis;font-weight:700;cursor:pointer;margin-bottom:2px;color:#fff;display:block;width:100%;text-align:left;border:none;font-family:inherit;line-height:1.3;transition:filter .12s}
 .kal-evt:active{filter:brightness(.85)}
 /* ============ PRINT / RECHNUNG ============ */
 #printarea{display:none}
@@ -1140,9 +1149,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.50';
+const APP_VER='2.51';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.51',d:'2026-10-06',p:['Terminkalender aufgeräumt: Alle sieben Tage passen jetzt aufs Handy, ohne seitlich zu wischen. Samstag und Sonntag sind leicht grau hinterlegt, der heutige Tag dezent markiert.','Uhrzeiten und Termine sind größer und besser lesbar. Neuer Knopf „Heute“ springt aus anderen Wochen zurück zur aktuellen Woche.']},
  {v:'2.50',d:'2026-10-06',p:['Neu im Auftrag: „Status an Kunden senden“. Die App schreibt die Nachricht fertig – Stand der Arbeit, wann das Auto voraussichtlich fertig ist, bei fertigen Autos der Betrag zur Abholung und die nächste HU.','Sie können den Text vor dem Senden ändern. Ein Tipp öffnet WhatsApp, und die Nachricht landet automatisch in der Kommunikation des Auftrags.']},
  {v:'2.49',d:'2026-10-06',p:['Auftragsliste aufgeräumt: Rechts steht jetzt der Preis, darunter der Status als kleines farbiges Schild und die Arbeitswerte dezent – kein Durcheinander mehr.','Der rote Punkt hinter der Auftragsnummer bedeutet „Notiz vorhanden“ – das wird jetzt auch so angesagt.']},
  {v:'2.48',d:'2026-10-05',p:['HU- und Wartungs-Erinnerungen an Kunden unterschreiben jetzt mit Ihrem Werkstattnamen aus den Einstellungen statt mit „mehanicar Meisterwerkstatt“.','Auf der Startseite steht nur noch „überfällig“, wenn es wirklich überfällig ist – sonst „bald fällig“, mit dem Tipp, Kunden 4–6 Wochen vorher anzuschreiben.']},
@@ -4483,22 +4493,23 @@ function vTermine(){
  const HOURS=['07','08','09','10','11','12','13','14','15','16','17','18'];
  const byDay={};days.forEach(d=>{byDay[d]=T.filter(t=>t.datum===d)});
  const kw=(()=>{const d=new Date(mon+'T12:00');const o=new Date(d.getFullYear(),0,4);return Math.ceil((((d-o)/86400000)+o.getDay()+1)/7)})();
- const hdr=['<div class="kal-time" style="background:var(--bg);border-right:1px solid var(--line)"></div>',
+ const hdr=['<div class="kal-time"></div>',
   ...days.map((d,i)=>{const isTod=d===today;const dd=new Date(d+'T12:00');
-   return`<div class="kal-hd-cell${isTod?' today':''}" style="flex:1">${WDS[i]}<br><b style="font-size:12px">${dd.getDate()}.${dd.getMonth()+1}.</b></div>`})].join('');
+   return`<div class="kal-hd-cell${isTod?' today':''}${i>4?' we':''}">${WDS[i]}<span class="kd">${dd.getDate()}.</span></div>`})].join('');
  const rows=HOURS.map(h=>{
-  const cells=days.map(d=>{const isTod=d===today;
+  const cells=days.map((d,i)=>{const isTod=d===today;
    const slot=(byDay[d]||[]).filter(t=>t.von&&t.von.startsWith(h));
-   return`<div class="kal-cell${isTod?' today':''}" style="flex:1" data-act="termin-slot" data-datum="${d}" data-h="${h}:00">${slot.map(t=>`<button class="kal-evt" style="background:${(TTYP[t.typ]||TTYP.sonstiges)[1]}" data-act="termin-open" data-id="${t.id}">${esc(t.titel)}<br><span style="font-weight:500;font-size:8px;opacity:.9">${t.von}</span></button>`).join('')}</div>`}).join('');
+   return`<div class="kal-cell${isTod?' today':''}${i>4?' we':''}" data-act="termin-slot" data-datum="${d}" data-h="${h}:00">${slot.map(t=>`<button class="kal-evt" style="background:${(TTYP[t.typ]||TTYP.sonstiges)[1]}" data-act="termin-open" data-id="${t.id}"><span style="font-weight:500;opacity:.9">${t.von}</span><br>${esc(t.titel)}</button>`).join('')}</div>`}).join('');
   return`<div style="display:flex;border-bottom:1px solid var(--line2)"><div class="kal-time">${h}</div>${cells}</div>`;
  }).join('');
  const weekTerms=days.flatMap(d=>byDay[d]||[]);
  const bookUrl=location.origin+location.pathname+'#/buchen';
  const inner=`
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-   <button class="icon-btn" data-act="term-woche" data-d="-1" style="flex-shrink:0">‹</button>
-   <b style="flex:1;text-align:center;font-size:13px">KW ${kw} · ${new Date(days[0]+'T12:00').getDate()}.${new Date(days[0]+'T12:00').getMonth()+1}. – ${new Date(days[6]+'T12:00').getDate()}.${new Date(days[6]+'T12:00').getMonth()+1}.</b>
-   <button class="icon-btn" data-act="term-woche" data-d="1" style="flex-shrink:0">›</button></div>
+  <div class="kal-nav">
+   <button class="icon-btn" data-act="term-woche" data-d="-1" style="flex-shrink:0" aria-label="Vorherige Woche">‹</button>
+   <b>KW ${kw} · ${new Date(days[0]+'T12:00').getDate()}.${new Date(days[0]+'T12:00').getMonth()+1}. – ${new Date(days[6]+'T12:00').getDate()}.${new Date(days[6]+'T12:00').getMonth()+1}.</b>
+   ${termWoche?'<button class="btn btn-2nd" data-act="term-heute">Heute</button>':''}
+   <button class="icon-btn" data-act="term-woche" data-d="1" style="flex-shrink:0" aria-label="Nächste Woche">›</button></div>
   ${(()=>{const tod=T.filter(t=>t.datum===today).sort((a,b)=>(a.von||'').localeCompare(b.von||''));
    return tod.length?`<div class="lbl" style="margin-top:0">Heute · ${tod.length} Termin${tod.length!==1?'e':''}</div>
    <div class="card stag" style="margin-bottom:12px">${tod.map(t=>{const k=t.kundeId?kunde(t.kundeId):null;
@@ -4509,7 +4520,7 @@ function vTermine(){
      <span class="tag" style="background:${tc}18;color:${tc}">${tl}</span></div>`}).join('')}</div>`:''})()}
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-    <div style="min-width:420px">
+    <div style="min-width:330px">
      <div style="display:flex;border-bottom:2px solid var(--line)">${hdr}</div>
      ${rows}
     </div></div></div>
@@ -4521,15 +4532,16 @@ function vTermine(){
     <div class="lt"><b>${esc(t.titel)}</b><span>${t.datum} ${t.von}–${t.bis}${k?' · '+esc(k.name):''}</span></div>
     <span class="tag" style="background:${tc}18;color:${tc}">${tl}</span></div>`}).join('')}</div>`
   :'<div class="empty"><b>Keine Termine diese Woche</b>Mit + anlegen oder Zelle im Kalender antippen.</div>'}
-  <div class="card" style="padding:12px;margin-top:4px">
-   <div style="font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Online-Terminbuchungslink</div>
+  <div class="lbl">Online-Terminbuchung</div>
+  <div class="card blink">
    <div style="display:flex;align-items:center;gap:8px">
-    <code style="flex:1;font-size:10px;color:var(--ink2);word-break:break-all;background:var(--bg);border-radius:7px;padding:6px 8px">${esc(bookUrl)}</code>
+    <code>${esc(bookUrl)}</code>
     <button class="icon-btn" data-act="buchen-link-share" style="flex-shrink:0" title="Link teilen"><span style="width:17px;height:17px;display:block">${IC.share.replace('<svg ','<svg style="stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;width:100%;height:100%" ')}</span></button></div>
-   <div style="font-size:10px;color:var(--ink3);margin-top:5px;line-height:1.5">Kunden öffnen diesen Link im Browser — Terminwünsche landen automatisch als Anfragen bei dir.</div>
+   <p>Kunden öffnen diesen Link im Browser. Terminwünsche landen als Anfrage bei Ihnen – bestätigt wird erst von Ihnen.</p>
   </div>`;
  return shell(inner,{title:'Terminkalender',eyebrow:'Wochenplanung',back:1})+`<button class="fab" data-act="termin-new" aria-label="Neuer Termin">+</button>`;
 }
+ACT['term-heute']=()=>{termWoche=0;render()};
 ACT['term-woche']=el=>{termWoche=(termWoche||0)+parseInt(el.dataset.d||0);render()};
 ACT['termin-slot']=el=>showTerminSheet(null,el.dataset.datum,el.dataset.h,null);
 ACT['termin-new']=()=>showTerminSheet(null,todayISO(),'09:00',null);

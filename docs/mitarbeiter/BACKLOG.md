@@ -3,7 +3,7 @@
 Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Jede Idee hat eine Herkunft (Inhaber / Recherche / Fehlerfund).
 
 ## A — Wünsche des Inhabers
-- **Design regelmäßig pflegen** *(Inhaber, 03.10.2026: „Kümmere dich auch regelmäßig um das Design.“)* Dauerauftrag: Jeder 3. Lauf ist ein Design-Lauf (siehe ROUTINE.md). Dabei eine Ansicht bei 390 px hell und dunkel ansehen und Abstände, Schriftgrößen, Ausrichtung, Farben und Einheitlichkeit mit dem Stil von Entwurf 14 verbessern. Erledigt: Planung (2.41), Kundenliste (2.43), Finanzen (2.45), Einstellungen (2.47), Auftragsliste (2.49). Nächste: Termine, Anfragen, Auftragsmaske-Details. **Akzentfarbe: Vorschlag `designs/akzent.html` (A/B/C) liegt beim Inhaber.**
+- **Design regelmäßig pflegen** *(Inhaber, 03.10.2026: „Kümmere dich auch regelmäßig um das Design.“)* Dauerauftrag: Jeder 3. Lauf ist ein Design-Lauf (siehe ROUTINE.md). Dabei eine Ansicht bei 390 px hell und dunkel ansehen und Abstände, Schriftgrößen, Ausrichtung, Farben und Einheitlichkeit mit dem Stil von Entwurf 14 verbessern. Erledigt: Planung (2.41), Kundenliste (2.43), Finanzen (2.45), Einstellungen (2.47), Auftragsliste (2.49), Termine (2.51). Nächste: Anfragen, Auftragsmaske-Details. **Akzentfarbe: Vorschlag `designs/akzent.html` (A/B/C) liegt beim Inhaber.**
 
 ## B — Qualität & Pflichten
 4. **Kunden-Statusseite** — Stufe A erledigt in 2.50. Stufe B (Link-Seite) und C (Freigabe) nur nach Zustimmung des Inhabers, siehe `docs/kundenportal.md`.
