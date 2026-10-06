@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 06.10.2026 — Version 2.49: Design-Lauf 5 (Auftragsliste)
+- **Recherche:** entfallen (Design-Lauf).
+- **Befund:** Rechte Spalte in `ordRow`: Der Status stand als farbiger Text mit hängendem „·“, die AW als `<b>` darunter in Preisgröße (erbt `.lr b`). Das sah unruhig aus. Der rote Punkt (Notiz) hatte keine Erklärung.
+- **Gebaut:** `.ord-meta` mit Status als kleinem Schild (`.ord-st`, Statusfarbe auf 8 % Fläche) und AW dezent als `<em>`. Der Notiz-Punkt hat jetzt `title`/`aria-label` „Notiz vorhanden“. Der Smoke-Test macht auch `auftraege-hell/-dunkel.png`.
+- **Test:** Smoke-Test grün (390/1280). SW v50.
+- **Offen / nächster Handgriff:** Normaler Lauf: C-Idee bewerten (Fälligkeiten-Einblick/Kunden-Statusseite braucht Server und Datenschutz, also erst Konzept unter `docs/`). Alternativ kleine Qualitätsrunde. Nächster Design-Lauf: Termine. Antworten des Inhabers offen: Akzentfarbe A/B/C, Umsatz > 800.000 €.
+
 ## 05.10.2026 (4. Lauf) — Version 2.48: HU-/Wartungs-Erinnerungen mit eigenem Werkstattnamen
 - **Recherche (e) Kfz-Branche:** Laut DEKRA/Ipsos-Studie 2026 wünschen sich 56 % der Autobesitzer Einblick in Service- und HU-Fälligkeiten, aber nur 17 % der Werkstätten bieten das an. HU/AU-Erinnerungen 4–6 Wochen vorher führen laut Ratgeber zu über 80 % Buchungen. Quellen: catama-software.de (DEKRA/Ipsos-Studie, Ratgeber automatische Erinnerungen), autohaus.de. → Die Funktion gibt es in mehanicar schon (Anfragen → Wartung & HU), deshalb Feinschliff statt Neubau.
 - **Gebaut:** `wsGruss()` gibt „Ihre <Werkstattname aus Einstellungen>“ zurück. Alle festen Signaturen „Ihre mehanicar Meisterwerkstatt“ in Erinnerungs- und Antworttexten sind ersetzt, in den Kampagnen-Vorlagen steht jetzt der Platzhalter `{firma}` (`kampFill` ersetzt ihn, auch für alte gespeicherte Texte). Startseite: „überfällig“ nur noch bei echt überfälligen Einträgen, sonst „bald fällig“ mit Hinweis auf 4–6 Wochen Vorlauf.

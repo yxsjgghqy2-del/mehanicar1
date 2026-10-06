@@ -45,7 +45,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     const sw = await page.evaluate(() => document.documentElement.scrollWidth);
     if (sw > w + 1) errs.push(`${v}: horizontales Scrollen (${sw}px bei ${w}px)`);
     if (shotDir && w === 390) await page.screenshot({ path: `${shotDir}/${v}.png` });
-    if (shotDir && w === 390 && ['planung','kunden','finanzen','einstellungen'].includes(v)) { await page.evaluate(() => { applyTheme('light'); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-hell.png`, fullPage: true }); await page.evaluate(() => { applyTheme(S.settings.theme); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-dunkel.png`, fullPage: true }); }
+    if (shotDir && w === 390 && ['planung','kunden','finanzen','einstellungen','auftraege'].includes(v)) { await page.evaluate(() => { applyTheme('light'); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-hell.png`, fullPage: true }); await page.evaluate(() => { applyTheme(S.settings.theme); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-dunkel.png`, fullPage: true }); }
     await a11y(page, errs, v);
   }
   // „Was ist neu“: Mehr → Versionsnummer antippen, Liste muss erscheinen, Punkt verschwinden
