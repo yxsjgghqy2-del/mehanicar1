@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 06.10.2026 (2. Lauf) — Konzept Kunden-Statusseite (keine App-Änderung)
+- **Erstellt:** `docs/kundenportal.md`. Begründung aus den Recherchen 01.10. und 05.10. Datensparsame Feldliste: gekürztes Kennzeichen, Status, HU-Monat, Service-Schätzung, Werkstatt-Kontakt, **kein** Name, keine Preise und keine Fotos. Drei Stufen: A WhatsApp-Status-Knopf ohne Server, B Link-Statusseite mit eigener Supabase-Tabelle `status_links` (128-Bit-Schlüssel, nur per Schlüssel lesbar, Ablauf 30 Tage nach Abholung, getrennt von der Gesamt-Sicherung), C Freigabe von Zusatzarbeiten über den Link.
+- **Technischer Befund:** Das Cloud-Backup speichert den ganzen Stand `S` in einer Zeile. Eine öffentliche Seite darf auf keinen Fall darauf zugreifen, deshalb ist eine eigene Tabelle Pflicht.
+- **Test:** Keine App-Änderung. Version bleibt 2.49.
+- **Offen / nächster Handgriff:** Stufe A bauen: Knopf „Status an Kunden senden“ im Auftrag (Text aus Status, `abgabeZeit`, HU-Monat, `wsGruss()`, öffnet WhatsApp und protokolliert in der Kommunikation). Danach Design-Lauf Termine. B erst nach Zustimmung des Inhabers.
+
 ## 06.10.2026 — Version 2.49: Design-Lauf 5 (Auftragsliste)
 - **Recherche:** entfallen (Design-Lauf).
 - **Befund:** Rechte Spalte in `ordRow`: Der Status stand als farbiger Text mit hängendem „·“, die AW als `<b>` darunter in Preisgröße (erbt `.lr b`). Das sah unruhig aus. Der rote Punkt (Notiz) hatte keine Erklärung.
