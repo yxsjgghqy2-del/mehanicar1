@@ -599,6 +599,13 @@ body.theme-dark .kav-firma{background:rgba(143,170,196,.16);color:#AFC3D6}
 .kal-cell.today{background:color-mix(in srgb,var(--blue) 7%,transparent)}
 .kal-hd-cell .kd{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-top:1px;font-variant-numeric:tabular-nums}
 .kal-hd-cell.today .kd{color:var(--blue)}
+.akz-block{padding:11px 0;border-bottom:1px solid var(--line2)}
+.akz-block .k{font-size:12.5px;color:var(--ink3);margin-bottom:10px}
+.akz-wahl{display:flex;flex-wrap:wrap;gap:10px}
+.akz-dot{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;position:relative;flex-shrink:0}
+.akz-dot.on{border-color:var(--ink);box-shadow:inset 0 0 0 3px var(--card,#fff)}
+.akz-eigen{background:conic-gradient(#D64545,#D4A73A,#3FA66B,#3B7DD8,#8A949E,#D64545);overflow:hidden;display:block}
+.akz-eigen input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
 .kal-nav{display:flex;align-items:center;gap:8px;margin-bottom:12px}
 .kal-nav b{flex:1;text-align:center;font-size:14px}
 .kal-nav .btn{min-height:44px;padding:0 14px}
@@ -1143,15 +1150,27 @@ function applyTheme(t){
   const dark=t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
   meta.content=dark?'#060706':'#F4F4F6';
  }
+ applyAkzent();
 }
+/* Eigene Akzentfarbe (Einstellungen → Erscheinungsbild) */
+const AKZ_VORSCHL=[['#D9E97A','Standard'],['#E8833A','Orange'],['#D64545','Rot'],['#3B7DD8','Blau'],['#3FA66B','Grün'],['#D4A73A','Gold'],['#8A949E','Grau']];
+function akzentInk(hex){const n=parseInt(hex.slice(1),16),c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});
+ const L=.2126*c[0]+.7152*c[1]+.0722*c[2];return (L+.05)/.05>=1.05/(L+.05)?'#15180A':'#FFFFFF'}
+function applyAkzent(){const b=document.body;let h='';try{h=(S.settings&&S.settings.akzent)||''}catch(e){}
+ if(!b)return;
+ if(!/^#[0-9a-fA-F]{6}$/.test(h)){['--acc','--acc-ink','--acc-bg'].forEach(v=>b.style.removeProperty(v));return}
+ const n=parseInt(h.slice(1),16);
+ b.style.setProperty('--acc',h);b.style.setProperty('--acc-ink',akzentInk(h));
+ b.style.setProperty('--acc-bg',`rgba(${n>>16&255},${n>>8&255},${n&255},.16)`)}
 /* Lookups */
 const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.51';
+const APP_VER='2.52';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.52',d:'2026-10-08',p:['Neu in den Einstellungen unter „Erscheinungsbild“: Akzentfarbe frei wählbar. Tippen Sie auf einen Vorschlag oder wählen Sie über den bunten Kreis jede beliebige Farbe. Die App passt sich sofort an.','Die Schrift auf Knöpfen wird automatisch hell oder dunkel, damit sie auf jeder Farbe gut lesbar bleibt. Der erste Kreis stellt die Standardfarbe wieder her.']},
  {v:'2.51',d:'2026-10-06',p:['Terminkalender aufgeräumt: Alle sieben Tage passen jetzt aufs Handy, ohne seitlich zu wischen. Samstag und Sonntag sind leicht grau hinterlegt, der heutige Tag dezent markiert.','Uhrzeiten und Termine sind größer und besser lesbar. Neuer Knopf „Heute“ springt aus anderen Wochen zurück zur aktuellen Woche.']},
  {v:'2.50',d:'2026-10-06',p:['Neu im Auftrag: „Status an Kunden senden“. Die App schreibt die Nachricht fertig – Stand der Arbeit, wann das Auto voraussichtlich fertig ist, bei fertigen Autos der Betrag zur Abholung und die nächste HU.','Sie können den Text vor dem Senden ändern. Ein Tipp öffnet WhatsApp, und die Nachricht landet automatisch in der Kommunikation des Auftrags.']},
  {v:'2.49',d:'2026-10-06',p:['Auftragsliste aufgeräumt: Rechts steht jetzt der Preis, darunter der Status als kleines farbiges Schild und die Arbeitswerte dezent – kein Durcheinander mehr.','Der rote Punkt hinter der Auftragsnummer bedeutet „Notiz vorhanden“ – das wird jetzt auch so angesagt.']},
@@ -3131,6 +3150,8 @@ function vFinanzen(){
 }
 ACT['fin-tog']=el=>{finSec[el.dataset.k]=!finSec[el.dataset.k];render()};
 ACT['install-hint-done']=()=>{S.settings.installHintDone=true;save();render()};
+ACT['akzent-set']=el=>{S.settings.akzent=el.dataset.v||'';applyAkzent();save();render()};
+FSET['akzent-pick']=(el)=>{S.settings.akzent=el.value;applyAkzent();save();render()};
 ACT['theme-set']=el=>{S.settings.theme=el.dataset.v;applyTheme(el.dataset.v);save();render()};
 function vEinstellungen(){
  const fi=S.settings.firma;
@@ -3144,6 +3165,11 @@ function vEinstellungen(){
      <button class="${thm==='auto'?'on':''}" data-act="theme-set" data-v="auto">Auto</button>
      <button class="${thm==='dark'?'on':''}" data-act="theme-set" data-v="dark">Dunkel</button>
     </div></span></div>
+   <div class="akz-block"><div class="k">Akzentfarbe<br><span style="font-size:11px;color:var(--ink3)">für Knöpfe und Markierungen</span></div><div class="akz-wahl">
+    ${AKZ_VORSCHL.map(([h,l],i)=>{const on=(st.akzent||AKZ_VORSCHL[0][0]).toLowerCase()===h.toLowerCase();
+     return`<button class="akz-dot${on?' on':''}" style="background:${h}" data-act="akzent-set" data-v="${i?h:''}" aria-label="Akzentfarbe ${l}" aria-pressed="${on}"></button>`}).join('')}
+    <label class="akz-dot akz-eigen" aria-label="Eigene Farbe wählen" title="Eigene Farbe"><input type="color" value="${st.akzent||AKZ_VORSCHL[0][0]}" data-f="akzent-pick" aria-label="Eigene Farbe wählen"></label>
+   </div></div>
    <div class="kv kv-flex"><span class="k">Zahl am App-Symbol<br><span style="font-size:11px;color:var(--ink3)">zeigt neue Anfragen am Symbol auf dem Home-Bildschirm</span></span><span class="v">
     ${!badgeOK()?'<span style="font-size:11.5px;color:var(--ink3)">auf diesem Gerät nicht möglich</span>'
      :`<button class="btn btn-sm ${st.badge?'btn-2nd':'btn-main'}" style="min-height:40px" data-act="badge-tog">${st.badge?'Ausschalten':'Einschalten'}</button>`}</span></div></div>

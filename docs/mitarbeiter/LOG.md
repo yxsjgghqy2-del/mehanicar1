@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 08.10.2026 (2. Lauf) — Version 2.52: Akzentfarbe frei wählbar
+- **Anlass:** Inhaber 08.10.: keiner der Vorschläge A/B/C gefällt, „die App sollte individuell sein können“. Außerdem entschieden: Umsatz bei 800.000 € (E-Rechnung-Pflicht ab 2028, Export trotzdem für alle bauen), Statusseite per Link (Stufe B) gewünscht.
+- **Gebaut:** Einstellungen → Erscheinungsbild → „Akzentfarbe“: 7 ruhige Vorschläge (erster = Standard/zurücksetzen) + bunter Kreis mit Farbwähler für jede Farbe. `S.settings.akzent`, `applyAkzent()` (aus `applyTheme`) setzt `--acc/--acc-ink/--acc-bg` als Inline-Stil am body, gilt hell und dunkel. Schriftfarbe auf dem Akzent per WCAG-Kontrast automatisch dunkel/weiß. Kreise 44 px, umbrechend.
+- **Test:** Smoke-Test grün (390/1280), neue Prüfung: Vorschlag setzen, eigene dunkle/helle Farbe → Schrift weiß/dunkel, Zurücksetzen. Screenshots Einstellungen hell/dunkel angesehen (erster Entwurf lief rechts aus der Karte, behoben). SW v53.
+- **Achtung:** GitHub weiter nicht verbunden. Liegt lokal auf `claude/termine-design` zusammen mit 2.51. Nicht live.
+- **Nächster Handgriff:** Sobald GitHub geht: hochladen, PR, mergen, live prüfen. Dann Statusseite per Link (Stufe B).
+
 ## 06.10.2026 (4. Lauf) — Version 2.51: Design-Lauf Terminkalender
 - **Achtung:** GitHub-Zugang in dieser Sitzung fehlt (git fetch/push und GitHub-Werkzeuge abgelehnt: kein GitHub-Konto verbunden). Arbeit liegt fertig auf dem lokalen Zweig `claude/termine-design`, noch nicht live. Live ist weiter 2.50.
 - **Gebaut:** Wochenraster passt bei 390 px ohne Seitwärts-Wischen (7 Tage, Spalten `flex:1;min-width:0`, min-width 330). Sa/So leicht grau, heutiger Tag in Akzent-Türkis statt altem Blau. Uhrzeiten 10 px statt 8,5 px, Termine 10 px mit Uhrzeit oben. Kopf: Wochentag klein, Tageszahl groß. Knopf „Heute“ (nur in anderen Wochen). Pfeile mit aria-label. Buchungslink-Karte mit normaler Überschrift und lesbarer Schrift (12 px), Text in Sie-Form und Hinweis, dass erst der Inhaber bestätigt.

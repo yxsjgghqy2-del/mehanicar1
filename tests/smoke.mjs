@@ -289,6 +289,24 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (!sm.arbeit || !sm.fertig || !sm.feld || !sm.log) errs.push('Status an Kunden senden: ' + JSON.stringify(sm));
   }
+  // Akzentfarbe frei wählbar
+  {
+    const ak = await page.evaluate(async () => {
+      nav('einstellungen'); await new Promise(r => setTimeout(r, 80));
+      const dots = document.querySelectorAll('[data-act="akzent-set"]').length;
+      document.querySelector('[data-act="akzent-set"][data-v="#3B7DD8"]').click(); await new Promise(r => setTimeout(r, 80));
+      const btn = document.querySelector('.btn-main'), cs = btn && getComputedStyle(btn);
+      const blau = S.settings.akzent === '#3B7DD8' && getComputedStyle(document.body).getPropertyValue('--acc').trim().toLowerCase() === '#3b7dd8';
+      let inp = document.querySelector('[data-f="akzent-pick"]'); inp.value = '#1f3a7a'; inp.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 80));
+      const ink = getComputedStyle(document.body).getPropertyValue('--acc-ink').trim();
+      inp = document.querySelector('[data-f="akzent-pick"]'); inp.value = '#f0e040'; inp.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 80));
+      const hellInk = getComputedStyle(document.body).getPropertyValue('--acc-ink').trim();
+      document.querySelector('[data-act="akzent-set"][data-v=""]').click(); await new Promise(r => setTimeout(r, 80));
+      const reset = !S.settings.akzent && !document.body.style.getPropertyValue('--acc');
+      return { dots, blau, ink, hellInk, reset };
+    });
+    if (ak.dots < 5 || !ak.blau || ak.ink !== '#FFFFFF' || ak.hellInk !== '#15180A' || !ak.reset) errs.push('Akzentfarbe: ' + JSON.stringify(ak));
+  }
   // Terminkalender: alle 7 Tage sichtbar, Heute-Knopf
   {
     const tk = await page.evaluate(async () => {
