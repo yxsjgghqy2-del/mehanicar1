@@ -601,6 +601,11 @@ body.theme-dark .kav-firma{background:rgba(143,170,196,.16);color:#AFC3D6}
 .kal-hd-cell.today .kd{color:var(--blue)}
 .akz-block{padding:11px 0;border-bottom:1px solid var(--line2)}
 .akz-block .k{font-size:12.5px;color:var(--ink3);margin-bottom:10px}
+.stl-st{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:6px 0 6px}
+.stl-st[data-st="fertig"]{color:var(--green)}.stl-st[data-st="teile"]{color:var(--amber)}
+.stl-steps{list-style:none;display:flex;gap:4px;padding:0;margin:16px 0 8px}
+.stl-steps li{flex:1;font-size:10.5px;color:var(--ink3);text-align:center;padding-top:10px;border-top:4px solid var(--line);border-radius:2px}
+.stl-steps li.done{border-top-color:var(--ink3)}.stl-steps li.on{border-top-color:var(--green);color:var(--ink);font-weight:700}
 .akz-wahl{display:flex;flex-wrap:wrap;gap:10px}
 .akz-dot{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;position:relative;flex-shrink:0}
 .akz-dot.on{border-color:var(--ink);box-shadow:inset 0 0 0 3px var(--card,#fff)}
@@ -1167,9 +1172,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.52';
+const APP_VER='2.53';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.53',d:'2026-10-08',p:['Neu: Statusseite für Kunden. Beim „Status an Kunden senden“ kann ein Link mitgeschickt werden. Darüber sieht der Kunde jederzeit den aktuellen Stand – ohne Namen und ohne Preise. Ändert sich der Status, ist die Seite automatisch aktuell.','Einmalig nötig: den neuen Befehl aus Einstellungen → Cloud-Backup → „Einmalige Einrichtung“ in Supabase ausführen. Er schützt außerdem Ihre Sicherung besser.']},
  {v:'2.52',d:'2026-10-08',p:['Neu in den Einstellungen unter „Erscheinungsbild“: Akzentfarbe frei wählbar. Tippen Sie auf einen Vorschlag oder wählen Sie über den bunten Kreis jede beliebige Farbe. Die App passt sich sofort an.','Die Schrift auf Knöpfen wird automatisch hell oder dunkel, damit sie auf jeder Farbe gut lesbar bleibt. Der erste Kreis stellt die Standardfarbe wieder her.']},
  {v:'2.51',d:'2026-10-06',p:['Terminkalender aufgeräumt: Alle sieben Tage passen jetzt aufs Handy, ohne seitlich zu wischen. Samstag und Sonntag sind leicht grau hinterlegt, der heutige Tag dezent markiert.','Uhrzeiten und Termine sind größer und besser lesbar. Neuer Knopf „Heute“ springt aus anderen Wochen zurück zur aktuellen Woche.']},
  {v:'2.50',d:'2026-10-06',p:['Neu im Auftrag: „Status an Kunden senden“. Die App schreibt die Nachricht fertig – Stand der Arbeit, wann das Auto voraussichtlich fertig ist, bei fertigen Autos der Betrag zur Abholung und die nächste HU.','Sie können den Text vor dem Senden ändern. Ein Tipp öffnet WhatsApp, und die Nachricht landet automatisch in der Kommunikation des Auftrags.']},
@@ -2233,12 +2239,42 @@ function statusMsg(a){
  if(f.hu){const[y,m]=f.hu.split('-');z.push('Nächste Hauptuntersuchung: '+m+'/'+y+'.')}
  const tel=(S.settings.firma||{}).tel;
  return 'Guten Tag'+(k.name?' '+k.name:'')+', kurzer Stand zu Ihrem '+fz+': '+st+'. '+z.join(' ')+(tel?' Bei Fragen erreichen Sie uns unter '+tel+'.':'')+' '+wsGruss()}
-ACT['status-msg']=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId)||{};
+/* Kunden-Statusseite (Stufe B): nur gekürztes Kennzeichen, Status, Termin, HU-Monat, Werkstatt-Kontakt. Kein Name, keine Preise. */
+const STL_TAG=86400000;
+function kzKurz(kz){kz=(kz||'').trim();if(!kz)return'';const m=kz.match(/^(.*?)(\d+)([EH]?)$/);return m?m[1]+m[2].slice(0,1)+'•'.repeat(Math.max(0,m[2].length-1))+m[3]:kz}
+function statusDaten(a){const f=fzg(a.fzgId)||{},fi=S.settings.firma||{};
+ const teilEta=a.pakete.flatMap(pk=>pk.pos).filter(p=>p.best==='bestellt'&&p.eta).map(p=>p.eta).sort().pop()||'';
+ return{ws:fi.name||'',tel:fi.tel||'',adr:fi.adresse||'',kz:kzKurz(f.kennz),fz:[f.marke,f.modell].filter(Boolean).join(' '),st:a.status,
+  fertig:!['fertig','abgeholt'].includes(a.status)&&a.abgabe?a.abgabe+(a.abgabeZeit?' '+a.abgabeZeit:''):'',teile:a.status==='teile'?teilEta:'',
+  hu:f.hu?f.hu.split('-').reverse().join('/'):''}}
+function stlId(){const b=new Uint8Array(16);crypto.getRandomValues(b);return[...b].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function statusLinkUrl(a){return location.origin+location.pathname+'#/status/'+a.statusLink.id}
+function statusLinkAblauf(a){const L=a.statusLink;if(a.status==='abgeholt'){L.abg=L.abg||Date.now();return L.abg+30*STL_TAG}L.abg=0;return Date.now()+60*STL_TAG}
+async function statusLinkPush(a){const c=syncCfg();if(!c.on||!c.id||!a.statusLink)throw new Error('Cloud-Backup ist aus');
+ const d=statusDaten(a),h=JSON.stringify(d)+a.status;
+ const r=await sbRpc('status_put',{p_backup_id:c.id,p_id:a.statusLink.id,p_data:{...d,upd:Date.now()},p_expires:new Date(statusLinkAblauf(a)).toISOString()});
+ if(!r.ok)throw new Error(r.status===404?'Statusseite noch nicht eingerichtet':'Server-Antwort '+r.status);
+ a.statusLink.h=h}
+let stlBusy=false;
+async function statusLinksPush(){if(stlBusy)return;stlBusy=true;
+ try{for(const a of S.auftraege.filter(o=>o.statusLink&&!(o.statusLink.abg&&o.statusLink.abg+30*STL_TAG<Date.now()))){
+  if(a.statusLink.h===JSON.stringify(statusDaten(a))+a.status)continue;
+  try{await statusLinkPush(a)}catch(e){}}}
+ finally{stlBusy=false}}
+ACT['status-msg']=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId)||{};const c=syncCfg();
  sheet('Status an Kunden senden',`
   <div class="fld"><label>Nachricht — vor dem Senden änderbar</label><textarea id="st-msg" rows="7">${esc(statusMsg(a))}</textarea></div>
   ${k.tel?'':'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:10px">Beim Kunden ist keine Telefonnummer hinterlegt — die Nachricht wird nur kopiert.</div>'}
+  ${c.on&&c.id?`<label class="chk-row" style="display:flex;gap:10px;align-items:center;min-height:44px;font-size:13px;margin-bottom:10px"><input type="checkbox" id="st-link" checked style="width:20px;height:20px"> Link zur Statusseite anhängen<span style="font-size:11px;color:var(--ink3)">(Kunde sieht den Stand jederzeit, ohne Namen und Preise)</span></label>`
+   :'<div style="font-size:11.5px;color:var(--ink3);margin-bottom:10px">Tipp: Mit eingeschaltetem Cloud-Backup kann ein Link zur Statusseite mitgeschickt werden.</div>'}
   <button class="btn btn-main" style="width:100%" data-act="status-send" data-oid="${a.id}">${k.tel?'Per WhatsApp senden':'Text kopieren'}</button>`)};
-ACT['status-send']=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId)||{};const txt=($('#st-msg').value||'').trim();if(!txt)return toast('Nachricht ist leer',true);
+ACT['status-send']=async el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId)||{};let txt=($('#st-msg').value||'').trim();if(!txt)return toast('Nachricht ist leer',true);
+ const cb=$('#st-link');
+ if(cb&&cb.checked){const neu=!a.statusLink;if(neu)a.statusLink={id:stlId()};
+  el.disabled=true;
+  try{await statusLinkPush(a);txt+='\n\nAktueller Stand jederzeit: '+statusLinkUrl(a)}
+  catch(e){if(neu)delete a.statusLink;toast((e.message||'Fehler')+' – Nachricht ohne Link',true)}
+  el.disabled=false}
  a.komm.push({id:'m'+uid(),kanal:'wa',ts:Date.now(),txt:'Status gesendet: „'+txt+'"',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'man',orig:'wa'});
  save();closeSheet();render();
  if(k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(txt);
@@ -3226,9 +3262,8 @@ function vEinstellungen(){
     <div class="sec-h" data-act="sec-plain" style="padding:10px 12px"><span class="t" style="font-size:12px">Einmalige Einrichtung & Erweitert</span><span class="chev"></span></div>
     <div class="sec-b"><div class="sec-in" style="padding:0 12px 12px">
      <div style="font-size:11px;color:var(--ink2);line-height:1.6;margin-bottom:8px">1. supabase.com anmelden → dein Projekt → <b>SQL Editor</b><br>2. Diesen Befehl einfügen und auf <b>Run</b>:</div>
-     <textarea readonly rows="5" style="font-family:ui-monospace,monospace;font-size:10px" onclick="this.select()">create table if not exists backup (id text primary key, payload jsonb, updated_at timestamptz default now());
-alter table backup enable row level security;
-create policy "backup_all" on backup for all using (true) with check (true);</textarea>
+     <textarea readonly rows="6" style="font-family:ui-monospace,monospace;font-size:10px" onclick="this.select()">${esc(SB_SQL)}</textarea>
+     <button class="btn btn-2nd btn-sm" style="width:100%;margin-top:6px" data-act="sql-copy">Befehl kopieren</button>
      <div style="font-size:10.5px;color:var(--ink3);line-height:1.5;margin:8px 0">3. Fertig — Schalter oben einschalten. Hinweis: Der Zugangsschlüssel steckt in der App; für den Eigengebrauch in Ordnung, vor einem Verkauf an andere Werkstätten bauen wir echte Anmeldung ein.</div>
      <div class="fld"><label>Supabase-URL</label><input value="${esc((S.settings.sync||{url:''}).url||'')}" data-f="sync-url" placeholder="https://xxxx.supabase.co"></div>
      <div class="fld" style="margin-bottom:0"><label>Publishable Key</label><input value="${esc((S.settings.sync||{key:''}).key||'')}" data-f="sync-key"></div>
@@ -3394,6 +3429,37 @@ ACT['data-xlsx']=()=>{
  catch(e){console.error(e);toast('Backup fehlgeschlagen',true)}};
 
 /* ============ 10. CLOUD-BACKUP (Supabase, automatisch) ============ */
+/* Einmal im Supabase-SQL-Editor ausführen. Sicherung und Statusseiten sind danach nur über den genauen Schlüssel erreichbar. Mehrfach ausführen schadet nicht. */
+const SB_SQL=`create table if not exists backup (id text primary key, payload jsonb, updated_at timestamptz default now());
+alter table backup enable row level security;
+drop policy if exists "backup_all" on backup;
+revoke all on backup from anon, authenticated;
+create or replace function backup_get(p_id text) returns table(payload jsonb, updated_at timestamptz)
+ language sql security definer set search_path=public as $$
+ select b.payload, b.updated_at from backup b where b.id=p_id and length(p_id)>=6 $$;
+create or replace function backup_put(p_id text, p_payload jsonb) returns void
+ language sql security definer set search_path=public as $$
+ insert into backup(id,payload,updated_at) values(p_id,p_payload,now())
+ on conflict(id) do update set payload=excluded.payload, updated_at=now() $$;
+create table if not exists status_links (id text primary key, backup_id text not null, data jsonb not null, expires_at timestamptz not null, updated_at timestamptz default now());
+alter table status_links enable row level security;
+revoke all on status_links from anon, authenticated;
+create or replace function status_put(p_backup_id text, p_id text, p_data jsonb, p_expires timestamptz) returns void
+ language plpgsql security definer set search_path=public as $$
+ begin
+  if length(p_id)<24 or not exists(select 1 from backup where id=p_backup_id) then raise exception 'nicht erlaubt'; end if;
+  delete from status_links where expires_at < now();
+  insert into status_links(id,backup_id,data,expires_at,updated_at)
+   values(p_id,p_backup_id,p_data,least(p_expires,now()+interval '90 days'),now())
+  on conflict(id) do update set data=excluded.data, expires_at=excluded.expires_at, updated_at=now()
+   where status_links.backup_id=p_backup_id;
+ end $$;
+create or replace function status_get(p_id text) returns jsonb
+ language sql security definer set search_path=public as $$
+ select s.data from status_links s where s.id=p_id and s.expires_at>now() $$;
+revoke all on function backup_get(text), backup_put(text,jsonb), status_put(text,text,jsonb,timestamptz), status_get(text) from public;
+grant execute on function backup_get(text), backup_put(text,jsonb), status_put(text,text,jsonb,timestamptz), status_get(text) to anon, authenticated;`;
+ACT['sql-copy']=async()=>{try{await navigator.clipboard.writeText(SB_SQL);toast('Befehl kopiert')}catch(e){toast('Bitte im Feld markieren und kopieren',true)}};
 const SYNC_DEF={on:false,url:'https://jyyorhojzgubdsbijekx.supabase.co',key:'sb_publishable_52CxKyr4PZRlC96eNoiCBg_ew7lRmtu',id:''};
 function syncCfg(){if(!S.settings.sync)S.settings.sync={...SYNC_DEF};return S.settings.sync}
 const genCode=()=>{const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';
@@ -3406,15 +3472,21 @@ function scheduleSync(){const c=syncCfg();if(!c.on||!c.url||!c.key||!c.id)return
 async function cloudPush(){const c=syncCfg();if(!c.on||!c.id||syncBusy)return;syncBusy=true;
  try{const size=JSON.stringify(S).length;
   if(size>8000000)throw new Error('Datenbestand zu groß für Cloud ('+Math.round(size/1e6)+' MB) — alte Fotos löschen');
-  const r=await fetch(c.url+'/rest/v1/backup?on_conflict=id',{method:'POST',
+  let r=await sbRpc('backup_put',{p_id:c.id,p_payload:S});
+  if(r.status===404)r=await fetch(c.url+'/rest/v1/backup?on_conflict=id',{method:'POST',
    headers:{apikey:c.key,Authorization:'Bearer '+c.key,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},
    body:JSON.stringify([{id:c.id,payload:S,updated_at:new Date().toISOString()}])});
   if(!r.ok)throw new Error('Server-Antwort '+r.status);
+  statusLinksPush();
   syncState.last=Date.now();syncState.err=null;syncState.pending=false;syncUi()}
  catch(e){syncState.err=e.message||String(e);syncUi()}
  finally{syncBusy=false}}
+/* Supabase-Funktionen (RPC): Daten nur mit genauem Schlüssel lesbar, siehe SB_SQL */
+function sbRpc(fn,body,cfg){const c=cfg||syncCfg();
+ return fetch(c.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:c.key,Authorization:'Bearer '+c.key,'Content-Type':'application/json'},body:JSON.stringify(body)})}
 async function cloudPull(code){const c=syncCfg();
- const r=await fetch(c.url+'/rest/v1/backup?id=eq.'+encodeURIComponent(code||c.id)+'&select=payload,updated_at',
+ let r=await sbRpc('backup_get',{p_id:code||c.id});
+ if(r.status===404)r=await fetch(c.url+'/rest/v1/backup?id=eq.'+encodeURIComponent(code||c.id)+'&select=payload,updated_at',
   {headers:{apikey:c.key,Authorization:'Bearer '+c.key}});
  if(!r.ok)throw new Error('Server-Antwort '+r.status);
  const rows=await r.json();return rows&&rows[0]?rows[0]:null}
@@ -4609,6 +4681,34 @@ ACT['termin-save']=el=>{
 ACT['termin-del']=el=>{S.termine=(S.termine||[]).filter(x=>x.id!==el.dataset.id);save();closeSheet();render();toast('Termin gelöscht')};
 
 /* ============ ONLINE-TERMINBUCHUNG (öffentlich, kein Login) ============ */
+const ST_TXT={offen:['Angenommen','Ihr Fahrzeug ist bei uns angekommen. Wir beginnen in Kürze.'],arbeit:['In Arbeit','Wir arbeiten gerade an Ihrem Fahrzeug.'],
+ teile:['Wartet auf Teile','Wir warten noch auf Ersatzteile.'],fertig:['Fertig','Ihr Fahrzeug ist fertig und kann abgeholt werden.'],abgeholt:['Abgeholt','Vielen Dank für Ihren Besuch.']};
+let stView={id:null,d:null,err:null};
+async function statusLaden(id){stView={id,d:null,err:null};
+ try{const r=await sbRpc('status_get',{p_id:id},syncCfg().url?null:SYNC_DEF);
+  if(!r.ok)throw new Error('x');const d=await r.json();stView.d=d&&typeof d==='object'&&!Array.isArray(d)&&d.st?d:null;if(!stView.d)stView.err='weg'}
+ catch(e){stView.err='netz'}
+ if(route.v==='status'&&route.id===id)render()}
+function vStatus(){const id=route.id||'';
+ if(stView.id!==id){statusLaden(id)}
+ const d=stView.d,box=b=>`<div style="min-height:100%;background:var(--bg);padding:calc(var(--sat,0px) + 24px) 16px calc(40px + var(--sab,0px))"><div style="max-width:480px;margin:0 auto">${b}</div></div>`;
+ if(!d&&!stView.err)return box('<div class="empty" style="margin-top:30vh"><b>Lädt …</b>Stand Ihres Fahrzeugs wird abgerufen.</div>');
+ if(!d)return box(`<div class="empty" style="margin-top:24vh"><b>${stView.err==='weg'?'Link nicht mehr gültig':'Keine Verbindung'}</b>${stView.err==='weg'?'Dieser Link ist abgelaufen. Bitte rufen Sie Ihre Werkstatt an.':'Bitte prüfen Sie Ihre Internetverbindung und laden Sie die Seite neu.'}</div>`);
+ const [stL,stT]=ST_TXT[d.st]||[d.st,''];const stp=['offen','arbeit','fertig','abgeholt'],cur=stp.indexOf(d.st==='teile'?'arbeit':d.st);
+ const tel=(d.tel||'').replace(/[^\d+]/g,'');
+ return box(`<div style="text-align:center;margin-bottom:18px"><div style="font-size:20px;font-weight:800;letter-spacing:-.02em">${esc(d.ws||'Ihre Werkstatt')}</div>
+  ${d.adr?`<div style="font-size:12.5px;color:var(--ink3);margin-top:2px">${esc(d.adr)}</div>`:''}</div>
+  <div class="card stl-card" style="padding:18px">
+   <div style="font-size:12px;color:var(--ink3)">${esc([d.fz,d.kz].filter(Boolean).join(' · ')||'Ihr Fahrzeug')}</div>
+   <div class="stl-st" data-st="${esc(d.st)}">${esc(stL)}</div>
+   <div style="font-size:14px;line-height:1.5;color:var(--ink2)">${esc(stT)}${d.teile?' Lieferung voraussichtlich '+esc(dLabel(d.teile))+'.':''}</div>
+   <ol class="stl-steps">${['Angenommen','In Arbeit','Fertig','Abgeholt'].map((l,i)=>`<li class="${i<cur?'done':i===cur?'on':''}">${l}</li>`).join('')}</ol>
+   ${d.fertig?`<div class="kv"><span class="k">Voraussichtlich fertig</span><span class="v">${esc(dLabel(d.fertig.slice(0,10)))}${d.fertig.length>10?' · '+esc(d.fertig.slice(11))+' Uhr':''}</span></div>`:''}
+   ${d.hu?`<div class="kv"><span class="k">Nächste Hauptuntersuchung</span><span class="v">${esc(d.hu)}</span></div>`:''}
+   <div style="font-size:11px;color:var(--ink3);margin-top:10px">Stand: ${new Date(d.upd||Date.now()).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} Uhr</div>
+  </div>
+  ${tel?`<a class="btn btn-main" style="width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;text-decoration:none" href="tel:${esc(tel)}">Werkstatt anrufen</a>`:''}
+  <div style="text-align:center;margin-top:18px;font-size:11.5px"><a href="#/datenschutz" style="color:var(--ink3)">Datenschutz</a></div>`)}
 function vBuchen(){
  const fi=S.settings.firma;
  return`<div style="min-height:100%;background:var(--bg);padding:calc(var(--sat,0px) + 20px) 16px calc(40px + var(--sab,0px));font-family:-apple-system,BlinkMacSystemFont,sans-serif">
@@ -4715,6 +4815,7 @@ function vDatenschutz(){
    <div style="font-size:13px;line-height:1.75"><b>${esc(fi.name||'[Werkstattname]')}</b>, ${esc(fi.inhaber||'[Inhaber]')}<br>${esc(fi.adresse||'[Anschrift]')}<br>${esc(fi.tel||'')} · ${esc(fi.email||'')}</div>
    ${sec('1. Grundsatz: Lokale Datenhaltung','Diese Anwendung speichert alle Werkstattdaten (Kunden, Fahrzeuge, Aufträge, Rechnungen, Anfragen) ausschließlich lokal auf dem verwendeten Gerät (Browser-Speicher). Es findet keine automatische Übertragung an Dritte statt. Für die Richtigkeit und Sicherung der Daten ist der Betreiber der Werkstatt verantwortlich.')}
    ${sec('2. Online-Terminanfrage','Wenn Sie über unser Buchungsformular eine Terminanfrage stellen, verarbeiten wir die von Ihnen angegebenen Daten (Name, Telefonnummer, ggf. Kennzeichen, Fahrzeug und Anliegen) ausschließlich zur Bearbeitung Ihrer Anfrage und Terminvereinbarung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertragsanbahnung). Die Daten werden gelöscht, sobald sie für diesen Zweck nicht mehr erforderlich sind und keine gesetzlichen Aufbewahrungspflichten (z. B. § 147 AO für Rechnungsdaten: 10 Jahre) entgegenstehen.')}
+   ${sec('2a. Statusseite zu Ihrem Auftrag','Auf Wunsch senden wir Ihnen einen Link, unter dem Sie den Bearbeitungsstand Ihres Fahrzeugs sehen. Dafür speichern wir nur: gekürztes Kennzeichen, Fahrzeugmodell, Bearbeitungsstand, voraussichtlichen Fertigstellungstermin, Monat der nächsten Hauptuntersuchung und unsere Kontaktdaten – keinen Namen und keine Preise. Die Daten liegen bei Supabase (Server in der EU) und sind nur mit dem genauen, zufällig erzeugten Link abrufbar. Sie werden spätestens 30 Tage nach Abholung des Fahrzeugs gelöscht. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Durchführung des Auftrags).')}
    ${sec('3. Hosting','Die Anwendung wird bei Vercel Inc. (USA) gehostet. Beim Aufruf werden technisch notwendige Daten (IP-Adresse, Zeitpunkt, abgerufene Datei) in Server-Logs verarbeitet. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der sicheren Bereitstellung). Vercel ist nach dem EU-US Data Privacy Framework zertifiziert.')}
    ${sync?sec('4. Cloud-Sicherung (aktiviert)','Der Betreiber nutzt eine automatische Datensicherung über Supabase. Dabei werden die Werkstattdaten verschlüsselt übertragen und in einer Datenbank gespeichert. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Datensicherung). Mit Supabase besteht ein Auftragsverarbeitungsverhältnis.'):sec('4. Cloud-Sicherung','Eine optionale Cloud-Sicherung (Supabase) ist derzeit nicht aktiviert. Alle Daten verbleiben lokal.')}
    ${ki?sec('5. KI-gestützte Anfragen-Einschätzung','Zur Priorisierung von Kundenanfragen kann der Text einer Anfrage an die Anthropic-API (Claude) übermittelt werden. Übermittelt werden nur der Anfragetext, der Kanal und ggf. der Vorname — keine weiteren Kundendaten. Anthropic verwendet API-Daten nicht zum Training. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (effiziente Anfragenbearbeitung).'):''}
@@ -4803,8 +4904,8 @@ function renderInner(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
  const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
-  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz,apdb:vApDb,pakvorlagen:vPakVorlagen};
- if(!S.settings.onboarded&&!['buchen','impressum','datenschutz'].includes(route.v)){app.innerHTML=vOnboarding();return}
+  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,status:vStatus,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz,apdb:vApDb,pakvorlagen:vPakVorlagen};
+ if(!S.settings.onboarded&&!['buchen','impressum','datenschutz','status'].includes(route.v)){app.innerHTML=vOnboarding();return}
  app.innerHTML=(V[route.v]||vPlanung)();
  linkLabels(app);
  syncWakeLock();
@@ -5020,7 +5121,7 @@ try{
  setTimeout(syncStartup,400);
  if(memOnly)setTimeout(()=>toast('Achtung: Speichern blockiert — Daten gehen beim Schließen verloren',true),600);
  const h0=location.hash.replace('#/','').split('/');
- if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen','impressum','datenschutz','apdb','pakvorlagen'].includes(h0[0]))route={v:h0[0],id:h0[1]};
+ if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen','impressum','datenschutz','apdb','pakvorlagen','status'].includes(h0[0]))route={v:h0[0],id:h0[1]};
  render();
 }catch(err){
  console.error('START-FEHLER:',err);

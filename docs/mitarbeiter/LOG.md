@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 08.10.2026 (3. Lauf) — Version 2.53: Kunden-Statusseite per Link (Stufe B) + Sicherung geschützt
+- **Gebaut:** Öffentliche Seite `#/status/<schlüssel>` (ohne Menü, ohne Einrichtung im Kunden-Browser): Werkstatt, Fahrzeug + gekürztes Kennzeichen (`kzKurz`), Status groß, 4-Stufen-Leiste, voraussichtlich fertig, HU-Monat, „Werkstatt anrufen“. Kein Name, keine Preise. Im Blatt „Status an Kunden senden“ Häkchen „Link zur Statusseite anhängen“ (nur bei eingeschaltetem Cloud-Backup). Schlüssel 128 Bit (`stlId`). Nach jeder Sicherung werden geänderte Statusseiten nachgezogen (`statusLinksPush`). Ablauf: 60 Tage gleitend, 30 Tage nach Abholung. Datenschutz-Abschnitt 2a ergänzt.
+- **Sicherheitsfund:** Die bisherige Regel `backup_all` (using true) erlaubte jedem mit dem öffentlichen App-Schlüssel, **alle** Sicherungen zu lesen (`/rest/v1/backup?select=*`). Neues SQL (`SB_SQL`, in Einstellungen mit „Befehl kopieren“) sperrt die Tabellen und erlaubt nur noch Funktionen mit genauem Schlüssel: `backup_get/backup_put/status_get/status_put`. App nutzt die Funktionen, fällt bei 404 auf den alten Weg zurück (läuft also vor und nach dem SQL). Nicht selbst in Supabase geprüft oder ausgeführt.
+- **Fehlerfund (nicht behoben):** Online-Terminbuchung speichert Anfragen nur im Browser des Kunden (`S.anfragen.push` in `buchen-send`) – sie kommen in der Werkstatt nie an. → BACKLOG ganz oben.
+- **Test:** Smoke-Test grün (390/1280). Neue Prüfung mit nachgebildeten Supabase-Funktionen: Link im Text, Daten sparsam, Seite zeigt Stand ohne Menü, Aktualisierung nach Statuswechsel, abgelaufener Link, Rückfall ohne Einrichtung. Seite hell/dunkel bei 390 px angesehen. SW v54.
+- **Achtung:** GitHub weiter nicht verbunden. Liegt lokal auf `claude/termine-design` (2.51–2.53). Nicht live.
+
 ## 08.10.2026 (2. Lauf) — Version 2.52: Akzentfarbe frei wählbar
 - **Anlass:** Inhaber 08.10.: keiner der Vorschläge A/B/C gefällt, „die App sollte individuell sein können“. Außerdem entschieden: Umsatz bei 800.000 € (E-Rechnung-Pflicht ab 2028, Export trotzdem für alle bauen), Statusseite per Link (Stufe B) gewünscht.
 - **Gebaut:** Einstellungen → Erscheinungsbild → „Akzentfarbe“: 7 ruhige Vorschläge (erster = Standard/zurücksetzen) + bunter Kreis mit Farbwähler für jede Farbe. `S.settings.akzent`, `applyAkzent()` (aus `applyTheme`) setzt `--acc/--acc-ink/--acc-bg` als Inline-Stil am body, gilt hell und dunkel. Schriftfarbe auf dem Akzent per WCAG-Kontrast automatisch dunkel/weiß. Kreise 44 px, umbrechend.

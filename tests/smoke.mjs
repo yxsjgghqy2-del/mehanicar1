@@ -289,6 +289,42 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (!sm.arbeit || !sm.fertig || !sm.feld || !sm.log) errs.push('Status an Kunden senden: ' + JSON.stringify(sm));
   }
+  // Statusseite per Link (Stufe B): Link anhängen, Seite zeigt Stand ohne Namen/Preise, Aktualisierung, Rückfall ohne Einrichtung
+  {
+    const sl = await page.evaluate(async () => {
+      const w = ms => new Promise(r => setTimeout(r, ms));
+      const store = {}, calls = []; let einger = true; const of = window.fetch;
+      window.fetch = async (u, o) => { const m = String(u).match(/\/rpc\/(\w+)$/); if (!m) return of(u, o);
+        calls.push(m[1]); if (!einger) return new Response('{}', { status: 404 }); const b = JSON.parse(o.body);
+        if (m[1] === 'status_put') { store[b.p_id] = b.p_data; return new Response(null, { status: 204 }); }
+        if (m[1] === 'status_get') return new Response(JSON.stringify(store[b.p_id] || null), { status: 200 });
+        return new Response('null', { status: 200 }); };
+      const c = syncCfg(), alt = { ...c }; c.on = true; c.id = c.id || 'TESTCODE01';
+      const a = S.auftraege.find(o => o.status === 'arbeit'), k = kunde(a.kundeId), tel = k.tel; k.tel = ''; delete a.statusLink; const vor = a.komm.length;
+      nav('auftrag', a.id); await w(80);
+      document.querySelector('[data-act="status-msg"]').click(); await w(80);
+      const cb = !!document.getElementById('st-link');
+      document.querySelector('[data-act="status-send"]').click(); await w(150);
+      const linkImText = (a.komm[a.komm.length - 1].txt || '').includes('#/status/' + (a.statusLink || {}).id);
+      const d = store[(a.statusLink || {}).id] || {};
+      const sparsam = !!d.kz && !JSON.stringify(d).includes(k.name) && !('brutto' in d) && d.st === 'arbeit';
+      route = { v: 'status', id: a.statusLink.id }; render(); await w(150);
+      const seite = document.querySelector('.stl-st')?.textContent === 'In Arbeit' && !document.querySelector('.nav');
+      a.status = 'fertig'; await statusLinksPush(); stView.id = null; render(); await w(150);
+      const aktuell = document.querySelector('.stl-st')?.textContent === 'Fertig';
+      route = { v: 'status', id: 'unbekannt' }; render(); await w(150);
+      const weg = document.body.textContent.includes('Link nicht mehr gültig');
+      // ohne Einrichtung (Funktion fehlt): Nachricht geht trotzdem raus, ohne Link
+      einger = false; const b = S.auftraege.find(o => o !== a && o.status !== 'abgeholt'); delete b.statusLink; const vb = b.komm.length; const kb = kunde(b.kundeId), telb = kb.tel; kb.tel = '';
+      nav('auftrag', b.id); await w(80); document.querySelector('[data-act="status-msg"]').click(); await w(80);
+      document.querySelector('[data-act="status-send"]').click(); await w(150);
+      const rueck = b.komm.length === vb + 1 && !b.statusLink && !b.komm[b.komm.length - 1].txt.includes('#/status/');
+      a.komm.length = vor; b.komm.length = vb; kb.tel = telb; a.status = 'arbeit'; delete a.statusLink; k.tel = tel; Object.assign(c, alt);
+      window.fetch = of; closeSheet(); nav('planung'); save(); await w(80);
+      return { cb, linkImText, sparsam, seite, aktuell, weg, rueck };
+    });
+    if (Object.values(sl).some(v => !v)) errs.push('Statusseite per Link: ' + JSON.stringify(sl));
+  }
   // Akzentfarbe frei wählbar
   {
     const ak = await page.evaluate(async () => {
