@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 08.10.2026 (4. Lauf) — Version 2.54: Online-Terminbuchung kommt an
+- **Fehler:** `buchen-send` legte die Anfrage nur im Browser des Kunden ab. Behoben über Supabase: `buch_keys` (öffentlicher Buchungs-Schlüssel → Werkstatt, mit Werkstatt-Infos), `anfragen_eingang`; Funktionen `buchung_an` (nur mit Backup-Code), `buchung_info`, `anfrage_neu` (nur einfügen, Pflichtfelder, max. 4000 Zeichen, max. 30/Stunde), `anfragen_holen` (holt und löscht, nur mit Backup-Code). Alles in `SB_SQL` ergänzt.
+- **App:** Buchungs-Schlüssel `S.settings.buchId` wird beim Cloud-Backup angelegt und angemeldet; Link `#/buchen/<schlüssel>`. Buchungsseite zeigt Werkstattdaten aus Supabase (vorher Standarddaten im Kunden-Browser). Werkstatt holt beim Start und alle 3 Minuten (wenn sichtbar) ab; Status immer `neu`. Ohne Schlüssel im Link bleibt das alte Verhalten (Vorschau auf dem eigenen Gerät). Hinweis in den Einstellungen, solange Cloud-Backup aus ist.
+- **Test:** Smoke-Test grün (390/1280), neue Prüfung mit nachgebildeten Funktionen: Anmelden → Link → Kunde sendet → liegt im Eingang, nicht lokal → Werkstatt holt ab → Anfrage „neu“. SW v55.
+- **Achtung:** GitHub weiter nicht verbunden. Lokal auf `claude/termine-design` (2.51–2.54). Nach dem Hochladen muss der Inhaber das SQL ausführen und den neuen Buchungslink weitergeben.
+
 ## 08.10.2026 (3. Lauf) — Version 2.53: Kunden-Statusseite per Link (Stufe B) + Sicherung geschützt
 - **Gebaut:** Öffentliche Seite `#/status/<schlüssel>` (ohne Menü, ohne Einrichtung im Kunden-Browser): Werkstatt, Fahrzeug + gekürztes Kennzeichen (`kzKurz`), Status groß, 4-Stufen-Leiste, voraussichtlich fertig, HU-Monat, „Werkstatt anrufen“. Kein Name, keine Preise. Im Blatt „Status an Kunden senden“ Häkchen „Link zur Statusseite anhängen“ (nur bei eingeschaltetem Cloud-Backup). Schlüssel 128 Bit (`stlId`). Nach jeder Sicherung werden geänderte Statusseiten nachgezogen (`statusLinksPush`). Ablauf: 60 Tage gleitend, 30 Tage nach Abholung. Datenschutz-Abschnitt 2a ergänzt.
 - **Sicherheitsfund:** Die bisherige Regel `backup_all` (using true) erlaubte jedem mit dem öffentlichen App-Schlüssel, **alle** Sicherungen zu lesen (`/rest/v1/backup?select=*`). Neues SQL (`SB_SQL`, in Einstellungen mit „Befehl kopieren“) sperrt die Tabellen und erlaubt nur noch Funktionen mit genauem Schlüssel: `backup_get/backup_put/status_get/status_put`. App nutzt die Funktionen, fällt bei 404 auf den alten Weg zurück (läuft also vor und nach dem SQL). Nicht selbst in Supabase geprüft oder ausgeführt.

@@ -7,7 +7,7 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
 - **Design regelmäßig pflegen** *(Inhaber, 03.10.2026: „Kümmere dich auch regelmäßig um das Design.“)* Dauerauftrag: Jeder 3. Lauf ist ein Design-Lauf (siehe ROUTINE.md). Dabei eine Ansicht bei 390 px hell und dunkel ansehen und Abstände, Schriftgrößen, Ausrichtung, Farben und Einheitlichkeit mit dem Stil von Entwurf 14 verbessern. Erledigt: Planung (2.41), Kundenliste (2.43), Finanzen (2.45), Einstellungen (2.47), Auftragsliste (2.49), Termine (2.51). Akzentfarbe frei wählbar seit 2.52. Nächste: Anfragen, Auftragsmaske-Details.
 
 ## B — Qualität & Pflichten
-0. **Online-Terminbuchung kommt nicht an** *(Fehlerfund 08.10.2026)* — `buchen-send` speichert die Anfrage nur im Browser des Kunden. Lösung wie Statusseite: Tabelle `anfragen_eingang` + Funktion `anfrage_neu` (nur einfügen, Längen begrenzen) und `anfragen_holen(backup_id)` (nur mit Werkstatt-Schlüssel), App holt beim Start und alle paar Minuten ab. Status immer `neu`. Werkstatt-Schlüssel darf nicht im Buchungslink stehen → eigener Buchungs-Schlüssel. Nächstes Paket.
+0. Online-Terminbuchung: erledigt in 2.54. Nach Liveschaltung Inhaber an neuen Buchungslink erinnern.
 4. **Kunden-Statusseite** — Stufe A 2.50, Stufe B 2.53. Stufe C (Freigabe von Zusatzarbeiten) später, nach Rücksprache.
 5. **E-Rechnung** — Konzept steht in `docs/e-rechnung.md` (02.10.2026). Pflicht gilt nur für Firmenkunden: ab 2028, bei > 800.000 € Vorjahresumsatz schon ab 2027. Inhaber 08.10.2026: Umsatz liegt bei 800.000 € (nicht darüber) → Pflicht ab 01.01.2028. Inhaber wünscht: App soll für jede Werkstatt passen, also Export für alle bauen. Scheibe 1 erledigt in 2.37. Scheibe 2 (XRechnung-Export) nach den beiden A-Paketen.
 

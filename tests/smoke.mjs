@@ -325,6 +325,36 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (Object.values(sl).some(v => !v)) errs.push('Statusseite per Link: ' + JSON.stringify(sl));
   }
+  // Online-Terminbuchung kommt über Supabase in der Werkstatt an
+  {
+    const bk = await page.evaluate(async () => {
+      const w = ms => new Promise(r => setTimeout(r, ms));
+      const keys = {}, box = []; let rid = 1; const of = window.fetch;
+      window.fetch = async (u, o) => { const m = String(u).match(/\/rpc\/(\w+)$/); if (!m) return of(u, o); const b = JSON.parse(o.body);
+        if (m[1] === 'buchung_an') { keys[b.p_buch_id] = b.p_info; return new Response(null, { status: 204 }); }
+        if (m[1] === 'buchung_info') return new Response(JSON.stringify(keys[b.p_buch_id] || null), { status: 200 });
+        if (m[1] === 'anfrage_neu') { if (!keys[b.p_buch_id]) return new Response('{}', { status: 400 }); box.push({ ...b.p_data, rid: rid++, ts: Date.now() }); return new Response(null, { status: 204 }); }
+        if (m[1] === 'anfragen_holen') { const r = box.splice(0); return new Response(JSON.stringify(r), { status: 200 }); }
+        return new Response('null', { status: 200 }); };
+      const c = syncCfg(), alt = { ...c }, altBid = S.settings.buchId; c.on = true; c.id = c.id || 'TESTCODE01'; delete S.settings.buchId;
+      await buchungAnmelden(); const bid = S.settings.buchId;
+      const link = buchUrl().endsWith('#/buchen/' + bid);
+      const vorher = S.anfragen.length;
+      route = { v: 'buchen', id: bid }; render(); await w(150);
+      const name = document.body.textContent.includes(S.settings.firma.name || '§');
+      const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+      set('bk-name', 'Test Kunde'); set('bk-tel', '0170 1234567'); set('bk-anl', 'Bremsen quietschen'); set('bk-kz', 'HU-XY 12');
+      document.querySelector('[data-act="buchen-send"]').click(); await w(150);
+      const imPostfach = box.length === 1 && S.anfragen.length === vorher;
+      const n = await anfragenHolen();
+      const q = S.anfragen[S.anfragen.length - 1];
+      const an = n === 1 && S.anfragen.length === vorher + 1 && q.name === 'Test Kunde' && q.status === 'neu' && q.kanal === 'web';
+      S.anfragen.length = vorher; Object.assign(c, alt); if (altBid) S.settings.buchId = altBid; else delete S.settings.buchId;
+      window.fetch = of; nav('planung'); save(); await w(80);
+      return { link, name, imPostfach, an };
+    });
+    if (Object.values(bk).some(v => !v)) errs.push('Online-Terminbuchung: ' + JSON.stringify(bk));
+  }
   // Akzentfarbe frei wählbar
   {
     const ak = await page.evaluate(async () => {
