@@ -2,6 +2,10 @@
 
 Neueste Einträge oben.
 
+## 16.10.2026 — 2.51–2.54 live (PR #70) + Effizienz
+- **GitHub wieder verbunden** (Ausfall 06.–16.10.). Gesammelte Pakete 2.51–2.54 per PR #70 gemergt, live geprüft (APP_VER 2.54, SW v55). Inhaber hat Anleitung für das Supabase-SQL und den neuen Buchungslink bekommen.
+- **Inhaber-Wunsch „schneller und effizienter“, Antwort „alles umsetzen“:** Weckzeiten von 4× auf 2× täglich (06:47 und 18:47 Berlin), dafür 1–2 Pakete pro Lauf. GitHub-Prüfung `smoke.yml` (Smoke-Test bei jedem PR). `index.html` wird nebenbei schrittweise aufgeteilt (BACKLOG).
+
 ## 08.10.2026 (4. Lauf) — Version 2.54: Online-Terminbuchung kommt an
 - **Fehler:** `buchen-send` legte die Anfrage nur im Browser des Kunden ab. Behoben über Supabase: `buch_keys` (öffentlicher Buchungs-Schlüssel → Werkstatt, mit Werkstatt-Infos), `anfragen_eingang`; Funktionen `buchung_an` (nur mit Backup-Code), `buchung_info`, `anfrage_neu` (nur einfügen, Pflichtfelder, max. 4000 Zeichen, max. 30/Stunde), `anfragen_holen` (holt und löscht, nur mit Backup-Code). Alles in `SB_SQL` ergänzt.
 - **App:** Buchungs-Schlüssel `S.settings.buchId` wird beim Cloud-Backup angelegt und angemeldet; Link `#/buchen/<schlüssel>`. Buchungsseite zeigt Werkstattdaten aus Supabase (vorher Standarddaten im Kunden-Browser). Werkstatt holt beim Start und alle 3 Minuten (wenn sichtbar) ab; Status immer `neu`. Ohne Schlüssel im Link bleibt das alte Verhalten (Vorschau auf dem eigenen Gerät). Hinweis in den Einstellungen, solange Cloud-Backup aus ist.

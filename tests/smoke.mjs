@@ -26,7 +26,9 @@ async function a11y(page, errs, wo) {
   if (gestaucht.length) errs.push(`${wo}: gestauchte Knöpfe: ${gestaucht.join(', ')}`);
 }
 
-const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+import fs from 'fs';
+const exe = process.env.PW_CHROMIUM || (fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
+const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
 let fail = 0;
 for (const [w, h] of [[390, 844], [1280, 800]]) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h } });
@@ -433,7 +435,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   } else errs.push('Kein Auftrag in den Demo-Daten gefunden');
   const ver = await page.evaluate(() => typeof APP_VER !== 'undefined' ? APP_VER : '?');
   console.log(`${w}px · Version ${ver} · Fehler: ${errs.length}`);
-  errs.slice(0, 40).forEach(e => console.log('   ' + e));
+  errs.slice(0, 40).forEach(e => console.log((process.env.GITHUB_ACTIONS ? `::error::${w}px ` : '   ') + e.replace(/\n/g, ' ')));
   fail += errs.length;
 }
 await browser.close();

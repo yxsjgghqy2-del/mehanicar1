@@ -1172,9 +1172,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.54';
+const APP_VER='2.55';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.55',d:'2026-10-16',p:['Kleine Korrektur: Wenn beim „Status an Kunden senden“ das Kopieren des Textes nicht klappt, sagt die App das jetzt deutlich, statt still zu scheitern.']},
  {v:'2.54',d:'2026-10-08',p:['Fehler behoben: Online-Terminanfragen von Kunden-Handys kommen jetzt bei Ihnen an. Die App holt sie alle 3 Minuten ab und zeigt sie unter „Anfragen“ als neu – bestätigt wird weiter nur von Ihnen.','Dafür braucht es das Cloud-Backup und den Befehl aus „Einmalige Einrichtung“. Danach hat Ihr Buchungslink eine neue Adresse – bitte den neuen Link weitergeben (Webseite, Google-Profil).']},
  {v:'2.53',d:'2026-10-08',p:['Neu: Statusseite für Kunden. Beim „Status an Kunden senden“ kann ein Link mitgeschickt werden. Darüber sieht der Kunde jederzeit den aktuellen Stand – ohne Namen und ohne Preise. Ändert sich der Status, ist die Seite automatisch aktuell.','Einmalig nötig: den neuen Befehl aus Einstellungen → Cloud-Backup → „Einmalige Einrichtung“ in Supabase ausführen. Er schützt außerdem Ihre Sicherung besser.']},
  {v:'2.52',d:'2026-10-08',p:['Neu in den Einstellungen unter „Erscheinungsbild“: Akzentfarbe frei wählbar. Tippen Sie auf einen Vorschlag oder wählen Sie über den bunten Kreis jede beliebige Farbe. Die App passt sich sofort an.','Die Schrift auf Knöpfen wird automatisch hell oder dunkel, damit sie auf jeder Farbe gut lesbar bleibt. Der erste Kreis stellt die Standardfarbe wieder her.']},
@@ -2295,7 +2296,7 @@ ACT['status-send']=async el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId)
  a.komm.push({id:'m'+uid(),kanal:'wa',ts:Date.now(),txt:'Status gesendet: „'+txt+'"',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'man',orig:'wa'});
  save();closeSheet();render();
  if(k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(txt);
- else{try{navigator.clipboard.writeText(txt)}catch(e){}toast('Text kopiert')}};
+ else{try{await navigator.clipboard.writeText(txt);toast('Text kopiert')}catch(e){toast('Kopieren hat nicht geklappt – Text steht im Kommunikationsverlauf',true)}}};
 
 /* Feld-Änderungen */
 FSET['o-kmab']=el=>{const a=auftrag(el.dataset.oid);const v=parseInt(String(el.value).replace(/\D/g,''));a.kmAb=isNaN(v)?null:v;save()};
