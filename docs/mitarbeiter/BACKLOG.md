@@ -11,6 +11,9 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
 4. **Kunden-Statusseite** — Stufe A 2.50, Stufe B 2.53. Stufe C (Freigabe von Zusatzarbeiten) später, nach Rücksprache.
 5. **E-Rechnung** — Konzept steht in `docs/e-rechnung.md` (02.10.2026). Pflicht gilt nur für Firmenkunden: ab 2028, bei > 800.000 € Vorjahresumsatz schon ab 2027. Inhaber 08.10.2026: Umsatz liegt bei 800.000 € (nicht darüber) → Pflicht ab 01.01.2028. Inhaber wünscht: App soll für jede Werkstatt passen, also Export für alle bauen. Scheibe 1 erledigt in 2.37. Scheibe 2 (XRechnung-Export) nach den beiden A-Paketen.
 
+## B2 — Technik (nebenbei, je Lauf höchstens ein Schritt)
+- **index.html aufteilen** *(Inhaber 16.10.2026: „alles umsetzen“)*: 1. CSS → `app.css`; 2. Demo-Daten → `demo.js`; 3. Sync/Supabase → `sync.js`. Jeweils in `sw.js` SHELL aufnehmen, Cache-Version erhöhen, Smoke-Test grün.
+
 ## C — Ideen (aus Recherche, noch zu bewerten)
 - Digitale Fahrzeugannahme mit Schadensfotos am Fahrzeugschema
 - **Kunden-Statusseite per Link mit Freigabe von Zusatzarbeiten** („Ihr Auto ist fertig“, Erweiterung per Foto/Video freigeben) — Wettbewerber (SmartWerkstatt u. a.) bieten Kundenportal mit Freigabe + Video-Check als Standard. *(Recherche 01.10.2026, Quelle: fuer-gruender.de Vergleich 09/2026, smartwerkstatt.cloud)*

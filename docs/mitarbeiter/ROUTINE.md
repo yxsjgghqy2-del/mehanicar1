@@ -14,7 +14,7 @@ Du arbeitest als fester Mitarbeiter an **mehanicar** (Werkstatt-Management-PWA f
 1. **Einlesen:** `docs/mitarbeiter/LOG.md` (letzte 3 Einträge), `docs/mitarbeiter/BACKLOG.md`, offene PRs. Dazu den Vercel-Deploy-Status und Runtime-Fehler prüfen, falls die Tools verfügbar sind.
 2. **Gesundheitscheck (Pflicht):** Playwright-Smoke-Test von `index.html` lokal bei 390×844 und 1280×800. Durchspielen: App lädt, Auftrag anlegen, Position hinzufügen, Rechnung erstellen, Termine öffnen. Dabei dürfen **0 JS-Fehler** auftreten und nichts darf horizontal scrollen. Findest du einen Fehler, ist er das Tagespaket.
 3. **Recherche (kurz, ~15 %):** Pro Tag ein Thema, reihum: (a) Konkurrenz-Werkstattsoftware und ihre Funktionen, (b) iOS/Safari/PWA-Neuerungen, (c) UX-/Design-Muster für mobile Business-Apps, (d) Recht und Pflichten (E-Rechnung/XRechnung/ZUGFeRD, GoBD, DSGVO, Preisangaben), (e) Kfz-Branche (HU/AU-Änderungen, Teilemarkt, Kundenerwartungen). Mach dir Notizen mit Quelle und trag die besten Ideen priorisiert in `BACKLOG.md` ein.
-4. **Umsetzen:** Nimm **ein** Paket, und zwar die oberste passende Aufgabe aus BACKLOG.md. Wünsche des Inhabers haben Vorrang. Große Themen zerlegst du in Tagesscheiben, von denen jede für sich nutzbar ist. Kleine Pakete machst du lieber vollständig fertig als große nur halb.
+4. **Umsetzen:** Nimm **ein bis zwei** Pakete (seit 16.10.2026 nur noch zwei Läufe am Tag, Inhaber: „alles umsetzen“), und zwar die oberste passende Aufgabe aus BACKLOG.md. Wünsche des Inhabers haben Vorrang. Große Themen zerlegst du in Tagesscheiben, von denen jede für sich nutzbar ist. Kleine Pakete machst du lieber vollständig fertig als große nur halb.
 5. **Prüfen:** Den Smoke-Test von Schritt 2 wiederholen und zusätzlich den geänderten Ablauf gezielt durchklicken. Screenshots bei 390 px und Desktop anschauen und Fehler beheben.
 6. **Ausliefern:** Auf dem vorgegebenen Branch committen, Commit-Nachricht auf Deutsch. PR gegen `main` erstellen und squash-mergen, der Inhaber will direkt live. Danach einen Live-Check mit `curl` auf die geänderte Seite, `APP_VER` muss sichtbar sein.
 7. **Was ist neu:** Den Eintrag in der In-App-Liste „Was ist neu“ ergänzen (Mehr → Version). Anzeigen: Datum, Version, 1–3 Punkte in Alltagssprache.
@@ -32,6 +32,9 @@ Du arbeitest als fester Mitarbeiter an **mehanicar** (Werkstatt-Management-PWA f
 - **Recherche knapp halten:** höchstens 3 Suchen pro Lauf, Ergebnis in 3–5 Zeilen im BACKLOG. An Tagen mit Fehlerbehebung fällt die Recherche aus.
 - **Screenshots nur dort, wo sich etwas sichtbar geändert hat:** ein iPhone-Bild, dazu ein Desktop-Bild, wenn es relevant ist.
 - **Kleine Pakete** von 1–2 Stunden Umfang. Große Themen in Scheiben schneiden.
+- **Automatische Prüfung:** GitHub führt `tests/smoke.mjs` bei jedem PR aus (`.github/workflows/smoke.yml`). Erst mergen, wenn der Lauf grün ist.
+- **index.html aufteilen:** Nebenbei in kleinen Schritten Teile in eigene Dateien auslagern (zuerst CSS). Jede ausgelagerte Datei in `sw.js` SHELL aufnehmen. Nur ein Teil pro Lauf, Smoke-Test muss grün bleiben.
+- **Ist GitHub nicht erreichbar:** einmal kurz melden, dann nur noch knapp; nichts Neues anhäufen.
 
 ## Unterbrechung und Weitermachen
 Die Nutzung ist in 5-Stunden-Fenstern begrenzt. Ein Lauf kann also mittendrin abbrechen. Deshalb:

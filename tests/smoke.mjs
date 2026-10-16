@@ -26,7 +26,9 @@ async function a11y(page, errs, wo) {
   if (gestaucht.length) errs.push(`${wo}: gestauchte Knöpfe: ${gestaucht.join(', ')}`);
 }
 
-const browser = await chromium.launch({ executablePath: process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium', args: ['--no-sandbox'] });
+import fs from 'fs';
+const exe = process.env.PW_CHROMIUM || (fs.existsSync('/opt/pw-browsers/chromium') ? '/opt/pw-browsers/chromium' : undefined);
+const browser = await chromium.launch({ executablePath: exe, args: ['--no-sandbox'] });
 let fail = 0;
 for (const [w, h] of [[390, 844], [1280, 800]]) {
   const ctx = await browser.newContext({ viewport: { width: w, height: h } });
