@@ -435,7 +435,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   } else errs.push('Kein Auftrag in den Demo-Daten gefunden');
   const ver = await page.evaluate(() => typeof APP_VER !== 'undefined' ? APP_VER : '?');
   console.log(`${w}px · Version ${ver} · Fehler: ${errs.length}`);
-  errs.slice(0, 40).forEach(e => console.log('   ' + e));
+  errs.slice(0, 40).forEach(e => console.log((process.env.GITHUB_ACTIONS ? `::error::${w}px ` : '   ') + e.replace(/\n/g, ' ')));
   fail += errs.length;
 }
 await browser.close();
