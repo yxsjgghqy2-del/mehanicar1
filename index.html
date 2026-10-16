@@ -592,13 +592,34 @@ body.theme-dark .kav-firma{background:rgba(143,170,196,.16);color:#AFC3D6}
 .search-kachel.sel{border-color:var(--blue);background:var(--blue-bg)}
 
 /* ============ TERMINKALENDER ============ */
-.kal-time{font-size:8.5px;font-weight:700;color:var(--ink3);padding:5px 4px 0;text-align:right;background:var(--bg);border-right:1px solid var(--line2);width:34px;flex-shrink:0}
-.kal-cell{border-left:1px solid var(--line2);min-height:48px;padding:2px;overflow:hidden;cursor:pointer;transition:background .12s}
+.kal-time{font-size:10px;font-weight:600;color:var(--ink3);padding:4px 5px 0 0;text-align:right;background:var(--bg);border-right:1px solid var(--line2);width:30px;flex-shrink:0;font-variant-numeric:tabular-nums}
+.kal-cell{flex:1;min-width:0;border-left:1px solid var(--line2);min-height:44px;padding:2px;overflow:hidden;cursor:pointer;transition:background .12s}
 .kal-cell:active{background:var(--bg)}
-.kal-cell.today{background:rgba(10,95,255,.03);border-left-color:rgba(10,95,255,.3)}
-.kal-hd-cell{font-size:10px;font-weight:700;text-align:center;padding:7px 2px;border-left:1px solid var(--line2)}
+.kal-cell.we,.kal-hd-cell.we{background:color-mix(in srgb,var(--ink3) 6%,transparent)}
+.kal-cell.today{background:color-mix(in srgb,var(--blue) 7%,transparent)}
+.kal-hd-cell .kd{display:block;font-size:13px;font-weight:700;color:var(--ink);margin-top:1px;font-variant-numeric:tabular-nums}
+.kal-hd-cell.today .kd{color:var(--blue)}
+.akz-block{padding:11px 0;border-bottom:1px solid var(--line2)}
+.akz-block .k{font-size:12.5px;color:var(--ink3);margin-bottom:10px}
+.stl-st{font-size:24px;font-weight:800;letter-spacing:-.02em;margin:6px 0 6px}
+.stl-st[data-st="fertig"]{color:var(--green)}.stl-st[data-st="teile"]{color:var(--amber)}
+.stl-steps{list-style:none;display:flex;gap:4px;padding:0;margin:16px 0 8px}
+.stl-steps li{flex:1;font-size:10.5px;color:var(--ink3);text-align:center;padding-top:10px;border-top:4px solid var(--line);border-radius:2px}
+.stl-steps li.done{border-top-color:var(--ink3)}.stl-steps li.on{border-top-color:var(--green);color:var(--ink);font-weight:700}
+.akz-wahl{display:flex;flex-wrap:wrap;gap:10px}
+.akz-dot{width:44px;height:44px;border-radius:50%;border:2px solid var(--line);cursor:pointer;padding:0;position:relative;flex-shrink:0}
+.akz-dot.on{border-color:var(--ink);box-shadow:inset 0 0 0 3px var(--card,#fff)}
+.akz-eigen{background:conic-gradient(#D64545,#D4A73A,#3FA66B,#3B7DD8,#8A949E,#D64545);overflow:hidden;display:block}
+.akz-eigen input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+.kal-nav{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.kal-nav b{flex:1;text-align:center;font-size:14px}
+.kal-nav .btn{min-height:44px;padding:0 14px}
+.blink{padding:14px}
+.blink code{flex:1;font-size:12px;color:var(--ink2);word-break:break-all;background:var(--bg);border-radius:8px;padding:8px 10px}
+.blink p{font-size:12.5px;color:var(--ink3);margin:8px 0 0;line-height:1.5}
+.kal-hd-cell{flex:1;min-width:0;font-size:10.5px;font-weight:600;color:var(--ink3);text-align:center;padding:7px 0;border-left:1px solid var(--line2)}
 .kal-hd-cell.today{color:var(--blue)}
-.kal-evt{border-radius:5px;padding:2px 5px;font-size:9px;font-weight:700;cursor:pointer;margin-bottom:2px;color:#fff;display:block;width:100%;text-align:left;border:none;font-family:inherit;line-height:1.3;transition:filter .12s}
+.kal-evt{border-radius:5px;padding:3px 4px;font-size:10px;overflow:hidden;text-overflow:ellipsis;font-weight:700;cursor:pointer;margin-bottom:2px;color:#fff;display:block;width:100%;text-align:left;border:none;font-family:inherit;line-height:1.3;transition:filter .12s}
 .kal-evt:active{filter:brightness(.85)}
 /* ============ PRINT / RECHNUNG ============ */
 #printarea{display:none}
@@ -1134,15 +1155,30 @@ function applyTheme(t){
   const dark=t==='dark'||(t==='auto'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
   meta.content=dark?'#060706':'#F4F4F6';
  }
+ applyAkzent();
 }
+/* Eigene Akzentfarbe (Einstellungen → Erscheinungsbild) */
+const AKZ_VORSCHL=[['#D9E97A','Standard'],['#E8833A','Orange'],['#D64545','Rot'],['#3B7DD8','Blau'],['#3FA66B','Grün'],['#D4A73A','Gold'],['#8A949E','Grau']];
+function akzentInk(hex){const n=parseInt(hex.slice(1),16),c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});
+ const L=.2126*c[0]+.7152*c[1]+.0722*c[2];return (L+.05)/.05>=1.05/(L+.05)?'#15180A':'#FFFFFF'}
+function applyAkzent(){const b=document.body;let h='';try{h=(S.settings&&S.settings.akzent)||''}catch(e){}
+ if(!b)return;
+ if(!/^#[0-9a-fA-F]{6}$/.test(h)){['--acc','--acc-ink','--acc-bg'].forEach(v=>b.style.removeProperty(v));return}
+ const n=parseInt(h.slice(1),16);
+ b.style.setProperty('--acc',h);b.style.setProperty('--acc-ink',akzentInk(h));
+ b.style.setProperty('--acc-bg',`rgba(${n>>16&255},${n>>8&255},${n&255},.16)`)}
 /* Lookups */
 const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.50';
+const APP_VER='2.54';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.54',d:'2026-10-08',p:['Fehler behoben: Online-Terminanfragen von Kunden-Handys kommen jetzt bei Ihnen an. Die App holt sie alle 3 Minuten ab und zeigt sie unter „Anfragen“ als neu – bestätigt wird weiter nur von Ihnen.','Dafür braucht es das Cloud-Backup und den Befehl aus „Einmalige Einrichtung“. Danach hat Ihr Buchungslink eine neue Adresse – bitte den neuen Link weitergeben (Webseite, Google-Profil).']},
+ {v:'2.53',d:'2026-10-08',p:['Neu: Statusseite für Kunden. Beim „Status an Kunden senden“ kann ein Link mitgeschickt werden. Darüber sieht der Kunde jederzeit den aktuellen Stand – ohne Namen und ohne Preise. Ändert sich der Status, ist die Seite automatisch aktuell.','Einmalig nötig: den neuen Befehl aus Einstellungen → Cloud-Backup → „Einmalige Einrichtung“ in Supabase ausführen. Er schützt außerdem Ihre Sicherung besser.']},
+ {v:'2.52',d:'2026-10-08',p:['Neu in den Einstellungen unter „Erscheinungsbild“: Akzentfarbe frei wählbar. Tippen Sie auf einen Vorschlag oder wählen Sie über den bunten Kreis jede beliebige Farbe. Die App passt sich sofort an.','Die Schrift auf Knöpfen wird automatisch hell oder dunkel, damit sie auf jeder Farbe gut lesbar bleibt. Der erste Kreis stellt die Standardfarbe wieder her.']},
+ {v:'2.51',d:'2026-10-06',p:['Terminkalender aufgeräumt: Alle sieben Tage passen jetzt aufs Handy, ohne seitlich zu wischen. Samstag und Sonntag sind leicht grau hinterlegt, der heutige Tag dezent markiert.','Uhrzeiten und Termine sind größer und besser lesbar. Neuer Knopf „Heute“ springt aus anderen Wochen zurück zur aktuellen Woche.']},
  {v:'2.50',d:'2026-10-06',p:['Neu im Auftrag: „Status an Kunden senden“. Die App schreibt die Nachricht fertig – Stand der Arbeit, wann das Auto voraussichtlich fertig ist, bei fertigen Autos der Betrag zur Abholung und die nächste HU.','Sie können den Text vor dem Senden ändern. Ein Tipp öffnet WhatsApp, und die Nachricht landet automatisch in der Kommunikation des Auftrags.']},
  {v:'2.49',d:'2026-10-06',p:['Auftragsliste aufgeräumt: Rechts steht jetzt der Preis, darunter der Status als kleines farbiges Schild und die Arbeitswerte dezent – kein Durcheinander mehr.','Der rote Punkt hinter der Auftragsnummer bedeutet „Notiz vorhanden“ – das wird jetzt auch so angesagt.']},
  {v:'2.48',d:'2026-10-05',p:['HU- und Wartungs-Erinnerungen an Kunden unterschreiben jetzt mit Ihrem Werkstattnamen aus den Einstellungen statt mit „mehanicar Meisterwerkstatt“.','Auf der Startseite steht nur noch „überfällig“, wenn es wirklich überfällig ist – sonst „bald fällig“, mit dem Tipp, Kunden 4–6 Wochen vorher anzuschreiben.']},
@@ -2204,12 +2240,58 @@ function statusMsg(a){
  if(f.hu){const[y,m]=f.hu.split('-');z.push('Nächste Hauptuntersuchung: '+m+'/'+y+'.')}
  const tel=(S.settings.firma||{}).tel;
  return 'Guten Tag'+(k.name?' '+k.name:'')+', kurzer Stand zu Ihrem '+fz+': '+st+'. '+z.join(' ')+(tel?' Bei Fragen erreichen Sie uns unter '+tel+'.':'')+' '+wsGruss()}
-ACT['status-msg']=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId)||{};
+/* Kunden-Statusseite (Stufe B): nur gekürztes Kennzeichen, Status, Termin, HU-Monat, Werkstatt-Kontakt. Kein Name, keine Preise. */
+const STL_TAG=86400000;
+function kzKurz(kz){kz=(kz||'').trim();if(!kz)return'';const m=kz.match(/^(.*?)(\d+)([EH]?)$/);return m?m[1]+m[2].slice(0,1)+'•'.repeat(Math.max(0,m[2].length-1))+m[3]:kz}
+function statusDaten(a){const f=fzg(a.fzgId)||{},fi=S.settings.firma||{};
+ const teilEta=a.pakete.flatMap(pk=>pk.pos).filter(p=>p.best==='bestellt'&&p.eta).map(p=>p.eta).sort().pop()||'';
+ return{ws:fi.name||'',tel:fi.tel||'',adr:fi.adresse||'',kz:kzKurz(f.kennz),fz:[f.marke,f.modell].filter(Boolean).join(' '),st:a.status,
+  fertig:!['fertig','abgeholt'].includes(a.status)&&a.abgabe?a.abgabe+(a.abgabeZeit?' '+a.abgabeZeit:''):'',teile:a.status==='teile'?teilEta:'',
+  hu:f.hu?f.hu.split('-').reverse().join('/'):''}}
+function stlId(){const b=new Uint8Array(16);crypto.getRandomValues(b);return[...b].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function statusLinkUrl(a){return location.origin+location.pathname+'#/status/'+a.statusLink.id}
+function statusLinkAblauf(a){const L=a.statusLink;if(a.status==='abgeholt'){L.abg=L.abg||Date.now();return L.abg+30*STL_TAG}L.abg=0;return Date.now()+60*STL_TAG}
+async function statusLinkPush(a){const c=syncCfg();if(!c.on||!c.id||!a.statusLink)throw new Error('Cloud-Backup ist aus');
+ const d=statusDaten(a),h=JSON.stringify(d)+a.status;
+ const r=await sbRpc('status_put',{p_backup_id:c.id,p_id:a.statusLink.id,p_data:{...d,upd:Date.now()},p_expires:new Date(statusLinkAblauf(a)).toISOString()});
+ if(!r.ok)throw new Error(r.status===404?'Statusseite noch nicht eingerichtet':'Server-Antwort '+r.status);
+ a.statusLink.h=h}
+/* Online-Terminbuchung über Supabase: Kunde schreibt nur hinein (anfrage_neu), Werkstatt holt mit ihrem Backup-Code ab */
+function buchUrl(){const id=S.settings.buchId;return location.origin+location.pathname+'#/buchen'+(id?'/'+id:'')}
+let buchInfoH='';
+async function buchungAnmelden(){const c=syncCfg();if(!c.on||!c.id)return;
+ if(!S.settings.buchId){S.settings.buchId=stlId().slice(0,20);save()}
+ const fi=S.settings.firma||{},info={ws:fi.name||'',tel:fi.tel||'',adr:fi.adresse||'',email:fi.email||'',web:fi.web||''},h=JSON.stringify(info);
+ if(h===buchInfoH)return;
+ try{const r=await sbRpc('buchung_an',{p_backup_id:c.id,p_buch_id:S.settings.buchId,p_info:info});if(r.ok)buchInfoH=h}catch(e){}}
+let holT=null;
+async function anfragenHolen(){const c=syncCfg();if(!c.on||!c.id||!S.settings.buchId)return 0;
+ try{const r=await sbRpc('anfragen_holen',{p_backup_id:c.id});if(!r.ok)return 0;
+  const rows=await r.json();if(!Array.isArray(rows)||!rows.length)return 0;
+  rows.forEach(d=>{if(!d||(S.anfragen||[]).some(q=>q.rid===d.rid))return;S.anfragen.push(anfrageAusBuchung(d))});
+  save();render();toast(rows.length===1?'Neue Online-Terminanfrage':rows.length+' neue Online-Terminanfragen');syncBadge();return rows.length}
+ catch(e){return 0}}
+function anfragenTakt(){clearTimeout(holT);holT=setTimeout(async()=>{if(document.visibilityState==='visible')await anfragenHolen();anfragenTakt()},180000)}
+let stlBusy=false;
+async function statusLinksPush(){if(stlBusy)return;stlBusy=true;
+ try{for(const a of S.auftraege.filter(o=>o.statusLink&&!(o.statusLink.abg&&o.statusLink.abg+30*STL_TAG<Date.now()))){
+  if(a.statusLink.h===JSON.stringify(statusDaten(a))+a.status)continue;
+  try{await statusLinkPush(a)}catch(e){}}}
+ finally{stlBusy=false}}
+ACT['status-msg']=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId)||{};const c=syncCfg();
  sheet('Status an Kunden senden',`
   <div class="fld"><label>Nachricht — vor dem Senden änderbar</label><textarea id="st-msg" rows="7">${esc(statusMsg(a))}</textarea></div>
   ${k.tel?'':'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:10px">Beim Kunden ist keine Telefonnummer hinterlegt — die Nachricht wird nur kopiert.</div>'}
+  ${c.on&&c.id?`<label class="chk-row" style="display:flex;gap:10px;align-items:center;min-height:44px;font-size:13px;margin-bottom:10px"><input type="checkbox" id="st-link" checked style="width:20px;height:20px"> Link zur Statusseite anhängen<span style="font-size:11px;color:var(--ink3)">(Kunde sieht den Stand jederzeit, ohne Namen und Preise)</span></label>`
+   :'<div style="font-size:11.5px;color:var(--ink3);margin-bottom:10px">Tipp: Mit eingeschaltetem Cloud-Backup kann ein Link zur Statusseite mitgeschickt werden.</div>'}
   <button class="btn btn-main" style="width:100%" data-act="status-send" data-oid="${a.id}">${k.tel?'Per WhatsApp senden':'Text kopieren'}</button>`)};
-ACT['status-send']=el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId)||{};const txt=($('#st-msg').value||'').trim();if(!txt)return toast('Nachricht ist leer',true);
+ACT['status-send']=async el=>{const a=auftrag(el.dataset.oid),k=kunde(a.kundeId)||{};let txt=($('#st-msg').value||'').trim();if(!txt)return toast('Nachricht ist leer',true);
+ const cb=$('#st-link');
+ if(cb&&cb.checked){const neu=!a.statusLink;if(neu)a.statusLink={id:stlId()};
+  el.disabled=true;
+  try{await statusLinkPush(a);txt+='\n\nAktueller Stand jederzeit: '+statusLinkUrl(a)}
+  catch(e){if(neu)delete a.statusLink;toast((e.message||'Fehler')+' – Nachricht ohne Link',true)}
+  el.disabled=false}
  a.komm.push({id:'m'+uid(),kanal:'wa',ts:Date.now(),txt:'Status gesendet: „'+txt+'"',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'man',orig:'wa'});
  save();closeSheet();render();
  if(k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(txt);
@@ -3121,6 +3203,8 @@ function vFinanzen(){
 }
 ACT['fin-tog']=el=>{finSec[el.dataset.k]=!finSec[el.dataset.k];render()};
 ACT['install-hint-done']=()=>{S.settings.installHintDone=true;save();render()};
+ACT['akzent-set']=el=>{S.settings.akzent=el.dataset.v||'';applyAkzent();save();render()};
+FSET['akzent-pick']=(el)=>{S.settings.akzent=el.value;applyAkzent();save();render()};
 ACT['theme-set']=el=>{S.settings.theme=el.dataset.v;applyTheme(el.dataset.v);save();render()};
 function vEinstellungen(){
  const fi=S.settings.firma;
@@ -3134,6 +3218,11 @@ function vEinstellungen(){
      <button class="${thm==='auto'?'on':''}" data-act="theme-set" data-v="auto">Auto</button>
      <button class="${thm==='dark'?'on':''}" data-act="theme-set" data-v="dark">Dunkel</button>
     </div></span></div>
+   <div class="akz-block"><div class="k">Akzentfarbe<br><span style="font-size:11px;color:var(--ink3)">für Knöpfe und Markierungen</span></div><div class="akz-wahl">
+    ${AKZ_VORSCHL.map(([h,l],i)=>{const on=(st.akzent||AKZ_VORSCHL[0][0]).toLowerCase()===h.toLowerCase();
+     return`<button class="akz-dot${on?' on':''}" style="background:${h}" data-act="akzent-set" data-v="${i?h:''}" aria-label="Akzentfarbe ${l}" aria-pressed="${on}"></button>`}).join('')}
+    <label class="akz-dot akz-eigen" aria-label="Eigene Farbe wählen" title="Eigene Farbe"><input type="color" value="${st.akzent||AKZ_VORSCHL[0][0]}" data-f="akzent-pick" aria-label="Eigene Farbe wählen"></label>
+   </div></div>
    <div class="kv kv-flex"><span class="k">Zahl am App-Symbol<br><span style="font-size:11px;color:var(--ink3)">zeigt neue Anfragen am Symbol auf dem Home-Bildschirm</span></span><span class="v">
     ${!badgeOK()?'<span style="font-size:11.5px;color:var(--ink3)">auf diesem Gerät nicht möglich</span>'
      :`<button class="btn btn-sm ${st.badge?'btn-2nd':'btn-main'}" style="min-height:40px" data-act="badge-tog">${st.badge?'Ausschalten':'Einschalten'}</button>`}</span></div></div>
@@ -3190,16 +3279,16 @@ function vEinstellungen(){
     <div class="sec-h" data-act="sec-plain" style="padding:10px 12px"><span class="t" style="font-size:12px">Einmalige Einrichtung & Erweitert</span><span class="chev"></span></div>
     <div class="sec-b"><div class="sec-in" style="padding:0 12px 12px">
      <div style="font-size:11px;color:var(--ink2);line-height:1.6;margin-bottom:8px">1. supabase.com anmelden → dein Projekt → <b>SQL Editor</b><br>2. Diesen Befehl einfügen und auf <b>Run</b>:</div>
-     <textarea readonly rows="5" style="font-family:ui-monospace,monospace;font-size:10px" onclick="this.select()">create table if not exists backup (id text primary key, payload jsonb, updated_at timestamptz default now());
-alter table backup enable row level security;
-create policy "backup_all" on backup for all using (true) with check (true);</textarea>
+     <textarea readonly rows="6" style="font-family:ui-monospace,monospace;font-size:10px" onclick="this.select()">${esc(SB_SQL)}</textarea>
+     <button class="btn btn-2nd btn-sm" style="width:100%;margin-top:6px" data-act="sql-copy">Befehl kopieren</button>
      <div style="font-size:10.5px;color:var(--ink3);line-height:1.5;margin:8px 0">3. Fertig — Schalter oben einschalten. Hinweis: Der Zugangsschlüssel steckt in der App; für den Eigengebrauch in Ordnung, vor einem Verkauf an andere Werkstätten bauen wir echte Anmeldung ein.</div>
      <div class="fld"><label>Supabase-URL</label><input value="${esc((S.settings.sync||{url:''}).url||'')}" data-f="sync-url" placeholder="https://xxxx.supabase.co"></div>
      <div class="fld" style="margin-bottom:0"><label>Publishable Key</label><input value="${esc((S.settings.sync||{key:''}).key||'')}" data-f="sync-key"></div>
     </div></div></div></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Online-Terminbuchung</div>
    <div style="font-size:11.5px;color:var(--ink2);line-height:1.55;margin-bottom:10px">Dieser Link führt Kunden zum öffentlichen Buchungsformular. Jede Anfrage landet automatisch unter <b>Anfragen</b> — du bestätigst jeden Termin persönlich.</div>
-   <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:11px;font-family:ui-monospace,monospace;word-break:break-all;color:var(--ink2);margin-bottom:10px">${esc(typeof location!=='undefined'?location.origin+location.pathname+'#/buchen':'https://deine-domain.de/#/buchen')}</div>
+   <div style="background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:11px;font-family:ui-monospace,monospace;word-break:break-all;color:var(--ink2);margin-bottom:10px">${esc(buchUrl())}</div>
+   ${S.settings.buchId?'':'<div style="font-size:11.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:9px 11px;margin-bottom:10px">Damit Anfragen von Kunden-Handys bei Ihnen ankommen, bitte Cloud-Backup einschalten. Danach ändert sich der Link – bitte den neuen weitergeben.</div>'}
    <div class="row2"><button class="btn btn-2nd btn-sm" data-act="buchen-link-share">Link teilen</button>
     <button class="btn btn-main btn-sm" data-act="open" data-v="buchen">Vorschau öffnen</button></div></div>
   <div class="card" style="padding:15px"><div class="lbl" style="margin-top:0">Rechtliches</div>
@@ -3358,6 +3447,65 @@ ACT['data-xlsx']=()=>{
  catch(e){console.error(e);toast('Backup fehlgeschlagen',true)}};
 
 /* ============ 10. CLOUD-BACKUP (Supabase, automatisch) ============ */
+/* Einmal im Supabase-SQL-Editor ausführen. Sicherung und Statusseiten sind danach nur über den genauen Schlüssel erreichbar. Mehrfach ausführen schadet nicht. */
+const SB_SQL=`create table if not exists backup (id text primary key, payload jsonb, updated_at timestamptz default now());
+alter table backup enable row level security;
+drop policy if exists "backup_all" on backup;
+revoke all on backup from anon, authenticated;
+create or replace function backup_get(p_id text) returns table(payload jsonb, updated_at timestamptz)
+ language sql security definer set search_path=public as $$
+ select b.payload, b.updated_at from backup b where b.id=p_id and length(p_id)>=6 $$;
+create or replace function backup_put(p_id text, p_payload jsonb) returns void
+ language sql security definer set search_path=public as $$
+ insert into backup(id,payload,updated_at) values(p_id,p_payload,now())
+ on conflict(id) do update set payload=excluded.payload, updated_at=now() $$;
+create table if not exists status_links (id text primary key, backup_id text not null, data jsonb not null, expires_at timestamptz not null, updated_at timestamptz default now());
+alter table status_links enable row level security;
+revoke all on status_links from anon, authenticated;
+create or replace function status_put(p_backup_id text, p_id text, p_data jsonb, p_expires timestamptz) returns void
+ language plpgsql security definer set search_path=public as $$
+ begin
+  if length(p_id)<24 or not exists(select 1 from backup where id=p_backup_id) then raise exception 'nicht erlaubt'; end if;
+  delete from status_links where expires_at < now();
+  insert into status_links(id,backup_id,data,expires_at,updated_at)
+   values(p_id,p_backup_id,p_data,least(p_expires,now()+interval '90 days'),now())
+  on conflict(id) do update set data=excluded.data, expires_at=excluded.expires_at, updated_at=now()
+   where status_links.backup_id=p_backup_id;
+ end $$;
+create or replace function status_get(p_id text) returns jsonb
+ language sql security definer set search_path=public as $$
+ select s.data from status_links s where s.id=p_id and s.expires_at>now() $$;
+revoke all on function backup_get(text), backup_put(text,jsonb), status_put(text,text,jsonb,timestamptz), status_get(text) from public;
+grant execute on function backup_get(text), backup_put(text,jsonb), status_put(text,text,jsonb,timestamptz), status_get(text) to anon, authenticated;
+create table if not exists buch_keys (buch_id text primary key, backup_id text not null, info jsonb);
+create table if not exists anfragen_eingang (id bigserial primary key, buch_id text not null, data jsonb not null, created_at timestamptz default now());
+alter table buch_keys enable row level security;
+alter table anfragen_eingang enable row level security;
+revoke all on buch_keys, anfragen_eingang from anon, authenticated;
+create or replace function buchung_an(p_backup_id text, p_buch_id text, p_info jsonb) returns void
+ language plpgsql security definer set search_path=public as $$
+ begin
+  if length(p_buch_id)<16 or not exists(select 1 from backup where id=p_backup_id) then raise exception 'nicht erlaubt'; end if;
+  insert into buch_keys values(p_buch_id,p_backup_id,p_info)
+  on conflict(buch_id) do update set info=excluded.info where buch_keys.backup_id=p_backup_id;
+ end $$;
+create or replace function buchung_info(p_buch_id text) returns jsonb
+ language sql security definer set search_path=public as $$ select info from buch_keys where buch_id=p_buch_id $$;
+create or replace function anfrage_neu(p_buch_id text, p_data jsonb) returns void
+ language plpgsql security definer set search_path=public as $$
+ begin
+  if not exists(select 1 from buch_keys where buch_id=p_buch_id) then raise exception 'unbekannt'; end if;
+  if coalesce(p_data->>'name','')='' or coalesce(p_data->>'tel','')='' or length(p_data::text)>4000 then raise exception 'ungültig'; end if;
+  if (select count(*) from anfragen_eingang where buch_id=p_buch_id and created_at>now()-interval '1 hour')>=30 then raise exception 'zu viele'; end if;
+  insert into anfragen_eingang(buch_id,data) values(p_buch_id,p_data);
+ end $$;
+create or replace function anfragen_holen(p_backup_id text) returns setof jsonb
+ language sql security definer set search_path=public as $$
+ delete from anfragen_eingang e using buch_keys k where e.buch_id=k.buch_id and k.backup_id=p_backup_id and length(p_backup_id)>=6
+ returning e.data || jsonb_build_object('rid',e.id,'ts',extract(epoch from e.created_at)*1000) $$;
+revoke all on function buchung_an(text,text,jsonb), buchung_info(text), anfrage_neu(text,jsonb), anfragen_holen(text) from public;
+grant execute on function buchung_an(text,text,jsonb), buchung_info(text), anfrage_neu(text,jsonb), anfragen_holen(text) to anon, authenticated;`;
+ACT['sql-copy']=async()=>{try{await navigator.clipboard.writeText(SB_SQL);toast('Befehl kopiert')}catch(e){toast('Bitte im Feld markieren und kopieren',true)}};
 const SYNC_DEF={on:false,url:'https://jyyorhojzgubdsbijekx.supabase.co',key:'sb_publishable_52CxKyr4PZRlC96eNoiCBg_ew7lRmtu',id:''};
 function syncCfg(){if(!S.settings.sync)S.settings.sync={...SYNC_DEF};return S.settings.sync}
 const genCode=()=>{const A='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let s='';
@@ -3370,15 +3518,21 @@ function scheduleSync(){const c=syncCfg();if(!c.on||!c.url||!c.key||!c.id)return
 async function cloudPush(){const c=syncCfg();if(!c.on||!c.id||syncBusy)return;syncBusy=true;
  try{const size=JSON.stringify(S).length;
   if(size>8000000)throw new Error('Datenbestand zu groß für Cloud ('+Math.round(size/1e6)+' MB) — alte Fotos löschen');
-  const r=await fetch(c.url+'/rest/v1/backup?on_conflict=id',{method:'POST',
+  let r=await sbRpc('backup_put',{p_id:c.id,p_payload:S});
+  if(r.status===404)r=await fetch(c.url+'/rest/v1/backup?on_conflict=id',{method:'POST',
    headers:{apikey:c.key,Authorization:'Bearer '+c.key,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},
    body:JSON.stringify([{id:c.id,payload:S,updated_at:new Date().toISOString()}])});
   if(!r.ok)throw new Error('Server-Antwort '+r.status);
+  statusLinksPush();buchungAnmelden();
   syncState.last=Date.now();syncState.err=null;syncState.pending=false;syncUi()}
  catch(e){syncState.err=e.message||String(e);syncUi()}
  finally{syncBusy=false}}
+/* Supabase-Funktionen (RPC): Daten nur mit genauem Schlüssel lesbar, siehe SB_SQL */
+function sbRpc(fn,body,cfg){const c=cfg||syncCfg();
+ return fetch(c.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:{apikey:c.key,Authorization:'Bearer '+c.key,'Content-Type':'application/json'},body:JSON.stringify(body)})}
 async function cloudPull(code){const c=syncCfg();
- const r=await fetch(c.url+'/rest/v1/backup?id=eq.'+encodeURIComponent(code||c.id)+'&select=payload,updated_at',
+ let r=await sbRpc('backup_get',{p_id:code||c.id});
+ if(r.status===404)r=await fetch(c.url+'/rest/v1/backup?id=eq.'+encodeURIComponent(code||c.id)+'&select=payload,updated_at',
   {headers:{apikey:c.key,Authorization:'Bearer '+c.key}});
  if(!r.ok)throw new Error('Server-Antwort '+r.status);
  const rows=await r.json();return rows&&rows[0]?rows[0]:null}
@@ -3395,6 +3549,7 @@ function syncUi(){const el=$('#sync-status');if(!el)return;
   :syncState.last?'<span class="tag t-green">Aktiv</span> zuletzt '+new Date(syncState.last).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})
   :'<span class="tag t-green">Aktiv</span> wartet auf erste Änderung'}
 async function syncStartup(){const c=syncCfg();if(!c.on||!c.id)return;
+ buchungAnmelden();anfragenHolen();anfragenTakt();
  try{const row=await cloudPull();
   if(row){const remote=Date.parse(row.updated_at)||0,local=S.meta&&S.meta.savedAt||0;
    if(remote>local+2000){cloudAdopt(row);render();toast('Neuester Stand aus der Cloud geladen')}
@@ -4483,22 +4638,23 @@ function vTermine(){
  const HOURS=['07','08','09','10','11','12','13','14','15','16','17','18'];
  const byDay={};days.forEach(d=>{byDay[d]=T.filter(t=>t.datum===d)});
  const kw=(()=>{const d=new Date(mon+'T12:00');const o=new Date(d.getFullYear(),0,4);return Math.ceil((((d-o)/86400000)+o.getDay()+1)/7)})();
- const hdr=['<div class="kal-time" style="background:var(--bg);border-right:1px solid var(--line)"></div>',
+ const hdr=['<div class="kal-time"></div>',
   ...days.map((d,i)=>{const isTod=d===today;const dd=new Date(d+'T12:00');
-   return`<div class="kal-hd-cell${isTod?' today':''}" style="flex:1">${WDS[i]}<br><b style="font-size:12px">${dd.getDate()}.${dd.getMonth()+1}.</b></div>`})].join('');
+   return`<div class="kal-hd-cell${isTod?' today':''}${i>4?' we':''}">${WDS[i]}<span class="kd">${dd.getDate()}.</span></div>`})].join('');
  const rows=HOURS.map(h=>{
-  const cells=days.map(d=>{const isTod=d===today;
+  const cells=days.map((d,i)=>{const isTod=d===today;
    const slot=(byDay[d]||[]).filter(t=>t.von&&t.von.startsWith(h));
-   return`<div class="kal-cell${isTod?' today':''}" style="flex:1" data-act="termin-slot" data-datum="${d}" data-h="${h}:00">${slot.map(t=>`<button class="kal-evt" style="background:${(TTYP[t.typ]||TTYP.sonstiges)[1]}" data-act="termin-open" data-id="${t.id}">${esc(t.titel)}<br><span style="font-weight:500;font-size:8px;opacity:.9">${t.von}</span></button>`).join('')}</div>`}).join('');
+   return`<div class="kal-cell${isTod?' today':''}${i>4?' we':''}" data-act="termin-slot" data-datum="${d}" data-h="${h}:00">${slot.map(t=>`<button class="kal-evt" style="background:${(TTYP[t.typ]||TTYP.sonstiges)[1]}" data-act="termin-open" data-id="${t.id}"><span style="font-weight:500;opacity:.9">${t.von}</span><br>${esc(t.titel)}</button>`).join('')}</div>`}).join('');
   return`<div style="display:flex;border-bottom:1px solid var(--line2)"><div class="kal-time">${h}</div>${cells}</div>`;
  }).join('');
  const weekTerms=days.flatMap(d=>byDay[d]||[]);
- const bookUrl=location.origin+location.pathname+'#/buchen';
+ const bookUrl=buchUrl();
  const inner=`
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
-   <button class="icon-btn" data-act="term-woche" data-d="-1" style="flex-shrink:0">‹</button>
-   <b style="flex:1;text-align:center;font-size:13px">KW ${kw} · ${new Date(days[0]+'T12:00').getDate()}.${new Date(days[0]+'T12:00').getMonth()+1}. – ${new Date(days[6]+'T12:00').getDate()}.${new Date(days[6]+'T12:00').getMonth()+1}.</b>
-   <button class="icon-btn" data-act="term-woche" data-d="1" style="flex-shrink:0">›</button></div>
+  <div class="kal-nav">
+   <button class="icon-btn" data-act="term-woche" data-d="-1" style="flex-shrink:0" aria-label="Vorherige Woche">‹</button>
+   <b>KW ${kw} · ${new Date(days[0]+'T12:00').getDate()}.${new Date(days[0]+'T12:00').getMonth()+1}. – ${new Date(days[6]+'T12:00').getDate()}.${new Date(days[6]+'T12:00').getMonth()+1}.</b>
+   ${termWoche?'<button class="btn btn-2nd" data-act="term-heute">Heute</button>':''}
+   <button class="icon-btn" data-act="term-woche" data-d="1" style="flex-shrink:0" aria-label="Nächste Woche">›</button></div>
   ${(()=>{const tod=T.filter(t=>t.datum===today).sort((a,b)=>(a.von||'').localeCompare(b.von||''));
    return tod.length?`<div class="lbl" style="margin-top:0">Heute · ${tod.length} Termin${tod.length!==1?'e':''}</div>
    <div class="card stag" style="margin-bottom:12px">${tod.map(t=>{const k=t.kundeId?kunde(t.kundeId):null;
@@ -4509,7 +4665,7 @@ function vTermine(){
      <span class="tag" style="background:${tc}18;color:${tc}">${tl}</span></div>`}).join('')}</div>`:''})()}
   <div class="card" style="padding:0;overflow:hidden;margin-bottom:12px">
    <div style="overflow-x:auto;-webkit-overflow-scrolling:touch">
-    <div style="min-width:420px">
+    <div style="min-width:330px">
      <div style="display:flex;border-bottom:2px solid var(--line)">${hdr}</div>
      ${rows}
     </div></div></div>
@@ -4521,20 +4677,21 @@ function vTermine(){
     <div class="lt"><b>${esc(t.titel)}</b><span>${t.datum} ${t.von}–${t.bis}${k?' · '+esc(k.name):''}</span></div>
     <span class="tag" style="background:${tc}18;color:${tc}">${tl}</span></div>`}).join('')}</div>`
   :'<div class="empty"><b>Keine Termine diese Woche</b>Mit + anlegen oder Zelle im Kalender antippen.</div>'}
-  <div class="card" style="padding:12px;margin-top:4px">
-   <div style="font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Online-Terminbuchungslink</div>
+  <div class="lbl">Online-Terminbuchung</div>
+  <div class="card blink">
    <div style="display:flex;align-items:center;gap:8px">
-    <code style="flex:1;font-size:10px;color:var(--ink2);word-break:break-all;background:var(--bg);border-radius:7px;padding:6px 8px">${esc(bookUrl)}</code>
+    <code>${esc(bookUrl)}</code>
     <button class="icon-btn" data-act="buchen-link-share" style="flex-shrink:0" title="Link teilen"><span style="width:17px;height:17px;display:block">${IC.share.replace('<svg ','<svg style="stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;width:100%;height:100%" ')}</span></button></div>
-   <div style="font-size:10px;color:var(--ink3);margin-top:5px;line-height:1.5">Kunden öffnen diesen Link im Browser — Terminwünsche landen automatisch als Anfragen bei dir.</div>
+   <p>Kunden öffnen diesen Link im Browser. Terminwünsche landen als Anfrage bei Ihnen – bestätigt wird erst von Ihnen.</p>
   </div>`;
  return shell(inner,{title:'Terminkalender',eyebrow:'Wochenplanung',back:1})+`<button class="fab" data-act="termin-new" aria-label="Neuer Termin">+</button>`;
 }
+ACT['term-heute']=()=>{termWoche=0;render()};
 ACT['term-woche']=el=>{termWoche=(termWoche||0)+parseInt(el.dataset.d||0);render()};
 ACT['termin-slot']=el=>showTerminSheet(null,el.dataset.datum,el.dataset.h,null);
 ACT['termin-new']=()=>showTerminSheet(null,todayISO(),'09:00',null);
 ACT['termin-open']=el=>{const t=(S.termine||[]).find(x=>x.id===el.dataset.id);if(t)showTerminSheet(t)};
-ACT['buchen-link-share']=async()=>{const url=location.origin+location.pathname+'#/buchen';
+ACT['buchen-link-share']=async()=>{if(!S.settings.buchId)toast('Hinweis: Erst mit Cloud-Backup kommen Anfragen von Kunden-Handys an',true);const url=buchUrl();
  if(navigator.share){try{await navigator.share({title:S.settings.firma.name+' — Termin buchen',url})}catch(e){}}
  else{try{await navigator.clipboard.writeText(url);toast('Link kopiert')}catch(e){toast(url)}}};
 function showTerminSheet(t,defDatum,defVon,defBis){
@@ -4571,8 +4728,40 @@ ACT['termin-save']=el=>{
 ACT['termin-del']=el=>{S.termine=(S.termine||[]).filter(x=>x.id!==el.dataset.id);save();closeSheet();render();toast('Termin gelöscht')};
 
 /* ============ ONLINE-TERMINBUCHUNG (öffentlich, kein Login) ============ */
+const ST_TXT={offen:['Angenommen','Ihr Fahrzeug ist bei uns angekommen. Wir beginnen in Kürze.'],arbeit:['In Arbeit','Wir arbeiten gerade an Ihrem Fahrzeug.'],
+ teile:['Wartet auf Teile','Wir warten noch auf Ersatzteile.'],fertig:['Fertig','Ihr Fahrzeug ist fertig und kann abgeholt werden.'],abgeholt:['Abgeholt','Vielen Dank für Ihren Besuch.']};
+let stView={id:null,d:null,err:null};
+async function statusLaden(id){stView={id,d:null,err:null};
+ try{const r=await sbRpc('status_get',{p_id:id},syncCfg().url?null:SYNC_DEF);
+  if(!r.ok)throw new Error('x');const d=await r.json();stView.d=d&&typeof d==='object'&&!Array.isArray(d)&&d.st?d:null;if(!stView.d)stView.err='weg'}
+ catch(e){stView.err='netz'}
+ if(route.v==='status'&&route.id===id)render()}
+function vStatus(){const id=route.id||'';
+ if(stView.id!==id){statusLaden(id)}
+ const d=stView.d,box=b=>`<div style="min-height:100%;background:var(--bg);padding:calc(var(--sat,0px) + 24px) 16px calc(40px + var(--sab,0px))"><div style="max-width:480px;margin:0 auto">${b}</div></div>`;
+ if(!d&&!stView.err)return box('<div class="empty" style="margin-top:30vh"><b>Lädt …</b>Stand Ihres Fahrzeugs wird abgerufen.</div>');
+ if(!d)return box(`<div class="empty" style="margin-top:24vh"><b>${stView.err==='weg'?'Link nicht mehr gültig':'Keine Verbindung'}</b>${stView.err==='weg'?'Dieser Link ist abgelaufen. Bitte rufen Sie Ihre Werkstatt an.':'Bitte prüfen Sie Ihre Internetverbindung und laden Sie die Seite neu.'}</div>`);
+ const [stL,stT]=ST_TXT[d.st]||[d.st,''];const stp=['offen','arbeit','fertig','abgeholt'],cur=stp.indexOf(d.st==='teile'?'arbeit':d.st);
+ const tel=(d.tel||'').replace(/[^\d+]/g,'');
+ return box(`<div style="text-align:center;margin-bottom:18px"><div style="font-size:20px;font-weight:800;letter-spacing:-.02em">${esc(d.ws||'Ihre Werkstatt')}</div>
+  ${d.adr?`<div style="font-size:12.5px;color:var(--ink3);margin-top:2px">${esc(d.adr)}</div>`:''}</div>
+  <div class="card stl-card" style="padding:18px">
+   <div style="font-size:12px;color:var(--ink3)">${esc([d.fz,d.kz].filter(Boolean).join(' · ')||'Ihr Fahrzeug')}</div>
+   <div class="stl-st" data-st="${esc(d.st)}">${esc(stL)}</div>
+   <div style="font-size:14px;line-height:1.5;color:var(--ink2)">${esc(stT)}${d.teile?' Lieferung voraussichtlich '+esc(dLabel(d.teile))+'.':''}</div>
+   <ol class="stl-steps">${['Angenommen','In Arbeit','Fertig','Abgeholt'].map((l,i)=>`<li class="${i<cur?'done':i===cur?'on':''}">${l}</li>`).join('')}</ol>
+   ${d.fertig?`<div class="kv"><span class="k">Voraussichtlich fertig</span><span class="v">${esc(dLabel(d.fertig.slice(0,10)))}${d.fertig.length>10?' · '+esc(d.fertig.slice(11))+' Uhr':''}</span></div>`:''}
+   ${d.hu?`<div class="kv"><span class="k">Nächste Hauptuntersuchung</span><span class="v">${esc(d.hu)}</span></div>`:''}
+   <div style="font-size:11px;color:var(--ink3);margin-top:10px">Stand: ${new Date(d.upd||Date.now()).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} Uhr</div>
+  </div>
+  ${tel?`<a class="btn btn-main" style="width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;text-decoration:none" href="tel:${esc(tel)}">Werkstatt anrufen</a>`:''}
+  <div style="text-align:center;margin-top:18px;font-size:11.5px"><a href="#/datenschutz" style="color:var(--ink3)">Datenschutz</a></div>`)}
+let buchInfo={id:null,d:null};
 function vBuchen(){
- const fi=S.settings.firma;
+ let fi=S.settings.firma;
+ if(route.id&&buchInfo.id!==route.id){buchInfo={id:route.id,d:null};const id=route.id;
+  sbRpc('buchung_info',{p_buch_id:id},syncCfg().on?null:SYNC_DEF).then(r=>r.ok?r.json():null).then(d=>{if(d&&d.ws!==undefined&&buchInfo.id===id){buchInfo.d=d;if(route.v==='buchen')render()}}).catch(()=>{})}
+ if(route.id&&buchInfo.d){const d=buchInfo.d;fi={...fi,name:d.ws,tel:d.tel,adresse:d.adr,email:d.email,web:d.web}}
  return`<div style="min-height:100%;background:var(--bg);padding:calc(var(--sat,0px) + 20px) 16px calc(40px + var(--sab,0px));font-family:-apple-system,BlinkMacSystemFont,sans-serif">
   <div style="max-width:480px;margin:0 auto">
    <div style="text-align:center;margin-bottom:22px;padding-top:8px">
@@ -4677,6 +4866,7 @@ function vDatenschutz(){
    <div style="font-size:13px;line-height:1.75"><b>${esc(fi.name||'[Werkstattname]')}</b>, ${esc(fi.inhaber||'[Inhaber]')}<br>${esc(fi.adresse||'[Anschrift]')}<br>${esc(fi.tel||'')} · ${esc(fi.email||'')}</div>
    ${sec('1. Grundsatz: Lokale Datenhaltung','Diese Anwendung speichert alle Werkstattdaten (Kunden, Fahrzeuge, Aufträge, Rechnungen, Anfragen) ausschließlich lokal auf dem verwendeten Gerät (Browser-Speicher). Es findet keine automatische Übertragung an Dritte statt. Für die Richtigkeit und Sicherung der Daten ist der Betreiber der Werkstatt verantwortlich.')}
    ${sec('2. Online-Terminanfrage','Wenn Sie über unser Buchungsformular eine Terminanfrage stellen, verarbeiten wir die von Ihnen angegebenen Daten (Name, Telefonnummer, ggf. Kennzeichen, Fahrzeug und Anliegen) ausschließlich zur Bearbeitung Ihrer Anfrage und Terminvereinbarung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertragsanbahnung). Die Daten werden gelöscht, sobald sie für diesen Zweck nicht mehr erforderlich sind und keine gesetzlichen Aufbewahrungspflichten (z. B. § 147 AO für Rechnungsdaten: 10 Jahre) entgegenstehen.')}
+   ${sec('2a. Statusseite zu Ihrem Auftrag','Auf Wunsch senden wir Ihnen einen Link, unter dem Sie den Bearbeitungsstand Ihres Fahrzeugs sehen. Dafür speichern wir nur: gekürztes Kennzeichen, Fahrzeugmodell, Bearbeitungsstand, voraussichtlichen Fertigstellungstermin, Monat der nächsten Hauptuntersuchung und unsere Kontaktdaten – keinen Namen und keine Preise. Die Daten liegen bei Supabase (Server in der EU) und sind nur mit dem genauen, zufällig erzeugten Link abrufbar. Sie werden spätestens 30 Tage nach Abholung des Fahrzeugs gelöscht. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Durchführung des Auftrags).')}
    ${sec('3. Hosting','Die Anwendung wird bei Vercel Inc. (USA) gehostet. Beim Aufruf werden technisch notwendige Daten (IP-Adresse, Zeitpunkt, abgerufene Datei) in Server-Logs verarbeitet. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse an der sicheren Bereitstellung). Vercel ist nach dem EU-US Data Privacy Framework zertifiziert.')}
    ${sync?sec('4. Cloud-Sicherung (aktiviert)','Der Betreiber nutzt eine automatische Datensicherung über Supabase. Dabei werden die Werkstattdaten verschlüsselt übertragen und in einer Datenbank gespeichert. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (Datensicherung). Mit Supabase besteht ein Auftragsverarbeitungsverhältnis.'):sec('4. Cloud-Sicherung','Eine optionale Cloud-Sicherung (Supabase) ist derzeit nicht aktiviert. Alle Daten verbleiben lokal.')}
    ${ki?sec('5. KI-gestützte Anfragen-Einschätzung','Zur Priorisierung von Kundenanfragen kann der Text einer Anfrage an die Anthropic-API (Claude) übermittelt werden. Übermittelt werden nur der Anfragetext, der Kanal und ggf. der Vorname — keine weiteren Kundendaten. Anthropic verwendet API-Daten nicht zum Training. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO (effiziente Anfragenbearbeitung).'):''}
@@ -4686,7 +4876,16 @@ function vDatenschutz(){
   </div></div>`;
  return shell(inner,{title:'Datenschutz',eyebrow:'Rechtliches',back:1,hideNav:route._from&&route._from.v==='buchen'});
 }
-ACT['buchen-send']=()=>{
+function anfrageAusBuchung(d){const anl=String(d.anl||'').slice(0,1500),kz=String(d.kz||'').slice(0,20),fzgBez=String(d.fzg||'').slice(0,80);
+ const dat=/^\d{4}-\d{2}-\d{2}$/.test(d.dat||'')?d.dat:addDays(todayISO(),2),uhr=/^\d{2}:\d{2}$/.test(d.uhr||'')?d.uhr:'09:00';
+ const r=ruleAnalyze(anl);
+ return{id:'q'+uid(),rid:d.rid||null,ts:d.ts||Date.now(),kanal:'web',name:String(d.name||'').slice(0,80),tel:String(d.tel||'').slice(0,40),
+  betreff:r.betreff||(kz||'Terminanfrage'),
+  original:anl+(kz?'\nFahrzeug: '+kz+(fzgBez?' '+fzgBez:''):'')+'\nWunschtermin: '+dat+' '+uhr,
+  origUrl:'',notiz:'Online-Terminanfrage — bitte telefonisch bestätigen.',status:'neu',
+  prio:r.prio,grund:'Online-Terminanfrage: immer persönlich bestätigen.',kiQuelle:'web',
+  antwort:r.antwort,wertCt:r.wertCt||25000,followUp:dat,auftragId:null,wonTs:null,fotos:[],antworten:[],kiSugg:[]}}
+ACT['buchen-send']=async el=>{
  const name=($('#bk-name').value||'').trim(),tel=($('#bk-tel').value||'').trim();
  const anl=($('#bk-anl').value||'').trim();
  if(!name||!tel)return toast('Name und Telefon sind Pflichtfelder',true);
@@ -4694,13 +4893,11 @@ ACT['buchen-send']=()=>{
  const kz=($('#bk-kz').value||'').trim().toUpperCase();
  const fzgBez=($('#bk-fzg').value||'').trim();
  const dat=($('#bk-dat').value)||addDays(todayISO(),2),uhr=($('#bk-uhr').value)||'09:00';
- const r=ruleAnalyze(anl);
- S.anfragen.push({id:'q'+uid(),ts:Date.now(),kanal:'web',name,tel,
-  betreff:r.betreff||(kz||'Terminanfrage'),
-  original:anl+(kz?'\nFahrzeug: '+kz+(fzgBez?' '+fzgBez:''):'')+'\nWunschtermin: '+dat+' '+uhr,
-  origUrl:'',notiz:'Online-Terminanfrage — bitte telefonisch bestätigen.',status:'neu',
-  prio:r.prio,grund:'Online-Terminanfrage: immer persönlich bestätigen.',kiQuelle:'web',
-  antwort:r.antwort,wertCt:r.wertCt||25000,followUp:dat,auftragId:null,wonTs:null,fotos:[],antworten:[],kiSugg:[]});
+ const daten={name,tel,anl,kz,fzg:fzgBez,dat,uhr};
+ if(route.id){if(el)el.disabled=true;
+  try{const r=await sbRpc('anfrage_neu',{p_buch_id:route.id,p_data:daten},syncCfg().on?null:SYNC_DEF);if(!r.ok)throw new Error(r.status)}
+  catch(e){if(el)el.disabled=false;return toast('Senden hat nicht geklappt. Bitte erneut versuchen oder anrufen.',true)}}
+ else S.anfragen.push(anfrageAusBuchung(daten));
  save();
  if(S.settings.pushAnfragen&&'Notification'in window&&Notification.permission==='granted'){
   new Notification('mehanicar — Neue Terminanfrage',{body:name+' · '+anl.slice(0,80),icon:'./icon.svg',tag:'anfrage-'+Date.now()})}
@@ -4765,8 +4962,8 @@ function renderInner(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
  const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
-  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz,apdb:vApDb,pakvorlagen:vPakVorlagen};
- if(!S.settings.onboarded&&!['buchen','impressum','datenschutz'].includes(route.v)){app.innerHTML=vOnboarding();return}
+  fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,status:vStatus,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz,apdb:vApDb,pakvorlagen:vPakVorlagen};
+ if(!S.settings.onboarded&&!['buchen','impressum','datenschutz','status'].includes(route.v)){app.innerHTML=vOnboarding();return}
  app.innerHTML=(V[route.v]||vPlanung)();
  linkLabels(app);
  syncWakeLock();
@@ -4982,7 +5179,7 @@ try{
  setTimeout(syncStartup,400);
  if(memOnly)setTimeout(()=>toast('Achtung: Speichern blockiert — Daten gehen beim Schließen verloren',true),600);
  const h0=location.hash.replace('#/','').split('/');
- if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen','impressum','datenschutz','apdb','pakvorlagen'].includes(h0[0]))route={v:h0[0],id:h0[1]};
+ if(h0[0]&&['planung','auftraege','auftrag','kunden','kunde','fahrzeuge','fahrzeug','lager','anfragen','anfrage','kalender','bestellungen','kampagnen','team','personal','mehr','finanzen','einstellungen','termine','buchen','impressum','datenschutz','apdb','pakvorlagen','status'].includes(h0[0]))route={v:h0[0],id:h0[1]};
  render();
 }catch(err){
  console.error('START-FEHLER:',err);

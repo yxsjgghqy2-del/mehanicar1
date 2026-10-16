@@ -3,11 +3,13 @@
 Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Jede Idee hat eine Herkunft (Inhaber / Recherche / Fehlerfund).
 
 ## A — Wünsche des Inhabers
-- **Design regelmäßig pflegen** *(Inhaber, 03.10.2026: „Kümmere dich auch regelmäßig um das Design.“)* Dauerauftrag: Jeder 3. Lauf ist ein Design-Lauf (siehe ROUTINE.md). Dabei eine Ansicht bei 390 px hell und dunkel ansehen und Abstände, Schriftgrößen, Ausrichtung, Farben und Einheitlichkeit mit dem Stil von Entwurf 14 verbessern. Erledigt: Planung (2.41), Kundenliste (2.43), Finanzen (2.45), Einstellungen (2.47), Auftragsliste (2.49). Nächste: Termine, Anfragen, Auftragsmaske-Details. **Akzentfarbe: Vorschlag `designs/akzent.html` (A/B/C) liegt beim Inhaber.**
+- **Inhaber muss einmal tun:** neuen Befehl aus Einstellungen → Cloud-Backup → „Einmalige Einrichtung“ in Supabase ausführen (schützt Sicherung, schaltet Statusseite frei). Erinnern, bis bestätigt.
+- **Design regelmäßig pflegen** *(Inhaber, 03.10.2026: „Kümmere dich auch regelmäßig um das Design.“)* Dauerauftrag: Jeder 3. Lauf ist ein Design-Lauf (siehe ROUTINE.md). Dabei eine Ansicht bei 390 px hell und dunkel ansehen und Abstände, Schriftgrößen, Ausrichtung, Farben und Einheitlichkeit mit dem Stil von Entwurf 14 verbessern. Erledigt: Planung (2.41), Kundenliste (2.43), Finanzen (2.45), Einstellungen (2.47), Auftragsliste (2.49), Termine (2.51). Akzentfarbe frei wählbar seit 2.52. Nächste: Anfragen, Auftragsmaske-Details.
 
 ## B — Qualität & Pflichten
-4. **Kunden-Statusseite** — Stufe A erledigt in 2.50. Stufe B (Link-Seite) und C (Freigabe) nur nach Zustimmung des Inhabers, siehe `docs/kundenportal.md`.
-5. **E-Rechnung** — Konzept steht in `docs/e-rechnung.md` (02.10.2026). Pflicht gilt nur für Firmenkunden: ab 2028, bei > 800.000 € Vorjahresumsatz schon ab 2027. **Wartet auf Antwort des Inhabers (Umsatz 2026 über 800.000 €?).** Scheibe 1 (USt-IdNr. + Markierung) erledigt in 2.37. Scheibe 2 (XRechnung-Export) nach Antwort des Inhabers, bis dahin Design-Läufe und C-Ideen.
+0. Online-Terminbuchung: erledigt in 2.54. Nach Liveschaltung Inhaber an neuen Buchungslink erinnern.
+4. **Kunden-Statusseite** — Stufe A 2.50, Stufe B 2.53. Stufe C (Freigabe von Zusatzarbeiten) später, nach Rücksprache.
+5. **E-Rechnung** — Konzept steht in `docs/e-rechnung.md` (02.10.2026). Pflicht gilt nur für Firmenkunden: ab 2028, bei > 800.000 € Vorjahresumsatz schon ab 2027. Inhaber 08.10.2026: Umsatz liegt bei 800.000 € (nicht darüber) → Pflicht ab 01.01.2028. Inhaber wünscht: App soll für jede Werkstatt passen, also Export für alle bauen. Scheibe 1 erledigt in 2.37. Scheibe 2 (XRechnung-Export) nach den beiden A-Paketen.
 
 ## C — Ideen (aus Recherche, noch zu bewerten)
 - Digitale Fahrzeugannahme mit Schadensfotos am Fahrzeugschema

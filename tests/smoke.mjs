@@ -45,7 +45,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     const sw = await page.evaluate(() => document.documentElement.scrollWidth);
     if (sw > w + 1) errs.push(`${v}: horizontales Scrollen (${sw}px bei ${w}px)`);
     if (shotDir && w === 390) await page.screenshot({ path: `${shotDir}/${v}.png` });
-    if (shotDir && w === 390 && ['planung','kunden','finanzen','einstellungen','auftraege'].includes(v)) { await page.evaluate(() => { applyTheme('light'); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-hell.png`, fullPage: true }); await page.evaluate(() => { applyTheme(S.settings.theme); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-dunkel.png`, fullPage: true }); }
+    if (shotDir && w === 390 && ['planung','kunden','finanzen','einstellungen','auftraege','termine'].includes(v)) { await page.evaluate(() => { applyTheme('light'); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-hell.png`, fullPage: true }); await page.evaluate(() => { applyTheme(S.settings.theme); render(); }); await page.waitForTimeout(600); await page.screenshot({ path: `${shotDir}/${v}-dunkel.png`, fullPage: true }); }
     await a11y(page, errs, v);
   }
   // „Was ist neu“: Mehr → Versionsnummer antippen, Liste muss erscheinen, Punkt verschwinden
@@ -288,6 +288,102 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       return { arbeit: ma.includes('arbeiten gerade') && ma.includes('Voraussichtlich fertig'), fertig: mb.includes('abgeholt werden'), feld, log };
     });
     if (!sm.arbeit || !sm.fertig || !sm.feld || !sm.log) errs.push('Status an Kunden senden: ' + JSON.stringify(sm));
+  }
+  // Statusseite per Link (Stufe B): Link anhängen, Seite zeigt Stand ohne Namen/Preise, Aktualisierung, Rückfall ohne Einrichtung
+  {
+    const sl = await page.evaluate(async () => {
+      const w = ms => new Promise(r => setTimeout(r, ms));
+      const store = {}, calls = []; let einger = true; const of = window.fetch;
+      window.fetch = async (u, o) => { const m = String(u).match(/\/rpc\/(\w+)$/); if (!m) return of(u, o);
+        calls.push(m[1]); if (!einger) return new Response('{}', { status: 404 }); const b = JSON.parse(o.body);
+        if (m[1] === 'status_put') { store[b.p_id] = b.p_data; return new Response(null, { status: 204 }); }
+        if (m[1] === 'status_get') return new Response(JSON.stringify(store[b.p_id] || null), { status: 200 });
+        return new Response('null', { status: 200 }); };
+      const c = syncCfg(), alt = { ...c }; c.on = true; c.id = c.id || 'TESTCODE01';
+      const a = S.auftraege.find(o => o.status === 'arbeit'), k = kunde(a.kundeId), tel = k.tel; k.tel = ''; delete a.statusLink; const vor = a.komm.length;
+      nav('auftrag', a.id); await w(80);
+      document.querySelector('[data-act="status-msg"]').click(); await w(80);
+      const cb = !!document.getElementById('st-link');
+      document.querySelector('[data-act="status-send"]').click(); await w(150);
+      const linkImText = (a.komm[a.komm.length - 1].txt || '').includes('#/status/' + (a.statusLink || {}).id);
+      const d = store[(a.statusLink || {}).id] || {};
+      const sparsam = !!d.kz && !JSON.stringify(d).includes(k.name) && !('brutto' in d) && d.st === 'arbeit';
+      route = { v: 'status', id: a.statusLink.id }; render(); await w(150);
+      const seite = document.querySelector('.stl-st')?.textContent === 'In Arbeit' && !document.querySelector('.nav');
+      a.status = 'fertig'; await statusLinksPush(); stView.id = null; render(); await w(150);
+      const aktuell = document.querySelector('.stl-st')?.textContent === 'Fertig';
+      route = { v: 'status', id: 'unbekannt' }; render(); await w(150);
+      const weg = document.body.textContent.includes('Link nicht mehr gültig');
+      // ohne Einrichtung (Funktion fehlt): Nachricht geht trotzdem raus, ohne Link
+      einger = false; const b = S.auftraege.find(o => o !== a && o.status !== 'abgeholt'); delete b.statusLink; const vb = b.komm.length; const kb = kunde(b.kundeId), telb = kb.tel; kb.tel = '';
+      nav('auftrag', b.id); await w(80); document.querySelector('[data-act="status-msg"]').click(); await w(80);
+      document.querySelector('[data-act="status-send"]').click(); await w(150);
+      const rueck = b.komm.length === vb + 1 && !b.statusLink && !b.komm[b.komm.length - 1].txt.includes('#/status/');
+      a.komm.length = vor; b.komm.length = vb; kb.tel = telb; a.status = 'arbeit'; delete a.statusLink; k.tel = tel; Object.assign(c, alt);
+      window.fetch = of; closeSheet(); nav('planung'); save(); await w(80);
+      return { cb, linkImText, sparsam, seite, aktuell, weg, rueck };
+    });
+    if (Object.values(sl).some(v => !v)) errs.push('Statusseite per Link: ' + JSON.stringify(sl));
+  }
+  // Online-Terminbuchung kommt über Supabase in der Werkstatt an
+  {
+    const bk = await page.evaluate(async () => {
+      const w = ms => new Promise(r => setTimeout(r, ms));
+      const keys = {}, box = []; let rid = 1; const of = window.fetch;
+      window.fetch = async (u, o) => { const m = String(u).match(/\/rpc\/(\w+)$/); if (!m) return of(u, o); const b = JSON.parse(o.body);
+        if (m[1] === 'buchung_an') { keys[b.p_buch_id] = b.p_info; return new Response(null, { status: 204 }); }
+        if (m[1] === 'buchung_info') return new Response(JSON.stringify(keys[b.p_buch_id] || null), { status: 200 });
+        if (m[1] === 'anfrage_neu') { if (!keys[b.p_buch_id]) return new Response('{}', { status: 400 }); box.push({ ...b.p_data, rid: rid++, ts: Date.now() }); return new Response(null, { status: 204 }); }
+        if (m[1] === 'anfragen_holen') { const r = box.splice(0); return new Response(JSON.stringify(r), { status: 200 }); }
+        return new Response('null', { status: 200 }); };
+      const c = syncCfg(), alt = { ...c }, altBid = S.settings.buchId; c.on = true; c.id = c.id || 'TESTCODE01'; delete S.settings.buchId;
+      await buchungAnmelden(); const bid = S.settings.buchId;
+      const link = buchUrl().endsWith('#/buchen/' + bid);
+      const vorher = S.anfragen.length;
+      route = { v: 'buchen', id: bid }; render(); await w(150);
+      const name = document.body.textContent.includes(S.settings.firma.name || '§');
+      const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
+      set('bk-name', 'Test Kunde'); set('bk-tel', '0170 1234567'); set('bk-anl', 'Bremsen quietschen'); set('bk-kz', 'HU-XY 12');
+      document.querySelector('[data-act="buchen-send"]').click(); await w(150);
+      const imPostfach = box.length === 1 && S.anfragen.length === vorher;
+      const n = await anfragenHolen();
+      const q = S.anfragen[S.anfragen.length - 1];
+      const an = n === 1 && S.anfragen.length === vorher + 1 && q.name === 'Test Kunde' && q.status === 'neu' && q.kanal === 'web';
+      S.anfragen.length = vorher; Object.assign(c, alt); if (altBid) S.settings.buchId = altBid; else delete S.settings.buchId;
+      window.fetch = of; nav('planung'); save(); await w(80);
+      return { link, name, imPostfach, an };
+    });
+    if (Object.values(bk).some(v => !v)) errs.push('Online-Terminbuchung: ' + JSON.stringify(bk));
+  }
+  // Akzentfarbe frei wählbar
+  {
+    const ak = await page.evaluate(async () => {
+      nav('einstellungen'); await new Promise(r => setTimeout(r, 80));
+      const dots = document.querySelectorAll('[data-act="akzent-set"]').length;
+      document.querySelector('[data-act="akzent-set"][data-v="#3B7DD8"]').click(); await new Promise(r => setTimeout(r, 80));
+      const btn = document.querySelector('.btn-main'), cs = btn && getComputedStyle(btn);
+      const blau = S.settings.akzent === '#3B7DD8' && getComputedStyle(document.body).getPropertyValue('--acc').trim().toLowerCase() === '#3b7dd8';
+      let inp = document.querySelector('[data-f="akzent-pick"]'); inp.value = '#1f3a7a'; inp.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 80));
+      const ink = getComputedStyle(document.body).getPropertyValue('--acc-ink').trim();
+      inp = document.querySelector('[data-f="akzent-pick"]'); inp.value = '#f0e040'; inp.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 80));
+      const hellInk = getComputedStyle(document.body).getPropertyValue('--acc-ink').trim();
+      document.querySelector('[data-act="akzent-set"][data-v=""]').click(); await new Promise(r => setTimeout(r, 80));
+      const reset = !S.settings.akzent && !document.body.style.getPropertyValue('--acc');
+      return { dots, blau, ink, hellInk, reset };
+    });
+    if (ak.dots < 5 || !ak.blau || ak.ink !== '#FFFFFF' || ak.hellInk !== '#15180A' || !ak.reset) errs.push('Akzentfarbe: ' + JSON.stringify(ak));
+  }
+  // Terminkalender: alle 7 Tage sichtbar, Heute-Knopf
+  {
+    const tk = await page.evaluate(async () => {
+      nav('termine'); await new Promise(r => setTimeout(r, 80));
+      const hd = [...document.querySelectorAll('.kal-hd-cell')], sc = hd[0] && hd[0].closest('[style*="overflow-x"]');
+      const alle = hd.length === 7 && (window.innerWidth > 500 || hd[6].getBoundingClientRect().right <= sc.getBoundingClientRect().right + 1);
+      document.querySelector('[data-act="term-woche"][data-d="1"]').click(); await new Promise(r => setTimeout(r, 80));
+      const btn = document.querySelector('[data-act="term-heute"]'); btn && btn.click(); await new Promise(r => setTimeout(r, 80));
+      return { alle, heute: !!btn && termWoche === 0 && !document.querySelector('[data-act="term-heute"]') };
+    });
+    if (!tk.alle || !tk.heute) errs.push('Terminkalender: ' + JSON.stringify(tk));
   }
   // Auftrag öffnen und sichtbare Buttons einmal antippen
   const aid = await page.evaluate(() => (S.auftraege.find(a => a.pakete && a.pakete.length) || S.auftraege[0] || {}).id);

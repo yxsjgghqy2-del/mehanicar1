@@ -2,6 +2,32 @@
 
 Neueste Einträge oben.
 
+## 08.10.2026 (4. Lauf) — Version 2.54: Online-Terminbuchung kommt an
+- **Fehler:** `buchen-send` legte die Anfrage nur im Browser des Kunden ab. Behoben über Supabase: `buch_keys` (öffentlicher Buchungs-Schlüssel → Werkstatt, mit Werkstatt-Infos), `anfragen_eingang`; Funktionen `buchung_an` (nur mit Backup-Code), `buchung_info`, `anfrage_neu` (nur einfügen, Pflichtfelder, max. 4000 Zeichen, max. 30/Stunde), `anfragen_holen` (holt und löscht, nur mit Backup-Code). Alles in `SB_SQL` ergänzt.
+- **App:** Buchungs-Schlüssel `S.settings.buchId` wird beim Cloud-Backup angelegt und angemeldet; Link `#/buchen/<schlüssel>`. Buchungsseite zeigt Werkstattdaten aus Supabase (vorher Standarddaten im Kunden-Browser). Werkstatt holt beim Start und alle 3 Minuten (wenn sichtbar) ab; Status immer `neu`. Ohne Schlüssel im Link bleibt das alte Verhalten (Vorschau auf dem eigenen Gerät). Hinweis in den Einstellungen, solange Cloud-Backup aus ist.
+- **Test:** Smoke-Test grün (390/1280), neue Prüfung mit nachgebildeten Funktionen: Anmelden → Link → Kunde sendet → liegt im Eingang, nicht lokal → Werkstatt holt ab → Anfrage „neu“. SW v55.
+- **Achtung:** GitHub weiter nicht verbunden. Lokal auf `claude/termine-design` (2.51–2.54). Nach dem Hochladen muss der Inhaber das SQL ausführen und den neuen Buchungslink weitergeben.
+
+## 08.10.2026 (3. Lauf) — Version 2.53: Kunden-Statusseite per Link (Stufe B) + Sicherung geschützt
+- **Gebaut:** Öffentliche Seite `#/status/<schlüssel>` (ohne Menü, ohne Einrichtung im Kunden-Browser): Werkstatt, Fahrzeug + gekürztes Kennzeichen (`kzKurz`), Status groß, 4-Stufen-Leiste, voraussichtlich fertig, HU-Monat, „Werkstatt anrufen“. Kein Name, keine Preise. Im Blatt „Status an Kunden senden“ Häkchen „Link zur Statusseite anhängen“ (nur bei eingeschaltetem Cloud-Backup). Schlüssel 128 Bit (`stlId`). Nach jeder Sicherung werden geänderte Statusseiten nachgezogen (`statusLinksPush`). Ablauf: 60 Tage gleitend, 30 Tage nach Abholung. Datenschutz-Abschnitt 2a ergänzt.
+- **Sicherheitsfund:** Die bisherige Regel `backup_all` (using true) erlaubte jedem mit dem öffentlichen App-Schlüssel, **alle** Sicherungen zu lesen (`/rest/v1/backup?select=*`). Neues SQL (`SB_SQL`, in Einstellungen mit „Befehl kopieren“) sperrt die Tabellen und erlaubt nur noch Funktionen mit genauem Schlüssel: `backup_get/backup_put/status_get/status_put`. App nutzt die Funktionen, fällt bei 404 auf den alten Weg zurück (läuft also vor und nach dem SQL). Nicht selbst in Supabase geprüft oder ausgeführt.
+- **Fehlerfund (nicht behoben):** Online-Terminbuchung speichert Anfragen nur im Browser des Kunden (`S.anfragen.push` in `buchen-send`) – sie kommen in der Werkstatt nie an. → BACKLOG ganz oben.
+- **Test:** Smoke-Test grün (390/1280). Neue Prüfung mit nachgebildeten Supabase-Funktionen: Link im Text, Daten sparsam, Seite zeigt Stand ohne Menü, Aktualisierung nach Statuswechsel, abgelaufener Link, Rückfall ohne Einrichtung. Seite hell/dunkel bei 390 px angesehen. SW v54.
+- **Achtung:** GitHub weiter nicht verbunden. Liegt lokal auf `claude/termine-design` (2.51–2.53). Nicht live.
+
+## 08.10.2026 (2. Lauf) — Version 2.52: Akzentfarbe frei wählbar
+- **Anlass:** Inhaber 08.10.: keiner der Vorschläge A/B/C gefällt, „die App sollte individuell sein können“. Außerdem entschieden: Umsatz bei 800.000 € (E-Rechnung-Pflicht ab 2028, Export trotzdem für alle bauen), Statusseite per Link (Stufe B) gewünscht.
+- **Gebaut:** Einstellungen → Erscheinungsbild → „Akzentfarbe“: 7 ruhige Vorschläge (erster = Standard/zurücksetzen) + bunter Kreis mit Farbwähler für jede Farbe. `S.settings.akzent`, `applyAkzent()` (aus `applyTheme`) setzt `--acc/--acc-ink/--acc-bg` als Inline-Stil am body, gilt hell und dunkel. Schriftfarbe auf dem Akzent per WCAG-Kontrast automatisch dunkel/weiß. Kreise 44 px, umbrechend.
+- **Test:** Smoke-Test grün (390/1280), neue Prüfung: Vorschlag setzen, eigene dunkle/helle Farbe → Schrift weiß/dunkel, Zurücksetzen. Screenshots Einstellungen hell/dunkel angesehen (erster Entwurf lief rechts aus der Karte, behoben). SW v53.
+- **Achtung:** GitHub weiter nicht verbunden. Liegt lokal auf `claude/termine-design` zusammen mit 2.51. Nicht live.
+- **Nächster Handgriff:** Sobald GitHub geht: hochladen, PR, mergen, live prüfen. Dann Statusseite per Link (Stufe B).
+
+## 06.10.2026 (4. Lauf) — Version 2.51: Design-Lauf Terminkalender
+- **Achtung:** GitHub-Zugang in dieser Sitzung fehlt (git fetch/push und GitHub-Werkzeuge abgelehnt: kein GitHub-Konto verbunden). Arbeit liegt fertig auf dem lokalen Zweig `claude/termine-design`, noch nicht live. Live ist weiter 2.50.
+- **Gebaut:** Wochenraster passt bei 390 px ohne Seitwärts-Wischen (7 Tage, Spalten `flex:1;min-width:0`, min-width 330). Sa/So leicht grau, heutiger Tag in Akzent-Türkis statt altem Blau. Uhrzeiten 10 px statt 8,5 px, Termine 10 px mit Uhrzeit oben. Kopf: Wochentag klein, Tageszahl groß. Knopf „Heute“ (nur in anderen Wochen). Pfeile mit aria-label. Buchungslink-Karte mit normaler Überschrift und lesbarer Schrift (12 px), Text in Sie-Form und Hinweis, dass erst der Inhaber bestätigt.
+- **Test:** Smoke-Test grün (390/1280), neue Prüfung „alle 7 Tage sichtbar + Heute-Knopf“. Screenshots hell/dunkel angesehen. SW v52.
+- **Offen / nächster Handgriff:** Sobald GitHub wieder geht: Zweig hochladen, PR, mergen, live prüfen. Danach nächstes Paket. Antworten des Inhabers offen: Akzentfarbe A/B/C, Umsatz > 800.000 €, Kundenportal Stufe B.
+
 ## 06.10.2026 (3. Lauf) — Version 2.50: Kundenportal Stufe A („Status an Kunden senden“)
 - **Recherche:** entfallen (Umsetzung von `docs/kundenportal.md`, Stufe A).
 - **Gebaut:** `statusMsg(a)` schreibt einen fertigen Text: Gruß mit Kundenname, Fahrzeug + Kennzeichen, Status in Alltagssprache (bei „Wartet auf Teile“ mit Liefertermin aus bestellten Teilen), „voraussichtlich fertig“ aus `abgabe`/`abgabeZeit`, bei „fertig“ „Zu zahlen bei Abholung“ aus `ordKalk`, nächste HU, Werkstatt-Telefon, `wsGruss()`. Knopf „Status an Kunden senden“ im Kunden-Bereich des Auftrags öffnet ein Blatt mit änderbarem Text. „Per WhatsApp senden“ protokolliert in `a.komm` und öffnet wa.me. Ohne Telefonnummer wird der Text kopiert. Kein Server, keine neuen Daten im Netz.
