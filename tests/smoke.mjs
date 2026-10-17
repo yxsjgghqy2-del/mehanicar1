@@ -357,6 +357,39 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (Object.values(bk).some(v => !v)) errs.push('Online-Terminbuchung: ' + JSON.stringify(bk));
   }
+  // E-Rechnung (XRechnung CII): Pflichtangaben-Prüfung, Summen stimmen, Knopf in Finanzen
+  {
+    const er = await page.evaluate(async () => {
+      const w = ms => new Promise(r => setTimeout(r, ms));
+      const fi = S.settings.firma, altFi = { ...fi };
+      const a = S.auftraege.find(o => o.pakete.some(pk => pk.pos.some(p => posNetto(p) > 0)));
+      const k = kunde(a.kundeId), altK = { ...k };
+      Object.assign(fi, { name: 'Testwerkstatt', adresse: 'Hauptstr. 5, 63450 Hanau', ustid: 'DE123456789', iban: 'DE89 3704 0044 0532 0130 00', email: 'w@test.de', tel: '06181 1' });
+      Object.assign(k, { firma: 'Test GmbH', name: 'Test GmbH', adresse: 'Industriestr. 2, 60311 Frankfurt', email: '' });
+      const paks = a.pakete.filter(pk => pk.pos.some(p => posNetto(p) > 0)); const pos = rePosSnap(paks);
+      const zeilen = pos.reduce((x, p) => x + p.nettoCt, 0), netto = zeilen - 500, mwst = Math.round(netto * 0.19);
+      const r = { id: 'rTEST', nr: 'RE-TEST-0001', auftragId: a.id, datum: todayISO(), nettoCt: netto, mwstCt: mwst, bruttoCt: netto + mwst, pos, anzCt: 1000, mwstSatz: 19 };
+      S.rechnungen.push(r);
+      const fehltMail = eRechDaten(r).fehl.some(f => f.includes('E-Mail des Kunden'));
+      k.email = 'buch@test.de';
+      const ok = eRechDaten(r).fehl.length === 0;
+      const doc = new DOMParser().parseFromString(xrechnungXml(r), 'application/xml');
+      const wohl = !doc.querySelector('parsererror');
+      const t = n => [...doc.getElementsByTagName('ram:' + n)].map(e => e.textContent);
+      const c = n => Math.round(parseFloat(t(n).slice(-1)[0]) * 100);
+      const zs = t('LineTotalAmount').slice(0, -1).reduce((x, v) => x + Math.round(parseFloat(v) * 100), 0);
+      const summen = zs === c('LineTotalAmount') && c('LineTotalAmount') - c('AllowanceTotalAmount') === c('TaxBasisTotalAmount')
+        && c('TaxBasisTotalAmount') + c('TaxTotalAmount') === c('GrandTotalAmount') && c('GrandTotalAmount') - c('TotalPrepaidAmount') === c('DuePayableAmount');
+      const pflicht = ['BuyerReference', 'IBANID', 'DueDateDateTime', 'PostcodeCode'].every(n => t(n).length) && t('ID').some(v => v.includes('xrechnung_3.0'));
+      nav('finanzen'); await w(100);
+      const knopf = !!document.querySelector('[data-act="erech"][data-id="rTEST"]');
+      document.querySelector('[data-act="erech"][data-id="rTEST"]')?.click(); await w(80);
+      const blatt = !!document.querySelector('[data-act="erech-xml"]:not([disabled])');
+      closeSheet(); S.rechnungen = S.rechnungen.filter(x => x.id !== 'rTEST'); Object.assign(fi, altFi); Object.keys(k).forEach(x => delete k[x]); Object.assign(k, altK); save(); nav('planung'); await w(60);
+      return { fehltMail, ok, wohl, summen, pflicht, knopf, blatt };
+    });
+    if (Object.values(er).some(v => !v)) errs.push('E-Rechnung: ' + JSON.stringify(er));
+  }
   // Akzentfarbe frei wählbar
   {
     const ak = await page.evaluate(async () => {
