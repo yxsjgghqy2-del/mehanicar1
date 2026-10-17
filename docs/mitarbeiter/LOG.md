@@ -2,6 +2,10 @@
 
 Neueste Einträge oben.
 
+## 17.10.2026 (Abendlauf) — 2.58 Design-Lauf Anfragen
+- **Gebaut:** „Triage starten“-Karte (blauer Verlauf, Fachwort) → ruhige Karte „Neue Anfragen nacheinander abarbeiten“ mit Akzent-Hintergrund. Vier große Kennzahl-Kacheln + bunte Kanal-Kacheln → eine kompakte Karte: 4 Zahlen in einer Zeile, darunter „Herkunft“ als Textzeile. Erste Anfrage jetzt ohne Scrollen sichtbar. Fehlerfund: `KICON` (Kanal-Symbole) hatten keine Linienfarbe und wurden schwarz gefüllt gezeichnet – jetzt `stroke=currentColor`, betrifft auch die Anfrage-Karten. CSS in `app.css`. SW v59.
+- **Test:** Smoke-Test grün (390/1280), Screenshots hell/dunkel angesehen; `anfragen` in die Screenshot-Liste aufgenommen.
+
 ## 17.10.2026 (Morgenlauf) — 2.56 E-Rechnung + 2.57 CSS ausgelagert
 - **2.56 E-Rechnung (Scheibe 2):** `xrechnungXml(r)` erzeugt XRechnung 3.0 (CII) im Browser: Positionen, Rabatt als Nachlass auf Belegebene, USt 19 % (Kategorie S), Anzahlung als TotalPrepaid, IBAN (Code 58), Zahlungsziel, Leistungsdatum, Käufer-Referenz = Auftragsnummer (oder `k.leitwegId`). `eRechDaten` prüft Pflichtangaben und nennt Fehlendes in Alltagssprache. Neue Rechnungen speichern jetzt einen Positions-Schnappschuss (`r.pos`, `anzCt`, `leistung`, `mwstSatz`); alte werden aus dem Auftrag rekonstruiert. Knopf „E-Rechnung“ in Finanzen bei Firmenkunden (gelb, wenn nötig und noch nicht erzeugt). Teilen-Dialog oder Download.
 - **Nicht geprüft:** offizielle KoSIT-Validierung (offline nicht verfügbar). Smoke-Test prüft wohlgeformtes XML, Summenregeln (Zeilen − Nachlass = Basis, Basis + USt = Brutto, Brutto − Anzahlung = Zahlbetrag) und Pflichtelemente. Empfehlung an Inhaber: erste Datei einmal durch einen Online-Prüfdienst oder den Steuerberater prüfen lassen.

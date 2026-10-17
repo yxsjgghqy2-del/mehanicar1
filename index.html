@@ -357,9 +357,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.57';
+const APP_VER='2.58';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.58',d:'2026-10-17',p:['Anfragen aufgeräumt: Die Zahlen (Neu, Offen, Termine, Gewonnen) stehen jetzt kompakt in einer Zeile, darunter woher die Anfragen kommen. So sehen Sie die Anfragen selbst schneller.','Der Knopf für neue Anfragen heißt jetzt verständlich „Neue Anfragen nacheinander abarbeiten“. Die Symbole für WhatsApp, Anrufbeantworter usw. sind wieder sauber gezeichnet statt schwarz gefüllt.']},
  {v:'2.57',d:'2026-10-17',p:['Technik im Hintergrund: Das Aussehen der App liegt jetzt in einer eigenen Datei. Für Sie ändert sich nichts – Änderungen am Design gehen dadurch schneller und sicherer.']},
  {v:'2.56',d:'2026-10-17',p:['Neu: E-Rechnung für Firmenkunden. In Finanzen steht bei Rechnungen an Firmen der Knopf „E-Rechnung“. Er erzeugt eine XRechnung (XML-Datei), die ab 2028 für Firmenkunden Pflicht ist.','Fehlen dafür Angaben (z. B. echte IBAN, E-Mail des Kunden, Adresse mit PLZ), zeigt die App genau, was noch fehlt.']},
  {v:'2.55',d:'2026-10-16',p:['Kleine Korrektur: Wenn beim „Status an Kunden senden“ das Kopieren des Textes nicht klappt, sagt die App das jetzt deutlich, statt still zu scheitern.']},
@@ -2848,6 +2849,8 @@ const KICON={
  mail:'<svg viewBox="0 0 24 24"><rect x="3.5" y="5.5" width="17" height="13" rx="2.5"/><path d="M4 7.5l8 5.5 8-5.5"/></svg>',
  web:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.9 2.6 2.9 14.4 0 17-2.9-2.6-2.9-14.4 0-17z"/></svg>',
  theke:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1-4 3.6-6 7-6s6 2 7 6"/></svg>'};
+/* Kanal-Symbole sind Strich-Icons: Linienfarbe = Textfarbe (vorher teils schwarz gefüllt) */
+Object.keys(KICON).forEach(k=>{KICON[k]=KICON[k].replace('<svg ','<svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ')});
 const QSTAT={neu:['Neu','#0A5FFF'],beantwortet:['Kontaktiert','#6B4DD6'],termin:['Termin','#C2710A'],gewonnen:['Auftrag erteilt','#0E8F4E'],verloren:['Abgesagt','#6B6B73']};
 const anfrage=id=>S.anfragen.find(q=>q.id===id);
 /*TEST-RULE-START*/
@@ -2942,23 +2945,20 @@ function vAnfragen(){
   else list.sort((a,b)=>a.ts-b.ts);
   // Kanal-Statistik
   const chanCt={};q.forEach(x=>chanCt[x.kanal]=(chanCt[x.kanal]||0)+1);
-  const chanStat=Object.entries(QKANAL).filter(([k])=>chanCt[k]).map(([k,l])=>{const kc=KCOL[k]||'#6B6B73';
-   return `<div style="flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:3px;min-width:52px;background:${kc}10;border:1px solid ${kc}30;border-radius:10px;padding:7px 9px">
-    <span style="color:${kc};display:flex;width:18px;height:18px">${KICON[k]||KICON.tel}</span>
-    <span style="font-size:13px;font-weight:750;color:var(--ink);line-height:1">${chanCt[k]}</span>
-    <span style="font-size:9px;color:var(--ink3);font-weight:600;text-transform:uppercase;letter-spacing:.03em">${l.split(' ')[0]}</span></div>`}).join('');
+  const chanStat=Object.entries(QKANAL).filter(([k])=>chanCt[k]).map(([k,l])=>`<span class="as-kanal"><span class="as-ic">${KICON[k]||KICON.tel}</span>${esc(l.split(' ')[0])} <b class="num">${chanCt[k]}</b></span>`).join('');
   body=`
-  ${neu>0?`<button class="card" style="width:100%;display:flex;align-items:center;gap:12px;padding:13px 15px;margin-bottom:12px;text-align:left;border-color:rgba(10,95,255,.35);cursor:pointer" data-act="triage-start">
-   <div style="width:38px;height:38px;border-radius:12px;background:linear-gradient(135deg,#0A5FFF,#5B8DEF);display:grid;place-items:center;color:#fff;flex-shrink:0"><span style="width:19px;height:19px;display:block">${IC.bolt.replace('<svg ','<svg style="stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;width:100%;height:100%" ')}</span></div>
-   <div style="flex:1"><b style="font-size:13.5px">Triage starten</b>
-    <div style="font-size:11px;color:var(--ink3);margin-top:1px">${neu} neue Anfrage${neu>1?'n':''} nacheinander durchgehen — antworten, Termin, später</div></div>
+  ${neu>0?`<button class="card as-start" data-act="triage-start">
+   <span class="as-start-ic">${IC.bolt}</span>
+   <span style="flex:1;min-width:0"><b>Neue Anfragen nacheinander abarbeiten</b>
+    <span class="as-start-sub">${neu} neue Anfrage${neu>1?'n':''} · antworten, Termin geben oder auf später legen</span></span>
    <span class="chev" style="transform:rotate(-45deg)"></span></button>`:''}
-  <div class="kpis stag">
-   <div class="kpi"><b class="num" style="${neu?'color:var(--blue)':''}">${neu}</b><span>Neu</span></div>
-   <div class="kpi"><b class="num">${offen}</b><span>Offen</span></div>
-   <div class="kpi"><b class="num">${termine}</b><span>Termine</span></div>
-   <div class="kpi"><b class="num" style="color:var(--green)">${fmt(gerettetMonatCt()).replace(' €','')}<small style="font-size:10px;font-weight:600"> €</small></b><span>Gewonnen /Mon.</span></div></div>
-  ${chanStat?`<div style="display:flex;gap:7px;overflow-x:auto;margin-bottom:13px;padding:2px 4px;scrollbar-width:none">${chanStat}</div>`:''}
+  <div class="card as-sum">
+   <div class="as-zahlen">
+    <div><b class="num"${neu?' style="color:var(--blue)"':''}>${neu}</b><span>Neu</span></div>
+    <div><b class="num">${offen}</b><span>Offen</span></div>
+    <div><b class="num">${termine}</b><span>Termine</span></div>
+    <div><b class="num" style="color:var(--green)">${fmt(gerettetMonatCt()).replace(/,00 €$/,' €')}</b><span>Gewonnen im Monat</span></div></div>
+   ${chanStat?`<div class="as-kanaele"><span class="as-k-lbl">Herkunft</span>${chanStat}</div>`:''}</div>
   <div class="pills">${[['offen','Offen'],['termin','Termine'],['gewonnen','Auftrag erteilt'],['verloren','Abgesagt'],['alle','Alle']].map(([v,l])=>
    `<button class="pill ${anfrFilter===v?'on':''}" style="${anfrFilter===v?'background:rgba(10,95,255,.08);border-color:var(--blue);color:var(--blue)':''}" data-act="anfr-filter" data-v="${v}">${l}</button>`).join('')}</div>
   <div class="stag">${list.length?list.map(x=>{
