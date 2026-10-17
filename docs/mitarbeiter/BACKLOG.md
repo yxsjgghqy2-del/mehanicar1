@@ -3,6 +3,7 @@
 Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Jede Idee hat eine Herkunft (Inhaber / Recherche / Fehlerfund).
 
 ## A — Wünsche des Inhabers
+- **App viel einfacher / intuitiver** *(Inhaber 17.10.2026: „Das soll bitte alles noch viel viel einfacher aussehen, so dass es wirklich jeder versteht … nur intuitiver. Trotzdem komplexe Funktionen.“)* Vorschlag `designs/einfach.html` (Startseite „Heute“ mit Hauptknopf „Auto annehmen“, Anfragen als Hinweis, Auto-Karten mit 4-Schritt-Balken und einem nächsten Schritt; Auto-Detail: Preis, Arbeiten, zwei Knöpfe, Rest unter „Mehr“; Navigation Heute/Autos/Kunden/Kalender/Mehr). **Wartet auf Zustimmung**, dann Umbau Seite für Seite (zuerst Startseite, dann Auto-Detail, dann Navigation).
 - **Inhaber muss einmal tun:** neuen Befehl aus Einstellungen → Cloud-Backup → „Einmalige Einrichtung“ in Supabase ausführen (schützt Sicherung, schaltet Statusseite frei). Erinnern, bis bestätigt.
 - **Design regelmäßig pflegen** *(Inhaber, 03.10.2026: „Kümmere dich auch regelmäßig um das Design.“)* Dauerauftrag: Jeder 3. Lauf ist ein Design-Lauf (siehe ROUTINE.md). Dabei eine Ansicht bei 390 px hell und dunkel ansehen und Abstände, Schriftgrößen, Ausrichtung, Farben und Einheitlichkeit mit dem Stil von Entwurf 14 verbessern. Erledigt: Planung (2.41), Kundenliste (2.43), Finanzen (2.45), Einstellungen (2.47), Auftragsliste (2.49), Termine (2.51), Anfragen (2.58). Akzentfarbe frei wählbar seit 2.52. Nächste: Auftragsmaske-Details.
 
