@@ -2,6 +2,10 @@
 
 Neueste Einträge oben.
 
+## 17.10.2026 (spät, Nachtrag) — 2.61 Schrift Manrope
+- **Anlass:** Inhaber: „Schriftart von PayPal bitte.“ PayPal Sans ist proprietär (nicht lizenzierbar) → nächstliegende freie Schrift Manrope (SIL OFL), selbst gehostet unter `fonts/` (latin + latin-ext, variabel 200–800, ~40 KB), Lizenz `fonts/OFL-Manrope.txt`. Kein Google-Fonts-Abruf (Datenschutz). In SW-SHELL, SW v62.
+- **Test-Umbau:** `tests/smoke.mjs` startet jetzt einen lokalen Webserver statt `file://` (Schriften wurden per CORS blockiert). Smoke-Test grün.
+
 ## 17.10.2026 (spät) — Kalkulations-Fokus Tag 1: 2.60 Aufschlag-Staffel
 - **Anlass:** Inhaber: 3 Tage nur Kalkulation. Plan mit 7 Paketen in BACKLOG (A, oben).
 - **Gebaut:** `AUFSCHLAG_STD` (bis 20 € +80 %, bis 100 € +50 %, bis 500 € +35 %, darüber +25 %), `vkVorschlag(ek)` mit Rundung auf x,90 € (ab 5 €) bzw. 10 Cent, `vkAuto()` koppelt EK- und VK-Feld in „Teil hinzufügen“ und „Position bearbeiten“: VK folgt dem Vorschlag, bis er von Hand geändert wird; danach Hinweis „Vorschlag … – antippen zum Übernehmen“. Lager-Teile behalten ihren Lager-VK. Einstellungen → Kalkulation & Preise: Staffel (4 Stufen) editierbar, Rundung an/aus, Live-Beispiel. Migration `S.settings.aufschlag`.

@@ -11,6 +11,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preload" href="fonts/manrope-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="app.css">
 </head>
 <body>
@@ -358,9 +359,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.60';
+const APP_VER='2.61';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.61',d:'2026-10-17',p:['Neue Schrift: Manrope – rund, klar und ähnlich wie bei PayPal. Sie ist in der App eingebaut und funktioniert auch ohne Internet.']},
  {v:'2.60',d:'2026-10-17',p:['Kalkulation: Beim Eintragen eines Teils schlägt die App den Verkaufspreis automatisch vor – aus dem Einkauf und Ihrer Aufschlag-Staffel. Günstige Kleinteile bekommen mehr Aufschlag, teure weniger. Den Preis können Sie jederzeit selbst ändern.','Die Staffel stellen Sie unter Einstellungen → Kalkulation & Preise ein. Auf Wunsch werden Preise glatt gemacht (z. B. 24,90 €).']},
  {v:'2.59',d:'2026-10-17',p:['Ruhigere Farben: Die App ist jetzt in gedecktem Anthrazit und Grau gehalten. Statusfarben (Grün, Orange, Rot) sind zurückhaltender, bunte Leuchteffekte sind weg.','Die frühere gelbgrüne Farbe gibt es weiter als Vorschlag unter Einstellungen → Akzentfarbe.']},
  {v:'2.58',d:'2026-10-17',p:['Anfragen aufgeräumt: Die Zahlen (Neu, Offen, Termine, Gewonnen) stehen jetzt kompakt in einer Zeile, darunter woher die Anfragen kommen. So sehen Sie die Anfragen selbst schneller.','Der Knopf für neue Anfragen heißt jetzt verständlich „Neue Anfragen nacheinander abarbeiten“. Die Symbole für WhatsApp, Anrufbeantworter usw. sind wieder sauber gezeichnet statt schwarz gefüllt.']},
@@ -4054,7 +4056,7 @@ function vBuchen(){
  if(route.id&&buchInfo.id!==route.id){buchInfo={id:route.id,d:null};const id=route.id;
   sbRpc('buchung_info',{p_buch_id:id},syncCfg().on?null:SYNC_DEF).then(r=>r.ok?r.json():null).then(d=>{if(d&&d.ws!==undefined&&buchInfo.id===id){buchInfo.d=d;if(route.v==='buchen')render()}}).catch(()=>{})}
  if(route.id&&buchInfo.d){const d=buchInfo.d;fi={...fi,name:d.ws,tel:d.tel,adresse:d.adr,email:d.email,web:d.web}}
- return`<div style="min-height:100%;background:var(--bg);padding:calc(var(--sat,0px) + 20px) 16px calc(40px + var(--sab,0px));font-family:-apple-system,BlinkMacSystemFont,sans-serif">
+ return`<div style="min-height:100%;background:var(--bg);padding:calc(var(--sat,0px) + 20px) 16px calc(40px + var(--sab,0px));font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif">
   <div style="max-width:480px;margin:0 auto">
    <div style="text-align:center;margin-bottom:22px;padding-top:8px">
     <div style="font-size:22px;font-weight:800;letter-spacing:-.02em;margin-bottom:3px">${esc(fi.name||'Werkstatt')}</div>
@@ -4194,7 +4196,7 @@ ACT['buchen-send']=async el=>{
  if(S.settings.pushAnfragen&&'Notification'in window&&Notification.permission==='granted'){
   new Notification('mehanicar — Neue Terminanfrage',{body:name+' · '+anl.slice(0,80),icon:'./icon.svg',tag:'anfrage-'+Date.now()})}
  const app=$('#app');if(app)app.innerHTML=`
-  <div style="height:100%;display:grid;place-items:center;background:var(--bg);padding:20px;font-family:-apple-system,sans-serif;text-align:center">
+  <div style="height:100%;display:grid;place-items:center;background:var(--bg);padding:20px;font-family:Manrope,-apple-system,sans-serif;text-align:center">
    <div style="max-width:340px">
     <div style="width:70px;height:70px;border-radius:50%;background:var(--green-bg);display:grid;place-items:center;margin:0 auto 18px;border:2px solid rgba(14,143,78,.25)">
      <svg viewBox="0 0 24 24" style="width:34px;height:34px;stroke:var(--green);fill:none;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"><polyline points="20 6 9 17 4 12"/></svg></div>
@@ -4227,7 +4229,7 @@ ACT['datev-export']=()=>{
 /* ============ 8. RENDER, EVENTS, INIT ============ */
 function renderErrScreen(err){
  const app=$('#app');if(!app)return;
- app.innerHTML=`<div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:24px;background:#F2F2F7;font-family:-apple-system,sans-serif;text-align:center">
+ app.innerHTML=`<div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:24px;background:#F2F2F7;font-family:Manrope,-apple-system,sans-serif;text-align:center">
   <div style="font-size:17px;font-weight:800;margin-bottom:8px;color:#16161A">Etwas ist schiefgelaufen</div>
   <div style="font-size:12.5px;color:#6B6B73;line-height:1.6;margin-bottom:16px">Bitte mache einen Screenshot dieser Meldung und schicke ihn — damit lässt sich der Fehler gezielt beheben.</div>
   <div style="font-size:10.5px;font-family:ui-monospace,monospace;color:#B53A3A;background:#fff;border:1px solid rgba(224,53,59,.3);border-radius:10px;padding:11px;text-align:left;word-break:break-word;max-height:180px;overflow-y:auto">${String((err&&(err.stack||err.message))||err).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>
@@ -4475,7 +4477,7 @@ try{
  render();
 }catch(err){
  console.error('START-FEHLER:',err);
- document.body.innerHTML='<div style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:24px;background:#F2F2F7;font-family:-apple-system,sans-serif;text-align:center">'
+ document.body.innerHTML='<div style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:24px;background:#F2F2F7;font-family:Manrope,-apple-system,sans-serif;text-align:center">'
   +'<div style="font-size:17px;font-weight:800;margin-bottom:8px;color:#16161A">App konnte nicht starten</div>'
   +'<div style="font-size:12.5px;color:#6B6B73;line-height:1.6;margin-bottom:16px">Bitte Screenshot senden, damit der Fehler behoben werden kann.</div>'
   +'<div style="font-size:10.5px;font-family:ui-monospace,monospace;color:#B53A3A;background:#fff;border:1px solid rgba(224,53,59,.3);border-radius:10px;padding:11px;text-align:left;word-break:break-word">'
