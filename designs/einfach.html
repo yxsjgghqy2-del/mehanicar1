@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vorschlag: Einfach</title>
+<style>
+:root{--bg:#F3F4F5;--card:#fff;--ink:#1B1F23;--ink2:#5D646B;--line:#E3E6E9;--acc:#2F3A44;--ok:#2E7650;--warn:#9C6420;--bad:#B53A3A}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#E9EBED;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:var(--ink);padding:24px 16px 60px}
+h1.t{font-size:20px;text-align:center;margin-bottom:6px}
+p.lead{max-width:640px;margin:0 auto 22px;text-align:center;color:var(--ink2);font-size:14px;line-height:1.55}
+.wrap{display:flex;flex-wrap:wrap;gap:28px;justify-content:center;align-items:flex-start}
+.cap{font-size:12px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;text-align:center}
+.phone{width:360px;max-width:100%;background:var(--bg);border-radius:32px;border:1px solid #D5D9DD;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.08);display:flex;flex-direction:column;min-height:720px}
+.top{padding:22px 20px 10px}
+.hallo{font-size:14px;color:var(--ink2)}
+.big{font-size:26px;font-weight:750;letter-spacing:-.02em;margin-top:2px}
+.main{padding:6px 16px 16px;flex:1}
+.cta{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:56px;border-radius:16px;background:var(--acc);color:#fff;font-size:16px;font-weight:650;border:0;margin:8px 0 18px}
+.cta svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2}
+.sec{font-size:13px;font-weight:700;color:var(--ink2);margin:16px 4px 8px;display:flex;justify-content:space-between}
+.auto{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:14px 15px;margin-bottom:10px}
+.auto .r1{display:flex;align-items:center;gap:10px}
+.kz{font-size:17px;font-weight:750;letter-spacing:.02em}
+.mod{font-size:13px;color:var(--ink2)}
+.was{font-size:14px;margin-top:6px}
+.steps{display:flex;gap:4px;margin:12px 0 4px}
+.steps i{flex:1;height:6px;border-radius:3px;background:var(--line)}
+.steps i.on{background:var(--acc)}
+.stxt{font-size:12.5px;color:var(--ink2);display:flex;justify-content:space-between}
+.next{margin-top:12px;width:100%;min-height:46px;border-radius:12px;border:1.5px solid var(--acc);background:#fff;color:var(--acc);font-size:15px;font-weight:650}
+.hinweis{background:#FBF5EC;border:1px solid #EBDCC4;border-radius:14px;padding:12px 14px;font-size:14px;display:flex;gap:10px;align-items:center;margin-bottom:10px}
+.hinweis b{display:block}
+.hinweis span{font-size:12.5px;color:var(--ink2)}
+.hinweis .go{margin-left:auto;font-size:20px;color:var(--ink2)}
+.nav{display:flex;border-top:1px solid var(--line);background:#fff;padding:8px 6px 14px}
+.nav div{flex:1;text-align:center;font-size:11.5px;color:var(--ink2);padding-top:4px}
+.nav div.on{color:var(--ink);font-weight:700}
+.nav svg{display:block;margin:0 auto 3px;width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.8}
+.hd{display:flex;align-items:center;gap:12px;padding:20px 18px 6px}
+.back{width:40px;height:40px;border-radius:12px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;font-size:20px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px;margin-bottom:12px}
+.stat .lab{font-size:12.5px;color:var(--ink2)}
+.stat .val{font-size:22px;font-weight:750;margin-top:2px}
+.list{background:var(--card);border:1px solid var(--line);border-radius:18px;margin-bottom:12px}
+.li{display:flex;justify-content:space-between;align-items:center;padding:13px 15px;border-bottom:1px solid var(--line);font-size:14.5px}
+.li:last-child{border-bottom:0}
+.li small{display:block;color:var(--ink2);font-size:12.5px}
+.add{color:var(--acc);font-weight:650}
+.mehr{text-align:center;font-size:13.5px;color:var(--ink2);padding:6px 0 4px}
+.btn2{display:flex;gap:8px}
+.btn2 button{flex:1;min-height:48px;border-radius:12px;border:1px solid var(--line);background:#fff;font-size:14.5px;font-weight:600;color:var(--ink)}
+.btn2 button.p{background:var(--acc);color:#fff;border-color:var(--acc)}
+ul.reg{max-width:640px;margin:30px auto 0;font-size:14px;line-height:1.7;color:var(--ink);padding-left:20px}
+</style></head><body>
+<h1 class="t">Vorschlag „Einfach“</h1>
+<p class="lead">So könnte mehanicar aussehen: Auf jeder Seite steht nur das, was man gerade braucht, und immer ein klarer nächster Schritt. Alle Funktionen bleiben erhalten. Kalkulation, Rabatte, Zahlen und Einstellungen liegen eine Ebene tiefer.</p>
+<div class="wrap">
+
+<div><div class="cap">1 · Startseite</div><div class="phone">
+ <div class="top"><div class="hallo">Guten Morgen, Samed</div><div class="big">Heute 4 Autos</div></div>
+ <div class="main">
+  <button class="cta"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Auto annehmen</button>
+  <div class="hinweis"><div><b>2 Kunden warten auf Antwort</b><span>Anfragen von WhatsApp und Telefon</span></div><div class="go">›</div></div>
+  <div class="sec"><span>In der Werkstatt</span><span>4</span></div>
+  <div class="auto"><div class="r1"><div class="kz">HU-SM 247</div><div class="mod">BMW 320d</div></div>
+   <div class="was">Bremsen vorne und hinten</div>
+   <div class="steps"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+   <div class="stxt"><span>In Arbeit</span><span>fertig um 16:00</span></div>
+   <button class="next">Fertig melden</button></div>
+  <div class="auto"><div class="r1"><div class="kz">OF-PG 304</div><div class="mod">Audi A4</div></div>
+   <div class="was">Inspektion</div>
+   <div class="steps"><i class="on"></i><i class="on"></i><i class="on"></i><i></i></div>
+   <div class="stxt"><span>Fertig · 620 €</span><span>wartet auf Abholung</span></div>
+   <button class="next">Kunden Bescheid geben</button></div>
+ </div>
+ <div class="nav">
+  <div class="on"><svg viewBox="0 0 24 24"><path d="M4 11l8-7 8 7v9H4z"/></svg>Heute</div>
+  <div><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="8" rx="2"/><circle cx="7.5" cy="17" r="2"/><circle cx="16.5" cy="17" r="2"/></svg>Autos</div>
+  <div><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c1-4 3.6-6 7-6s6 2 7 6"/></svg>Kunden</div>
+  <div><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>Kalender</div>
+  <div><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>Mehr</div>
+ </div></div></div>
+
+<div><div class="cap">2 · Ein Auto antippen</div><div class="phone">
+ <div class="hd"><div class="back">‹</div><div><div class="kz">HU-SM 247</div><div class="mod">BMW 320d · Max Weber</div></div></div>
+ <div class="main">
+  <div class="steps" style="margin-top:6px"><i class="on"></i><i class="on"></i><i></i><i></i></div>
+  <div class="stxt" style="margin-bottom:14px"><span>Angenommen · <b>In Arbeit</b> · Fertig · Abgeholt</span></div>
+  <div class="stat"><div class="lab">Kosten für den Kunden</div><div class="val">1.240,00 €</div><div class="lab" style="margin-top:4px">inkl. MwSt · Kunde hat zugestimmt</div></div>
+  <div class="sec"><span>Was gemacht wird</span></div>
+  <div class="list">
+   <div class="li"><div>Bremsen vorne<small>Scheiben + Beläge</small></div><b>540 €</b></div>
+   <div class="li"><div>Bremsen hinten<small>Beläge</small></div><b>310 €</b></div>
+   <div class="li"><div>Bremsflüssigkeit<small>wechseln</small></div><b>90 €</b></div>
+   <div class="li add">+ Arbeit oder Teil hinzufügen</div>
+  </div>
+  <div class="btn2"><button>Kunden anrufen</button><button class="p">Fertig melden</button></div>
+  <div class="mehr" style="margin-top:12px">Mehr: Kalkulation, Rabatt, Fotos, Unterschrift ›</div>
+ </div></div></div>
+
+</div>
+<ul class="reg">
+ <li><b>Ein Hauptknopf pro Seite</b> – z. B. „Auto annehmen“ oder „Fertig melden“.</li>
+ <li><b>Ein Fortschrittsbalken statt Fachbegriffen</b> – vier Schritte: Angenommen, In Arbeit, Fertig, Abgeholt.</li>
+ <li><b>Nur nötige Zahlen</b> – Preis für den Kunden. AW, Effizienz und Marge liegen unter „Mehr“.</li>
+ <li><b>Anfragen erscheinen dort, wo man sie braucht</b> – als Hinweis auf der Startseite statt als eigener Bereich.</li>
+ <li><b>Große Schrift und große Knöpfe</b> – gut mit Arbeitshandschuhen und im Stehen bedienbar.</li>
+</ul>
+</body></html>
