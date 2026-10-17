@@ -390,6 +390,27 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (Object.values(er).some(v => !v)) errs.push('E-Rechnung: ' + JSON.stringify(er));
   }
+  // Kalkulation: VK-Vorschlag aus Aufschlag-Staffel
+  {
+    const ka = await page.evaluate(async () => {
+      const w = ms => new Promise(r => setTimeout(r, ms));
+      const formel = vkVorschlag(1200) === 2190 && vkVorschlag(8000) === 11990 && vkVorschlag(0) === 0;
+      const a = S.auftraege.find(o => o.pakete.length), pk = a.pakete[0];
+      nav('auftrag', a.id); await w(80);
+      ACT['add-teil']({ dataset: { oid: a.id, pid: pk.id } }); await w(80);
+      const ek = document.getElementById('pt-ek'), vk = document.getElementById('pt-vk');
+      ek.value = '12,00'; ek.dispatchEvent(new Event('input', { bubbles: true })); await w(30);
+      const auto = parseEuro(vk.value) === 2190;
+      vk.value = '30,00'; vk.dispatchEvent(new Event('input', { bubbles: true }));
+      ek.value = '15,00'; ek.dispatchEvent(new Event('input', { bubbles: true })); await w(30);
+      const hand = parseEuro(vk.value) === 3000 && /Vorschlag/.test(document.getElementById('pt-vk-hint').textContent);
+      closeSheet(); nav('einstellungen'); await w(80);
+      const einst = document.querySelectorAll('[data-f="auf-pct"]').length === 4;
+      nav('planung'); await w(40);
+      return { formel, auto, hand, einst };
+    });
+    if (Object.values(ka).some(v => !v)) errs.push('Aufschlag-Staffel: ' + JSON.stringify(ka));
+  }
   // Akzentfarbe frei wählbar
   {
     const ak = await page.evaluate(async () => {

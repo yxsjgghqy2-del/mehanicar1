@@ -276,6 +276,7 @@ function migrate2(){
  if(S.settings.designV4===undefined){S.settings.designV4=true;S.settings.theme='light'}
  if(S.settings.designV5===undefined){S.settings.designV5=true;S.settings.theme='dark'}
  if(S.settings.stundensatzCt===undefined)S.settings.stundensatzCt=S.settings.awCt||12500;
+ if(!S.settings.aufschlag)S.settings.aufschlag={staffel:AUFSCHLAG_STD.map(x=>({...x})),runden:true};
  if(!S.apKombi)S.apKombi=AP_KOMBI_SEED.map(([kws,partner])=>({keywords:kws,partner}));
  if(!S.pakVorlagen)S.pakVorlagen=PAK_VORLAGEN_SEED.map(t=>({...t,pos:t.pos.map(p=>({...p}))}));
  (S.kunden||[]).forEach(k=>{if(k.ansprechpartner===undefined)k.ansprechpartner=''});
@@ -357,9 +358,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.59';
+const APP_VER='2.60';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.60',d:'2026-10-17',p:['Kalkulation: Beim Eintragen eines Teils schlägt die App den Verkaufspreis automatisch vor – aus dem Einkauf und Ihrer Aufschlag-Staffel. Günstige Kleinteile bekommen mehr Aufschlag, teure weniger. Den Preis können Sie jederzeit selbst ändern.','Die Staffel stellen Sie unter Einstellungen → Kalkulation & Preise ein. Auf Wunsch werden Preise glatt gemacht (z. B. 24,90 €).']},
  {v:'2.59',d:'2026-10-17',p:['Ruhigere Farben: Die App ist jetzt in gedecktem Anthrazit und Grau gehalten. Statusfarben (Grün, Orange, Rot) sind zurückhaltender, bunte Leuchteffekte sind weg.','Die frühere gelbgrüne Farbe gibt es weiter als Vorschlag unter Einstellungen → Akzentfarbe.']},
  {v:'2.58',d:'2026-10-17',p:['Anfragen aufgeräumt: Die Zahlen (Neu, Offen, Termine, Gewonnen) stehen jetzt kompakt in einer Zeile, darunter woher die Anfragen kommen. So sehen Sie die Anfragen selbst schneller.','Der Knopf für neue Anfragen heißt jetzt verständlich „Neue Anfragen nacheinander abarbeiten“. Die Symbole für WhatsApp, Anrufbeantworter usw. sind wieder sauber gezeichnet statt schwarz gefüllt.']},
  {v:'2.57',d:'2026-10-17',p:['Technik im Hintergrund: Das Aussehen der App liegt jetzt in einer eigenen Datei. Für Sie ändert sich nichts – Änderungen am Design gehen dadurch schneller und sicherer.']},
@@ -456,6 +458,23 @@ function ordKalk(a){
  return {arbeiten,teile,sonst,lohn,teileVk,sonstVk,teileEk,posSum,rabPak,rabOrd,netto,mwst,brutto,gewinn,offenNetto,abgerBr,rabNurOffen,restAnz,zuZahlen,marge,lohnPct,
   aw:arbeiten.reduce((s,p)=>s+(p.aw||0)*(p.menge||1),0)};
 }
+
+/* Teile-Aufschlag nach Staffel: je günstiger das Teil im Einkauf, desto höher der Aufschlag in %.
+   bis = EK-Obergrenze in Cent (null = darüber). Runden: VK auf ,90 € (ab 5 €) bzw. auf 10 Cent. */
+const AUFSCHLAG_STD=[{bis:2000,pct:80},{bis:10000,pct:50},{bis:50000,pct:35},{bis:null,pct:25}];
+function aufschlagPct(ekCt){const st=((S.settings.aufschlag||{}).staffel||AUFSCHLAG_STD);return (st.find(x=>x.bis==null||ekCt<=x.bis)||st[st.length-1]).pct}
+function vkVorschlag(ekCt){if(!(ekCt>0))return 0;let vk=ekCt*(1+aufschlagPct(ekCt)/100);
+ if((S.settings.aufschlag||{}).runden!==false)vk=vk>=500?Math.round((vk+10)/100)*100-10:Math.ceil(vk/10)*10;
+ return Math.round(vk)}
+/* Verknüpft EK- und VK-Feld: Solange der VK nicht von Hand geändert wurde, folgt er dem Vorschlag. */
+function vkAuto(ekEl,vkEl,hintEl,manuell){if(!ekEl||!vkEl)return;let hand=!!manuell,auto=null;
+ const upd=()=>{const ek=parseEuro(ekEl.value)||0;
+  if(hintEl)hintEl.textContent=ek>0?(hand?'Vorschlag '+fmt(vkVorschlag(ek))+' (+'+aufschlagPct(ek)+' %) – antippen zum Übernehmen':'+'+aufschlagPct(ek)+' % Aufschlag'):'';
+  if(!hand&&ek>0){auto=fmtIn(vkVorschlag(ek));vkEl.value=auto}};
+ ekEl.addEventListener('input',()=>{upd();vkEl.dispatchEvent(new Event('input',{bubbles:true}))});
+ vkEl.addEventListener('input',()=>{if(vkEl.value!==auto)hand=true;if(hintEl&&hand){const ek=parseEuro(ekEl.value)||0;hintEl.textContent=ek>0?'Vorschlag '+fmt(vkVorschlag(ek))+' (+'+aufschlagPct(ek)+' %)':''}});
+ if(hintEl)hintEl.onclick=()=>{const ek=parseEuro(ekEl.value)||0;if(ek>0){hand=false;upd();vkEl.dispatchEvent(new Event('input',{bubbles:true}))}};
+ upd();return{setHand:v=>{hand=v;upd()}}}
 
 /* ============ 4. SHELL, ROUTER, KOMPONENTEN ============ */
 let route={v:'planung'},navSlideDir=0,skipNextSlide=false,riseNext=false;
@@ -1571,7 +1590,8 @@ function posSheet(a,pk,x,prefillBez){
   :`<div class="row3">
    <div class="fld" style="margin-bottom:0"><label>Menge</label><input id="ps-m" inputmode="numeric" value="${x?(x.menge||1):1}"></div>
    <div class="fld" style="margin-bottom:0"><label>EK / Stück €</label><input id="ps-ek" inputmode="decimal" value="${x?fmtIn(x.ekCt):'0,00'}"></div>
-   <div class="fld" style="margin-bottom:0"><label>VK / Stück €</label><input id="ps-vk" inputmode="decimal" value="${x?fmtIn(x.vkCt):''}"></div></div>`}`)}
+   <div class="fld" style="margin-bottom:0"><label>VK / Stück €</label><input id="ps-vk" inputmode="decimal" value="${x?fmtIn(x.vkCt):''}"></div></div>
+   <button type="button" id="ps-vk-hint" class="vk-hint"></button>`}`)}
   ${mSec('Rabatt & Abrechnung',x&&(x.rab&&x.rab.wert||x.zahler)?[x.rab&&x.rab.wert?'Rabatt':'',x.zahler?ZAHLER[x.zahler]:''].filter(Boolean).join(' · '):'Wie Paket',!!(x&&(x.rab&&x.rab.wert||x.zahler)),`
   <div class="fld"><label>Rabatt Position</label><div style="display:flex;gap:6px"><input id="ps-rw" inputmode="decimal" style="flex:1;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 12px" value="${x&&x.rab?(x.rab.typ==='pct'?String(x.rab.wert).replace('.',','):fmtIn(x.rab.wert)):''}" placeholder="0">
     <div class="disc-tog" style="align-self:center"><button id="ps-re" class="${!x||!x.rab||x.rab.typ==='eur'?'on':''}" type="button">€</button><button id="ps-rp" class="${x&&x.rab&&x.rab.typ==='pct'?'on':''}" type="button">%</button></div></div></div>
@@ -1602,6 +1622,7 @@ function posSheet(a,pk,x,prefillBez){
  $('#sheetbg').addEventListener('input',()=>setTimeout(pv,0));$('#sheetbg').addEventListener('change',()=>setTimeout(pv,0));pv();
  $('#ps-re').onclick=()=>{$('#ps-re').classList.add('on');$('#ps-rp').classList.remove('on')};
  $('#ps-rp').onclick=()=>{$('#ps-rp').classList.add('on');$('#ps-re').classList.remove('on')};
+ if(isT)vkAuto($('#ps-ek'),$('#ps-vk'),$('#ps-vk-hint'),!!x);
  const aw=$('#ps-aw'),aws=$('#ps-aws'),bez=$('#ps-b');
  const calcVk=()=>{if(!aw||!aws)return;const v=parseFloat((aw.value||'').replace(',','.'));const s=parseEuro(aws.value)||S.settings.awCt;
   if(!isNaN(v)&&v>0)$('#ps-vk').value=fmtIn(Math.round(v*s))};
@@ -1642,7 +1663,8 @@ ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
   <div class="row3">
    <div class="fld" style="margin-bottom:0"><label>Menge</label><input id="pt-m" inputmode="numeric" value="1"></div>
    <div class="fld" style="margin-bottom:0"><label>EK / Stück €</label><input id="pt-ek" inputmode="decimal" value="0,00"></div>
-   <div class="fld" style="margin-bottom:0"><label>VK / Stück €</label><input id="pt-vk" inputmode="decimal" value="0,00"></div></div>`)}
+   <div class="fld" style="margin-bottom:0"><label>VK / Stück €</label><input id="pt-vk" inputmode="decimal" value="0,00"></div></div>
+  <button type="button" id="pt-vk-hint" class="vk-hint"></button>`)}
   ${ordFreigegeben(a)?`<div style="font-size:11px;background:var(--amber-bg);border:1px solid rgba(194,113,10,.3);border-radius:9px;padding:8px 11px;margin-bottom:12px;color:var(--amber)">Auftrag ist freigegeben — dieses Teil wird automatisch als <b>Erweiterung</b> protokolliert.</div>`:''}
   <button class="btn btn-main" style="width:100%;margin-top:6px" data-act="teil-save" data-oid="${a.id}" data-pid="${pk.id}">Hinzufügen</button>`);
  /* Vorschau-Kopf: Menge × EK → VK, Summe, Aufschlag, Lagerbestand */
@@ -1650,8 +1672,9 @@ ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
   $('#mk-n').textContent=$('#pt-b').value.trim()||'Neues Teil';
   $('#mk-s').textContent=m+' × EK '+fmt(ek)+' → VK '+fmt(vk)+(l?' · '+(l.bestand>=m?'Lager: '+l.bestand+' da':'nur '+l.bestand+' im Lager — wird bestellt'):'');
   $('#mk-p').textContent=fmt(vk*m);$('#mk-g').textContent=(vk-ek>=0?'+ ':'− ')+fmt(Math.abs(vk-ek)*m)+(ek?' ('+Math.round((vk-ek)/ek*100)+' %)':'')};
+ const va=vkAuto($('#pt-ek'),$('#pt-vk'),$('#pt-vk-hint'),false);
  $('#pt-l').addEventListener('change',e=>{const l=lagerT(e.target.value);if(l){
-  $('#pt-b').value=l.teil;$('#pt-ek').value=fmtIn(l.ekCt);$('#pt-vk').value=fmtIn(l.vkCt)}pv()});
+  $('#pt-b').value=l.teil;$('#pt-ek').value=fmtIn(l.ekCt);$('#pt-vk').value=fmtIn(l.vkCt);va.setHand(true);$('#pt-vk').value=fmtIn(l.vkCt)}pv()});
  $('#sheetbg').addEventListener('input',pv);pv()};
 ACT['teil-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const bez=$('#pt-b').value.trim();if(!bez)return toast('Bezeichnung fehlt',true);
@@ -2491,6 +2514,12 @@ function vEinstellungen(){
    <div class="kv"><span class="k">AW-Teiler (AW pro Stunde)</span><span class="v"><input class="priceinp" style="width:64px" inputmode="decimal" value="${pct1(st.awTeiler||1)}" data-f="set-teiler"></span></div>
    <div class="kv"><span class="k">Preis pro AW (Arbeitswert)</span><span class="v num" style="color:var(--green);font-weight:700">${fmt(st.awCt)} <span style="font-size:10px;color:var(--ink3);font-weight:400">1 AW = ${pct1(60/(st.awTeiler||1))} Min</span></span></div>
    <div class="kv"><span class="k">MwSt-Satz %</span><span class="v"><input class="priceinp" style="width:56px" inputmode="numeric" value="${st.mwst}" data-f="set-mwst"></span></div>
+   <div class="auf-block"><div class="k">Aufschlag auf Teile<br><span style="font-size:11px;color:var(--ink3)">Der Verkaufspreis wird aus dem Einkauf vorgeschlagen – günstige Teile bekommen mehr Aufschlag</span></div>
+    ${((st.aufschlag||{}).staffel||AUFSCHLAG_STD).map((x,i,arr)=>`<div class="auf-row"><span>${i===0?'Einkauf bis':x.bis==null?'darüber':'bis'}</span>
+     ${x.bis==null?`<span class="auf-ab">ab ${fmt(arr[i-1].bis)}</span>`:`<input class="priceinp" style="width:84px" inputmode="decimal" value="${fmtIn(x.bis)}" data-f="auf-bis" data-i="${i}" aria-label="Einkauf bis Euro, Stufe ${i+1}">`}
+     <span>+</span><input class="priceinp" style="width:56px" inputmode="numeric" value="${x.pct}" data-f="auf-pct" data-i="${i}" aria-label="Aufschlag Prozent, Stufe ${i+1}"><span>%</span></div>`).join('')}
+    <label class="auf-rund"><input type="checkbox" data-f="auf-runden" ${(st.aufschlag||{}).runden!==false?'checked':''}> Preise glatt machen (z. B. 24,90 €)</label>
+    <div class="auf-bsp">Beispiel: Einkauf 12,00 € → Verkauf <b>${fmt(vkVorschlag(1200))}</b> · Einkauf 80,00 € → <b>${fmt(vkVorschlag(8000))}</b></div></div>
    <div class="kv"><span class="k">Standard-Abgabe-Uhrzeit</span><span class="v"><input type="time" class="priceinp" style="width:96px" value="${st.defaultAbgabeZeit||'17:00'}" data-f="set-abgabe-zeit"></span></div>
    <div class="kv"><span class="k">Standard-Paket-Name</span><span class="v"><input class="priceinp" style="width:140px" value="${esc(st.defaultPaketName||'')}" placeholder="z. B. Inspektion" data-f="set-pak-name"></span></div>
    <div class="kv"><span class="k">Standard-Klassifizierung</span><span class="v"><div class="selwrap" style="display:inline-block"><select data-f="set-default-klass" style="background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 26px 6px 10px;font-size:12px">
@@ -2569,6 +2598,10 @@ function vEinstellungen(){
 FSET['set-aw']=el=>{S.settings.awCt=parseEuro(el.value);save()};
 FSET['set-stundensatz']=el=>{S.settings.stundensatzCt=parseEuro(el.value);S.settings.awCt=Math.round(S.settings.stundensatzCt/(S.settings.awTeiler||1));save();render()};
 FSET['set-teiler']=el=>{let t=parseFloat(String(el.value||'').replace(',','.'));if(!(t>0))t=1;S.settings.awTeiler=t;S.settings.awCt=Math.round((S.settings.stundensatzCt||0)/t);save();render()};
+FSET['auf-bis']=el=>{const st=S.settings.aufschlag.staffel,i=+el.dataset.i;st[i].bis=Math.max(1,parseEuro(el.value)||st[i].bis);
+ for(let j=1;j<st.length;j++)if(st[j].bis!=null&&st[j].bis<=st[j-1].bis)st[j].bis=st[j-1].bis+100;save();render()};
+FSET['auf-pct']=el=>{const v=parseInt(el.value);S.settings.aufschlag.staffel[+el.dataset.i].pct=Math.max(0,Math.min(500,isNaN(v)?0:v));save();render()};
+FSET['auf-runden']=el=>{S.settings.aufschlag.runden=el.checked;save();render()};
 FSET['set-mwst']=el=>{S.settings.mwst=Math.max(0,Math.min(30,parseInt(el.value)||19));save()};
 FSET['set-firma']=el=>{S.settings.firma[el.dataset.k]=el.value.trim();save()};
 FSET['set-abgabe-zeit']=el=>{S.settings.defaultAbgabeZeit=el.value;save()};
