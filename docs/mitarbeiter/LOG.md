@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 17.10.2026 (Morgenlauf) — 2.56 E-Rechnung + 2.57 CSS ausgelagert
+- **2.56 E-Rechnung (Scheibe 2):** `xrechnungXml(r)` erzeugt XRechnung 3.0 (CII) im Browser: Positionen, Rabatt als Nachlass auf Belegebene, USt 19 % (Kategorie S), Anzahlung als TotalPrepaid, IBAN (Code 58), Zahlungsziel, Leistungsdatum, Käufer-Referenz = Auftragsnummer (oder `k.leitwegId`). `eRechDaten` prüft Pflichtangaben und nennt Fehlendes in Alltagssprache. Neue Rechnungen speichern jetzt einen Positions-Schnappschuss (`r.pos`, `anzCt`, `leistung`, `mwstSatz`); alte werden aus dem Auftrag rekonstruiert. Knopf „E-Rechnung“ in Finanzen bei Firmenkunden (gelb, wenn nötig und noch nicht erzeugt). Teilen-Dialog oder Download.
+- **Nicht geprüft:** offizielle KoSIT-Validierung (offline nicht verfügbar). Smoke-Test prüft wohlgeformtes XML, Summenregeln (Zeilen − Nachlass = Basis, Basis + USt = Brutto, Brutto − Anzahlung = Zahlbetrag) und Pflichtelemente. Empfehlung an Inhaber: erste Datei einmal durch einen Online-Prüfdienst oder den Steuerberater prüfen lassen.
+- **2.57:** CSS aus `index.html` nach `app.css` (814 Zeilen), in `sw.js` SHELL, SW v58. Screenshots unverändert.
+- **Test:** Smoke-Test grün (390/1280).
+
 ## 16.10.2026 — 2.51–2.54 live (PR #70) + Effizienz
 - **GitHub wieder verbunden** (Ausfall 06.–16.10.). Gesammelte Pakete 2.51–2.54 per PR #70 gemergt, live geprüft (APP_VER 2.54, SW v55). Inhaber hat Anleitung für das Supabase-SQL und den neuen Buchungslink bekommen.
 - **Inhaber-Wunsch „schneller und effizienter“, Antwort „alles umsetzen“:** Weckzeiten von 4× auf 2× täglich (06:47 und 18:47 Berlin), dafür 1–2 Pakete pro Lauf. GitHub-Prüfung `smoke.yml` (Smoke-Test bei jedem PR). `index.html` wird nebenbei schrittweise aufgeteilt (BACKLOG).
