@@ -1172,9 +1172,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.55';
+const APP_VER='2.56';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.56',d:'2026-10-17',p:['Neu: E-Rechnung für Firmenkunden. In Finanzen steht bei Rechnungen an Firmen der Knopf „E-Rechnung“. Er erzeugt eine XRechnung (XML-Datei), die ab 2028 für Firmenkunden Pflicht ist.','Fehlen dafür Angaben (z. B. echte IBAN, E-Mail des Kunden, Adresse mit PLZ), zeigt die App genau, was noch fehlt.']},
  {v:'2.55',d:'2026-10-16',p:['Kleine Korrektur: Wenn beim „Status an Kunden senden“ das Kopieren des Textes nicht klappt, sagt die App das jetzt deutlich, statt still zu scheitern.']},
  {v:'2.54',d:'2026-10-08',p:['Fehler behoben: Online-Terminanfragen von Kunden-Handys kommen jetzt bei Ihnen an. Die App holt sie alle 3 Minuten ab und zeigt sie unter „Anfragen“ als neu – bestätigt wird weiter nur von Ihnen.','Dafür braucht es das Cloud-Backup und den Befehl aus „Einmalige Einrichtung“. Danach hat Ihr Buchungslink eine neue Adresse – bitte den neuen Link weitergeben (Webseite, Google-Profil).']},
  {v:'2.53',d:'2026-10-08',p:['Neu: Statusseite für Kunden. Beim „Status an Kunden senden“ kann ein Link mitgeschickt werden. Darüber sieht der Kunde jederzeit den aktuellen Stand – ohne Namen und ohne Preise. Ändert sich der Status, ist die Seite automatisch aktuell.','Einmalig nötig: den neuen Befehl aus Einstellungen → Cloud-Backup → „Einmalige Einrichtung“ in Supabase ausführen. Er schützt außerdem Ihre Sicherung besser.']},
@@ -2764,13 +2765,82 @@ function doBill(a,pakIds){
   const reNr='RE-'+y+'-'+String(S.settings.nextRe++).padStart(4,'0');
   const inv=buildInvoiceHtml(a,pakIds,reNr);
   const gewinn=paks.reduce((s,pk)=>s+pakGewinn(pk),0);
-  S.rechnungen.push({id:'r'+uid(),nr:reNr,auftragId:a.id,datum:todayISO(),nettoCt:inv.netto,mwstCt:inv.mwst,bruttoCt:inv.brutto,gewinnCt:gewinn,paketIds:pakIds});
+  S.rechnungen.push({id:'r'+uid(),nr:reNr,auftragId:a.id,datum:todayISO(),nettoCt:inv.netto,mwstCt:inv.mwst,bruttoCt:inv.brutto,gewinnCt:gewinn,paketIds:pakIds,
+   anzCt:inv.anz||0,leistung:a.abgabe||todayISO(),mwstSatz:S.settings.mwst,pos:rePosSnap(paks)});
   a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Rechnung '+reNr+' erstellt — '+fmt(inv.brutto)+' brutto.',preisCt:inv.brutto,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
   paks.forEach(p=>{p.abger=true;if(p.status!=='fertig')p.status='fertig'});
   if(inv.anz)a.anzVerrCt=(a.anzVerrCt||0)+inv.anz;
   if(a.pakete.every(p=>p.abger)&&a.status!=='abgeholt')a.status='fertig';
   save();render();toast(reNr+' erstellt');
   $('#printarea').innerHTML=inv.html;setTimeout(()=>window.print(),120)},false)}
+
+/* ---- E-Rechnung (XRechnung 3.0, CII) – wird komplett im Browser erzeugt ---- */
+function rePosSnap(paks){return paks.flatMap(pk=>pk.pos.filter(p=>p.typ!=='text'&&p.typ!=='befund'&&posNetto(p)>0)
+ .map(p=>({bez:(p.bez||'Position').slice(0,200),typ:p.typ,menge:p.menge||1,vkCt:p.vkCt,nettoCt:posNetto(p)})))}
+function adrTeile(s){s=(s||'').trim();const m=s.match(/^(.*?)[,\n]\s*(?:D-)?(\d{5})\s+(.+)$/);return m?{str:m[1].trim(),plz:m[2],ort:m[3].trim()}:null}
+function xmlEsc(v){return String(v==null?'':v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]))}
+const eurX=ct=>(Math.round(ct)/100).toFixed(2);
+function eRechDaten(r){const a=auftrag(r.auftragId),k=a?kunde(a.kundeId)||{}:{},fi=S.settings.firma||{};
+ const pos=r.pos||rePosSnap(a?a.pakete.filter(p=>(r.paketIds||[]).includes(p.id)):[]);
+ const fehl=[];
+ const sa=adrTeile(fi.adresse),ka=adrTeile(k.adresse);
+ if(!fi.name)fehl.push('Werkstattname (Einstellungen)');
+ if(!sa)fehl.push('Werkstatt-Adresse im Format „Straße Nr, PLZ Ort“ (Einstellungen)');
+ if(!fi.ustid&&!fi.steuernr)fehl.push('USt-IdNr. oder Steuernummer der Werkstatt (Einstellungen)');
+ if(!fi.iban||/^DE0{2}\s?0{4}/.test(fi.iban.replace(/\s/g,'').slice(0,8)+' '))fehl.push('echte IBAN (Einstellungen)');
+ if(!fi.email)fehl.push('E-Mail der Werkstatt (Einstellungen)');
+ if(!fi.tel)fehl.push('Telefon der Werkstatt (Einstellungen)');
+ if(!k.name)fehl.push('Name des Kunden');
+ if(!ka)fehl.push('Kunden-Adresse im Format „Straße Nr, PLZ Ort“');
+ if(!k.email)fehl.push('E-Mail des Kunden (für die elektronische Zustellung)');
+ if(!pos.length)fehl.push('Rechnungspositionen (Auftrag nicht mehr vorhanden)');
+ const zeilen=pos.reduce((x,p)=>x+p.nettoCt,0);
+ return{a,k,fi,pos,sa,ka,fehl,zeilen,nachlass:Math.max(0,zeilen-r.nettoCt)}}
+function xrechnungXml(r){const d=eRechDaten(r),{a,k,fi,pos,sa,ka}=d,satz=r.mwstSatz??S.settings.mwst;
+ const dt=x=>(x||todayISO()).slice(0,10).replace(/-/g,''),faellig=addDays(r.datum,S.settings.mahnTage||14);
+ const anz=r.anzCt||0;
+ const zeile=(p,i)=>{const q=(p.typ==='teil'&&p.nettoCt===Math.round(p.vkCt*p.menge))?p.menge:1,preis=p.nettoCt/q;
+  return`<ram:IncludedSupplyChainTradeLineItem><ram:AssociatedDocumentLineDocument><ram:LineID>${i+1}</ram:LineID></ram:AssociatedDocumentLineDocument>
+<ram:SpecifiedTradeProduct><ram:Name>${xmlEsc(p.bez)}</ram:Name></ram:SpecifiedTradeProduct>
+<ram:SpecifiedLineTradeAgreement><ram:NetPriceProductTradePrice><ram:ChargeAmount>${(preis/100).toFixed(4)}</ram:ChargeAmount></ram:NetPriceProductTradePrice></ram:SpecifiedLineTradeAgreement>
+<ram:SpecifiedLineTradeDelivery><ram:BilledQuantity unitCode="${p.typ==='teil'?'H87':'C62'}">${q}</ram:BilledQuantity></ram:SpecifiedLineTradeDelivery>
+<ram:SpecifiedLineTradeSettlement><ram:ApplicableTradeTax><ram:TypeCode>VAT</ram:TypeCode><ram:CategoryCode>S</ram:CategoryCode><ram:RateApplicablePercent>${satz}</ram:RateApplicablePercent></ram:ApplicableTradeTax>
+<ram:SpecifiedTradeSettlementLineMonetarySummation><ram:LineTotalAmount>${eurX(p.nettoCt)}</ram:LineTotalAmount></ram:SpecifiedTradeSettlementLineMonetarySummation></ram:SpecifiedLineTradeSettlement></ram:IncludedSupplyChainTradeLineItem>`};
+ const adr=x=>`<ram:PostalTradeAddress><ram:PostcodeCode>${xmlEsc(x.plz)}</ram:PostcodeCode><ram:LineOne>${xmlEsc(x.str)}</ram:LineOne><ram:CityName>${xmlEsc(x.ort)}</ram:CityName><ram:CountryID>DE</ram:CountryID></ram:PostalTradeAddress>`;
+ return`<?xml version="1.0" encoding="UTF-8"?>
+<rsm:CrossIndustryInvoice xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100" xmlns:ram="urn:un:unece:uncefact:data:standard:ReusableAggregateBusinessInformationEntity:100" xmlns:udt="urn:un:unece:uncefact:data:standard:UnqualifiedDataType:100">
+<rsm:ExchangedDocumentContext><ram:BusinessProcessSpecifiedDocumentContextParameter><ram:ID>urn:fdc:peppol.eu:2017:poacc:billing:01:1.0</ram:ID></ram:BusinessProcessSpecifiedDocumentContextParameter>
+<ram:GuidelineSpecifiedDocumentContextParameter><ram:ID>urn:cen.eu:en16931:2017#compliant#urn:xeinkauf.de:kosit:xrechnung_3.0</ram:ID></ram:GuidelineSpecifiedDocumentContextParameter></rsm:ExchangedDocumentContext>
+<rsm:ExchangedDocument><ram:ID>${xmlEsc(r.nr)}</ram:ID><ram:TypeCode>380</ram:TypeCode><ram:IssueDateTime><udt:DateTimeString format="102">${dt(r.datum)}</udt:DateTimeString></ram:IssueDateTime>
+${a?`<ram:IncludedNote><ram:Content>${xmlEsc('Auftrag '+a.nr+((fzg(a.fzgId)||{}).kennz?' · Fahrzeug '+fzg(a.fzgId).kennz:''))}</ram:Content></ram:IncludedNote>`:''}</rsm:ExchangedDocument>
+<rsm:SupplyChainTradeTransaction>
+${pos.map(zeile).join('\n')}
+<ram:ApplicableHeaderTradeAgreement><ram:BuyerReference>${xmlEsc(k.leitwegId||(a?a.nr:r.nr))}</ram:BuyerReference>
+<ram:SellerTradeParty><ram:Name>${xmlEsc(fi.name)}</ram:Name>
+<ram:DefinedTradeContact><ram:PersonName>${xmlEsc(fi.inhaber||fi.name)}</ram:PersonName><ram:TelephoneUniversalCommunication><ram:CompleteNumber>${xmlEsc(fi.tel)}</ram:CompleteNumber></ram:TelephoneUniversalCommunication><ram:EmailURIUniversalCommunication><ram:URIID>${xmlEsc(fi.email)}</ram:URIID></ram:EmailURIUniversalCommunication></ram:DefinedTradeContact>
+${sa?adr(sa):''}<ram:URIUniversalCommunication><ram:URIID schemeID="EM">${xmlEsc(fi.email)}</ram:URIID></ram:URIUniversalCommunication>
+${fi.ustid?`<ram:SpecifiedTaxRegistration><ram:ID schemeID="VA">${xmlEsc(fi.ustid)}</ram:ID></ram:SpecifiedTaxRegistration>`:''}${fi.steuernr?`<ram:SpecifiedTaxRegistration><ram:ID schemeID="FC">${xmlEsc(fi.steuernr)}</ram:ID></ram:SpecifiedTaxRegistration>`:''}</ram:SellerTradeParty>
+<ram:BuyerTradeParty><ram:Name>${xmlEsc(k.name)}</ram:Name>${ka?adr(ka):''}<ram:URIUniversalCommunication><ram:URIID schemeID="EM">${xmlEsc(k.email)}</ram:URIID></ram:URIUniversalCommunication>
+${k.ustid?`<ram:SpecifiedTaxRegistration><ram:ID schemeID="VA">${xmlEsc(k.ustid)}</ram:ID></ram:SpecifiedTaxRegistration>`:''}</ram:BuyerTradeParty></ram:ApplicableHeaderTradeAgreement>
+<ram:ApplicableHeaderTradeDelivery><ram:ActualDeliverySupplyChainEvent><ram:OccurrenceDateTime><udt:DateTimeString format="102">${dt(r.leistung||r.datum)}</udt:DateTimeString></ram:OccurrenceDateTime></ram:ActualDeliverySupplyChainEvent></ram:ApplicableHeaderTradeDelivery>
+<ram:ApplicableHeaderTradeSettlement><ram:InvoiceCurrencyCode>EUR</ram:InvoiceCurrencyCode>
+<ram:SpecifiedTradeSettlementPaymentMeans><ram:TypeCode>58</ram:TypeCode><ram:PayeePartyCreditorFinancialAccount><ram:IBANID>${xmlEsc((fi.iban||'').replace(/\s/g,''))}</ram:IBANID></ram:PayeePartyCreditorFinancialAccount></ram:SpecifiedTradeSettlementPaymentMeans>
+<ram:ApplicableTradeTax><ram:CalculatedAmount>${eurX(r.mwstCt)}</ram:CalculatedAmount><ram:TypeCode>VAT</ram:TypeCode><ram:BasisAmount>${eurX(r.nettoCt)}</ram:BasisAmount><ram:CategoryCode>S</ram:CategoryCode><ram:RateApplicablePercent>${satz}</ram:RateApplicablePercent></ram:ApplicableTradeTax>
+${d.nachlass?`<ram:SpecifiedTradeAllowanceCharge><ram:ChargeIndicator><udt:Indicator>false</udt:Indicator></ram:ChargeIndicator><ram:ActualAmount>${eurX(d.nachlass)}</ram:ActualAmount><ram:Reason>Rabatt</ram:Reason><ram:CategoryTradeTax><ram:TypeCode>VAT</ram:TypeCode><ram:CategoryCode>S</ram:CategoryCode><ram:RateApplicablePercent>${satz}</ram:RateApplicablePercent></ram:CategoryTradeTax></ram:SpecifiedTradeAllowanceCharge>`:''}
+<ram:SpecifiedTradePaymentTerms><ram:Description>${xmlEsc('Zahlbar innerhalb von '+(S.settings.mahnTage||14)+' Tagen ohne Abzug.')}</ram:Description><ram:DueDateDateTime><udt:DateTimeString format="102">${dt(faellig)}</udt:DateTimeString></ram:DueDateDateTime></ram:SpecifiedTradePaymentTerms>
+<ram:SpecifiedTradeSettlementHeaderMonetarySummation><ram:LineTotalAmount>${eurX(d.zeilen)}</ram:LineTotalAmount>${d.nachlass?`<ram:AllowanceTotalAmount>${eurX(d.nachlass)}</ram:AllowanceTotalAmount>`:''}<ram:TaxBasisTotalAmount>${eurX(r.nettoCt)}</ram:TaxBasisTotalAmount><ram:TaxTotalAmount currencyID="EUR">${eurX(r.mwstCt)}</ram:TaxTotalAmount><ram:GrandTotalAmount>${eurX(r.bruttoCt)}</ram:GrandTotalAmount>${anz?`<ram:TotalPrepaidAmount>${eurX(anz)}</ram:TotalPrepaidAmount>`:''}<ram:DuePayableAmount>${eurX(r.bruttoCt-anz)}</ram:DuePayableAmount></ram:SpecifiedTradeSettlementHeaderMonetarySummation>
+</ram:ApplicableHeaderTradeSettlement></rsm:SupplyChainTradeTransaction></rsm:CrossIndustryInvoice>`}
+ACT['erech']=el=>{const r=S.rechnungen.find(x=>x.id===el.dataset.id);if(!r)return;const d=eRechDaten(r);
+ sheet('E-Rechnung '+r.nr,`
+  <div style="font-size:13px;line-height:1.55;color:var(--ink2);margin-bottom:12px">Erzeugt eine <b>XRechnung</b> (XML-Datei) für ${esc(d.k.name||'den Kunden')}. Diese Datei ist die E-Rechnung für Firmenkunden. Schicken Sie sie per E-Mail – zusätzlich gern die normale Rechnung als PDF.</div>
+  ${d.fehl.length?`<div style="background:var(--amber-bg);border-radius:10px;padding:11px 13px;margin-bottom:12px;font-size:12.5px;line-height:1.6"><b>Bitte zuerst ergänzen:</b><br>${d.fehl.map(f=>'· '+esc(f)).join('<br>')}</div>`:''}
+  <button class="btn btn-main" style="width:100%" data-act="erech-xml" data-id="${r.id}"${d.fehl.length?' disabled':''}>E-Rechnung (XML) herunterladen</button>`)};
+ACT['erech-xml']=async el=>{const r=S.rechnungen.find(x=>x.id===el.dataset.id);if(!r||eRechDaten(r).fehl.length)return;
+ const name=r.nr+'.xml',blob=new Blob([xrechnungXml(r)],{type:'application/xml'});
+ try{const f=new File([blob],name,{type:'application/xml'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'E-Rechnung '+r.nr});closeSheet();return}}catch(e){if(e&&e.name==='AbortError')return}
+ const u=URL.createObjectURL(blob),l=document.createElement('a');l.href=u;l.download=name;document.body.appendChild(l);l.click();l.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);
+ r.eRechTs=Date.now();save();closeSheet();toast('E-Rechnung gespeichert')};
 
 /* ============ 7. KUNDEN / FAHRZEUGE / LAGER / MEHR ============ */
 let kQ='',lQ='';
@@ -3195,9 +3265,10 @@ function vFinanzen(){
   <div class="card">${S.rechnungen.slice().reverse().slice(0,20).map(r=>{const a=auftrag(r.auftragId);const k=a?kunde(a.kundeId):null;
     const od=!r.bezahlt&&(Date.parse(todayISO())-Date.parse(r.datum))/86400000>14;
     return `<div class="lrow" style="cursor:default">
-    <div class="lt" ${a?`data-act="open" data-v="auftrag" data-id="${a.id}" style="cursor:pointer"`:''}><b>${r.nr}${od?' <span class="tag t-red" style="font-size:8.5px">überfällig</span>':''}${eReNoetig(r)?' <span class="tag t-amber" style="font-size:8.5px" title="Firmenkunde, über 250 € — ab 2028 als E-Rechnung nötig">E-Rechnung</span>':''}</b>
+    <div class="lt" ${a?`data-act="open" data-v="auftrag" data-id="${a.id}" style="cursor:pointer"`:''}><b>${r.nr}${od?' <span class="tag t-red" style="font-size:8.5px">überfällig</span>':''}</b>
     <span>${dLabel(r.datum)} · ${esc(k?k.name:'—')} · <span class="num">${fmt(r.bruttoCt)}</span> · <span class="num" style="color:var(--green)">DB ${fmt(r.gewinnCt||0)}</span></span></div>
     <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+     ${k&&k.firma?`<button class="tag ${eReNoetig(r)&&!r.eRechTs?'t-amber':'t-gray'}" style="border:none;cursor:pointer;font-family:inherit;min-height:32px" data-act="erech" data-id="${r.id}" title="E-Rechnung (XRechnung) erzeugen">${r.eRechTs?'E-Rechnung ✓':'E-Rechnung'}</button>`:''}
      ${od?`<button class="btn btn-sm" style="background:var(--amber);color:#fff" data-act="re-mahn" data-id="${r.id}">Mahnen</button>`:''}
      <button class="tag ${r.bezahlt?'t-green':'t-amber'}" style="border:none;cursor:pointer;font-family:inherit" data-act="re-paid" data-id="${r.id}">${r.bezahlt?'bezahlt':'offen'}</button></div></div>`}).join('')||'<div style="padding:14px;font-size:12px;color:var(--ink3)">Noch keine Rechnungen</div>'}</div>`:''}`;
  return shell(inner,{title:'Finanzen',eyebrow:'Übersicht',back:1});
