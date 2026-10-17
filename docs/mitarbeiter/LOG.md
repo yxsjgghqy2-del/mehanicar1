@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 17.10.2026 (spät) — Kalkulations-Fokus Tag 1: 2.60 Aufschlag-Staffel
+- **Anlass:** Inhaber: 3 Tage nur Kalkulation. Plan mit 7 Paketen in BACKLOG (A, oben).
+- **Gebaut:** `AUFSCHLAG_STD` (bis 20 € +80 %, bis 100 € +50 %, bis 500 € +35 %, darüber +25 %), `vkVorschlag(ek)` mit Rundung auf x,90 € (ab 5 €) bzw. 10 Cent, `vkAuto()` koppelt EK- und VK-Feld in „Teil hinzufügen“ und „Position bearbeiten“: VK folgt dem Vorschlag, bis er von Hand geändert wird; danach Hinweis „Vorschlag … – antippen zum Übernehmen“. Lager-Teile behalten ihren Lager-VK. Einstellungen → Kalkulation & Preise: Staffel (4 Stufen) editierbar, Rundung an/aus, Live-Beispiel. Migration `S.settings.aufschlag`.
+- **Test:** Smoke-Test grün, neue Prüfung (Formel, Automatik, Handeingabe bleibt, Einstellungen). SW v61.
+
 ## 17.10.2026 (Abend, Nachtrag) — 2.59 Ruhige Farben
 - **Anlass:** Inhaber: „Farben sind eine Katastrophe, das sieht eher nach Zirkus aus als Professionalität.“
 - **Gebaut:** Neuer Farbblock am Ende von `app.css`: Akzent Anthrazit (#2F3A44, dunkel #D5DADF), gedeckte Statusfarben (Stahlblau, Grün #2E7650, Ocker #9C6420, Rot #B53A3A), Violett → Schiefergrau, Hintergrund ohne Raster und ohne farbige Leuchtflecken, Karten im Dunkelmodus einfarbig ohne Glas-Effekt. Harte Farbwerte in `index.html` (#0A5FFF, #6B4DD6, #0E8F4E, #C2710A, #E0353B …) auf dieselben gedeckten Töne umgestellt. Alter Gelbgrün-Akzent bleibt als Vorschlag in der Farbauswahl. SW v60.

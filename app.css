@@ -865,3 +865,15 @@ body.theme-dark .kpi::after{display:none}
 body.theme-dark .pin-card{border-color:rgba(213,218,223,.25)}
 .pbar i{background:var(--blue)}
 .bar{background:var(--blue)}
+
+/* Kalkulation: Aufschlag-Staffel (2.60) */
+.vk-hint{display:block;background:none;border:0;padding:6px 2px 0;margin:0 0 4px;font-size:12px;color:var(--ink3);text-align:left;min-height:28px;cursor:pointer}
+.vk-hint:empty{display:none}
+.auf-block{padding:11px 0;border-bottom:1px solid var(--line2);font-size:12.5px}
+.auf-block>.k{color:var(--ink3);margin-bottom:8px}
+.auf-row{display:flex;align-items:center;gap:8px;margin:6px 0;color:var(--ink2)}
+.auf-row>span:first-child{width:78px}
+.auf-ab{width:84px;font-size:12px}
+.auf-rund{display:flex;align-items:center;gap:8px;margin-top:10px;min-height:40px;color:var(--ink2)}
+.auf-rund input{width:20px;height:20px}
+.auf-bsp{font-size:12px;color:var(--ink3);margin-top:4px}
