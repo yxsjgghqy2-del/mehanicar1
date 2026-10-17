@@ -7,7 +7,15 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const URL = 'file://' + ROOT + '/index.html';
+// Kleiner lokaler Webserver statt file:// (Schriften u. Ä. laden wie auf der echten Seite)
+import http from 'http';
+import fsSrv from 'fs';
+const MIME = { '.html': 'text/html', '.css': 'text/css', '.js': 'application/javascript', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.woff2': 'font/woff2', '.webmanifest': 'application/manifest+json' };
+const srv = http.createServer((q, r) => { const f = path.join(ROOT, decodeURIComponent(q.url.split('?')[0]).replace(/^\/$/, '/index.html'));
+  if (!f.startsWith(ROOT) || !fsSrv.existsSync(f) || fsSrv.statSync(f).isDirectory()) { r.statusCode = 404; return r.end(); }
+  r.setHeader('Content-Type', MIME[path.extname(f)] || 'application/octet-stream'); fsSrv.createReadStream(f).pipe(r); });
+await new Promise(res => srv.listen(0, 'localhost', res));
+const URL = 'http://localhost:' + srv.address().port + '/index.html';
 const VIEWS = ['planung', 'auftraege', 'kunden', 'termine', 'anfragen', 'mehr', 'fahrzeuge', 'lager', 'finanzen', 'einstellungen', 'kalender', 'bestellungen', 'team', 'apdb', 'pakvorlagen'];
 const shotDir = process.env.SHOTS || null;
 
@@ -493,4 +501,5 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
   fail += errs.length;
 }
 await browser.close();
+srv.close();
 process.exit(fail ? 1 : 0);
