@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 17.10.2026 (Abend, Nachtrag) — 2.59 Ruhige Farben
+- **Anlass:** Inhaber: „Farben sind eine Katastrophe, das sieht eher nach Zirkus aus als Professionalität.“
+- **Gebaut:** Neuer Farbblock am Ende von `app.css`: Akzent Anthrazit (#2F3A44, dunkel #D5DADF), gedeckte Statusfarben (Stahlblau, Grün #2E7650, Ocker #9C6420, Rot #B53A3A), Violett → Schiefergrau, Hintergrund ohne Raster und ohne farbige Leuchtflecken, Karten im Dunkelmodus einfarbig ohne Glas-Effekt. Harte Farbwerte in `index.html` (#0A5FFF, #6B4DD6, #0E8F4E, #C2710A, #E0353B …) auf dieselben gedeckten Töne umgestellt. Alter Gelbgrün-Akzent bleibt als Vorschlag in der Farbauswahl. SW v60.
+- **Test:** Smoke-Test grün (390/1280), Screenshots Planung/Anfragen hell und dunkel angesehen.
+- **Regel ab jetzt:** Neue Farben nur über die Tokens (`--blue/--green/--amber/--red`), keine neuen Hex-Werte in `index.html`.
+
 ## 17.10.2026 (Abendlauf) — 2.58 Design-Lauf Anfragen
 - **Gebaut:** „Triage starten“-Karte (blauer Verlauf, Fachwort) → ruhige Karte „Neue Anfragen nacheinander abarbeiten“ mit Akzent-Hintergrund. Vier große Kennzahl-Kacheln + bunte Kanal-Kacheln → eine kompakte Karte: 4 Zahlen in einer Zeile, darunter „Herkunft“ als Textzeile. Erste Anfrage jetzt ohne Scrollen sichtbar. Fehlerfund: `KICON` (Kanal-Symbole) hatten keine Linienfarbe und wurden schwarz gefüllt gezeichnet – jetzt `stroke=currentColor`, betrifft auch die Anfrage-Karten. CSS in `app.css`. SW v59.
 - **Test:** Smoke-Test grün (390/1280), Screenshots hell/dunkel angesehen; `anfragen` in die Screenshot-Liste aufgenommen.

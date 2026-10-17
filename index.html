@@ -174,7 +174,7 @@ function seed(){
  return {version:2,demo:true,
   settings:{awCt:12500,stundensatzCt:12500,awTeiler:1,mwst:19,nextRe:101,nextAu:49,nextBe:1,buehnen:3,theme:'auto',onboarded:false,ki:{endpoint:'/api/analyse',model:'claude-haiku-4-5-20251001'},
    firma:{name:'mehanicar Kfz-Meisterwerkstatt',inhaber:'Samed',adresse:'Musterstraße 1, 63450 Hanau',tel:'+49 6181 000000',email:'info@mehanicar.de',iban:'DE00 0000 0000 0000 0000 00',ustid:'DE000000000',web:'mehanicar.de',reviewUrl:''}},
-  kunden:K,fahrzeuge:F,lager:L,auftraege:A,rechnungen:[],anfragen:Q,radarDone:{},bestellungen:[],kampagnen:[],mitarbeiter:[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#0A5FFF',aktiv:true}],termine:[],krankmeldungen:[],urlaub:[],meta:{changes:0,lastBackup:null}};
+  kunden:K,fahrzeuge:F,lager:L,auftraege:A,rechnungen:[],anfragen:Q,radarDone:{},bestellungen:[],kampagnen:[],mitarbeiter:[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#3E5A73',aktiv:true}],termine:[],krankmeldungen:[],urlaub:[],meta:{changes:0,lastBackup:null}};
 }
 /* Kunden-Normalisierung: name → vorname/nachname/firma, adresse → strasse/plz/ort */
 function kunNorm(){
@@ -214,7 +214,7 @@ S.settings.firma.reviewUrl=S.settings.firma.reviewUrl||'';
  if(a.mitarbeiterId===undefined)a.mitarbeiterId=null;(a.zeiten||[]).forEach(z=>{if(z.mid===undefined)z.mid='m1'})});
 S.bestellungen=S.bestellungen||[];S.kampagnen=S.kampagnen||[];
 S.settings.nextBe=S.settings.nextBe||1;
-if(!S.mitarbeiter||!S.mitarbeiter.length)S.mitarbeiter=[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#0A5FFF',aktiv:true}];
+if(!S.mitarbeiter||!S.mitarbeiter.length)S.mitarbeiter=[{id:'m1',name:'Samed',kuerzel:'SM',farbe:'#3E5A73',aktiv:true}];
 S.krankmeldungen=S.krankmeldungen||[];S.urlaub=S.urlaub||[];S.termine=S.termine||[];
 S.settings.defaultAbgabeZeit=S.settings.defaultAbgabeZeit||'17:00';
 S.settings.defaultKlass=S.settings.defaultKlass||'kw';
@@ -343,7 +343,7 @@ function applyTheme(t){
  applyAkzent();
 }
 /* Eigene Akzentfarbe (Einstellungen → Erscheinungsbild) */
-const AKZ_VORSCHL=[['#D9E97A','Standard'],['#E8833A','Orange'],['#D64545','Rot'],['#3B7DD8','Blau'],['#3FA66B','Grün'],['#D4A73A','Gold'],['#8A949E','Grau']];
+const AKZ_VORSCHL=[['#2F3A44','Standard'],['#D9E97A','Gelbgrün'],['#E8833A','Orange'],['#D64545','Rot'],['#3B7DD8','Blau'],['#3FA66B','Grün'],['#D4A73A','Gold'],['#8A949E','Grau']];
 function akzentInk(hex){const n=parseInt(hex.slice(1),16),c=[n>>16&255,n>>8&255,n&255].map(v=>{v/=255;return v<=.03928?v/12.92:Math.pow((v+.055)/1.055,2.4)});
  const L=.2126*c[0]+.7152*c[1]+.0722*c[2];return (L+.05)/.05>=1.05/(L+.05)?'#15180A':'#FFFFFF'}
 function applyAkzent(){const b=document.body;let h='';try{h=(S.settings&&S.settings.akzent)||''}catch(e){}
@@ -357,9 +357,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.58';
+const APP_VER='2.59';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.59',d:'2026-10-17',p:['Ruhigere Farben: Die App ist jetzt in gedecktem Anthrazit und Grau gehalten. Statusfarben (Grün, Orange, Rot) sind zurückhaltender, bunte Leuchteffekte sind weg.','Die frühere gelbgrüne Farbe gibt es weiter als Vorschlag unter Einstellungen → Akzentfarbe.']},
  {v:'2.58',d:'2026-10-17',p:['Anfragen aufgeräumt: Die Zahlen (Neu, Offen, Termine, Gewonnen) stehen jetzt kompakt in einer Zeile, darunter woher die Anfragen kommen. So sehen Sie die Anfragen selbst schneller.','Der Knopf für neue Anfragen heißt jetzt verständlich „Neue Anfragen nacheinander abarbeiten“. Die Symbole für WhatsApp, Anrufbeantworter usw. sind wieder sauber gezeichnet statt schwarz gefüllt.']},
  {v:'2.57',d:'2026-10-17',p:['Technik im Hintergrund: Das Aussehen der App liegt jetzt in einer eigenen Datei. Für Sie ändert sich nichts – Änderungen am Design gehen dadurch schneller und sicherer.']},
  {v:'2.56',d:'2026-10-17',p:['Neu: E-Rechnung für Firmenkunden. In Finanzen steht bei Rechnungen an Firmen der Knopf „E-Rechnung“. Er erzeugt eine XRechnung (XML-Datei), die ab 2028 für Firmenkunden Pflicht ist.','Fehlen dafür Angaben (z. B. echte IBAN, E-Mail des Kunden, Adresse mit PLZ), zeigt die App genau, was noch fehlt.']},
@@ -402,7 +403,7 @@ const posZahler=(p,pk)=>p.zahler||pk.zahler||'kunde';
 const pakZahlerKurz=pk=>{const set=[...new Set((pk.pos||[]).filter(p=>p.typ==='arbeit'||p.typ==='teil').map(p=>posZahler(p,pk)))];
  if(!set.length)set.push(pk.zahler||'kunde');return set.map(z=>ZAHLER_KURZ[z]||'?').join('+')};
 const nextPosNr=a=>1+a.pakete.reduce((m,pk)=>pk.pos.reduce((m2,p)=>Math.max(m2,p.nr||0),m),0);
-const STATI=[['offen','Offen','#C2710A'],['arbeit','In Arbeit','#0A5FFF'],['teile','Wartet auf Teile','#C2710A'],['fertig','Fertig','#0E8F4E'],['abgeholt','Abgeholt','#6B6B73'],['sonst','Sonstiges','#6B4DD6']];
+const STATI=[['offen','Offen','#9C6420'],['arbeit','In Arbeit','#3E5A73'],['teile','Wartet auf Teile','#9C6420'],['fertig','Fertig','#2E7650'],['abgeholt','Abgeholt','#6B6B73'],['sonst','Sonstiges','#5C6670']];
 const statL=s=>(STATI.find(x=>x[0]===s)||STATI[0]);
 const ordStatusLabel=a=>a.status==='sonst'&&(a.statusTxt||'').trim()?a.statusTxt.trim():statL(a.status)[1];
 const ordFreigegeben=a=>!!(a.sig||a.freigabe);
@@ -668,7 +669,7 @@ ACT.wa=el=>{const k=kunde(el.dataset.id);if(k&&k.tel)location.href='https://wa.m
 ACT.mail=el=>{const k=kunde(el.dataset.id);if(k&&k.email)location.href='mailto:'+k.email};
 
 function statusDot(a){const over=a.abgabe&&a.abgabe<todayISO()&&!['fertig','abgeholt'].includes(a.status);
- if(over)return'#E0353B';return{offen:'#8E8E93',arbeit:'#5E97FF',teile:'#F0A34E',fertig:'#5AD07A',abgeholt:'#5AD07A'}[a.status]||'#8E8E93'}
+ if(over)return'#B53A3A';return{offen:'#8E8E93',arbeit:'#6E879C',teile:'#F0A34E',fertig:'#5AD07A',abgeholt:'#5AD07A'}[a.status]||'#8E8E93'}
 function remainTime(a){
  if(!a.abgabe||['fertig','abgeholt'].includes(a.status))return null;
  const target=new Date(a.abgabe+'T'+(a.abgabeZeit||'23:59')).getTime();
@@ -691,9 +692,9 @@ function planRow(a,dark){
  const rem=remainTime(a);
  return `<div class="sw ${a.pinned?'pinned':''}" id="sw-${a.id}">
   <div class="sw-acts">
-   <button class="sw-act" style="background:#0A5FFF" data-act="row-call" data-id="${a.id}">${IC.phone}Anrufen</button>
-   <button class="sw-act" style="background:#0E8F4E" data-act="row-done" data-id="${a.id}">${IC.check}${a.status==='fertig'?'Abgeholt':'Erledigt'}</button>
-   <button class="sw-act" style="background:#C2710A" data-act="row-pin" data-id="${a.id}">${IC.pin}${a.pinned?'Lösen':'Anpinnen'}</button>
+   <button class="sw-act" style="background:#3E5A73" data-act="row-call" data-id="${a.id}">${IC.phone}Anrufen</button>
+   <button class="sw-act" style="background:#2E7650" data-act="row-done" data-id="${a.id}">${IC.check}${a.status==='fertig'?'Abgeholt':'Erledigt'}</button>
+   <button class="sw-act" style="background:#9C6420" data-act="row-pin" data-id="${a.id}">${IC.pin}${a.pinned?'Lösen':'Anpinnen'}</button>
   </div>
   <div class="sw-row ${dark?'dark':'light'}" data-open="${a.id}">
    <span class="dot" style="background:${statusDot(a)}"></span>
@@ -834,9 +835,9 @@ function vAuftraege(){
    else if(a.abgabe&&a.abgabe<=w)g.week.push(a);
    else g.later.push(a)});
   g.done.sort((a,b)=>(b.abgabe||'').localeCompare(a.abgabe||''));
-  const GRP=[['over','Überfällig','var(--red)','#E0353B'],['today','Heute fällig','var(--blue)','#0A5FFF'],
+  const GRP=[['over','Überfällig','var(--red)','#B53A3A'],['today','Heute fällig','var(--blue)','#3E5A73'],
    ['week','Diese Woche','var(--ink2)',''],['later','Später / ohne Termin','var(--ink3)',''],
-   ['ready','Abholbereit','var(--green)','#0E8F4E'],['done','Abgeholt (Archiv)','var(--ink3)','']];
+   ['ready','Abholbereit','var(--green)','#2E7650'],['done','Abgeholt (Archiv)','var(--ink3)','']];
   listHtml=GRP.map(([key,label,col,strip])=>{
    const it=g[key];if(!it.length)return '';
    const shown=key==='done'?it.slice(0,5):it;
@@ -849,7 +850,7 @@ function vAuftraege(){
  }
  const inner=`
   <div class="searchbar">${IC.search}<input placeholder="Kennzeichen, Kunde, Nummer" value="${esc(ordQ)}" data-input="ordQ"></div>
-  <div class="pills">${[['alle','Alle'],...STATI.map(s=>[s[0],s[1]])].map(([v,l])=>{const c=v==='alle'?'#0A5FFF':statL(v)[2];
+  <div class="pills">${[['alle','Alle'],...STATI.map(s=>[s[0],s[1]])].map(([v,l])=>{const c=v==='alle'?'#3E5A73':statL(v)[2];
    return `<button class="pill ${ordFilter===v?'on':''}" style="${ordFilter===v?`background:${c}14;border-color:${c};color:${c}`:''}" data-act="ord-filter" data-v="${v}">${l}</button>`}).join('')}</div>
   ${listHtml}`;
  return shell(inner,{title:'Aufträge',eyebrow:S.auftraege.length+' gesamt'})+`<button class="fab" data-act="ord-new" aria-label="Neuer Auftrag">+</button>`;
@@ -919,7 +920,7 @@ ACT['ord-new']=()=>{
   </div>
   </div>
   <div class="stepblock"><div class="step-h"><span class="step-n">2</span><span class="step-t">Fahrzeug</span></div>
-  <button class="btn" style="width:100%;margin-bottom:13px;background:linear-gradient(135deg,#0A5FFF,#3D7CFF);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px" data-act="schein-scan" data-mode="ord">
+  <button class="btn" style="width:100%;margin-bottom:13px;background:linear-gradient(135deg,#3E5A73,#3D7CFF);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px" data-act="schein-scan" data-mode="ord">
    <span class="ai-dot" style="position:relative;width:7px;height:7px"></span>Fahrzeugschein-Scan</button>
   <input type="file" accept="image/*,.pdf,application/pdf,.heic,.heif" id="scheininp" style="display:none">
   <div id="schein-status"></div>
@@ -2351,7 +2352,7 @@ function vMehr(){
  const installHint=!isStandalone&&!S.settings.installHintDone?`
   <div class="card" style="padding:13px 15px;border-color:rgba(10,95,255,.3)">
    <div style="display:flex;align-items:center;gap:11px">
-    <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#0A5FFF,#5B8DEF);display:grid;place-items:center;flex-shrink:0"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><rect x="4" y="15" width="16" height="6" rx="2"/></svg></div>
+    <div style="width:38px;height:38px;border-radius:11px;background:linear-gradient(135deg,#3E5A73,#6E879C);display:grid;place-items:center;flex-shrink:0"><svg viewBox="0 0 24 24" style="width:20px;height:20px;stroke:#fff;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round"><path d="M12 3v12"/><path d="M8 7l4-4 4 4"/><rect x="4" y="15" width="16" height="6" rx="2"/></svg></div>
     <div style="flex:1"><b style="font-size:13px">Als App installieren</b>
      <div style="font-size:11px;color:var(--ink3);line-height:1.5;margin-top:2px">${isIOS?'Safari: Teilen-Symbol → „Zum Home-Bildschirm" — dann läuft mehanicar wie eine echte App, auch offline.':'Browser-Menü → „App installieren" bzw. „Zum Startbildschirm hinzufügen".'}</div></div>
     <button style="color:var(--ink3);min-width:44px;min-height:44px;display:inline-grid;place-items:center;font-size:14px;flex-shrink:0" aria-label="Hinweis ausblenden" data-act="install-hint-done">${xIco(13)}</button></div></div>`:'';
@@ -2417,11 +2418,11 @@ function vFinanzen(){
    ${months.some(m=>m.u)?'':'<div class="fin-leer">Noch keine Rechnungen in den letzten 6 Monaten — sobald Sie abrechnen, erscheint hier der Verlauf.</div>'}
    <div class="bars" style="height:100px">${months.map(m=>`<div class="barw">
     <div style="display:flex;align-items:flex-end;gap:2px;flex:1;width:100%;justify-content:center">
-     <div class="bar" style="height:${Math.max(3,m.u/maxU*100)}%;flex:1;background:linear-gradient(180deg,#5E97FF,#0A5FFF)"></div>
-     <div class="bar" style="height:${Math.max(3,m.g/maxU*100)}%;flex:1;background:linear-gradient(180deg,#5ECC8A,#0E8F4E)"></div>
+     <div class="bar" style="height:${Math.max(3,m.u/maxU*100)}%;flex:1;background:linear-gradient(180deg,#6E879C,#3E5A73)"></div>
+     <div class="bar" style="height:${Math.max(3,m.g/maxU*100)}%;flex:1;background:linear-gradient(180deg,#5ECC8A,#2E7650)"></div>
     </div>
     <span>${m.lbl}</span>${m.n?`<span style="font-size:8px;color:var(--ink3)">${m.n} Re.</span>`:''}</div>`).join('')}</div>
-   <div class="fin-leg"><span><i style="background:#0A5FFF"></i>Umsatz (brutto)</span><span><i style="background:#0E8F4E"></i>Gewinn</span></div></div>`:''}
+   <div class="fin-leg"><span><i style="background:#3E5A73"></i>Umsatz (brutto)</span><span><i style="background:#2E7650"></i>Gewinn</span></div></div>`:''}
  ${finSec.gewinn?`<div class="kpis stag" style="grid-template-columns:1fr 1fr">
    <div class="kpi"><b class="num">${effs.length?Math.round(effs.reduce((a,b)=>a+b,0)/effs.length)+' %':'—'}</b><span>Ø Effizienz</span></div>
    <div class="kpi"><b class="num">${fmt(avgOrd)}</b><span>Ø Auftragswert brutto</span></div>
@@ -2601,7 +2602,7 @@ ACT['data-import']=()=>$('#importinp').click();
 ACT['demo-reset']=()=>confirmBox('Demo-Daten laden?','Aktuelle Daten werden durch die Beispieldaten ersetzt.','Neu laden',()=>{
  S=seed();S.settings.onboarded=true;kunNorm();migrate2();save();route={v:'planung',id:null};render();toast('Demo-Daten geladen')});
 ACT['data-wipe']=()=>confirmBox('Wirklich alles löschen?','Alle Kunden, Fahrzeuge, Aufträge, Rechnungen und Anfragen werden entfernt. Das kann nicht rückgängig gemacht werden.','Alles löschen',()=>{
- S={version:2,demo:false,settings:S.settings,kunden:[],fahrzeuge:[],lager:[],auftraege:[],rechnungen:[],anfragen:[],bestellungen:[],kampagnen:[],termine:[],mitarbeiter:[{id:'m1',name:S.settings.firma&&S.settings.firma.inhaber||'Inhaber',kuerzel:'IN',farbe:'#0A5FFF',aktiv:true}],krankmeldungen:[],urlaub:[],radarDone:{},meta:{changes:0,lastBackup:null}};
+ S={version:2,demo:false,settings:S.settings,kunden:[],fahrzeuge:[],lager:[],auftraege:[],rechnungen:[],anfragen:[],bestellungen:[],kampagnen:[],termine:[],mitarbeiter:[{id:'m1',name:S.settings.firma&&S.settings.firma.inhaber||'Inhaber',kuerzel:'IN',farbe:'#3E5A73',aktiv:true}],krankmeldungen:[],urlaub:[],radarDone:{},meta:{changes:0,lastBackup:null}};
  S.settings.nextAu=1;S.settings.nextRe=1;S.settings.nextBe=1;kunNorm();migrate2();save();render();toast('Alle Daten gelöscht')});
 
 /* ============ 9. EXCEL-EXPORT (.xlsx, ohne Bibliotheken) ============ */
@@ -2838,9 +2839,9 @@ FSET['sync-key']=el=>{syncCfg().key=el.value.trim();save()};
 
 /* ============ 11. KUNDENANFRAGEN ============ */
 let anfrSeg='eingang',anfrFilter='offen',kwOff=0;
-const PRIO={hoch:['Hoch','#E0353B'],mittel:['Mittel','#C2710A'],niedrig:['Niedrig','#6B6B73']};
+const PRIO={hoch:['Hoch','#B53A3A'],mittel:['Mittel','#9C6420'],niedrig:['Niedrig','#6B6B73']};
 const QKANAL={tel:'Telefon',ab:'Anrufbeantworter',wa:'WhatsApp',ig:'Instagram',mail:'E-Mail',web:'Website',theke:'Vor Ort'};
-const KCOL={tel:'#3E3E46',ab:'#C2710A',wa:'#0E8F4E',ig:'#C13584',mail:'#0A5FFF',web:'#0E7490',theke:'#6B6B73'};
+const KCOL={tel:'#3E3E46',ab:'#9C6420',wa:'#2E7650',ig:'#C13584',mail:'#3E5A73',web:'#0E7490',theke:'#6B6B73'};
 const KICON={
  tel:'<svg viewBox="0 0 24 24"><path d="M5 4h4l2 5-2.5 1.5a12 12 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>',
  ab:'<svg viewBox="0 0 24 24"><circle cx="6.5" cy="12" r="3.5"/><circle cx="17.5" cy="12" r="3.5"/><path d="M6.5 15.5h11"/></svg>',
@@ -2851,7 +2852,7 @@ const KICON={
  theke:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1-4 3.6-6 7-6s6 2 7 6"/></svg>'};
 /* Kanal-Symbole sind Strich-Icons: Linienfarbe = Textfarbe (vorher teils schwarz gefüllt) */
 Object.keys(KICON).forEach(k=>{KICON[k]=KICON[k].replace('<svg ','<svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ')});
-const QSTAT={neu:['Neu','#0A5FFF'],beantwortet:['Kontaktiert','#6B4DD6'],termin:['Termin','#C2710A'],gewonnen:['Auftrag erteilt','#0E8F4E'],verloren:['Abgesagt','#6B6B73']};
+const QSTAT={neu:['Neu','#3E5A73'],beantwortet:['Kontaktiert','#5C6670'],termin:['Termin','#9C6420'],gewonnen:['Auftrag erteilt','#2E7650'],verloren:['Abgesagt','#6B6B73']};
 const anfrage=id=>S.anfragen.find(q=>q.id===id);
 /*TEST-RULE-START*/
 function ruleAnalyze(txt){
@@ -3197,7 +3198,7 @@ function vAnfrage(id){
  const x=anfrage(id);
  if(!x)return shell('<div class="empty"><b>Nicht gefunden</b></div>',{title:'Anfrage',back:1});
  const kc=KCOL[x.kanal]||'#6B6B73';
- const[sl,sc]=QSTAT[x.status]||['Neu','#0A5FFF'];
+ const[sl,sc]=QSTAT[x.status]||['Neu','#3E5A73'];
  const over=x.followUp&&x.followUp<todayISO()&&['neu','beantwortet','termin'].includes(x.status);
  // Originalnachricht
  const origCard=`<div class="card" style="padding:14px 15px 15px;border-left:3.5px solid ${kc}">
@@ -3415,7 +3416,7 @@ FSET['o-buehne']=el=>{auftrag(el.dataset.oid).buehne=+el.value||null;save()};
 /* ============ 14. BESTELLUNGEN · KAMPAGNEN · TEAM ============ */
 let curMid=null,kampFilter='alle',kampTxt=null,kampSent={};
 const mita=id=>S.mitarbeiter.find(m=>m.id===id);
-const MACOLS=[['#0A5FFF','Blau'],['#0E8F4E','Grün'],['#C2710A','Bernstein'],['#6B4DD6','Violett'],['#E0353B','Rot'],['#3E3E46','Anthrazit']];
+const MACOLS=[['#3E5A73','Blau'],['#2E7650','Grün'],['#9C6420','Bernstein'],['#5C6670','Violett'],['#B53A3A','Rot'],['#3E3E46','Anthrazit']];
 function maChips(a){
  const act=S.mitarbeiter.filter(m=>m.aktiv);
  if(act.length<2)return'';
@@ -3884,7 +3885,7 @@ ACT['url-del']=el=>{S.urlaub=S.urlaub.filter(x=>x.id!==el.dataset.id);save();ren
 
 /* ============ TERMINKALENDER ============ */
 let termWoche=0;
-const TTYP={annahme:['Annahme','#0A5FFF'],werkstatt:['Werkstatt','#C2710A'],abholung:['Abholung','#0E8F4E'],besprechung:['Besprechung','#6B4DD6'],lieferung:['Lieferung','#3E3E46'],sonstiges:['Sonstiges','#6B6B73']};
+const TTYP={annahme:['Annahme','#3E5A73'],werkstatt:['Werkstatt','#9C6420'],abholung:['Abholung','#2E7650'],besprechung:['Besprechung','#5C6670'],lieferung:['Lieferung','#3E3E46'],sonstiges:['Sonstiges','#6B6B73']};
 function wkMon(ofs){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7)+ofs*7);
  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function vTermine(){
@@ -4050,7 +4051,7 @@ function vOnboarding(){
  return`<div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;background:var(--bg);padding:calc(var(--sat,0px) + 30px) 22px calc(30px + var(--sab,0px))">
   <div style="max-width:400px;margin:0 auto;width:100%">
    <div style="text-align:center;margin-bottom:26px">
-    <div style="width:76px;height:76px;border-radius:22px;background:linear-gradient(135deg,#0A5FFF,#5B8DEF);display:grid;place-items:center;margin:0 auto 16px;box-shadow:0 10px 30px rgba(10,95,255,.35)">
+    <div style="width:76px;height:76px;border-radius:22px;background:linear-gradient(135deg,#3E5A73,#6E879C);display:grid;place-items:center;margin:0 auto 16px;box-shadow:0 10px 30px rgba(10,95,255,.35)">
      <svg viewBox="0 0 24 24" style="width:42px;height:42px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"><path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11"/><path d="M4 11h16a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1h-1a2 2 0 1 1-4 0H9a2 2 0 1 1-4 0H4a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z"/></svg></div>
     <div style="font-size:26px;font-weight:800;letter-spacing:-.03em">mehanicar</div>
     <div style="font-size:13px;color:var(--ink2);margin-top:5px;line-height:1.5">Die komplette Werkstatt in einer App.<br>Aufträge · Kunden · Rechnungen · KI-Anfragen</div>
@@ -4073,7 +4074,7 @@ function obApply(fresh){
  if(fresh){
   S.demo=false;
   Object.assign(S,{kunden:[],fahrzeuge:[],lager:[],auftraege:[],rechnungen:[],anfragen:[],bestellungen:[],kampagnen:[],termine:[],krankmeldungen:[],urlaub:[],radarDone:{}});
-  S.mitarbeiter=[{id:'m1',name:i||'Inhaber',kuerzel:(i||'IN').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase(),farbe:'#0A5FFF',aktiv:true}];
+  S.mitarbeiter=[{id:'m1',name:i||'Inhaber',kuerzel:(i||'IN').split(' ').map(x=>x[0]).join('').slice(0,2).toUpperCase(),farbe:'#3E5A73',aktiv:true}];
   S.settings.nextAu=1;S.settings.nextRe=1;S.settings.nextBe=1;
  }
  S.settings.onboarded=true;save();render();
@@ -4196,8 +4197,8 @@ function renderErrScreen(err){
  app.innerHTML=`<div style="min-height:100%;display:flex;flex-direction:column;justify-content:center;padding:24px;background:#F2F2F7;font-family:-apple-system,sans-serif;text-align:center">
   <div style="font-size:17px;font-weight:800;margin-bottom:8px;color:#16161A">Etwas ist schiefgelaufen</div>
   <div style="font-size:12.5px;color:#6B6B73;line-height:1.6;margin-bottom:16px">Bitte mache einen Screenshot dieser Meldung und schicke ihn — damit lässt sich der Fehler gezielt beheben.</div>
-  <div style="font-size:10.5px;font-family:ui-monospace,monospace;color:#E0353B;background:#fff;border:1px solid rgba(224,53,59,.3);border-radius:10px;padding:11px;text-align:left;word-break:break-word;max-height:180px;overflow-y:auto">${String((err&&(err.stack||err.message))||err).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>
-  <button style="margin-top:16px;padding:11px;border-radius:10px;background:#0A5FFF;color:#fff;font-weight:700;font-size:13px" onclick="localStorage.removeItem('${KEY}');location.reload()">Zurücksetzen und neu laden</button>
+  <div style="font-size:10.5px;font-family:ui-monospace,monospace;color:#B53A3A;background:#fff;border:1px solid rgba(224,53,59,.3);border-radius:10px;padding:11px;text-align:left;word-break:break-word;max-height:180px;overflow-y:auto">${String((err&&(err.stack||err.message))||err).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))}</div>
+  <button style="margin-top:16px;padding:11px;border-radius:10px;background:#3E5A73;color:#fff;font-weight:700;font-size:13px" onclick="localStorage.removeItem('${KEY}');location.reload()">Zurücksetzen und neu laden</button>
   </div>`;
 }
 function render(){
@@ -4444,9 +4445,9 @@ try{
  document.body.innerHTML='<div style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:24px;background:#F2F2F7;font-family:-apple-system,sans-serif;text-align:center">'
   +'<div style="font-size:17px;font-weight:800;margin-bottom:8px;color:#16161A">App konnte nicht starten</div>'
   +'<div style="font-size:12.5px;color:#6B6B73;line-height:1.6;margin-bottom:16px">Bitte Screenshot senden, damit der Fehler behoben werden kann.</div>'
-  +'<div style="font-size:10.5px;font-family:ui-monospace,monospace;color:#E0353B;background:#fff;border:1px solid rgba(224,53,59,.3);border-radius:10px;padding:11px;text-align:left;word-break:break-word">'
+  +'<div style="font-size:10.5px;font-family:ui-monospace,monospace;color:#B53A3A;background:#fff;border:1px solid rgba(224,53,59,.3);border-radius:10px;padding:11px;text-align:left;word-break:break-word">'
   +String((err&&(err.stack||err.message))||err).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))+'</div>'
-  +'<button style="margin-top:16px;padding:11px;border-radius:10px;background:#0A5FFF;color:#fff;font-weight:700;font-size:13px" onclick="try{localStorage.clear()}catch(e){};location.reload()">Zurücksetzen und neu laden</button></div>';
+  +'<button style="margin-top:16px;padding:11px;border-radius:10px;background:#3E5A73;color:#fff;font-weight:700;font-size:13px" onclick="try{localStorage.clear()}catch(e){};location.reload()">Zurücksetzen und neu laden</button></div>';
 }
 </script>
 </body>
