@@ -884,3 +884,35 @@ body.theme-dark .pin-card{border-color:rgba(213,218,223,.25)}
 /* Manrope läuft etwas breiter: Zahlen gleich breit, Laufweite neutral */
 body{letter-spacing:0;font-feature-settings:'tnum' 0}
 .num{font-variant-numeric:tabular-nums}
+
+/* Positionen als Tabelle (2.62) */
+.kt-wrap{margin-bottom:12px;border:1px solid var(--line);border-radius:14px;background:var(--card);overflow:hidden}
+.kt-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.kt-kopf{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13.5px}
+.kt-kopf .num{margin-left:auto;font-weight:700}
+.kt-lk{font-size:11px;color:var(--ink3);background:var(--gray-bg);border-radius:999px;padding:2px 8px}
+table.kt{width:100%;min-width:720px;border-collapse:collapse;font-size:13px;table-layout:fixed}
+table.kt caption{text-align:left;padding:10px 12px;font-size:13px;display:flex;gap:6px;align-items:center;border-bottom:1px solid var(--line);caption-side:top}
+table.kt caption span{margin-left:auto;font-weight:700}
+table.kt th{font-size:10.5px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.05em;text-align:left;padding:7px 6px;background:var(--bg);border-bottom:1px solid var(--line);white-space:nowrap}
+table.kt th.r{text-align:right}
+table.kt td{border-bottom:1px solid var(--line2);padding:0;height:40px;vertical-align:middle}
+table.kt tr:last-child td{border-bottom:0}
+table.kt .kt-nr{width:34px;text-align:center;color:var(--ink3);font-size:11.5px}
+table.kt .kt-bez{min-width:0}
+.kt-in{width:100%;height:40px;border:0;background:transparent;padding:0 8px;font-size:13px;color:var(--ink);border-radius:0}
+.kt-in.num{text-align:right;font-variant-numeric:tabular-nums;min-width:62px}
+.kt-in:focus{outline:2px solid var(--acc);outline-offset:-2px;background:var(--acc-bg)}
+.kt-in:disabled{color:var(--ink3);background:transparent}
+.kt-typ{height:40px;border:0;background:transparent;font-size:12.5px;color:var(--ink2);padding:0 4px;font-family:inherit}
+.kt-sum{text-align:right;padding:0 8px!important;font-weight:650;white-space:nowrap}
+.kt-del{width:36px;height:36px;border-radius:9px;color:var(--ink3);font-size:18px}
+.kt-del:hover{background:var(--red-bg);color:var(--red)}
+tr.kt-neu td{background:var(--bg)}
+tr.kt-neu .kt-nr{font-weight:700}
+tr.kt-txt td{font-size:12px;color:var(--ink2);padding:6px 8px}
+.kt-tot{display:flex;flex-wrap:wrap;gap:6px 16px;justify-content:flex-end;align-items:baseline;padding:10px 12px;border-radius:14px;background:var(--card);border:1px solid var(--line);font-size:12px;color:var(--ink2)}
+.kt-tot b{color:var(--ink);font-size:13px;margin-left:3px}
+.kt-tot .kt-br b{font-size:15px}
+.kt-hilfe{font-size:11.5px;color:var(--ink3);text-align:right;margin:6px 4px 0}
+@media (max-width:600px){.kt-hilfe{display:none}}
