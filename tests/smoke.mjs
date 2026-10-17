@@ -419,6 +419,36 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (Object.values(ka).some(v => !v)) errs.push('Aufschlag-Staffel: ' + JSON.stringify(ka));
   }
+  // Positionen als Tabelle: echte Tastatur (Tab/Enter), neue Zeilen, Automatik für Preise
+  {
+    const prep = await page.evaluate(async () => {
+      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && !o.sig && !o.freigabe) || S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger);
+      const pk = a.pakete[0]; pk.entsperrt = false; calcMode[a.id] = 'tab'; nav('auftrag', a.id); await new Promise(r => setTimeout(r, 120));
+      const sec = document.querySelector('.kt'); if (sec) sec.scrollIntoView();
+      return { oid: a.id, pid: pk.id, n: pk.pos.length, satz: a.awCt || S.settings.awCt, tab: !!document.querySelector('tr[data-new="' + pk.id + '"]') };
+    });
+    let kt = { tab: prep.tab };
+    if (prep.tab) {
+      const sel = k => `tr[data-new="${prep.pid}"] .kt-in[data-k="${k}"]`;
+      await page.click(sel('bez')); await page.keyboard.type('Testarbeit Tabelle');
+      const w = () => page.waitForTimeout(120);
+      await page.keyboard.press('Tab'); await w(); await page.keyboard.press('Tab'); await w(); await page.keyboard.type('1.5'); await page.keyboard.press('Tab'); await page.waitForTimeout(200);
+      Object.assign(kt, await page.evaluate(({ pid, satz }) => { const pk = auftrag(route.id).pakete.find(p => p.id === pid); const x = pk.pos.find(p => p.bez === 'Testarbeit Tabelle');
+        return { arbeit: !!x && x.typ === 'arbeit' && x.aw === 1.5 && x.vkCt === Math.round(1.5 * satz), fokus: document.activeElement && document.activeElement.dataset.k === 'vk' && document.activeElement.dataset.xid === (x || {}).id }; }, prep));
+      await page.selectOption(`tr[data-new="${prep.pid}"] .kt-typ`, 'teil');
+      await page.click(sel('bez')); await page.keyboard.type('Testteil Tabelle');
+      await page.click(sel('ek')); await w(); await page.keyboard.type('10,00'); await page.keyboard.press('Tab'); await page.waitForTimeout(200);
+      Object.assign(kt, await page.evaluate(({ pid }) => { const pk = auftrag(route.id).pakete.find(p => p.id === pid); const x = pk.pos.find(p => p.bez === 'Testteil Tabelle');
+        return { teil: !!x && x.typ === 'teil' && x.ekCt === 1000 && x.vkCt === vkVorschlag(1000) }; }, prep));
+      kt.typMerk = await page.evaluate(({ pid }) => document.querySelector(`tr[data-new="${pid}"] .kt-typ`).value === 'teil', prep);
+      const ersteVk = `.kt[data-pid="${prep.pid}"] tbody tr[data-xid] .kt-in[data-k="vk"]`;
+      await page.click(ersteVk); await page.keyboard.press('Enter'); await page.waitForTimeout(50);
+      kt.enter = await page.evaluate(sel0 => { const all = [...document.querySelectorAll(sel0)]; return document.activeElement === all[1]; }, ersteVk);
+      kt.summe = await page.evaluate(() => /Brutto/.test(document.querySelector('.kt-tot').textContent));
+      await page.evaluate(({ pid }) => { const a = auftrag(route.id), pk = a.pakete.find(p => p.id === pid); pk.pos = pk.pos.filter(p => !/Tabelle$/.test(p.bez)); delete ktNeuTyp[pid]; calcMode[a.id] = 'tab'; save(); nav('planung'); }, prep);
+    }
+    if (Object.values(kt).some(v => !v)) errs.push('Tabelle: ' + JSON.stringify(kt));
+  }
   // Akzentfarbe frei wählbar
   {
     const ak = await page.evaluate(async () => {

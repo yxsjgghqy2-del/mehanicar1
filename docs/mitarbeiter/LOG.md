@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 17.10.2026 (Abend) — 2.62 Positionen als Tabelle (Variante 5)
+- **Anlass:** Inhaber wählt aus `designs/kalkulation-20.html` die Nummer **5 – Tabelle wie Excel, nur mit Tastatur**.
+- **Gebaut:** Im Auftrag „Pakete & Kalkulation“ neue erste Ansicht „Tabelle“ (`ktHtml`): je Paket eine Tabelle # · Art · Bezeichnung · Menge · AW · EK · VK · Gesamt · ×, darunter eine leere Zeile zum Eintippen. Speichern beim Verlassen eines Feldes (`ktCommit`), Fokus wird nach dem Neuzeichnen wiederhergestellt. Tab = nächstes Feld, Enter/↓/↑ = Zeile, Strg/⌘+Entf = löschen (mit Rückgängig). Arbeit: AW × Satz → VK, AW-Vorschlag aus dem Arbeitswert-Katalog; Teil: EK → VK aus Aufschlag-Staffel, Lagerteile per Name erkannt (EK/VK/Bestand), leere Zeile merkt sich die zuletzt gewählte Art. Abgerechnete Pakete nur lesbar. Nach Freigabe werden neue Zeilen automatisch als Erweiterung protokolliert. Summenleiste Lohn/Teile/Netto/MwSt/Brutto/Gewinn.
+- **Test:** Smoke-Test mit echten Tastatureingaben (Playwright): Arbeit anlegen, Teil mit VK-Automatik, Enter-Navigation, Summenleiste, Art-Merken. Screenshots Mac/Handy angesehen (Handy: seitlich wischen). SW v63.
+
 ## 17.10.2026 (spät, Nachtrag) — 2.61 Schrift Manrope
 - **Anlass:** Inhaber: „Schriftart von PayPal bitte.“ PayPal Sans ist proprietär (nicht lizenzierbar) → nächstliegende freie Schrift Manrope (SIL OFL), selbst gehostet unter `fonts/` (latin + latin-ext, variabel 200–800, ~40 KB), Lizenz `fonts/OFL-Manrope.txt`. Kein Google-Fonts-Abruf (Datenschutz). In SW-SHELL, SW v62.
 - **Test-Umbau:** `tests/smoke.mjs` startet jetzt einen lokalen Webserver statt `file://` (Schriften wurden per CORS blockiert). Smoke-Test grün.
