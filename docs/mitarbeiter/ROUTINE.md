@@ -32,6 +32,7 @@ Du arbeitest als fester Mitarbeiter an **mehanicar** (Werkstatt-Management-PWA f
 - **Recherche knapp halten:** höchstens 3 Suchen pro Lauf, Ergebnis in 3–5 Zeilen im BACKLOG. An Tagen mit Fehlerbehebung fällt die Recherche aus.
 - **Screenshots nur dort, wo sich etwas sichtbar geändert hat:** ein iPhone-Bild, dazu ein Desktop-Bild, wenn es relevant ist.
 - **Kleine Pakete** von 1–2 Stunden Umfang. Große Themen in Scheiben schneiden.
+- **Farben:** Seit 2.59 ruhige Palette (Anthrazit, gedeckte Statusfarben). Neue Farben nur über die CSS-Tokens, keine neuen Hex-Werte im Code, keine Verläufe oder Leuchteffekte.
 - **Automatische Prüfung:** GitHub führt `tests/smoke.mjs` bei jedem PR aus (`.github/workflows/smoke.yml`). Erst mergen, wenn der Lauf grün ist.
 - **index.html aufteilen:** Nebenbei in kleinen Schritten Teile in eigene Dateien auslagern (zuerst CSS). Jede ausgelagerte Datei in `sw.js` SHELL aufnehmen. Nur ein Teil pro Lauf, Smoke-Test muss grün bleiben.
 - **Ist GitHub nicht erreichbar:** einmal kurz melden, dann nur noch knapp; nichts Neues anhäufen.

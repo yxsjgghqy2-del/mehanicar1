@@ -829,3 +829,39 @@ body.theme-light{
 .as-kanal b{color:var(--ink)}
 .as-ic{display:inline-flex;width:15px;height:15px;color:var(--ink2)}
 .as-ic svg{width:100%;height:100%}
+
+/* ============ RUHIGE FARBEN (2.59, Inhaber 17.10.2026: „sieht eher nach Zirkus aus als Professionalität“) ============
+   Eine zurückhaltende Akzentfarbe (Anthrazit), gedeckte Statusfarben, keine farbigen Leuchteffekte. */
+:root,body.theme-light{
+ --bg:#F3F4F5;--card:#FFFFFF;--ink:#1B1F23;--ink2:#5D646B;--ink3:#6E757C;
+ --blue:#3E5A73;--green:#2E7650;--amber:#9C6420;--red:#B53A3A;--violet:#5C6670;
+ --blue-bg:rgba(62,90,115,.09);--green-bg:rgba(46,118,80,.09);--amber-bg:rgba(156,100,32,.10);
+ --red-bg:rgba(181,58,58,.08);--violet-bg:rgba(92,102,112,.09);--gray-bg:rgba(27,31,35,.05);
+ --acc:#2F3A44;--acc-ink:#FFFFFF;--acc-bg:rgba(47,58,68,.08)}
+body.theme-light{background:#F3F4F5}
+body.theme-light .main{background-image:none}
+@media (prefers-color-scheme:light){body:not(.theme-dark){background:#F3F4F5}body:not(.theme-dark) .main{background-image:none}}
+@media (prefers-color-scheme:dark){
+ :root{--bg:#111315;--card:#1B1E21;--ink:#ECEEF0;--ink2:#A3A9AF;--ink3:#8A9096;
+  --blue:#9FB3C8;--green:#86BE9C;--amber:#D2AE72;--red:#E08A8A;--violet:#A9B1BA;
+  --blue-bg:rgba(159,179,200,.10);--green-bg:rgba(134,190,156,.10);--amber-bg:rgba(210,174,114,.10);
+  --red-bg:rgba(224,138,138,.10);--violet-bg:rgba(169,177,186,.10);--gray-bg:rgba(255,255,255,.06);
+  --acc:#D5DADF;--acc-ink:#15181B;--acc-bg:rgba(213,218,223,.10)}
+ body:not(.theme-light){background:#111315}
+ body:not(.theme-light) .main{background-image:none}
+ body:not(.theme-light) .card,body:not(.theme-light) .sec,body:not(.theme-light) .pak,body:not(.theme-light) .kpi{
+  background:#1B1E21;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+ body:not(.theme-light) .kpi::after{display:none}
+ body:not(.theme-light) .pin-card{border-color:rgba(213,218,223,.25)}
+}
+body.theme-dark{--bg:#111315;--card:#1B1E21;--ink:#ECEEF0;--ink2:#A3A9AF;--ink3:#8A9096;
+ --blue:#9FB3C8;--green:#86BE9C;--amber:#D2AE72;--red:#E08A8A;--violet:#A9B1BA;
+ --blue-bg:rgba(159,179,200,.10);--green-bg:rgba(134,190,156,.10);--amber-bg:rgba(210,174,114,.10);
+ --red-bg:rgba(224,138,138,.10);--violet-bg:rgba(169,177,186,.10);--gray-bg:rgba(255,255,255,.06);
+ --acc:#D5DADF;--acc-ink:#15181B;--acc-bg:rgba(213,218,223,.10);background:#111315}
+body.theme-dark .main{background-image:none}
+body.theme-dark .card,body.theme-dark .sec,body.theme-dark .pak,body.theme-dark .kpi{background:#1B1E21;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.theme-dark .kpi::after{display:none}
+body.theme-dark .pin-card{border-color:rgba(213,218,223,.25)}
+.pbar i{background:var(--blue)}
+.bar{background:var(--blue)}
