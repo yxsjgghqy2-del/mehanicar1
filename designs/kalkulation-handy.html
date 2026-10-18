@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Vorschlag: Kalkulation am Handy</title>
+<style>
+@font-face{font-family:Manrope;src:url(../fonts/manrope-latin-wght-normal.woff2) format('woff2');font-weight:200 800;font-display:swap}
+@font-face{font-family:Manrope;src:url(../fonts/manrope-latin-ext-wght-normal.woff2) format('woff2');font-weight:200 800;font-display:swap;unicode-range:U+0100-024F,U+1E00-1EFF,U+20AC}
+:root{--bg:#F3F4F5;--card:#fff;--ink:#1B1F23;--ink2:#5D646B;--ink3:#8A9198;--line:#E3E6E9;--acc:#2F3A44;--soft:#EEF0F2;--ok:#2E7650;--warn:#9C6420}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:#E4E7EA}
+body{font-family:Manrope,-apple-system,sans-serif;color:var(--ink);padding:20px 16px 40px;font-feature-settings:"tnum"}
+h1.t{font-size:20px;text-align:center;margin-bottom:6px}
+p.lead{max-width:620px;margin:0 auto 20px;text-align:center;color:var(--ink2);font-size:14px;line-height:1.55}
+.wrap{display:flex;gap:28px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+.cap{font-size:12px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;text-align:center}
+.phone{width:375px;max-width:100%;height:760px;background:var(--bg);border-radius:34px;border:1px solid #D2D6DA;overflow:hidden;position:relative;display:flex;flex-direction:column;box-shadow:0 10px 30px rgba(0,0,0,.08)}
+.top{display:flex;align-items:center;gap:10px;padding:18px 16px 10px;background:var(--bg)}
+.top .ttl{flex:1;min-width:0}.top .ttl small{display:block;font-size:12px;color:var(--ink2);font-weight:600}
+.top .ttl b{font-size:19px;letter-spacing:-.01em}
+.ib{width:44px;height:44px;border-radius:12px;background:#fff;border:1px solid var(--line);display:grid;place-items:center;font-size:20px;color:var(--ink);cursor:pointer}
+.scroll{flex:1;overflow-y:auto;padding:4px 14px 96px}
+.pk{background:var(--card);border:1px solid var(--line);border-radius:18px;margin-bottom:12px;overflow:hidden}
+.pk-h{display:flex;align-items:center;gap:10px;padding:14px 15px;cursor:pointer}
+.pk-h .n{flex:1;font-weight:700;font-size:15.5px}
+.pk-h .n small{display:block;font-weight:500;font-size:12px;color:var(--ink2);margin-top:1px}
+.pk-h .s{font-weight:750;font-size:15.5px}
+.grp{padding:2px 15px 4px}
+.grp-h{font-size:11px;font-weight:700;color:var(--ink3);letter-spacing:.07em;text-transform:uppercase;padding:10px 0 4px;display:flex;justify-content:space-between}
+.pos{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--soft)}
+.pos:first-of-type{border-top:0}
+.pos .b{flex:1;min-width:0;font-size:14.5px}
+.pos .b small{display:block;font-size:12px;color:var(--ink2);margin-top:1px}
+.pos .p{font-weight:650;font-size:14.5px;white-space:nowrap}
+.add{display:flex;gap:8px;padding:10px 15px 15px}
+.add button{flex:1;min-height:46px;border-radius:12px;border:1px dashed #C3C9CF;background:#fff;font:inherit;font-size:14px;font-weight:650;color:var(--acc);cursor:pointer}
+.newpk{width:100%;min-height:52px;border-radius:16px;border:1px dashed #BFC5CB;background:transparent;font:inherit;font-size:15px;font-weight:650;color:var(--acc);cursor:pointer}
+.sum{position:absolute;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);padding:12px 16px 18px}
+.sum .row{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);padding:2px 0}
+.sum .row b{color:var(--ink);font-weight:650}
+.sum .big{display:flex;justify-content:space-between;align-items:baseline;margin-top:6px}
+.sum .big span{font-size:13px;color:var(--ink2)}.sum .big b{font-size:22px;font-weight:800;letter-spacing:-.01em}
+.sum .gw{color:var(--ok)!important}
+/* Katalog */
+.sheet{position:absolute;inset:0;background:var(--bg);display:none;flex-direction:column;z-index:5}
+.sheet.on{display:flex}
+.search{margin:0 14px 10px;display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:0 12px;min-height:48px}
+.search input{flex:1;border:0;outline:0;font:inherit;font-size:15.5px;background:transparent}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:0 14px 10px;scrollbar-width:none}
+.chip{flex:none;min-height:36px;padding:0 14px;border-radius:18px;border:1px solid var(--line);background:#fff;font:inherit;font-size:13px;font-weight:600;color:var(--ink2);cursor:pointer}
+.chip.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+.list{flex:1;overflow-y:auto;padding:0 14px 20px}
+.it{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 13px;margin-bottom:8px;cursor:pointer}
+.it .b{flex:1;font-size:14.5px;font-weight:600}
+.it .b small{display:block;font-weight:500;font-size:12px;color:var(--ink2);margin-top:2px}
+.it .pl{width:36px;height:36px;border-radius:10px;background:var(--soft);display:grid;place-items:center;font-size:20px;color:var(--acc);flex:none}
+.it.added{border-color:var(--ok)}.it.added .pl{background:var(--ok);color:#fff}
+.hint{font-size:12px;color:var(--ink2);padding:2px 2px 10px}
+.done{margin:0 14px 18px;min-height:52px;border-radius:14px;border:0;background:var(--acc);color:#fff;font:inherit;font-size:16px;font-weight:700;cursor:pointer}
+ul.reg{max-width:620px;margin:28px auto 0;font-size:14px;line-height:1.7;padding-left:20px}
+.q{max-width:620px;margin:18px auto 0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.6}
+</style></head><body>
+<h1 class="t">Vorschlag: Kalkulation am Handy</h1>
+<p class="lead">Zum Ausprobieren: Unten auf „+ Arbeit“ oder „+ Teil“ tippen. Dann öffnet sich eine eigene Liste zum Suchen. Ein Tipp auf einen Eintrag fügt ihn hinzu. Passende Teile werden gleich mit vorgeschlagen.</p>
+<div class="wrap">
+<div><div class="cap">Auftrag · Pakete</div>
+<div class="phone" id="ph">
+ <div class="top"><div class="ib">‹</div><div class="ttl"><small>HU-SM 247 · BMW 320d</small><b>Kalkulation</b></div></div>
+ <div class="scroll" id="pks"></div>
+ <div class="sum" id="sum"></div>
+ <div class="sheet" id="sh">
+  <div class="top"><div class="ib" id="shx">✕</div><div class="ttl"><small id="shsub">Paket: Bremsen</small><b id="shttl">Arbeit hinzufügen</b></div></div>
+  <div class="search"><span style="color:var(--ink3)">⌕</span><input id="q" placeholder="Suchen, z. B. Bremse, Öl, Zahnriemen"></div>
+  <div class="chips" id="cats"></div>
+  <div class="list" id="lst"></div>
+  <button class="done" id="shok">Fertig</button>
+ </div>
+</div></div>
+</div>
+<ul class="reg">
+ <li><b>Erst Paket, dann Inhalt</b> – zum Beispiel „Bremsen“ oder „Inspektion“. Jedes Paket zeigt Arbeit und Teile getrennt mit eigener Summe.</li>
+ <li><b>Arbeit aus einer eigenen Liste</b> – suchen oder nach Bereich filtern (Bremsen, Motor, Fahrwerk …). Die Zeit (AW) und den Preis rechnet die App. Die Liste lernt Ihre eigenen Arbeiten dazu.</li>
+ <li><b>Passende Teile werden vorgeschlagen</b> – bei „Bremsscheiben vorne“ zum Beispiel Scheiben und Beläge. Den Preis setzt die App über Ihren Aufschlag. Bei Lagerteilen sehen Sie den Bestand.</li>
+ <li><b>Unten immer die Summe</b> – Netto, MwSt, Brutto und Gewinn.</li>
+ <li><b>Ändern:</b> Position antippen → Menge, Preis oder Rabatt. Wischen zum Löschen.</li>
+ <li><b>Mac:</b> gleiche Pakete, die Liste steht dort rechts daneben statt als eigene Seite. Die Tabelle (Vollbild) bleibt für schnelles Tippen.</li>
+</ul>
+<div class="q"><b>Frage an Sie:</b> Ist das die Richtung? Antworten Sie einfach mit „Ja, bauen“ oder sagen Sie, was anders sein soll.</div>
+<script>
+const SATZ=125/10; // € pro AW (10 AW = 1 Std = 125 €)
+const KAT={Bremsen:[['Bremsscheiben + Beläge vorne wechseln',20,[['Bremsscheiben vorne (Paar)',145],['Bremsbeläge vorne (Satz)',89]]],['Bremsbeläge hinten wechseln',12,[['Bremsbeläge hinten (Satz)',69]]],['Bremsflüssigkeit wechseln',6,[['Bremsflüssigkeit DOT4 1 l',18]]],['Bremssattel vorne erneuern',10,[['Bremssattel vorne (AT)',189]]]],
+ Inspektion:[['Inspektion klein',10,[['Ölfilter',19],['Motoröl 5W-30 5 l',69]]],['Inspektion groß',24,[['Luftfilter',29],['Innenraumfilter',24],['Ölfilter',19],['Motoröl 5W-30 5 l',69]]],['Ölwechsel',5,[['Ölfilter',19],['Motoröl 5W-30 5 l',69]]]],
+ Motor:[['Zahnriemen + Wasserpumpe',45,[['Zahnriemensatz mit Wasserpumpe',289]]],['Zündkerzen wechseln',8,[['Zündkerzen (4 Stk)',48]]],['Keilrippenriemen wechseln',6,[['Keilrippenriemen',39]]]],
+ Fahrwerk:[['Stoßdämpfer vorne (Paar)',22,[['Stoßdämpfer vorne (Paar)',219]]],['Spurstangenkopf erneuern',6,[['Spurstangenkopf',45]]],['Achsvermessung',8,[]]],
+ Klima:[['Klimaservice',12,[['Kältemittel R1234yf',89]]]],
+ Reifen:[['Räder wechseln',4,[]],['Reifen montieren + wuchten (4 Stk)',8,[['Ventile (4 Stk)',12]]]]};
+const TEILE=Object.values(KAT).flat().flatMap(a=>a[2]).filter((t,i,arr)=>arr.findIndex(x=>x[0]===t[0])===i);
+let pakete=[{n:'Bremsen',sub:'Technische Beanstandung',arb:[['Bremsscheiben + Beläge vorne wechseln',20]],teile:[['Bremsscheiben vorne (Paar)',145,1],['Bremsbeläge vorne (Satz)',89,1]],open:true},
+ {n:'Inspektion',sub:'Kundenwunsch',arb:[['Ölwechsel',5]],teile:[['Ölfilter',19,1],['Motoröl 5W-30 5 l',69,1]],open:false}];
+let cur=0,mode='arbeit',cat='Bremsen';
+const eur=c=>c.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const pA=p=>p.arb.reduce((s,a)=>s+a[1]*SATZ,0),pT=p=>p.teile.reduce((s,t)=>s+t[1]*t[2],0);
+function draw(){
+ const el=document.getElementById('pks');
+ el.innerHTML=pakete.map((p,i)=>`<div class="pk"><div class="pk-h" data-tog="${i}"><div class="n">${p.n}<small>${p.sub} · ${p.arb.length+p.teile.length} Positionen</small></div><div class="s">${eur(pA(p)+pT(p))}</div><span style="color:var(--ink3)">${p.open?'▾':'▸'}</span></div>
+  ${p.open?`<div class="grp"><div class="grp-h"><span>Arbeit</span><span>${eur(pA(p))}</span></div>${p.arb.map(a=>`<div class="pos"><div class="b">${a[0]}<small>${a[1]} AW · ${(a[1]/10).toLocaleString('de-DE')} Std</small></div><div class="p">${eur(a[1]*SATZ)}</div></div>`).join('')||'<div class="hint">Noch keine Arbeit</div>'}</div>
+  <div class="grp"><div class="grp-h"><span>Teile</span><span>${eur(pT(p))}</span></div>${p.teile.map(t=>`<div class="pos"><div class="b">${t[0]}<small>${t[2]} Stk</small></div><div class="p">${eur(t[1]*t[2])}</div></div>`).join('')||'<div class="hint">Noch keine Teile</div>'}</div>
+  <div class="add"><button data-add="arbeit" data-i="${i}">+ Arbeit</button><button data-add="teil" data-i="${i}">+ Teil</button></div>`:''}</div>`).join('')+
+  `<button class="newpk" id="newpk">+ Neues Paket</button>`;
+ const net=pakete.reduce((s,p)=>s+pA(p)+pT(p),0),mw=net*.19,ek=pakete.reduce((s,p)=>s+pT(p)*0.62,0);
+ document.getElementById('sum').innerHTML=`<div class="row"><span>Arbeit ${eur(pakete.reduce((s,p)=>s+pA(p),0))} · Teile ${eur(pakete.reduce((s,p)=>s+pT(p),0))}</span><span>Gewinn <b class="gw">${eur(net-ek)}</b></span></div><div class="big"><span>Kunde zahlt (inkl. MwSt)</span><b>${eur(net+mw)}</b></div>`;
+}
+function list(){
+ const q=document.getElementById('q').value.trim().toLowerCase(),p=pakete[cur];
+ document.getElementById('cats').style.display=mode==='arbeit'&&!q?'flex':'none';
+ document.getElementById('cats').innerHTML=Object.keys(KAT).map(k=>`<button class="chip${k===cat?' on':''}" data-cat="${k}">${k}</button>`).join('');
+ let html='';
+ if(mode==='arbeit'){
+  const items=q?Object.values(KAT).flat().filter(a=>a[0].toLowerCase().includes(q)):KAT[cat];
+  html=items.map(a=>{const on=p.arb.some(x=>x[0]===a[0]);return`<div class="it${on?' added':''}" data-a="${a[0]}"><div class="b">${a[0]}<small>${a[1]} AW · ${eur(a[1]*SATZ)}${a[2].length?' · mit '+a[2].length+(a[2].length===1?' passenden Teil':' passenden Teilen'):''}</small></div><div class="pl">${on?'✓':'+'}</div></div>`}).join('')||'<div class="hint">Nichts gefunden – Ihre eigene Arbeit wird beim ersten Eintippen gespeichert.</div>';
+ }else{
+  const items=TEILE.filter(t=>!q||t[0].toLowerCase().includes(q));
+  html=items.map(t=>{const on=p.teile.some(x=>x[0]===t[0]);return`<div class="it${on?' added':''}" data-t="${t[0]}"><div class="b">${t[0]}<small>${eur(t[1])}${/Öl|filter/.test(t[0])?' · Lager: 6 Stk':''}</small></div><div class="pl">${on?'✓':'+'}</div></div>`}).join('');
+ }
+ document.getElementById('lst').innerHTML=(mode==='arbeit'?'<div class="hint">Antippen fügt die Arbeit und die passenden Teile hinzu.</div>':'')+html;
+}
+function openSheet(i,m){cur=i;mode=m;document.getElementById('q').value='';document.getElementById('shttl').textContent=m==='arbeit'?'Arbeit hinzufügen':'Teil hinzufügen';document.getElementById('shsub').textContent='Paket: '+pakete[i].n;document.getElementById('sh').classList.add('on');list()}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-tog],[data-add],[data-cat],[data-a],[data-t],#shx,#shok,#newpk');if(!t)return;
+ if(t.dataset.tog!==undefined){pakete[t.dataset.tog].open=!pakete[t.dataset.tog].open;draw()}
+ else if(t.dataset.add){openSheet(+t.dataset.i,t.dataset.add)}
+ else if(t.dataset.cat){cat=t.dataset.cat;list()}
+ else if(t.dataset.a){const a=Object.values(KAT).flat().find(x=>x[0]===t.dataset.a),p=pakete[cur];const i=p.arb.findIndex(x=>x[0]===a[0]);
+  if(i>=0)p.arb.splice(i,1);else{p.arb.push([a[0],a[1]]);a[2].forEach(tt=>{if(!p.teile.some(x=>x[0]===tt[0]))p.teile.push([tt[0],tt[1],1])})}list();draw()}
+ else if(t.dataset.t){const tt=TEILE.find(x=>x[0]===t.dataset.t),p=pakete[cur];const i=p.teile.findIndex(x=>x[0]===tt[0]);if(i>=0)p.teile.splice(i,1);else p.teile.push([tt[0],tt[1],1]);list();draw()}
+ else if(t.id==='shx'||t.id==='shok'){document.getElementById('sh').classList.remove('on')}
+ else if(t.id==='newpk'){const n=prompt('Name des Pakets (z. B. Zahnriemen)');if(n){pakete.forEach(p=>p.open=false);pakete.push({n,sub:'Kundenwunsch',arb:[],teile:[],open:true});draw();openSheet(pakete.length-1,'arbeit')}}
+});
+document.getElementById('q').addEventListener('input',list);
+draw();
+</script>
+</body></html>
