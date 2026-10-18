@@ -449,6 +449,34 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     }
     if (Object.values(kt).some(v => !v)) errs.push('Tabelle: ' + JSON.stringify(kt));
   }
+  // Kleinmaterial-Pauschale (5 % vom Lohn, 5–25 €) und Rabatt-Spalte
+  {
+    const km = await page.evaluate(async () => {
+      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && !o.sig && !o.freigabe && o.status !== 'abgeholt');
+      if (!a) return { auftrag: false };
+      const pk = a.pakete[0], alt = JSON.parse(JSON.stringify(a.pakete)), altAus = a.kmAus;
+      a.kmAus = false; pk.entsperrt = false;
+      a.pakete.forEach(p => { if (!p.abger) p.pos = []; });
+      pk.pos.push({ id: 'xkm1', nr: 99, created: Date.now(), typ: 'arbeit', bez: 'Testlohn', menge: 1, aw: 10, ekCt: 0, vkCt: 100000, best: null, eta: null, lagerId: null, ext: false });
+      save();
+      const pauschale = () => a.pakete.flatMap(p => p.pos).filter(p => p.auto === 'km');
+      const r = { hoch: pauschale().length === 1 && pauschale()[0].vkCt === 2500 };
+      pk.pos[0].vkCt = 4000; save(); r.niedrig = pauschale()[0].vkCt === 500;
+      pk.pos[0].vkCt = 20000; save(); r.mitte = pauschale()[0].vkCt === 1000;
+      calcMode[a.id] = 'tab'; nav('auftrag', a.id); await new Promise(r => setTimeout(r, 120));
+      r.zeile = !!document.querySelector('tr.kt-auto');
+      const inp = document.querySelector('.kt-in[data-k="rab"][data-xid="xkm1"]');
+      r.rabFeld = !!inp;
+      if (inp) { inp.value = '10 %'; inp.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 120)); }
+      const x = pk.pos.find(p => p.id === 'xkm1');
+      r.rabatt = !!x && posNetto(x) === 18000 && pauschale()[0].vkCt === 900;
+      document.querySelector('tr.kt-auto .kt-del').click(); await new Promise(r => setTimeout(r, 120));
+      r.aus = a.kmAus === true && pauschale().length === 0 && !document.querySelector('tr.kt-auto');
+      a.pakete = alt; a.kmAus = altAus; save(); nav('planung');
+      return r;
+    });
+    if (Object.values(km).some(v => !v)) errs.push('Kleinmaterial: ' + JSON.stringify(km));
+  }
   // Akzentfarbe frei wählbar
   {
     const ak = await page.evaluate(async () => {

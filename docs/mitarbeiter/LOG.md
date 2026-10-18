@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 18.10.2026 (Morgenlauf) — Kalkulations-Fokus Tag 2: 2.63 Kleinmaterial-Pauschale + Rabatt-Spalte
+- **Gebaut:** `kmBetrag/kmSync/kmSyncAlle` – Pauschale „Kleinmaterial & Entsorgung“ als automatische Position (`auto:'km'`, Art Teil) im ersten offenen Paket: % vom Arbeitslohn (Standard 5 %, min 5 €, max 25 €), wird bei jedem `save()` nachgeführt. In der Tabelle als graue „auto“-Zeile, × schaltet sie pro Auftrag ab (`a.kmAus`), Knopf zum Wiedereinschalten. Schutz: bestehende Aufträge bekommen sie bei der Umstellung nicht (Migration setzt `kmAus`), freigegebene/unterschriebene und abgeholte Aufträge werden nie verändert. Einstellungen → Kalkulation & Preise: an/aus, %, Min, Max, Bezeichnung. Tabelle: neue Spalte „Rabatt“ (`ktRab`: „10 %“ oder „10,00“ €). SW v64.
+- **Fehler unterwegs:** `ACT['km-tog']` stand vor `const ACT` → App startete nicht. Verschoben zu den anderen Positions-Aktionen.
+- **Test:** Smoke-Test grün (390/1280), neue Prüfung: Min/Max/Mitte, auto-Zeile, Rabatt 10 % senkt Lohn und Pauschale, × schaltet ab.
+
 ## 17.10.2026 (Abend) — 2.62 Positionen als Tabelle (Variante 5)
 - **Anlass:** Inhaber wählt aus `designs/kalkulation-20.html` die Nummer **5 – Tabelle wie Excel, nur mit Tastatur**.
 - **Gebaut:** Im Auftrag „Pakete & Kalkulation“ neue erste Ansicht „Tabelle“ (`ktHtml`): je Paket eine Tabelle # · Art · Bezeichnung · Menge · AW · EK · VK · Gesamt · ×, darunter eine leere Zeile zum Eintippen. Speichern beim Verlassen eines Feldes (`ktCommit`), Fokus wird nach dem Neuzeichnen wiederhergestellt. Tab = nächstes Feld, Enter/↓/↑ = Zeile, Strg/⌘+Entf = löschen (mit Rückgängig). Arbeit: AW × Satz → VK, AW-Vorschlag aus dem Arbeitswert-Katalog; Teil: EK → VK aus Aufschlag-Staffel, Lagerteile per Name erkannt (EK/VK/Bestand), leere Zeile merkt sich die zuletzt gewählte Art. Abgerechnete Pakete nur lesbar. Nach Freigabe werden neue Zeilen automatisch als Erweiterung protokolliert. Summenleiste Lohn/Teile/Netto/MwSt/Brutto/Gewinn.
