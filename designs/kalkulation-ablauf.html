@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kalkulation nach Ablauf</title>
+<style>
+@font-face{font-family:Manrope;src:url(../fonts/manrope-latin-wght-normal.woff2) format('woff2');font-weight:200 800;font-display:swap}
+@font-face{font-family:Manrope;src:url(../fonts/manrope-latin-ext-wght-normal.woff2) format('woff2');font-weight:200 800;font-display:swap;unicode-range:U+0100-024F,U+1E00-1EFF,U+20AC}
+:root{--bg:#F3F4F5;--card:#fff;--ink:#1B1F23;--ink2:#5D646B;--ink3:#8A9198;--line:#E3E6E9;--soft:#EEF0F2;--acc:#2F3A44;--ok:#2E7650;--okbg:#EAF3EE;--warn:#9C6420;--warnbg:#F7EFE4;--blue:#3E5A73;--bluebg:#ECF0F4}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#E4E7EA;font-family:Manrope,-apple-system,sans-serif;color:var(--ink);padding:22px 16px 50px}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+h1.t{font-size:21px;text-align:center}
+p.lead{max-width:680px;margin:6px auto 8px;text-align:center;color:var(--ink2);font-size:14px;line-height:1.55}
+.flow{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:0 auto 24px;max-width:760px}
+.flow span{font-size:12px;font-weight:700;padding:6px 10px;border-radius:16px;background:#fff;border:1px solid var(--line)}
+.flow i{font-style:normal;color:var(--ink3);align-self:center}
+.wrap{display:flex;flex-wrap:wrap;gap:30px 26px;justify-content:center;align-items:flex-start}
+.v{width:340px;max-width:100%}.v.breit{width:900px}
+.cap{font-size:13px;font-weight:800;margin-bottom:3px}
+.cap b{display:inline-block;min-width:24px;height:24px;border-radius:12px;background:var(--acc);color:#fff;text-align:center;line-height:24px;font-size:12px;margin-right:6px}
+.why{font-size:12.5px;color:var(--ink2);margin-bottom:10px;line-height:1.45;min-height:36px}
+.ph{background:var(--bg);border:1px solid #D2D6DA;border-radius:30px;overflow:hidden;height:680px;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(0,0,0,.07)}
+.v.breit .ph{border-radius:14px;height:560px}
+.hd{padding:16px 16px 8px}.hd small{display:block;font-size:11.5px;color:var(--ink2);font-weight:650}.hd strong{font-size:18px}
+.sc{flex:1;overflow:auto;padding:4px 12px 14px}
+.ft{background:#fff;border-top:1px solid var(--line);padding:10px 16px 14px}
+.ft .r{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2);padding:1px 0}.ft .r b{color:var(--ink)}
+.ft .big{display:flex;justify-content:space-between;align-items:baseline;margin-top:4px}.ft .big span{font-size:12px;color:var(--ink2)}.ft .big b{font-size:19px;font-weight:800}
+.lab{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--ink3)}
+.txt{font-size:13px;line-height:1.45}
+.d{font-size:12px;color:var(--ink2);line-height:1.45}
+.m{font-size:11px;color:var(--ink3)}
+.chip{display:inline-block;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:10px}
+.c-ok{background:var(--okbg);color:var(--ok)}.c-warn{background:var(--warnbg);color:var(--warn)}.c-blue{background:var(--bluebg);color:var(--blue)}.c-gray{background:var(--soft);color:var(--ink2)}
+.pos{display:flex;gap:10px;font-size:13px;padding:6px 0;border-top:1px solid var(--soft)}.pos:first-child{border-top:0}
+.pos>span:first-child{flex:1}.pos .aw{color:var(--ink3);font-size:11.5px}
+.btn{display:block;width:100%;text-align:center;padding:12px;border-radius:12px;background:var(--acc);color:#fff;font-size:14px;font-weight:700;margin-top:10px}
+.btn2{display:block;width:100%;text-align:center;padding:10px;border-radius:12px;border:1px dashed #C3C9CF;color:var(--ink);font-size:13px;font-weight:650;margin-top:8px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px}
+/* 1 Schritte untereinander */
+.st{display:flex;gap:10px;position:relative;padding-bottom:12px}
+.st:before{content:"";position:absolute;left:12px;top:26px;bottom:0;width:2px;background:var(--line)}
+.st:last-child:before{display:none}
+.st .n{width:26px;height:26px;border-radius:13px;flex:none;display:grid;place-items:center;font-size:12px;font-weight:800;color:#fff;background:var(--ok)}
+.st .n.open{background:#fff;border:2px solid var(--warn);color:var(--warn)}
+.st .card{flex:1}
+.st .h{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.st .h b{font-size:13.5px}
+/* 2 Wizard */
+.prog{display:flex;gap:4px;padding:0 16px 4px}.prog i{flex:1;height:5px;border-radius:3px;background:var(--line)}.prog i.on{background:var(--ok)}.prog i.cur{background:var(--warn)}
+.progl{display:flex;justify-content:space-between;padding:0 16px 10px;font-size:10px;color:var(--ink3);font-weight:700}
+.progl .cur{color:var(--warn)}
+.big-t{font-size:20px;font-weight:800;margin:6px 2px 10px}
+/* 3 Klappkarten */
+.kk{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:8px}
+.kk .h{display:flex;align-items:center;gap:10px;padding:12px}
+.kk .h .ic{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;font-size:12px;font-weight:800;flex:none}
+.kk .h div{flex:1;min-width:0}.kk .h b{font-size:13.5px;display:block}.kk .h .d{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kk .b{padding:0 12px 12px 50px}
+.kk.ext{border-color:var(--warn)}
+/* 4 Geld */
+.geld{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.geld .card{padding:10px}.geld b{font-size:17px;display:block;margin-top:2px}
+.story{background:#fff;border:1px solid var(--line);border-radius:14px;padding:4px 12px}
+.story .row{padding:9px 0;border-top:1px solid var(--soft)}.story .row:first-child{border-top:0}
+/* 5 Bericht */
+.zettel{background:#fff;border-radius:6px;padding:14px;box-shadow:0 1px 0 var(--line)}
+.zettel h4{font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;border-bottom:1.5px solid var(--ink);padding-bottom:3px;margin:14px 0 6px;display:flex;justify-content:space-between}
+.zettel h4:first-child{margin-top:0}
+.zettel .row{display:flex;font-size:12.5px;padding:3px 0;align-items:baseline}.zettel .dots{flex:1;border-bottom:1px dotted var(--ink3);margin:0 6px;transform:translateY(-3px)}
+/* 6 Verlauf */
+.ev{display:flex;gap:10px;margin-bottom:10px}
+.ev .t{width:40px;flex:none;font-size:11px;color:var(--ink3);padding-top:10px;text-align:right}
+.ev .card{flex:1;padding:10px 12px}
+.ev.kunde .card{background:var(--bluebg);border-color:transparent}
+/* 7 Mac */
+.cols{display:grid;grid-template-columns:190px 1fr 250px;height:100%}
+.c1{background:#fff;border-right:1px solid var(--line);padding:14px 10px}
+.c2{padding:14px 18px;overflow:auto}
+.c3{background:#fff;border-left:1px solid var(--line);padding:14px;overflow:auto}
+.nv{display:flex;align-items:center;gap:8px;padding:8px;border-radius:9px;font-size:13px;margin-bottom:2px}
+.nv i{width:20px;height:20px;border-radius:10px;font-style:normal;font-size:10px;font-weight:800;display:grid;place-items:center;color:#fff;background:var(--ok);flex:none}
+.nv.cur{background:var(--soft);font-weight:700}.nv.cur i{background:var(--warn)}
+.rahmen{background:#fff;border:1px solid var(--line);border-radius:12px;padding:8px 11px;margin:0 0 10px}
+.rahmen .z{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--ink2)}.rahmen .z b{color:var(--ink);font-size:13px}
+.rahmen .bar{height:6px;border-radius:3px;background:var(--soft);margin-top:6px;overflow:hidden}.rahmen .bar i{display:block;height:100%;background:var(--ok);border-radius:3px}
+.rahmen.over{border-color:var(--warn);background:var(--warnbg)}.rahmen.over .bar i{background:var(--warn)}
+.leiste{display:flex;align-items:center;gap:8px;background:var(--warnbg);color:var(--warn);font-size:12px;font-weight:700;padding:8px 12px;border-bottom:1px solid #EBDCC4}
+.leiste span{flex:1}.leiste u{font-weight:600;cursor:pointer}
+.modal{position:absolute;inset:0;background:rgba(20,24,28,.45);display:flex;align-items:flex-end;z-index:5}
+.modal .box{background:#fff;width:100%;border-radius:22px 22px 0 0;padding:20px 18px 22px}
+.modal .warn{width:48px;height:48px;border-radius:24px;background:var(--warnbg);color:var(--warn);display:grid;place-items:center;font-size:24px;font-weight:800;margin-bottom:10px}
+.modal h3{font-size:19px;margin-bottom:6px}
+.modal .zahl{display:flex;justify-content:space-between;font-size:13.5px;padding:6px 0;border-top:1px solid var(--soft)}
+.ph{position:relative}
+.add{cursor:pointer}
+.q{max-width:680px;margin:30px auto 0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.6}
+</style></head><body>
+<h1 class="t">Kalkulation nach Ihrem Ablauf – Vorlagen</h1>
+<p class="lead">Jede Vorlage folgt genau Ihrem Ablauf. Beispiel: BMW 320d, Motorkontrollleuchte. Die Diagnose ist schon freigegeben, die Erweiterung wartet noch auf den Kunden.</p>
+<div class="flow"><span>1 Kunde kommt mit Problem</span><i>→</i><span>2 Diagnosekosten klären</span><i>→</i><span>3 Prüfen</span><i>→</i><span>4 Befund</span><i>→</i><span>5 Abhilfe = Auftragserweiterung</span></div>
+<div class="wrap" id="w"></div>
+<div class="q"><b>Kostenrahmen:</b> Beim Annehmen tragen Sie ein, bis zu welchem Betrag der Kunde freigibt (z. B. „Diagnose bis 200 €“). Der Rahmen steht in jeder Vorlage oben. Bei Überschreitung erscheint erst eine große Meldung und danach dauerhaft eine schmale Leiste, bis der Kunde neu freigegeben hat.<br><br><b>Frage an Sie:</b> Welche Nummer passt am besten? Sie können auch mischen, zum Beispiel „1 am Handy, 7 am Mac“.<br>
+<span style="color:var(--ink2);font-size:13px">So arbeitet die App dann: Ein Auftrag kann mehrere solcher Abläufe haben, zum Beispiel einen für „Motorkontrollleuchte“ und einen für „Inspektion“. Bei reinem Kundenwunsch ohne Problem fallen die Schritte 2–4 einfach weg.</span></div>
+<script>
+const eur=c=>c.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const D={
+ problem:'„Motorkontrollleuchte leuchtet, Auto ruckelt beim Beschleunigen.“',probWer:'Max Weber · am Telefon, 14.10.',
+ diag:{t:'Fehlerdiagnose Motor',aw:1.5,p:187.5,frei:'freigegeben · Telefon, 09:12'},
+ pruef:['Fehlerspeicher ausgelesen: P0302 Zündaussetzer Zylinder 2','Zündspulen Zyl. 2 und 3 getauscht → Fehler wandert mit','Kompression gemessen: Zyl. 1–4 je 12 bar (in Ordnung)'],
+ befund:'Zündspule Zylinder 2 defekt. Zündkerzen verschlissen, Wechselintervall überschritten.',
+ abh:{arb:[{t:'Zündspule Zyl. 2 erneuern',aw:0.5,p:62.5},{t:'Zündkerzen erneuern',aw:1,p:125}],teile:[{t:'Zündspule (1 Stk)',p:89},{t:'Zündkerzen (4 Stk)',p:48}],status:'wartet auf Freigabe'}};
+const abhSum=D.abh.arb.reduce((s,a)=>s+a.p,0)+D.abh.teile.reduce((s,a)=>s+a.p,0);
+const aw=n=>String(n).replace('.',',')+' AW';
+const pruefList=D.pruef.map(x=>`<div class="d" style="padding:2px 0">• ${x}</div>`).join('');
+const abhPos=()=>D.abh.arb.map(a=>`<div class="pos"><span>${a.t}</span><span class="aw">${aw(a.aw)}</span><b class="num">${eur(a.p)}</b></div>`).join('')+D.abh.teile.map(t=>`<div class="pos"><span>${t.t}</span><b class="num">${eur(t.p)}</b></div>`).join('');
+const RAHMEN=200;
+const rahmen=(akt,over)=>`<div class="rahmen${over?' over':''}"><div class="z"><span>Kostenrahmen · Kunde hat freigegeben bis <b class="num">${eur(RAHMEN)}</b></span></div><div class="z" style="margin-top:2px"><span>bisher <b class="num">${eur(akt)}</b></span><span class="num">${over?'<b style="color:var(--warn)">'+eur(akt-RAHMEN)+' darüber</b>':'noch '+eur(RAHMEN-akt)+' frei'}</span></div><div class="bar"><i style="width:${Math.min(100,akt/RAHMEN*100)}%"></i></div></div>`;
+const fuss=`<div class="ft"><div class="r"><span>Diagnose <span class="chip c-ok">freigegeben</span></span><b class="num">${eur(D.diag.p)}</b></div><div class="r"><span>Erweiterung <span class="chip c-warn">offen</span></span><b class="num">${eur(abhSum)}</b></div><div class="big"><span>Kunde zahlt, wenn freigegeben (inkl. MwSt)</span><b class="num">${eur((D.diag.p+abhSum)*1.19)}</b></div></div>`;
+const ph=(body,f=true,kopf=true)=>`<div class="ph">${kopf?'<div class="hd"><small>HU-SM 247 · BMW 320d · Max Weber</small><strong>Motorkontrollleuchte</strong></div>':''}<div class="sc">${rahmen(D.diag.p)}${body}</div>${f?fuss:''}</div>`;
+const V=[];
+// 1 Schritte untereinander
+V.push(['Schritte untereinander','Alle fünf Schritte als Zeitleiste. Erledigte Schritte sind grün. Der offene Schritt ist markiert und hat seinen Knopf direkt dabei.',ph(`
+ <div class="st"><span class="n">1</span><div class="card"><div class="h"><b>Problem des Kunden</b></div><div class="txt">${D.problem}</div><div class="m" style="margin-top:3px">${D.probWer}</div></div></div>
+ <div class="st"><span class="n">2</span><div class="card"><div class="h"><b>Diagnosekosten</b><span class="chip c-ok">freigegeben</span></div><div class="pos"><span>${D.diag.t}</span><span class="aw">${aw(D.diag.aw)}</span><b class="num">${eur(D.diag.p)}</b></div><div class="m">${D.diag.frei}</div></div></div>
+ <div class="st"><span class="n">3</span><div class="card"><div class="h"><b>Prüfung</b></div>${pruefList}</div></div>
+ <div class="st"><span class="n">4</span><div class="card"><div class="h"><b>Befund</b></div><div class="txt">${D.befund}</div></div></div>
+ <div class="st"><span class="n open">5</span><div class="card" style="border-color:var(--warn)"><div class="h"><b>Abhilfe = Erweiterung</b><span class="chip c-warn">wartet</span></div>${abhPos()}<div class="pos"><span><b>Summe Erweiterung</b></span><b class="num">${eur(abhSum)}</b></div><span class="btn">Kunden um Freigabe bitten</span><span class="btn2">+ Arbeit · + Teil</span></div></div>`)]);
+// 2 Wizard
+V.push(['Ein Schritt pro Seite','Oben zeigt eine Leiste, wo Sie gerade sind. Darunter steht nur der aktuelle Schritt, groß und klar. Mit „Weiter“ geht es zum nächsten.',`<div class="ph"><div class="hd"><small>HU-SM 247 · BMW 320d</small><strong>Motorkontrollleuchte</strong></div>
+ <div class="prog"><i class="on"></i><i class="on"></i><i class="on"></i><i class="cur"></i><i></i></div>
+ <div class="progl"><span>Problem</span><span>Diagnose</span><span>Prüfung</span><span class="cur">Befund</span><span>Abhilfe</span></div>
+ <div class="sc">${rahmen(D.diag.p)}<div class="big-t">4 · Befund</div>
+  <div class="card"><div class="lab">Was haben Sie festgestellt?</div><div class="txt" style="font-size:15px;margin-top:6px;min-height:90px">${D.befund}</div></div>
+  <div class="card" style="margin-top:10px"><div class="lab">Aus der Prüfung</div>${pruefList}</div>
+  <span class="btn2">+ Foto zum Befund</span>
+  <span class="btn" style="margin-top:16px">Weiter zur Abhilfe →</span>
+  <div class="m" style="text-align:center;margin-top:8px">‹ Zurück zur Prüfung</div></div>${fuss}</div>`]);
+// 3 Klappkarten
+V.push(['Klappkarten mit Kurzinfo','Jeder Schritt ist eine Karte. Zugeklappt zeigt sie nur eine Zeile, deshalb passt alles auf einen Bildschirm. Ein Tipp öffnet die Karte.',ph(`
+ ${[['1','Problem','„Motorkontrollleuchte leuchtet, ruckelt …“','c-ok'],['2','Diagnose · '+eur(D.diag.p),'freigegeben · Telefon 09:12','c-ok'],['3','Prüfung','3 Einträge · P0302 Zündaussetzer Zyl. 2','c-ok']].map(k=>`<div class="kk"><div class="h"><span class="ic chip ${k[3]}">${k[0]}</span><div><b>${k[1]}</b><div class="d">${k[2]}</div></div><span class="m">›</span></div></div>`).join('')}
+ <div class="kk"><div class="h"><span class="ic chip c-ok">4</span><div><b>Befund</b></div><span class="m">⌄</span></div><div class="b txt">${D.befund}</div></div>
+ <div class="kk ext"><div class="h"><span class="ic chip c-warn">5</span><div><b>Abhilfe · ${eur(abhSum)}</b><div class="d">Erweiterung · wartet auf Freigabe</div></div><span class="m">⌄</span></div><div class="b" style="padding-left:12px">${abhPos()}<span class="btn">Freigabe anfragen</span></div></div>`)]);
+// 4 Geld im Blick
+V.push(['Geld im Blick','Oben stehen zwei Kästen: Was ist freigegeben, was ist angeboten? Darunter folgt der Ablauf als ruhige Liste. Gut, wenn der Kunde am Telefon nach dem Preis fragt.',ph(`
+ <div class="geld"><div class="card" style="background:var(--okbg);border-color:transparent"><span class="lab" style="color:var(--ok)">Freigegeben</span><b class="num">${eur(D.diag.p)}</b><span class="m">Diagnose</span></div>
+  <div class="card" style="background:var(--warnbg);border-color:transparent"><span class="lab" style="color:var(--warn)">Angeboten</span><b class="num">${eur(abhSum)}</b><span class="m">Erweiterung</span></div></div>
+ <div class="story">
+  <div class="row"><span class="lab">Problem</span><div class="txt">${D.problem}</div></div>
+  <div class="row"><span class="lab">Diagnose</span><div class="pos"><span>${D.diag.t}</span><span class="aw">${aw(D.diag.aw)}</span><b class="num">${eur(D.diag.p)}</b></div></div>
+  <div class="row"><span class="lab">Prüfung</span>${pruefList}</div>
+  <div class="row"><span class="lab">Befund</span><div class="txt">${D.befund}</div></div>
+  <div class="row"><span class="lab" style="color:var(--warn)">Abhilfe · Erweiterung</span>${abhPos()}</div></div>
+ <span class="btn">Erweiterung an Kunden senden</span>`,false)]);
+// 5 Bericht
+V.push(['Werkstattbericht','Sieht aus wie das fertige Papier für den Kunden, mit Überschriften in der Reihenfolge Ihres Ablaufs. Was Sie hier sehen, steht so auch auf dem Ausdruck.',ph(`<div class="zettel">
+ <h4><span>Beanstandung</span></h4><div class="txt">${D.problem}</div>
+ <h4><span>Diagnose</span><span class="num">${eur(D.diag.p)}</span></h4><div class="row"><span>${D.diag.t} (${aw(D.diag.aw)})</span><span class="dots"></span><span class="num">${eur(D.diag.p)}</span></div><div class="m">${D.diag.frei}</div>
+ <h4><span>Prüfung</span></h4>${pruefList}
+ <h4><span>Befund</span></h4><div class="txt">${D.befund}</div>
+ <h4><span>Abhilfe (Erweiterung)</span><span class="num">${eur(abhSum)}</span></h4>
+ ${D.abh.arb.concat(D.abh.teile).map(a=>`<div class="row"><span>${a.t}</span><span class="dots"></span><span class="num">${eur(a.p)}</span></div>`).join('')}
+ <div class="m" style="margin-top:6px"><span class="chip c-warn">wartet auf Freigabe</span></div></div>`)]);
+// 6 Verlauf
+V.push(['Verlauf mit Uhrzeit','Alles in der Reihenfolge, in der es passiert ist, mit Uhrzeit, ähnlich wie ein Chat. Was der Kunde sagt, ist blau. Gut zur Absicherung, wer wann was freigegeben hat.',ph(`
+ <div class="ev kunde"><span class="t">08:40</span><div class="card"><span class="lab">Kunde</span><div class="txt">${D.problem}</div></div></div>
+ <div class="ev"><span class="t">09:12</span><div class="card"><span class="lab">Diagnose freigegeben</span><div class="pos"><span>${D.diag.t}</span><b class="num">${eur(D.diag.p)}</b></div><div class="m">per Telefon</div></div></div>
+ <div class="ev"><span class="t">10:30</span><div class="card"><span class="lab">Prüfung</span>${pruefList}</div></div>
+ <div class="ev"><span class="t">11:05</span><div class="card"><span class="lab">Befund</span><div class="txt">${D.befund}</div></div></div>
+ <div class="ev"><span class="t">11:10</span><div class="card" style="border-color:var(--warn)"><span class="lab" style="color:var(--warn)">Erweiterung · wartet</span>${abhPos()}<span class="btn">Per WhatsApp anfragen</span></div></div>`)]);
+// 7 Mac
+V.push(['Mac: Schritte links, Inhalt Mitte, Geld rechts','Links stehen die fünf Schritte zum Anklicken. In der Mitte bearbeiten Sie den Schritt. Rechts sehen Sie immer die Kosten, die Freigaben und den Knopf für den Kunden.',`<div class="ph"><div class="cols">
+ <div class="c1"><div class="lab" style="margin:0 8px 8px">Motorkontrollleuchte</div>
+  ${[['1','Problem'],['2','Diagnosekosten'],['3','Prüfung'],['4','Befund']].map(s=>`<div class="nv"><i>${s[0]}</i>${s[1]}</div>`).join('')}<div class="nv cur"><i>5</i>Abhilfe</div>
+  <div class="lab" style="margin:18px 8px 8px">Weitere Abläufe</div><div class="nv" style="color:var(--ink2)">Inspektion</div><div class="nv" style="color:var(--ink3)">+ Neues Problem</div></div>
+ <div class="c2"><div class="m">Schritt 5</div><div style="font-size:19px;font-weight:800;margin-bottom:10px">Abhilfe = Auftragserweiterung</div>
+  <div class="card" style="margin-bottom:10px;background:var(--soft);border-color:transparent"><span class="lab">Befund</span><div class="txt">${D.befund}</div></div>
+  <div class="card">${abhPos()}<div class="pos"><span><b>Summe</b></span><b class="num">${eur(abhSum)}</b></div></div>
+  <div style="display:flex;gap:8px"><span class="btn2" style="flex:1">+ Arbeit aus Liste</span><span class="btn2" style="flex:1">+ Teil</span><span class="btn2" style="flex:1">+ Eigene Position</span></div></div>
+ <div class="c3">${rahmen(D.diag.p)}<span class="lab">Kosten</span>
+  <div class="pos" style="margin-top:6px"><span>Diagnose <span class="chip c-ok">frei</span></span><b class="num">${eur(D.diag.p)}</b></div>
+  <div class="pos"><span>Erweiterung <span class="chip c-warn">offen</span></span><b class="num">${eur(abhSum)}</b></div>
+  <div class="pos"><span>MwSt 19 %</span><span class="num">${eur((D.diag.p+abhSum)*.19)}</span></div>
+  <div class="pos"><span><b>Gesamt</b></span><b class="num" style="font-size:17px">${eur((D.diag.p+abhSum)*1.19)}</b></div>
+  <span class="btn">Freigabe anfragen</span><div class="m" style="margin-top:8px">Diagnose: ${D.diag.frei}</div></div></div></div>`]);
+V.push(['Zum Ausprobieren: Kostenrahmen überschritten','Tippen Sie auf „+ 0,5 AW Prüfzeit“. Sobald es mehr als 200 € sind, kommt erst eine große Meldung. Nach „Verstanden“ bleibt oben dauerhaft eine schmale Leiste stehen.',`<div class="ph" id="demo"></div>`]);
+document.getElementById('w').innerHTML=V.map((v,i)=>`<div class="v${i===6?' breit':''}"><div class="cap"><b>${i+1}</b>${v[0]}</div><div class="why">${v[1]}</div>${v[2]}</div>`).join('');
+let dAw=1.5,gesehen=false,offen=false;
+function demo(){const p=dAw*125,over=p>RAHMEN;if(over&&!gesehen)offen=true;
+ document.getElementById('demo').innerHTML=`${over&&gesehen?`<div class="leiste"><span>⚠ Kostenrahmen um ${eur(p-RAHMEN)} überschritten · Kunde noch nicht informiert</span><u data-d="info">Kunde fragen</u></div>`:''}
+ <div class="hd"><small>HU-SM 247 · BMW 320d · Max Weber</small><strong>Motorkontrollleuchte</strong></div>
+ <div class="sc">${rahmen(p,over)}
+  <div class="card"><div class="h" style="display:flex;justify-content:space-between;margin-bottom:4px"><b style="font-size:13.5px">2 · Diagnose</b><span class="chip c-ok">freigegeben bis ${eur(RAHMEN)}</span></div>
+   <div class="pos"><span>${D.diag.t}</span><span class="aw">${aw(dAw)}</span><b class="num">${eur(p)}</b></div>
+   <span class="btn2 add" data-d="plus">+ 0,5 AW Prüfzeit</span><span class="btn2 add" data-d="reset" style="border-style:solid;color:var(--ink3)">Zurücksetzen</span></div>
+  <div class="card" style="margin-top:10px"><span class="lab">3 · Prüfung</span>${pruefList}</div></div>
+ ${offen?`<div class="modal"><div class="box"><div class="warn">!</div><h3>Kostenrahmen überschritten</h3>
+  <div class="d" style="margin-bottom:10px">Der Kunde hat bis ${eur(RAHMEN)} freigegeben. Die Kalkulation liegt jetzt darüber. Bitte informieren Sie den Kunden, bevor Sie weiterarbeiten.</div>
+  <div class="zahl"><span>Freigegeben</span><b class="num">${eur(RAHMEN)}</b></div><div class="zahl"><span>Jetzt</span><b class="num">${eur(p)}</b></div><div class="zahl"><span>Darüber</span><b class="num" style="color:var(--warn)">${eur(p-RAHMEN)}</b></div>
+  <span class="btn add" data-d="info">Kunden jetzt fragen</span><span class="btn2 add" data-d="ok" style="border-style:solid">Verstanden</span></div></div>`:''}`}
+document.addEventListener('click',e=>{const t=e.target.closest('[data-d]');if(!t)return;const d=t.dataset.d;
+ if(d==='plus')dAw+=.5;else if(d==='reset'){dAw=1.5;gesehen=false;offen=false}else if(d==='ok'){offen=false;gesehen=true}else if(d==='info'){offen=false;gesehen=true;alert('Hier öffnet sich WhatsApp mit einer fertigen Nachricht an den Kunden.')}demo()});
+demo();
+</script>
+</body></html>
