@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 18.10.2026 (Abend, Nachtrag) — 2.66 Kalkulation als Liste
+- **Anlass:** Inhaber: Tabelle mit seitlichem Wischen „klares NO GO“. Paket als Ordner, darunter Zeilen mit Arbeit, Preis, AW; Details (Positionscode, Teile …) beim Antippen; Befund/Abhilfe und Hinweispositionen je Paket wichtig; Arbeitstext ändern + darunter weiterschreiben (Prüfung, Messwerte); individuelle Positionen.
+- **Gebaut:** `lsHtml(a)` – neue Standard-Ansicht „Liste“ (im Auftrag und im Vollbild). Ordner auf-/zuklappbar (`pakOpen`), Zeilen: Text + Beschreibung (bis 4 Zeilen) + AW + Preis; Befund (Abhilfe) mit Ocker-Rand, Hinweis mit Blau-Rand; Pauschale grau. Je Ordner: + Arbeit (`ls-kat`: Katalog aus `S.apDb` mit Suche, „eigene Arbeit“), + Teil, + Befund, + Hinweis, „Paket: Name, Art, wer zahlt“ (`pak-opts`). Summe unten (im Vollbild klebend). Positions-Blatt: „Beschreibung – was geprüft/gemacht, Messwerte“ (= `notizKunde`, steht auf der Rechnung, jetzt mehrzeilig gedruckt) und „Positionscode“ (`x.code`, auf Rechnung vor dem Text) oben. „Textposition“ heißt jetzt „Hinweis“. Tabelle bleibt am Mac wählbar, am Handy ausgeblendet; „Übersicht“ aus der Umschaltung entfernt. SW v67.
+- **Fehlerfund unterwegs:** eigene Arbeit aus der Suche wurde kleingeschrieben übernommen – behoben.
+- **Test:** Smoke-Test grün, neue Prüfung (Ordner offen, kein Überlauf, Katalog fügt hinzu, eigene Arbeit, Text/Beschreibung/Code speichern + sichtbar, Befund/Hinweis). Screenshots 390 hell/dunkel angesehen.
+
 ## 18.10.2026 (Abendlauf) — Kalkulations-Fokus Tag 2: 2.65 Stundensätze nach Arbeitsart
 - **Vorher am Tag:** 2.64 Vollbild-Kalkulation (Inhaber-Wunsch), Vorschlag `designs/kalkulation-handy.html` (Inhaber: Handy „nicht so benutzerfreundlich“; wartet auf OK). `claude/wip` (30.09., „Was ist neu“) ist längst in main enthalten – ignoriert.
 - **Gebaut:** `S.settings.arten` (Mechanik, Elektrik/Diagnose, Karosserie, Lack; `stdCt` null = wie Mechanik), `artSatz(a,id)` (Stundensatz ÷ AW-Teiler). Tabelle: Spalte „Art“ bietet Mechanik/Elektrik/Karosserie/Lack/Teil; Wahl setzt `x.art` + `x.awSatz` und rechnet VK neu; leere Zeile merkt sich die Art. Übersicht zeigt die Art bei Arbeiten. Einstellungen → Kalkulation & Preise: Satz je Art. SW v66.
