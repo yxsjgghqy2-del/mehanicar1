@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kalkulation: Vorlagen</title>
+<style>
+@font-face{font-family:Manrope;src:url(../fonts/manrope-latin-wght-normal.woff2) format('woff2');font-weight:200 800;font-display:swap}
+@font-face{font-family:Manrope;src:url(../fonts/manrope-latin-ext-wght-normal.woff2) format('woff2');font-weight:200 800;font-display:swap;unicode-range:U+0100-024F,U+1E00-1EFF,U+20AC}
+:root{--bg:#F3F4F5;--card:#fff;--ink:#1B1F23;--ink2:#5D646B;--ink3:#8A9198;--line:#E3E6E9;--soft:#EEF0F2;--acc:#2F3A44;--ok:#2E7650;--warn:#9C6420;--blue:#3E5A73}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#E4E7EA;font-family:Manrope,-apple-system,sans-serif;color:var(--ink);padding:22px 16px 50px;font-feature-settings:"tnum"}
+h1.t{font-size:21px;text-align:center}
+p.lead{max-width:660px;margin:6px auto 24px;text-align:center;color:var(--ink2);font-size:14px;line-height:1.55}
+.wrap{display:flex;flex-wrap:wrap;gap:30px 26px;justify-content:center;align-items:flex-start}
+.v{width:340px;max-width:100%}
+.v.breit{width:860px}
+.cap{font-size:13px;font-weight:800;margin-bottom:3px}
+.cap span{display:inline-block;min-width:24px;height:24px;border-radius:12px;background:var(--acc);color:#fff;text-align:center;line-height:24px;font-size:12px;margin-right:6px}
+.why{font-size:12.5px;color:var(--ink2);margin-bottom:10px;line-height:1.45;min-height:36px}
+.ph{background:var(--bg);border:1px solid #D2D6DA;border-radius:30px;overflow:hidden;height:640px;display:flex;flex-direction:column;box-shadow:0 8px 24px rgba(0,0,0,.07)}
+.v.breit .ph{border-radius:14px;height:520px}
+.hd{padding:16px 16px 8px}.hd small{display:block;font-size:11.5px;color:var(--ink2);font-weight:650}.hd b{font-size:18px}
+.sc{flex:1;overflow:auto;padding:4px 12px 12px}
+.ft{background:#fff;border-top:1px solid var(--line);padding:10px 16px 14px;display:flex;justify-content:space-between;align-items:baseline}
+.ft span{font-size:12px;color:var(--ink2)}.ft b{font-size:20px;font-weight:800}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+/* gemeinsame Bausteine */
+.lab{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase}
+.bef{color:var(--warn)}.abh{color:var(--ok)}.hin{color:var(--blue)}
+.d{font-size:12px;color:var(--ink2);margin-top:2px;line-height:1.4}
+.m{font-size:11px;color:var(--ink3)}
+/* 1 aktuell */
+.v1 .pk{background:#fff;border:1px solid var(--line);border-radius:14px;margin-bottom:10px}
+.v1 .pkh{display:flex;gap:10px;align-items:center;padding:12px}
+.v1 .ic{width:30px;height:30px;border-radius:9px;background:var(--bg);display:grid;place-items:center}
+.v1 .ic svg{width:16px;height:16px;fill:none;stroke:var(--ink2);stroke-width:1.8}
+.v1 .pkh div{flex:1}.v1 .pkh b{font-size:14px}
+.v1 .row{display:flex;gap:10px;padding:10px 12px;border-top:1px solid var(--line);font-size:13.5px}
+.v1 .row>div:first-child{flex:1}.v1 .row .r{text-align:right}
+.v1 .bl{border-left:3px solid var(--warn)}.v1 .hl{border-left:3px solid var(--blue)}
+/* 2 kompakt gruppiert (iOS) */
+.v2 .gh{font-size:11px;font-weight:700;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em;margin:14px 6px 6px;display:flex;justify-content:space-between}
+.v2 .grp{background:#fff;border-radius:12px;overflow:hidden}
+.v2 .row{display:flex;gap:8px;padding:9px 12px;font-size:13px;border-bottom:1px solid var(--soft);align-items:baseline}
+.v2 .row:last-child{border-bottom:0}.v2 .row>span:first-child{flex:1}
+.v2 .ch{color:var(--ink3);font-size:15px}
+/* 3 Beleg */
+.v3 .zettel{background:#fff;border-radius:6px;padding:16px 14px;box-shadow:0 1px 0 var(--line)}
+.v3 h4{font-size:12px;letter-spacing:.08em;text-transform:uppercase;border-bottom:1.5px solid var(--ink);padding-bottom:4px;margin:14px 0 6px;display:flex;justify-content:space-between}
+.v3 h4:first-child{margin-top:0}
+.v3 .row{display:flex;font-size:13px;padding:4px 0;align-items:baseline}
+.v3 .row .dots{flex:1;border-bottom:1px dotted var(--ink3);margin:0 6px;transform:translateY(-3px)}
+.v3 .note{font-size:12px;color:var(--ink2);padding:0 0 4px 10px;border-left:2px solid var(--line);margin:2px 0 4px}
+.v3 .sum{border-top:1.5px solid var(--ink);margin-top:12px;padding-top:8px;display:flex;justify-content:space-between;font-weight:800}
+/* 4 Ablauf */
+.v4 .pkn{font-size:13px;font-weight:800;margin:6px 4px 8px}
+.v4 .step{display:flex;gap:10px;position:relative;padding-bottom:12px}
+.v4 .step:before{content:"";position:absolute;left:11px;top:24px;bottom:0;width:2px;background:var(--line)}
+.v4 .step:last-child:before{display:none}
+.v4 .dot{width:24px;height:24px;border-radius:12px;flex:none;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff}
+.v4 .box{flex:1;background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 11px}
+.v4 .box .row{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+/* 5 Reiter */
+.v5 .tabs{display:flex;gap:6px;padding:0 12px 10px;overflow-x:auto}
+.v5 .tab{flex:none;padding:8px 12px;border-radius:10px;background:#fff;border:1px solid var(--line);font-size:12.5px;font-weight:650;text-align:left}
+.v5 .tab small{display:block;font-weight:600;color:var(--ink3);font-size:11px}
+.v5 .tab.on{background:var(--acc);color:#fff;border-color:var(--acc)}.v5 .tab.on small{color:#C9CFD5}
+.v5 .card{background:#fff;border-radius:14px;border:1px solid var(--line)}
+.v5 .row{display:flex;gap:10px;padding:11px 12px;border-bottom:1px solid var(--soft);font-size:13.5px}
+.v5 .row>div:first-child{flex:1}
+.v5 .addbar{display:flex;gap:6px;padding:10px 12px}
+.v5 .addbar span{flex:1;text-align:center;padding:9px 0;border-radius:10px;background:var(--soft);font-size:12px;font-weight:700}
+/* 6 Große Schrift */
+.v6 .row{background:#fff;border-radius:16px;padding:14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.v6 .row b{font-size:17px}.v6 .row .p{font-size:18px;font-weight:800}
+.v6 .row>div:first-child{flex:1}
+.v6 .pkn{font-size:20px;font-weight:800;margin:4px 4px 10px;display:flex;justify-content:space-between}
+.v6 .big{display:block;width:100%;padding:16px;border-radius:16px;background:var(--acc);color:#fff;font-size:17px;font-weight:700;text-align:center;margin-top:4px}
+/* 7 Mac drei Spalten */
+.v7 .cols{display:grid;grid-template-columns:200px 1fr 250px;height:100%}
+.v7 .c1{background:#fff;border-right:1px solid var(--line);padding:12px}
+.v7 .c2{padding:12px 16px;overflow:auto}
+.v7 .c3{background:#fff;border-left:1px solid var(--line);padding:12px;overflow:auto}
+.v7 .pkl{padding:9px 10px;border-radius:9px;font-size:13px;margin-bottom:4px;display:flex;justify-content:space-between}
+.v7 .pkl.on{background:var(--soft);font-weight:700}
+.v7 .row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13px}
+.v7 .row>div:first-child{flex:1}
+.v7 .srch{border:1px solid var(--line);border-radius:9px;padding:8px 10px;font-size:12.5px;color:var(--ink3);margin-bottom:8px}
+.v7 .kat{display:flex;justify-content:space-between;padding:8px 2px;border-bottom:1px solid var(--soft);font-size:12.5px}
+.v7 .kat b{color:var(--acc)}
+/* 8 Karten mit Teilen eingerückt */
+.v8 .arb{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 12px;margin-bottom:8px}
+.v8 .arb .top{display:flex;gap:8px;font-size:13.5px}.v8 .arb .top b{flex:1}
+.v8 .tl{margin-top:8px;padding-top:6px;border-top:1px dashed var(--line)}
+.v8 .tl div{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink2);padding:2px 0 2px 12px;position:relative}
+.v8 .tl div:before{content:"";position:absolute;left:2px;top:9px;width:5px;height:5px;border-radius:3px;background:var(--ink3)}
+.v8 .pkn{display:flex;justify-content:space-between;font-size:13px;font-weight:800;margin:8px 4px}
+.q{max-width:660px;margin:30px auto 0;background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;font-size:14px;line-height:1.6}
+</style></head><body>
+<h1 class="t">Kalkulation – Vorlagen zum Vergleichen</h1>
+<p class="lead">Alle Vorlagen zeigen denselben Auftrag (BMW 320d, Bremsen + Inspektion). Nr. 1 ist die aktuelle Ansicht in mehanicar. Sie können auch mischen, zum Beispiel „3, aber mit den Reitern aus 5“.</p>
+<div class="wrap" id="w"></div>
+<div class="q"><b>Frage an Sie:</b> Welche Nummer gefällt Ihnen? Oder welche Teile aus welchen Vorlagen? Eine Nummer als Antwort reicht.</div>
+<script>
+const eur=c=>c.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';
+const P=[{n:'Bremsen vorne',sum:484,bef:['Bremsscheiben VA unter Verschleißgrenze, Beläge 2 mm','Scheiben und Beläge VA erneuern'],
+  arb:[{t:'Bremsscheiben + Beläge VA wechseln',aw:2,p:250,d:'Scheibendicke gemessen: 21,4 mm (min. 22 mm)'}],
+  teile:[{t:'Bremsscheiben VA (Paar)',p:145,m:1},{t:'Bremsbeläge VA (Satz)',p:89,m:1}],hin:'Bremsen hinten bei nächster Inspektion prüfen'},
+ {n:'Inspektion',sum:150.5,arb:[{t:'Ölwechsel',aw:0.5,p:62.5,d:''}],teile:[{t:'Ölfilter',p:19,m:1},{t:'Motoröl 5W-30',p:69.5,m:5}]}];
+const total=P.reduce((s,p)=>s+p.sum,0)*1.19;
+const FOLDER='<svg viewBox="0 0 24 24"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.2l2 2h8.8A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>';
+const ph=(body,ft=true,hd=true)=>`<div class="ph">${hd?'<div class="hd"><small>HU-SM 247 · BMW 320d</small><b>Kalkulation</b></div>':''}<div class="sc">${body}</div>${ft?`<div class="ft"><span>Kunde zahlt inkl. MwSt</span><b class="num">${eur(total)}</b></div>`:''}</div>`;
+const V=[];
+// 1 aktuell
+V.push(['Aktuell in mehanicar: Ordner-Karten','Paket aufklappen, Zeilen mit Text, AW, Preis. Befund und Hinweis farbig markiert.','v1',ph(P.map((p,i)=>`<div class="pk"><div class="pkh"><span class="ic">${FOLDER}</span><div><b>${p.n}</b><div class="m">${(p.bef?1:0)+p.arb.length+p.teile.length+(p.hin?1:0)} Positionen</div></div><b class="num">${eur(p.sum)}</b></div>
+ ${i===0?`${p.bef?`<div class="row bl"><div><span class="lab bef">Befund</span><div>${p.bef[0]}</div><span class="lab abh">Abhilfe</span><div>${p.bef[1]}</div></div></div>`:''}
+ ${p.arb.map(a=>`<div class="row"><div><b>${a.t}</b>${a.d?`<div class="d">${a.d}</div>`:''}</div><div class="r"><b class="num">${eur(a.p)}</b><div class="m">${String(a.aw).replace('.',',')} AW</div></div></div>`).join('')}
+ ${p.teile.map(t=>`<div class="row"><div>${t.t}<div class="m">Teil</div></div><b class="num">${eur(t.p)}</b></div>`).join('')}
+ ${p.hin?`<div class="row hl"><div><span class="lab hin">Hinweis</span><div>${p.hin}</div></div></div>`:''}`:''}</div>`).join(''))]);
+// 2 kompakt
+V.push(['Kompakt wie iPhone-Einstellungen','Sehr ruhig, viele Positionen auf einen Blick. Arbeit und Teile in eigenen Gruppen mit Zwischensumme.','v2',ph(P.map(p=>`<div class="gh"><span>${p.n}</span><span class="num">${eur(p.sum)}</span></div>
+ ${p.bef?`<div class="grp" style="margin-bottom:6px"><div class="row"><span><span class="lab bef">Befund</span> ${p.bef[0]}</span></div><div class="row"><span><span class="lab abh">Abhilfe</span> ${p.bef[1]}</span></div></div>`:''}
+ <div class="grp">${p.arb.map(a=>`<div class="row"><span>${a.t}</span><span class="m">${String(a.aw).replace('.',',')} AW</span><b class="num">${eur(a.p)}</b><span class="ch">›</span></div>`).join('')}${p.teile.map(t=>`<div class="row"><span>${t.t}</span><b class="num">${eur(t.p)}</b><span class="ch">›</span></div>`).join('')}</div>
+ ${p.hin?`<div class="gh" style="text-transform:none;letter-spacing:0;font-weight:500"><span><span class="lab hin">Hinweis</span> ${p.hin}</span></div>`:''}`).join(''))]);
+// 3 Beleg
+V.push(['Werkstattzettel','Sieht aus wie der fertige Auftrag auf Papier. Beschreibung und Messwerte stehen direkt unter der Arbeit.','v3',ph(`<div class="zettel">${P.map(p=>`<h4><span>${p.n}</span><span class="num">${eur(p.sum)}</span></h4>
+ ${p.bef?`<div class="row"><span><b class="lab bef">Befund</b> ${p.bef[0]}</span></div><div class="row"><span><b class="lab abh">Abhilfe</b> ${p.bef[1]}</span></div>`:''}
+ ${p.arb.map(a=>`<div class="row"><span>${a.t}</span><span class="dots"></span><span class="num">${eur(a.p)}</span></div>${a.d?`<div class="note">${a.d}</div>`:''}`).join('')}
+ ${p.teile.map(t=>`<div class="row"><span>${t.t}</span><span class="dots"></span><span class="num">${eur(t.p)}</span></div>`).join('')}
+ ${p.hin?`<div class="row"><span><b class="lab hin">Hinweis</b> ${p.hin}</span></div>`:''}`).join('')}<div class="sum"><span>Gesamt inkl. MwSt</span><span class="num">${eur(total)}</span></div></div>`,false)]);
+// 4 Ablauf
+V.push(['Ablauf: Befund → Arbeit → Teile','Jedes Paket als kleine Zeitleiste. Gut für Kundengespräche: Was war los, was wird gemacht?','v4',ph(P.map(p=>`<div class="pkn">${p.n} · <span class="num">${eur(p.sum)}</span></div>
+ ${p.bef?`<div class="step"><span class="dot" style="background:var(--warn)">1</span><div class="box"><span class="lab bef">Befund</span><div style="font-size:13px">${p.bef[0]}</div></div></div>`:''}
+ <div class="step"><span class="dot" style="background:var(--acc)">${p.bef?2:1}</span><div class="box"><span class="lab">Arbeit</span>${p.arb.map(a=>`<div class="row"><span>${a.t}</span><b class="num">${eur(a.p)}</b></div>${a.d?`<div class="d">${a.d}</div>`:''}`).join('')}</div></div>
+ <div class="step"><span class="dot" style="background:var(--ink3)">${p.bef?3:2}</span><div class="box"><span class="lab">Teile</span>${p.teile.map(t=>`<div class="row"><span>${t.t}</span><b class="num">${eur(t.p)}</b></div>`).join('')}</div></div>
+ ${p.hin?`<div class="step"><span class="dot" style="background:var(--blue)">i</span><div class="box"><span class="lab hin">Hinweis</span><div style="font-size:13px">${p.hin}</div></div></div>`:''}`).join(''))]);
+// 5 Reiter
+V.push(['Pakete als Reiter oben','Oben die Pakete zum Wechseln, darunter nur das gewählte Paket. Die Knöpfe zum Hinzufügen sind immer sichtbar.','v5',`<div class="ph"><div class="hd"><small>HU-SM 247 · BMW 320d</small><b>Kalkulation</b></div>
+ <div class="tabs">${P.map((p,i)=>`<div class="tab${i===0?' on':''}">${p.n}<small class="num">${eur(p.sum)}</small></div>`).join('')}<div class="tab">+ Paket<small>neu</small></div></div>
+ <div class="sc"><div class="card">${(p=>`${p.bef?`<div class="row" style="border-left:3px solid var(--warn)"><div><span class="lab bef">Befund</span><div>${p.bef[0]}</div><span class="lab abh">Abhilfe</span><div>${p.bef[1]}</div></div></div>`:''}
+ ${p.arb.map(a=>`<div class="row"><div><b>${a.t}</b>${a.d?`<div class="d">${a.d}</div>`:''}</div><div style="text-align:right"><b class="num">${eur(a.p)}</b><div class="m">${a.aw} AW</div></div></div>`).join('')}
+ ${p.teile.map(t=>`<div class="row"><div>${t.t}</div><b class="num">${eur(t.p)}</b></div>`).join('')}
+ ${p.hin?`<div class="row" style="border-left:3px solid var(--blue)"><div><span class="lab hin">Hinweis</span><div>${p.hin}</div></div></div>`:''}`)(P[0])}
+ <div class="addbar"><span>+ Arbeit</span><span>+ Teil</span><span>+ Befund</span><span>+ Hinweis</span></div></div></div>
+ <div class="ft"><span>Kunde zahlt inkl. MwSt</span><b class="num">${eur(total)}</b></div></div>`]);
+// 6 Groß
+V.push(['Große Schrift (Handschuh-Modus)','Wenig pro Bildschirm, aber alles riesig und gut zu treffen – direkt am Auto.','v6',ph(`<div class="pkn"><span>${P[0].n}</span><span class="num">${eur(P[0].sum)}</span></div>
+ ${P[0].arb.map(a=>`<div class="row"><div><b>${a.t}</b><div class="d" style="font-size:14px">${a.d}</div></div><span class="p num">${eur(a.p)}</span></div>`).join('')}
+ ${P[0].teile.map(t=>`<div class="row"><div><b>${t.t}</b></div><span class="p num">${eur(t.p)}</span></div>`).join('')}
+ <span class="big">+ Arbeit oder Teil</span>`)]);
+// 8 Teile unter Arbeit
+V.push(['Teile direkt unter der Arbeit','Jede Arbeit zeigt eingerückt ihre Teile. So sieht man sofort, was zu was gehört.','v8',ph(P.map(p=>`<div class="pkn"><span>${p.n}</span><span class="num">${eur(p.sum)}</span></div>
+ ${p.bef?`<div class="arb" style="border-left:3px solid var(--warn)"><span class="lab bef">Befund</span><div style="font-size:13px">${p.bef[0]}</div></div>`:''}
+ ${p.arb.map(a=>`<div class="arb"><div class="top"><b>${a.t}</b><span class="m">${String(a.aw).replace('.',',')} AW</span><b class="num">${eur(a.p)}</b></div>${a.d?`<div class="d">${a.d}</div>`:''}
+  <div class="tl">${p.teile.map(t=>`<div><span>${t.t}</span><span class="num">${eur(t.p)}</span></div>`).join('')}</div></div>`).join('')}`).join(''))]);
+// 7 Mac
+V.push(['Mac: drei Spalten','Links die Pakete, in der Mitte die Positionen, rechts die Arbeitsliste zum Suchen und Antippen. Ohne Wischen, ohne Fenster.','v7 breit',`<div class="ph"><div class="cols">
+ <div class="c1"><div class="m" style="margin-bottom:8px;font-weight:700">PAKETE</div>${P.map((p,i)=>`<div class="pkl${i===0?' on':''}"><span>${p.n}</span><span class="num">${eur(p.sum)}</span></div>`).join('')}<div class="pkl" style="color:var(--ink3)">+ Neues Paket</div>
+  <div style="margin-top:24px;border-top:1px solid var(--line);padding-top:10px"><div class="m">Kunde zahlt</div><b class="num" style="font-size:20px">${eur(total)}</b><div class="m" style="margin-top:4px">Gewinn <b style="color:var(--ok)">412,80 €</b></div></div></div>
+ <div class="c2"><b style="font-size:16px">${P[0].n}</b>
+  <div class="row" style="border-left:3px solid var(--warn);padding-left:10px"><div><span class="lab bef">Befund</span> ${P[0].bef[0]}<br><span class="lab abh">Abhilfe</span> ${P[0].bef[1]}</div></div>
+  ${P[0].arb.map(a=>`<div class="row"><div><b>${a.t}</b><div class="d">${a.d}</div></div><span class="m">${a.aw} AW</span><b class="num">${eur(a.p)}</b></div>`).join('')}
+  ${P[0].teile.map(t=>`<div class="row"><div>${t.t}</div><b class="num">${eur(t.p)}</b></div>`).join('')}
+  <div class="row" style="border-left:3px solid var(--blue);padding-left:10px"><div><span class="lab hin">Hinweis</span> ${P[0].hin}</div></div></div>
+ <div class="c3"><div class="srch">Arbeit suchen …</div><div class="m" style="margin:4px 0 6px;font-weight:700">BREMSEN</div>
+  ${[['Bremsflüssigkeit wechseln','0,7 AW'],['Bremsbeläge HA wechseln','1,2 AW'],['Bremssattel VA erneuern','1,0 AW'],['Handbremse einstellen','0,5 AW']].map(k=>`<div class="kat"><span>${k[0]}<br><span class="m">${k[1]}</span></span><b>+</b></div>`).join('')}
+  <div class="kat" style="border:1px dashed var(--line);border-radius:8px;padding:8px;margin-top:8px"><span>Eigene Position</span><b>+</b></div></div></div></div>`]);
+document.getElementById('w').innerHTML=V.map((v,i)=>`<div class="v ${v[2]}"><div class="cap"><span>${i+1}</span>${v[0]}</div><div class="why">${v[1]}</div>${v[3]}</div>`).join('');
+</script>
+</body></html>
