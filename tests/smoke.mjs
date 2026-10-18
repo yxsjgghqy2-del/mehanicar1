@@ -477,6 +477,24 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (Object.values(km).some(v => !v)) errs.push('Kleinmaterial: ' + JSON.stringify(km));
   }
+  // Stundensätze nach Arbeitsart: Art in der Tabelle wählen → eigener Satz
+  {
+    const ar = await page.evaluate(async () => {
+      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); if (!a) return { auftrag: false };
+      const pk = a.pakete[0], altPos = JSON.parse(JSON.stringify(pk.pos)), altArten = JSON.parse(JSON.stringify(S.settings.arten)), altEnt = pk.entsperrt;
+      pk.entsperrt = true; S.settings.arten.find(r => r.id === 'elek').stdCt = 15000;
+      pk.pos.push({ id: 'xart1', nr: 98, created: Date.now(), typ: 'arbeit', bez: 'Testdiagnose', menge: 1, aw: 10, ekCt: 0, vkCt: 10 * ktSatz(a, null), best: null, eta: null, lagerId: null, ext: false });
+      calcMode[a.id] = 'tab'; nav('auftrag', a.id); await new Promise(r => setTimeout(r, 120));
+      const sel = document.querySelector('.kt-typ[data-xid="xart1"]'); if (!sel) return { auswahl: false };
+      const r = { optionen: [...sel.options].map(o => o.value).join() === 'arbeit,arbeit:elek,arbeit:karo,arbeit:lack,teil' };
+      sel.value = 'arbeit:elek'; sel.dispatchEvent(new Event('change', { bubbles: true })); await new Promise(r => setTimeout(r, 120));
+      const x = pk.pos.find(p => p.id === 'xart1');
+      r.satz = x.art === 'elek' && x.vkCt === Math.round(10 * Math.round(15000 / (a.awTeiler || S.settings.awTeiler || 1)));
+      r.anzeige = document.querySelector('.kt-typ[data-xid="xart1"]').value === 'arbeit:elek';
+      pk.pos = altPos; S.settings.arten = altArten; pk.entsperrt = altEnt; save(); nav('planung'); return r;
+    });
+    if (Object.values(ar).some(v => !v)) errs.push('Arbeitsart: ' + JSON.stringify(ar));
+  }
   // Kalkulation im Vollbild: nur Positionen, Fertig führt zurück zum Auftrag
   {
     const kv = await page.evaluate(async () => {
