@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 18.10.2026 (Abendlauf) — Kalkulations-Fokus Tag 2: 2.65 Stundensätze nach Arbeitsart
+- **Vorher am Tag:** 2.64 Vollbild-Kalkulation (Inhaber-Wunsch), Vorschlag `designs/kalkulation-handy.html` (Inhaber: Handy „nicht so benutzerfreundlich“; wartet auf OK). `claude/wip` (30.09., „Was ist neu“) ist längst in main enthalten – ignoriert.
+- **Gebaut:** `S.settings.arten` (Mechanik, Elektrik/Diagnose, Karosserie, Lack; `stdCt` null = wie Mechanik), `artSatz(a,id)` (Stundensatz ÷ AW-Teiler). Tabelle: Spalte „Art“ bietet Mechanik/Elektrik/Karosserie/Lack/Teil; Wahl setzt `x.art` + `x.awSatz` und rechnet VK neu; leere Zeile merkt sich die Art. Übersicht zeigt die Art bei Arbeiten. Einstellungen → Kalkulation & Preise: Satz je Art. SW v66.
+- **Test:** Smoke-Test grün, neue Prüfung (Optionen, Elektrik 150 €/Std → VK neu). Screenshots angesehen.
+
 ## 18.10.2026 (Vormittag) — 2.64 Kalkulation im Vollbild
 - **Anlass:** Inhaber: „Die Kalkulation muss im Vollbild passieren, nichts anderes sollte dabei sein außer das Relevante für die Positionen.“
 - **Gebaut:** Neue Ansicht `vKalk` (Route `kalk`): nur Tabelle je Paket, Summenleiste (klebt unten), „Neues Paket“. Kein Menü, kein Kalk-Kopf, keine Abschnitte. Kopf: Kennzeichen + „Kalkulation“ + Knopf „Fertig“ (zurück zum Auftrag). Einstieg: Knopf „Positionen im Vollbild bearbeiten“ oben in „Pakete & Kalkulation“. Handy: Bezeichnung-Spalte breiter (seitlich wischen). SW v65.

@@ -277,6 +277,7 @@ function migrate2(){
  if(S.settings.designV4===undefined){S.settings.designV4=true;S.settings.theme='light'}
  if(S.settings.designV5===undefined){S.settings.designV5=true;S.settings.theme='dark'}
  if(S.settings.stundensatzCt===undefined)S.settings.stundensatzCt=S.settings.awCt||12500;
+ if(!S.settings.arten)S.settings.arten=ARTEN_STD.map(x=>({...x}));
  if(!S.settings.kleinmat){S.settings.kleinmat={aktiv:true,pct:5,minCt:500,maxCt:2500,bez:'Kleinmaterial & Entsorgung'};(S.auftraege||[]).forEach(a=>{a.kmAus=true})} // bestehende Aufträge behalten ihren Preis
  if(!S.settings.aufschlag)S.settings.aufschlag={staffel:AUFSCHLAG_STD.map(x=>({...x})),runden:true};
  if(!S.apKombi)S.apKombi=AP_KOMBI_SEED.map(([kws,partner])=>({keywords:kws,partner}));
@@ -361,9 +362,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.64';
+const APP_VER='2.65';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.65',d:'2026-10-18',p:['Stundensätze nach Arbeitsart: In der Tabelle wählen Sie in der Spalte „Art“ jetzt Mechanik, Elektrik, Karosserie, Lack oder Teil. Für jede Art können Sie unter Einstellungen → Kalkulation & Preise einen eigenen Stundensatz eintragen. Leer bedeutet: gleicher Preis wie Mechanik.']},
  {v:'2.64',d:'2026-10-18',p:['Kalkulation im Vollbild: Im Auftrag unter „Pakete & Kalkulation“ auf „Positionen im Vollbild bearbeiten“ tippen. Dann sehen Sie nur noch die Positionen, die Pakete und die Summe. Mit „Fertig“ geht es zurück zum Auftrag.']},
  {v:'2.63',d:'2026-10-18',p:['Kalkulation: Kleinmaterial & Entsorgung wird jetzt automatisch berechnet – 5 % vom Arbeitslohn, mindestens 5 €, höchstens 25 €. Die Zeile steht mit „auto“ in der Tabelle und lässt sich pro Auftrag mit × abschalten. Gilt für neue Aufträge. Bestehende und vom Kunden schon freigegebene Aufträge behalten ihren Preis. Werte stellen Sie unter Einstellungen → Kalkulation & Preise ein.','Neue Spalte „Rabatt“ in der Tabelle: Betrag (z. B. 10,00) oder Prozent (z. B. 10 %) eintippen.']},
  {v:'2.62',d:'2026-10-17',p:['Neu: Positionen als Tabelle – wie in Excel. Im Auftrag unter „Pakete & Kalkulation“ ist „Tabelle“ jetzt die erste Ansicht. Jede Zeile ist eine Arbeit oder ein Teil; die Summen rechnen sofort mit.','Bedienung mit der Tastatur: Tab springt ins nächste Feld, Enter in die nächste Zeile. In die leere letzte Zeile tippen legt eine neue Position an. Arbeitswerte füllen den Preis selbst, bei Teilen kommt der Verkaufspreis aus Ihrer Aufschlag-Staffel. Lagerteile werden beim Eintippen erkannt.']},
@@ -485,6 +487,11 @@ function vkAuto(ekEl,vkEl,hintEl,manuell){if(!ekEl||!vkEl)return;let hand=!!manu
 
 /* Kleinmaterial- & Entsorgungs-Pauschale: x % vom Arbeitslohn der offenen Pakete, mit Mindest- und Höchstbetrag.
    Wird als automatische Position (auto:'km') im ersten offenen Paket geführt; je Auftrag abschaltbar (a.kmAus). */
+/* Stundensätze nach Arbeitsart: Mechanik = normaler Stundensatz; andere Arten optional mit eigenem Satz (stdCt null = wie Mechanik) */
+const ARTEN_STD=[{id:'mech',n:'Mechanik',stdCt:null},{id:'elek',n:'Elektrik',lang:'Elektrik / Diagnose',stdCt:null},{id:'karo',n:'Karosserie',stdCt:null},{id:'lack',n:'Lack',stdCt:null}];
+const arten=()=>S.settings.arten||ARTEN_STD;
+const artName=id=>(arten().find(x=>x.id===id)||{}).n||'';
+function artSatz(a,id){const r=arten().find(x=>x.id===id);if(!r||!r.stdCt)return null;return Math.round(r.stdCt/((a&&a.awTeiler)||S.settings.awTeiler||1))}
 function kmBetrag(a){const c=S.settings.kleinmat||{};if(!c.aktiv||a.kmAus)return 0;
  const lohn=a.pakete.filter(pk=>!pk.abger).flatMap(pk=>pk.pos).filter(p=>p.typ==='arbeit').reduce((s,p)=>s+posNetto(p),0);
  if(lohn<=0)return 0;return Math.min(c.maxCt||Infinity,Math.max(c.minCt||0,Math.round(lohn*(c.pct||0)/100)))}
@@ -1132,6 +1139,7 @@ function vAuftrag(id){
     <div><span style="font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--amber)">${posNr(p)}BEFUND</span><div class="pn" style="margin-top:2px;white-space:pre-wrap">${esc(p.bez)}</div></div>
     ${p.abhilfe?`<div><span style="font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--green)">ABHILFE</span><div class="pn" style="margin-top:2px;white-space:pre-wrap">${esc(p.abhilfe)}</div></div>`:''}</div>`}
    if(p.typ==='text'){return `<div class="pos text-pos" ${act} data-xid="${p.id}" style="${curs}"><div class="pn">${posNr(p)}${esc(p.bez)}</div></div>`}
+   if(p.typ==='arbeit'&&p.art&&p.art!=='mech')meta.push(esc(artName(p.art)));
    if(p.typ==='arbeit'&&p.aw)meta.push(pct1(p.aw)+' AW'+(p.awSatz&&p.awSatz!==S.settings.awCt?' à '+fmt(p.awSatz):''));
    if(p.typ==='teil'){if((p.menge||1)!==1)meta.push(p.menge+' ×');meta.push('EK '+fmt(p.ekCt)+' → VK '+fmt(p.vkCt));
     meta.push(`<span class="gain">+${fmt((p.vkCt-p.ekCt)*(p.menge||1))}</span>`)}
@@ -1804,12 +1812,13 @@ ACT['pos-del']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===e
 const KT_LBL={bez:'Bezeichnung',menge:'Menge',aw:'Arbeitswerte',ek:'Einkauf je Stück',vk:'Verkauf je Stück',rab:'Rabatt (Betrag oder %)'};
 const ktLocked=pk=>pk.abger&&!pk.entsperrt;
 const ktNeuTyp={}; /* zuletzt gewählte Art je Paket für die leere Zeile */
-const ktSatz=(a,x)=>(x&&x.awSatz)||a.awCt||S.settings.awCt;
+const ktSatz=(a,x,art)=>(x&&x.awSatz)||(art&&artSatz(a,art))||a.awCt||S.settings.awCt;
 const ktNum=v=>{let t=String(v||'').trim();if(t.includes(','))t=t.replace(/\./g,'').replace(',','.');const n=parseFloat(t);return isNaN(n)?0:n};
 function ktHtml(a){
  const dl=`<datalist id="kt-dl">${(S.apDb||[]).slice(-300).map(e=>`<option value="${esc(e.bez)}"></option>`).join('')}${S.lager.map(l=>`<option value="${esc(l.teil)}">Lager · ${l.bestand} Stk · ${fmt(l.vkCt)}</option>`).join('')}</datalist>`;
  const inp=(pk,x,k,val,dis)=>`<input class="kt-in${k==='bez'?'':' num'}" data-k="${k}" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x?x.id:''}" value="${val}"${dis?' disabled':''} ${k==='bez'?'list="kt-dl" autocomplete="off" enterkeyhint="next"':'inputmode="decimal"'} aria-label="${KT_LBL[k]}${x?'':' (neue Zeile)'}">`;
- const typSel=(pk,x,dis)=>`<select class="kt-typ" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x&&x.id?x.id:''}"${dis?' disabled':''} aria-label="Art"><option value="arbeit"${!x||x.typ==='arbeit'?' selected':''}>Arbeit</option><option value="teil"${x&&x.typ==='teil'?' selected':''}>Teil</option></select>`;
+ const typSel=(pk,x,dis)=>{const cur=!x||x.typ==='arbeit'?'arbeit'+(x&&x.art&&x.art!=='mech'?':'+x.art:''):x.typ;
+  return`<select class="kt-typ" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x&&x.id?x.id:''}"${dis?' disabled':''} aria-label="Art">${arten().map(r=>{const v=r.id==='mech'?'arbeit':'arbeit:'+r.id;return`<option value="${v}"${cur===v?' selected':''}>${esc(r.n)}</option>`}).join('')}<option value="teil"${cur==='teil'?' selected':''}>Teil</option></select>`};
  const zeile=(pk,x,lk)=>{
   if(x.typ!=='arbeit'&&x.typ!=='teil')return`<tr class="kt-txt"><td class="kt-nr">${x.nr||''}</td><td colspan="8">${x.typ==='befund'?'<b>Befund:</b> ':''}${esc(x.bez)}</td><td></td></tr>`;
   const A=x.typ==='arbeit';
@@ -1823,7 +1832,7 @@ function ktHtml(a){
    <td>${inp(pk,x,'rab',x.rab&&x.rab.wert?(x.rab.typ==='pct'?String(x.rab.wert).replace('.',',')+' %':fmtIn(x.rab.wert)):'',lk)}</td>
    <td class="kt-sum num">${fmt(posNetto(x))}</td>
    <td>${lk?'':`<button class="kt-del" data-act="pos-del" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}" aria-label="Zeile löschen" title="Zeile löschen (Strg/⌘ + Entf)">×</button>`}</td></tr>`};
- const neu=pk=>`<tr class="kt-neu" data-new="${pk.id}"><td class="kt-nr">+</td><td>${typSel(pk,{typ:ktNeuTyp[pk.id]||'arbeit',id:''},false)}</td><td class="kt-bez">${inp(pk,null,'bez','',false).replace('value=""','value="" placeholder="Neue Position – Arbeit oder Teil eintippen …"')}</td>
+ const neu=pk=>`<tr class="kt-neu" data-new="${pk.id}"><td class="kt-nr">+</td><td>${typSel(pk,(()=>{const t=ktNeuTyp[pk.id]||'arbeit',[ty,ar]=t.split(':');return{typ:ty,art:ar||null,id:''}})(),false)}</td><td class="kt-bez">${inp(pk,null,'bez','',false).replace('value=""','value="" placeholder="Neue Position – Arbeit oder Teil eintippen …"')}</td>
    <td>${inp(pk,null,'menge','',false)}</td><td>${inp(pk,null,'aw','',false)}</td><td>${inp(pk,null,'ek','',false)}</td><td>${inp(pk,null,'vk','',false)}</td><td>${inp(pk,null,'rab','',false)}</td><td class="kt-sum num"></td><td></td></tr>`;
  const K=ordKalk(a);
  return dl+(a.pakete.length?a.pakete.map(pk=>{const lk=ktLocked(pk);
@@ -1836,26 +1845,27 @@ function ktHtml(a){
  ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<div class="kt-hilfe"><button class="btn-ghost" style="min-height:36px" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale für diesen Auftrag wieder einschalten</button></div>`:''}
  <div class="kt-hilfe">Rabatt: Betrag (z. B. 10,00) oder Prozent (z. B. 10 %) · Tab = nächstes Feld · Enter = nächste Zeile · Strg/⌘ + Entf = Zeile löschen</div>`}
 function ktZeileWerte(tr){const g=k=>{const e=tr.querySelector('.kt-in[data-k="'+k+'"]');return e?e.value:''};const t=tr.querySelector('.kt-typ');
- return{typ:t?t.value:'arbeit',bez:g('bez').trim(),menge:Math.max(1,ktNum(g('menge'))||1),aw:ktNum(g('aw')),ekCt:Math.max(0,parseEuro(g('ek'))||0),vkCt:Math.max(0,parseEuro(g('vk'))||0),vkLeer:!g('vk').trim(),rab:ktRab(g('rab'))}}
+ const tv=t?t.value:'arbeit';
+ return{sel:tv,typ:tv.split(':')[0],art:tv.startsWith('arbeit')?(tv.split(':')[1]||'mech'):null,bez:g('bez').trim(),menge:Math.max(1,ktNum(g('menge'))||1),aw:ktNum(g('aw')),ekCt:Math.max(0,parseEuro(g('ek'))||0),vkCt:Math.max(0,parseEuro(g('vk'))||0),vkLeer:!g('vk').trim(),rab:ktRab(g('rab'))}}
 function ktRab(t){t=String(t||'').trim();if(!t)return null;if(t.includes('%')){const n=ktNum(t.replace('%',''));return n>0?{typ:'pct',wert:Math.min(100,n)}:null}const c=parseEuro(t);return c>0?{typ:'eur',wert:c}:null}
 /* Live-Vorschau beim Tippen (ohne Speichern) */
 function ktLive(el){const tr=el.closest('tr'),a=auftrag(el.dataset.oid);if(!tr||!a)return;const v=ktZeileWerte(tr),k=el.dataset.k;
  const x=el.dataset.xid?a.pakete.flatMap(p=>p.pos).find(p=>p.id===el.dataset.xid):null;
  const vkEl=tr.querySelector('.kt-in[data-k="vk"]');
- if(k==='aw'&&v.typ==='arbeit'&&v.aw>0)vkEl.value=fmtIn(Math.round(v.aw*ktSatz(a,x)));
+ if(k==='aw'&&v.typ==='arbeit'&&v.aw>0)vkEl.value=fmtIn(Math.round(v.aw*ktSatz(a,x,v.art)));
  if(k==='ek'&&v.typ==='teil'&&(!x||x.vkAuto!==false)&&v.ekCt>0)vkEl.value=fmtIn(vkVorschlag(v.ekCt));
  const w=ktZeileWerte(tr),sum=tr.querySelector('.kt-sum');if(sum&&w.bez)sum.textContent=fmt(posNetto({vkCt:w.vkCt,menge:w.menge,rab:w.rab}))}
 /* Übernehmen: bestehende Zeile ändern oder neue Position anlegen */
 function ktCommit(el){const a=auftrag(el.dataset.oid);if(!a)return null;const pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!pk||ktLocked(pk))return null;
  const tr=el.closest('tr'),v=ktZeileWerte(tr),k=el.dataset.k||'typ',marke=(fzg(a.fzgId)||{}).marke;
  let x=el.dataset.xid?pk.pos.find(p=>p.id===el.dataset.xid):null;
- if(!x){if(el.classList.contains('kt-typ'))ktNeuTyp[pk.id]=v.typ;if(!v.bez)return null;
+ if(!x){if(el.classList.contains('kt-typ'))ktNeuTyp[pk.id]=v.sel;if(!v.bez)return null;
   const lagerHit=S.lager.find(z=>z.teil.toLowerCase()===v.bez.toLowerCase());
-  if(v.typ==='arbeit'&&lagerHit&&apAwFor(v.bez,marke)==null)v.typ='teil'; /* Lagerteil erkannt */
-  ktNeuTyp[pk.id]=v.typ;
+  if(v.typ==='arbeit'&&lagerHit&&apAwFor(v.bez,marke)==null){v.typ='teil';v.sel='teil';v.art=null} /* Lagerteil erkannt */
+  ktNeuTyp[pk.id]=v.sel;
   const vorher=ordNetto(a),A=v.typ==='arbeit',l=!A?lagerHit:null;
   x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:v.typ,bez:v.bez,menge:v.menge,aw:0,ekCt:0,vkCt:0,best:null,eta:null,lagerId:null,ext:ordFreigegeben(a)};
-  if(A){x.aw=v.aw||apAwFor(v.bez,marke)||0;x.vkCt=v.vkLeer||k==='aw'?Math.round(x.aw*ktSatz(a,x)):v.vkCt}
+  if(A){if(v.art&&v.art!=='mech'){x.art=v.art;x.awSatz=artSatz(a,v.art)}x.aw=v.aw||apAwFor(v.bez,marke)||0;x.vkCt=v.vkLeer||k==='aw'?Math.round(x.aw*ktSatz(a,x)):v.vkCt}
   else if(l){x.lagerId=l.id;x.ekCt=l.ekCt;x.vkCt=l.vkCt;x.vkAuto=false;
    if(l.bestand>=x.menge){l.bestand-=x.menge;x.best='lager'}else{x.best='bestellt';x.eta=addDays(todayISO(),1);toast('Nur '+l.bestand+' im Lager – als „bestellt“ markiert',true)}}
   else{x.ekCt=v.ekCt;x.vkAuto=v.vkLeer;x.vkCt=v.vkLeer?vkVorschlag(v.ekCt):v.vkCt}
@@ -1864,7 +1874,8 @@ function ktCommit(el){const a=auftrag(el.dataset.oid);if(!a)return null;const pk
   if(A&&x.aw>0)apLearn(x.bez,x.aw,marke);save();return x}
  if(!v.bez)return x;
  const alt=posNetto(x);
- if(k==='typ'&&v.typ!==x.typ){x.typ=v.typ;if(v.typ==='arbeit'){x.ekCt=0;x.vkCt=Math.round((x.aw||0)*ktSatz(a,x))||x.vkCt}else{x.aw=0;x.vkAuto=false}}
+ if(k==='typ'&&v.typ==='arbeit'&&x.typ==='arbeit'&&(v.art||'mech')!==(x.art||'mech')){x.art=v.art==='mech'?null:v.art;x.awSatz=artSatz(a,v.art);if(x.aw>0)x.vkCt=Math.round(x.aw*ktSatz(a,x))}
+ if(k==='typ'&&v.typ!==x.typ){x.typ=v.typ;if(v.typ==='arbeit'){x.art=v.art==='mech'?null:v.art;x.awSatz=artSatz(a,v.art);x.ekCt=0;x.vkCt=Math.round((x.aw||0)*ktSatz(a,x))||x.vkCt}else{x.aw=0;x.vkAuto=false}}
  x.bez=v.bez;x.menge=v.menge;if(k==='rab')x.rab=v.rab;
  if(x.typ==='arbeit'){if(k==='aw'){x.aw=v.aw;x.vkCt=Math.round(v.aw*ktSatz(a,x));apLearn(x.bez,x.aw,marke)}else if(k==='vk')x.vkCt=v.vkCt}
  else{if(k==='ek'){x.ekCt=v.ekCt;if(x.vkAuto!==false)x.vkCt=vkVorschlag(v.ekCt)}else if(k==='vk'){x.vkCt=v.vkCt;x.vkAuto=false}}
@@ -2645,6 +2656,8 @@ function vEinstellungen(){
    <div class="kv"><span class="k">Stundensatz €</span><span class="v"><input class="priceinp" inputmode="decimal" value="${fmtIn(st.stundensatzCt)}" data-f="set-stundensatz"></span></div>
    <div class="kv"><span class="k">AW-Teiler (AW pro Stunde)</span><span class="v"><input class="priceinp" style="width:64px" inputmode="decimal" value="${pct1(st.awTeiler||1)}" data-f="set-teiler"></span></div>
    <div class="kv"><span class="k">Preis pro AW (Arbeitswert)</span><span class="v num" style="color:var(--green);font-weight:700">${fmt(st.awCt)} <span style="font-size:10px;color:var(--ink3);font-weight:400">1 AW = ${pct1(60/(st.awTeiler||1))} Min</span></span></div>
+   <div class="auf-block"><div class="k">Stundensatz nach Arbeitsart<br><span style="font-size:11px;color:var(--ink3)">Leer = wie Mechanik (${fmt(st.stundensatzCt)}). In der Tabelle wählen Sie die Art je Position.</span></div>
+    ${arten().filter(r=>r.id!=='mech').map(r=>`<div class="auf-row"><span>${esc(r.lang||r.n)}</span><input class="priceinp" style="width:84px" inputmode="decimal" value="${r.stdCt?fmtIn(r.stdCt):''}" placeholder="${fmtIn(st.stundensatzCt)}" data-f="art-std" data-id="${r.id}" aria-label="Stundensatz ${esc(r.lang||r.n)} Euro"><span>€ / Std</span></div>`).join('')}</div>
    <div class="kv"><span class="k">MwSt-Satz %</span><span class="v"><input class="priceinp" style="width:56px" inputmode="numeric" value="${st.mwst}" data-f="set-mwst"></span></div>
    ${(()=>{const c=st.kleinmat||{};return`<div class="auf-block"><div class="k">Kleinmaterial & Entsorgung<br><span style="font-size:11px;color:var(--ink3)">Wird automatisch auf jeden Auftrag gerechnet (z. B. Bremsenreiniger, Kabelbinder, Altöl). Pro Auftrag abschaltbar.</span></div>
     <label class="auf-rund"><input type="checkbox" data-f="km-aktiv" ${c.aktiv?'checked':''}> Automatisch berechnen</label>
@@ -2739,6 +2752,7 @@ FSET['set-teiler']=el=>{let t=parseFloat(String(el.value||'').replace(',','.'));
 FSET['auf-bis']=el=>{const st=S.settings.aufschlag.staffel,i=+el.dataset.i;st[i].bis=Math.max(1,parseEuro(el.value)||st[i].bis);
  for(let j=1;j<st.length;j++)if(st[j].bis!=null&&st[j].bis<=st[j-1].bis)st[j].bis=st[j-1].bis+100;save();render()};
 FSET['auf-pct']=el=>{const v=parseInt(el.value);S.settings.aufschlag.staffel[+el.dataset.i].pct=Math.max(0,Math.min(500,isNaN(v)?0:v));save();render()};
+FSET['art-std']=el=>{const r=S.settings.arten.find(x=>x.id===el.dataset.id);if(!r)return;const v=parseEuro(el.value);r.stdCt=v>0?v:null;save();render()};
 FSET['km-aktiv']=el=>{S.settings.kleinmat.aktiv=el.checked;save();render()};
 FSET['km-pct']=el=>{S.settings.kleinmat.pct=Math.max(0,Math.min(50,ktNum(el.value)));save();render()};
 FSET['km-min']=el=>{S.settings.kleinmat.minCt=Math.max(0,parseEuro(el.value)||0);save();render()};
