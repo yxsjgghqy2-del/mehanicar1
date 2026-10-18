@@ -477,6 +477,18 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (Object.values(km).some(v => !v)) errs.push('Kleinmaterial: ' + JSON.stringify(km));
   }
+  // Kalkulation im Vollbild: nur Positionen, Fertig führt zurück zum Auftrag
+  {
+    const kv = await page.evaluate(async () => {
+      const a = S.auftraege.find(o => o.pakete.length); nav('auftrag', a.id); await new Promise(r => setTimeout(r, 120));
+      const btn = document.querySelector('.kt-voll-btn'); if (!btn) return { knopf: false };
+      btn.click(); await new Promise(r => setTimeout(r, 120));
+      const r = { knopf: true, route: route.v === 'kalk', tabelle: !!document.querySelector('.kalk-voll table.kt'), nurPositionen: !document.querySelector('.sec, .nav, .calcbar, .kkopf') };
+      document.querySelector('.kv-fertig').click(); await new Promise(r => setTimeout(r, 120));
+      r.zurueck = route.v === 'auftrag' && route.id === a.id; nav('planung'); return r;
+    });
+    if (Object.values(kv).some(v => !v)) errs.push('Vollbild-Kalkulation: ' + JSON.stringify(kv));
+  }
   // Akzentfarbe frei wählbar
   {
     const ak = await page.evaluate(async () => {
