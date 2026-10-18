@@ -477,6 +477,29 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (Object.values(km).some(v => !v)) errs.push('Kleinmaterial: ' + JSON.stringify(km));
   }
+  // Kalkulation als Liste: Ordner, kein seitliches Wischen, Arbeit aus Liste, Beschreibung, Befund/Hinweis
+  {
+    const ls = await page.evaluate(async () => {
+      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); if (!a) return { auftrag: false };
+      const pk = a.pakete[0], alt = JSON.parse(JSON.stringify(pk.pos)), altEnt = pk.entsperrt; pk.entsperrt = true;
+      delete calcMode[a.id]; pakOpen[a.id] = new Set([pk.id]); nav('kalk', a.id); await new Promise(r => setTimeout(r, 150));
+      const r = { liste: !!document.querySelector('.kalk-voll .ls-pk.open'), keinWischen: document.documentElement.scrollWidth <= innerWidth + 1 && [...document.querySelectorAll('.ls-pos')].every(e => e.scrollWidth <= e.clientWidth + 1) };
+      document.querySelector('[data-act="ls-kat"][data-pid="' + pk.id + '"]').click(); await new Promise(r => setTimeout(r, 120));
+      const q = document.getElementById('ls-q'); q.value = 'Zzz Testmessung'; q.dispatchEvent(new Event('input'));
+      const eig = document.querySelector('[data-act="ls-eigen"]'); r.eigen = !!eig && eig.dataset.bez === 'Zzz Testmessung';
+      const it = document.querySelector('#ls-kl [data-act="ls-kat-add"]');
+      if (S.apDb.length) { q.value = ''; q.dispatchEvent(new Event('input')); const b = document.querySelector('#ls-kl [data-act="ls-kat-add"]'); const n = pk.pos.length; b.click(); await new Promise(r => setTimeout(r, 80)); r.katalog = pk.pos.length === n + 1 && pk.pos[pk.pos.length - 1].typ === 'arbeit'; } else r.katalog = true;
+      closeSheet();
+      const x = pk.pos.find(p => p.typ === 'arbeit' && !p.auto); posSheet(a, pk, x); await new Promise(r => setTimeout(r, 80));
+      document.getElementById('ps-b').value = 'Motor prüfen'; document.getElementById('ps-nk').value = 'Kompression 12 bar'; document.getElementById('ps-code').value = '0101';
+      document.querySelector('[data-act="pos-save"]').click(); await new Promise(r => setTimeout(r, 120));
+      r.text = x.bez === 'Motor prüfen' && x.notizKunde === 'Kompression 12 bar' && x.code === '0101' && document.querySelector('.ls-d') && /Kompression 12 bar/.test(document.querySelector('.kalk-voll').textContent);
+      pk.pos.push({ id: 'xbf', nr: 97, typ: 'befund', bez: 'Testbefund', abhilfe: 'Testabhilfe', vkCt: 0, ekCt: 0, aw: 0, menge: 1 }, { id: 'xhw', nr: 96, typ: 'text', bez: 'Testhinweis', vkCt: 0, ekCt: 0, aw: 0, menge: 1 }); render();
+      r.befundHinweis = !!document.querySelector('.ls-bef') && !!document.querySelector('.ls-hin');
+      pk.pos = alt; pk.entsperrt = altEnt; save(); nav('planung'); return r;
+    });
+    if (Object.values(ls).some(v => !v)) errs.push('Liste: ' + JSON.stringify(ls));
+  }
   // Stundensätze nach Arbeitsart: Art in der Tabelle wählen → eigener Satz
   {
     const ar = await page.evaluate(async () => {
@@ -501,7 +524,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       const a = S.auftraege.find(o => o.pakete.length); nav('auftrag', a.id); await new Promise(r => setTimeout(r, 120));
       const btn = document.querySelector('.kt-voll-btn'); if (!btn) return { knopf: false };
       btn.click(); await new Promise(r => setTimeout(r, 120));
-      const r = { knopf: true, route: route.v === 'kalk', tabelle: !!document.querySelector('.kalk-voll table.kt'), nurPositionen: !document.querySelector('.sec, .nav, .calcbar, .kkopf') };
+      const r = { knopf: true, route: route.v === 'kalk', tabelle: !!document.querySelector('.kalk-voll table.kt, .kalk-voll .ls'), nurPositionen: !document.querySelector('.sec, .nav, .calcbar, .kkopf') };
       document.querySelector('.kv-fertig').click(); await new Promise(r => setTimeout(r, 120));
       r.zurueck = route.v === 'auftrag' && route.id === a.id; nav('planung'); return r;
     });
@@ -569,7 +592,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       await page.screenshot({ path: `${shotDir}/rabatt-hell-${w}.png` }); await page.evaluate(() => applyTheme(S.settings.theme)); }
     await page.evaluate(([id, r]) => { auftrag(id).rabatt = JSON.parse(r); save(); render(); }, [aid, rabVorher]);
     if (shotDir) { await page.evaluate(() => document.querySelector('.kdet').scrollIntoView()); await page.screenshot({ path: `${shotDir}/kalk-${w}.png` }); }
-    await page.click('[data-act="calc-mode"][data-m="over"]', { timeout: 2000 }).catch(() => {});
+    await page.click('[data-act="calc-mode"][data-m="liste"]', { timeout: 2000 }).catch(() => {});
     await page.waitForTimeout(100);
     const n = await page.$$eval('button', b => b.length);
     for (let i = 0; i < Math.min(n, 25); i++) {

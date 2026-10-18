@@ -362,9 +362,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.65';
+const APP_VER='2.66';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.66',d:'2026-10-18',p:['Kalkulation als Liste – ohne seitliches Wischen: Jedes Paket ist ein Ordner. Darin steht jede Position mit Text, AW und Preis. Antippen zeigt alle Details.','Bei jeder Arbeit können Sie den Text ändern und darunter eine Beschreibung schreiben, zum Beispiel was geprüft wurde und Messwerte. Sie steht auf der Rechnung unter der Position.','Pro Paket: + Arbeit (aus Ihrer Liste suchen oder eigene Position), + Teil, + Befund (mit Abhilfe), + Hinweis.','Neues Feld „Positionscode“ in den Details.']},
  {v:'2.65',d:'2026-10-18',p:['Stundensätze nach Arbeitsart: In der Tabelle wählen Sie in der Spalte „Art“ jetzt Mechanik, Elektrik, Karosserie, Lack oder Teil. Für jede Art können Sie unter Einstellungen → Kalkulation & Preise einen eigenen Stundensatz eintragen. Leer bedeutet: gleicher Preis wie Mechanik.']},
  {v:'2.64',d:'2026-10-18',p:['Kalkulation im Vollbild: Im Auftrag unter „Pakete & Kalkulation“ auf „Positionen im Vollbild bearbeiten“ tippen. Dann sehen Sie nur noch die Positionen, die Pakete und die Summe. Mit „Fertig“ geht es zurück zum Auftrag.']},
  {v:'2.63',d:'2026-10-18',p:['Kalkulation: Kleinmaterial & Entsorgung wird jetzt automatisch berechnet – 5 % vom Arbeitslohn, mindestens 5 €, höchstens 25 €. Die Zeile steht mit „auto“ in der Tabelle und lässt sich pro Auftrag mit × abschalten. Gilt für neue Aufträge. Bestehende und vom Kunden schon freigegebene Aufträge behalten ihren Preis. Werte stellen Sie unter Einstellungen → Kalkulation & Preise ein.','Neue Spalte „Rabatt“ in der Tabelle: Betrag (z. B. 10,00) oder Prozent (z. B. 10 %) eintippen.']},
@@ -1079,7 +1080,7 @@ function vAuftrag(id){
  if(!pakOpen[a.id]){pakOpen[a.id]=new Set();const f=a.pakete.find(p=>!p.abger);if(f)pakOpen[a.id].add(f.id)}
  const k=kunde(a.kundeId)||{},f=fzg(a.fzgId)||{};
  const so=s=>secOpen[a.id].has(s)?'open':'';
- const mode=calcMode[a.id]||'tab';
+ const mode=calcMode[a.id]||'liste';
  const kiCount=a.komm.filter(m=>m.status==='ki').length;
  const histAll=S.auftraege.filter(x=>x.fzgId===a.fzgId&&x.id!==a.id&&x.status==='abgeholt');
  const huWarn=f.hu?(()=>{const[y,m]=f.hu.split('-').map(Number);const diff=(y-new Date().getFullYear())*12+(m-1-new Date().getMonth());
@@ -1249,14 +1250,15 @@ function vAuftrag(id){
  const secPak=sec('pak','Pakete & Kalkulation',a.pakete.length+' Paket'+(a.pakete.length!==1?'e':''),`
   <button class="btn btn-2nd kt-voll-btn" data-act="kalk-voll" data-oid="${a.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Positionen im Vollbild bearbeiten</button>
   <div class="seg" style="margin-bottom:13px">
-   <button class="${mode==='tab'?'on':''}" data-act="calc-mode" data-oid="${a.id}" data-m="tab">Tabelle</button>
-   <button class="${mode==='over'?'on':''}" data-act="calc-mode" data-oid="${a.id}" data-m="over">Übersicht</button>
+   <button class="${mode==='liste'||mode==='over'?'on':''}" data-act="calc-mode" data-oid="${a.id}" data-m="liste">Liste</button>
+   <button class="seg-tab ${mode==='tab'?'on':''}" data-act="calc-mode" data-oid="${a.id}" data-m="tab">Tabelle</button>
    <button class="${mode==='calc'?'on':''}" data-act="calc-mode" data-oid="${a.id}" data-m="calc">Kalkulation</button></div>
   ${mode==='over'?a.pakete.map(pakHtml).join('')+`
    <div class="klass" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:4px">
     <span style="font-size:10px;color:var(--ink3);font-weight:700;letter-spacing:.06em">NEUES PAKET</span>
     ${Object.entries(KLASS).map(([v,[l]])=>`<button class="chip" data-act="pak-new" data-oid="${a.id}" data-k="${v}">${l}</button>`).join('')}
     <button class="chip" style="border-style:dashed;color:var(--violet);border-color:rgba(107,77,214,.4);display:inline-flex;align-items:center;gap:5px" data-act="pak-from-vorlage" data-oid="${a.id}"><span style="width:13px;height:13px;display:block">${IC.stack.replace('<svg ','<svg style="stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;width:100%;height:100%" ')}</span>Aus Vorlage</button></div>`
+   :mode==='liste'?lsHtml(a)
    :mode==='tab'?ktHtml(a)+`<div class="klass" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px">
     <span style="font-size:10px;color:var(--ink3);font-weight:700;letter-spacing:.06em">NEUES PAKET</span>
     ${Object.entries(KLASS).map(([v,[l]])=>`<button class="chip" data-act="pak-new" data-oid="${a.id}" data-k="${v}">${l}</button>`).join('')}</div>`
@@ -1405,17 +1407,71 @@ function vAuftrag(id){
    <div class="bbtns"><button class="bb bb-2nd" data-act="print-kv" data-oid="${a.id}">PDF</button>
    <button class="bb bb-main" data-act="bill-all" data-oid="${a.id}">${offen>0?'Rechnung erstellen':'Alles abgerechnet'}</button></div></div>`;
 }
+/* Kalkulation als Liste (Inhaber 18.10.): Paket = Ordner, Zeilen nur Text · AW · Preis; Details beim Antippen. Kein seitliches Wischen. */
+const LS_ORD='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.2l2 2h8.8A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>';
+function lsHtml(a){
+ if(!pakOpen[a.id]){pakOpen[a.id]=new Set();const f=a.pakete.find(p=>!p.abger);if(f)pakOpen[a.id].add(f.id)}
+ const K=ordKalk(a);
+ const zeile=(pk,x,lk)=>{const act=lk||x.auto?'':` data-act="pos-edit" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}" role="button" tabindex="0"`;
+  if(x.typ==='befund')return`<div class="ls-pos ls-bef"${act}><div class="ls-t"><span class="ls-lab">Befund</span><div class="ls-txt">${esc(x.bez)}</div>${x.abhilfe?`<span class="ls-lab ls-ab">Abhilfe</span><div class="ls-txt">${esc(x.abhilfe)}</div>`:''}</div></div>`;
+  if(x.typ==='text')return`<div class="ls-pos ls-hin"${act}><div class="ls-t"><span class="ls-lab">Hinweis</span><div class="ls-txt">${esc(x.bez)}</div></div></div>`;
+  const A=x.typ==='arbeit';
+  const sub=x.auto==='km'?'automatisch · '+((S.settings.kleinmat||{}).pct||0)+' % vom Lohn':A?(x.art&&x.art!=='mech'?esc(artName(x.art)):''):((x.menge||1)!==1?(x.menge+' Stk'):'Teil');
+  return`<div class="ls-pos${x.auto?' ls-auto':''}${x.ext?' ls-ext':''}"${act}><div class="ls-t"><div class="ls-b">${esc(x.bez)}</div>${x.notizKunde?`<div class="ls-d">${esc(x.notizKunde)}</div>`:''}${sub?`<div class="ls-m">${sub}</div>`:''}</div>
+   <div class="ls-r"><b class="num">${fmt(posNetto(x))}</b>${A&&x.aw?`<small class="num">${pct1(x.aw)} AW</small>`:''}</div></div>`};
+ const ordner=(pk)=>{const lk=ktLocked(pk),open=pakOpen[a.id].has(pk.id),n=pk.pos.length;
+  return`<div class="ls-pk${open?' open':''}"><div class="ls-pk-h" data-act="pak-tog" data-oid="${a.id}" data-pid="${pk.id}" role="button" tabindex="0" aria-expanded="${open}">
+   <span class="ls-ico">${LS_ORD}</span><span class="ls-pk-n"><b>${esc(pk.name)}</b><small>${n} Position${n!==1?'en':''}${lk?' · abgerechnet':''}</small></span>
+   <b class="num ls-pk-s">${fmt(pakNetto(pk))}</b><span class="ls-chev" aria-hidden="true"></span></div>
+   ${open?`<div class="ls-pk-b">${pk.pos.map(x=>zeile(pk,x,lk)).join('')||'<div class="ls-leer">Noch leer – unten Arbeit, Teil, Befund oder Hinweis hinzufügen.</div>'}
+    ${lk?`<div class="ls-leer">Abgerechnet – zum Ändern im Paket „Entsperren“ (Ansicht „Kalkulation“).</div>`:`<div class="ls-add">
+     <button data-act="ls-kat" data-oid="${a.id}" data-pid="${pk.id}">+ Arbeit</button><button data-act="add-teil" data-oid="${a.id}" data-pid="${pk.id}">+ Teil</button>
+     <button data-act="add-befund" data-oid="${a.id}" data-pid="${pk.id}">+ Befund</button><button data-act="add-text" data-oid="${a.id}" data-pid="${pk.id}">+ Hinweis</button></div>
+     <button class="ls-opt" data-act="pak-opts" data-oid="${a.id}" data-pid="${pk.id}">Paket: Name, Art, wer zahlt</button>`}</div>`:''}</div>`};
+ return`<div class="ls">${a.pakete.map(ordner).join('')}
+  <button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="${Object.keys(KLASS)[0]}">+ Neues Paket</button>
+  ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<button class="ls-opt" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale wieder einschalten</button>`:''}
+  <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b></span></div>
+   <div class="ls-sum-b"><span>Kunde zahlt <small>inkl. ${S.settings.mwst} % MwSt</small></span><b class="num">${fmt(K.brutto)}</b></div></div></div>`}
+/* Arbeit aus Liste wählen (Arbeitswert-Katalog) oder eigene Position */
+function lsKatListe(a,pk,roh){const qq=(roh||'').trim(),q=qq.toLowerCase();const marke=(fzg(a.fzgId)||{}).marke;
+ const alle=(S.apDb||[]).slice().reverse().filter(e=>!q||e.bez.toLowerCase().includes(q)).slice(0,60);
+ const drin=new Set(pk.pos.filter(p=>p.typ==='arbeit').map(p=>p.bez.toLowerCase()));
+ return(q?`<button class="ls-kat-it ls-kat-eigen" data-act="ls-eigen" data-oid="${a.id}" data-pid="${pk.id}" data-bez="${esc(qq)}"><span class="ls-t"><b>„${esc(qq)}“ als eigene Arbeit</b><small>Text, AW und Preis selbst festlegen</small></span><span class="ls-plus">+</span></button>`:`<button class="ls-kat-it ls-kat-eigen" data-act="ls-eigen" data-oid="${a.id}" data-pid="${pk.id}" data-bez=""><span class="ls-t"><b>Eigene Position</b><small>Freier Text, AW und Preis</small></span><span class="ls-plus">+</span></button>`)+
+  alle.map(e=>{const aw=apAwFor(e.bez,marke)||e.aw||0,on=drin.has(e.bez.toLowerCase());return`<button class="ls-kat-it${on?' on':''}" data-act="ls-kat-add" data-oid="${a.id}" data-pid="${pk.id}" data-bez="${esc(e.bez)}"><span class="ls-t"><b>${esc(e.bez)}</b><small class="num">${aw?pct1(aw)+' AW · '+fmt(Math.round(aw*ktSatz(a,null))):'ohne AW'}</small></span><span class="ls-plus">${on?'✓':'+'}</span></button>`}).join('')||
+  (q?'':'<div class="ls-leer">Noch keine Arbeiten gespeichert – eigene Arbeit oben eintippen.</div>')}
+ACT['ls-kat']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!a||!pk)return;
+ sheet('Arbeit hinzufügen',`<div class="ls-kat-such"><input id="ls-q" type="search" placeholder="Suchen oder eigene Arbeit eintippen" autocomplete="off" enterkeyhint="done" aria-label="Arbeit suchen"></div>
+  <div id="ls-kl">${lsKatListe(a,pk,'')}</div>`);
+ const q=$('#ls-q');q.addEventListener('input',()=>{$('#ls-kl').innerHTML=lsKatListe(a,pk,q.value)})};
+ACT['ls-kat-add']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!a||!pk||ktLocked(pk))return;
+ const bez=el.dataset.bez,marke=(fzg(a.fzgId)||{}).marke,aw=apAwFor(bez,marke)||0,vorher=ordNetto(a);
+ const x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'arbeit',bez,menge:1,aw,ekCt:0,vkCt:Math.round(aw*ktSatz(a,null)),rab:null,best:null,eta:null,lagerId:null,ext:ordFreigegeben(a),notizKunde:'',notizIntern:''};
+ pk.pos.push(x);if(x.ext)logExtension(a,pk,x,vorher);logUnlockEdit(a,pk,'Position „'+bez+'" hinzugefügt ('+fmt(posNetto(x))+').');
+ save();render();el.classList.add('on');const p=el.querySelector('.ls-plus');if(p)p.textContent='✓';toast('„'+bez+'“ hinzugefügt')};
+ACT['ls-eigen']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);const q=$('#ls-q');closeSheet();posSheet(a,pk,null,el.dataset.bez||(q?q.value.trim():''))};
+/* Paket-Einstellungen als Blatt (Name, Klassifizierung, wer zahlt, löschen) */
+ACT['pak-opts']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!a||!pk)return;const lk=ktLocked(pk);
+ sheet('Paket',`<div class="fld"><label>Name</label><input id="po-n" value="${esc(pk.name)}" ${lk?'disabled':''}></div>
+  <div class="row2"><div class="fld"><label>Klassifizierung</label><div class="selwrap"><select data-f="p-klass" data-oid="${a.id}" data-pid="${pk.id}" ${lk?'disabled':''}>
+   ${Object.entries(KLASS).map(([v,[l]])=>`<option value="${v}" ${pk.klass===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
+  <div class="fld"><label>Wer zahlt</label><div class="selwrap"><select data-f="p-zahler" data-oid="${a.id}" data-pid="${pk.id}" ${lk?'disabled':''}>
+   ${Object.entries(ZAHLER).map(([v,l])=>`<option value="${v}" ${pk.zahler===v?'selected':''}>${l}</option>`).join('')}</select></div></div></div>
+  <div class="row2"><button class="btn btn-danger" data-act="pak-del" data-oid="${a.id}" data-pid="${pk.id}">Paket löschen</button>
+  <button class="btn btn-main" data-act="pak-opts-ok" data-oid="${a.id}" data-pid="${pk.id}">Fertig</button></div>`)};
+ACT['pak-opts-ok']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);const n=$('#po-n');
+ if(pk&&n&&!n.disabled&&n.value.trim())pk.name=n.value.trim();save();closeSheet();render()};
 /* Vollbild-Kalkulation: nur die Positionen (Tabelle), Pakete und Summen – sonst nichts */
 function vKalk(id){
  const a=auftrag(id);if(!a)return shell('<div class="empty"><b>Auftrag nicht gefunden</b></div>',{title:'Kalkulation',back:1,hideNav:true});
  const f=fzg(a.fzgId)||{};
- const inner=`<div class="kalk-voll">${ktHtml(a)}<div class="klass" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px">
+ const inner=(calcMode[a.id]||'liste')!=='tab'?`<div class="kalk-voll">${lsHtml(a)}</div>`:`<div class="kalk-voll">${ktHtml(a)}<div class="klass" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px">
    <span style="font-size:10px;color:var(--ink3);font-weight:700;letter-spacing:.06em">NEUES PAKET</span>
    ${Object.entries(KLASS).map(([v,[l]])=>`<button class="chip" data-act="pak-new" data-oid="${a.id}" data-k="${v}">${l}</button>`).join('')}</div></div>`;
  return shell(inner,{title:'Kalkulation',eyebrow:esc(f.kennz||a.nr),back:1,hideNav:true,ctx:'kalk',
   side:`<button class="btn kv-fertig" data-act="back">Fertig</button>`});
 }
-ACT['kalk-voll']=el=>{calcMode[el.dataset.oid]='tab';nav('kalk',el.dataset.oid)};
+ACT['kalk-voll']=el=>{if(calcMode[el.dataset.oid]==='over'||(calcMode[el.dataset.oid]==='tab'&&innerWidth<700))calcMode[el.dataset.oid]='liste';nav('kalk',el.dataset.oid)};
 function fotoTile(a,fo){return `<div class="foto">${fo.isVideo?`<video src="${fo.data}" muted playsinline style="width:100%;height:100%;object-fit:cover" controls></video>`:`<img src="${fo.data}" alt="">`}<span class="loc">${esc(fo.label)}</span>
  <button class="fx" data-act="foto-del" data-oid="${a.id}" data-fid="${fo.id}">${xIco(13)}</button></div>`}
 function camTile(a,pid){return `<div class="foto cam" data-act="add-foto-btn" data-oid="${a.id}" data-pid="${pid}">+</div>`}
@@ -1627,6 +1683,8 @@ function posSheet(a,pk,x,prefillBez){
   ${mSec(isT?'Teil & Preis':'Arbeit & Preis','',true,`
   <div class="fld"><label>Bezeichnung *</label><input id="ps-b" list="ap-dl" value="${x?esc(x.bez):esc(prefillBez||'')}" placeholder="z. B. Bremsscheiben wechseln" autocomplete="off">
    <datalist id="ap-dl">${(S.apDb||[]).map(e=>`<option value="${esc(e.bez)}">`).join('')}</datalist></div>
+  <div class="fld"><label>Beschreibung – was geprüft oder gemacht, Messwerte <span style="text-transform:none;font-weight:400;color:var(--ink3)">(steht auf der Rechnung unter der Position)</span></label><textarea id="ps-nk" rows="4" placeholder="z. B. Kompression gemessen: Zyl. 1–4 je 12 bar, Zündkerzen geprüft, Fehlerspeicher gelöscht">${x?esc(x.notizKunde||''):''}</textarea></div>
+  <div class="fld"><label>Positionscode <span style="text-transform:none;font-weight:400;color:var(--ink3)">(freiwillig)</span></label><input id="ps-code" value="${x?esc(x.code||''):''}" placeholder="z. B. 42 10 0001" autocomplete="off"></div>
   ${!isT?`<div class="row3">
    <div class="fld"><label>AW <span id="ps-aw-hint" style="text-transform:none;font-weight:400;color:var(--violet)"></span></label><input id="ps-aw" inputmode="decimal" value="${x&&x.aw?String(x.aw).replace('.',','):''}" placeholder="1,5"></div>
    <div class="fld"><label>AW-Satz €</label><input id="ps-aws" inputmode="decimal" value="${fmtIn(awSatz)}"></div>
@@ -1647,9 +1705,8 @@ function posSheet(a,pk,x,prefillBez){
   ${isT?mSec('Bestellung',x&&x.best&&BEST[x.best]?BEST[x.best][0]:'',!!(x&&x.best&&x.best!=='lager'),`<div class="row2"><div class="fld" style="margin-bottom:0"><label>Bestellstatus</label><div class="selwrap"><select id="ps-best">
     <option value="">—</option>${Object.entries(BEST).map(([v,[l]])=>`<option value="${v}" ${x&&x.best===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
    <div class="fld" style="margin-bottom:0"><label>ETA</label><input type="date" id="ps-eta" value="${x&&x.eta?x.eta:''}"></div></div>`):''}
-  ${mSec('Notizen',[x&&x.notizIntern?'intern':'',x&&x.notizKunde?'für Kunde':''].filter(Boolean).join(' · '),!!(x&&(x.notizIntern||x.notizKunde)),`
-  <div class="fld"><label>Interne Notiz — nur für die Werkstatt, nie auf der Rechnung</label><textarea id="ps-ni" rows="2" placeholder="z. B. Spezialwerkzeug nötig …">${x?esc(x.notizIntern||''):''}</textarea></div>
-  <div class="fld" style="margin-bottom:0"><label>Hinweis für den Kunden — erscheint auf der Rechnung</label><textarea id="ps-nk" rows="2" placeholder="z. B. Verschleiß altersbedingt, Nachkontrolle in 1.000 km …">${x?esc(x.notizKunde||''):''}</textarea></div>`)}
+  ${mSec('Interne Notiz',x&&x.notizIntern?'vorhanden':'',!!(x&&x.notizIntern),`
+  <div class="fld"><label>Interne Notiz — nur für die Werkstatt, nie auf der Rechnung</label><textarea id="ps-ni" rows="2" placeholder="z. B. Spezialwerkzeug nötig …">${x?esc(x.notizIntern||''):''}</textarea></div>`)}
   ${x?`<div style="font-size:10px;color:var(--ink3);margin:2px 2px 10px">Position ${x.nr?'#'+x.nr:''}${x.created?' · angelegt '+dtLabel(x.created):''}</div>`:''}
   <div class="row2" style="margin-top:6px">
    ${x?`<button class="btn btn-danger" data-act="pos-del" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Löschen</button>`:'<span></span>'}
@@ -1684,7 +1741,7 @@ function posSheet(a,pk,x,prefillBez){
 }
 ACT['add-arbeit']=el=>posSheet(auftrag(el.dataset.oid),auftrag(el.dataset.oid).pakete.find(p=>p.id===el.dataset.pid),null);
 ACT['add-text']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
- sheet('Textposition',`<div class="fld"><label>Text *</label><textarea id="tx-t" rows="3" placeholder="z. B. Kostenvoranschlag inkl. Ersatzteile…"></textarea></div>
+ sheet('Hinweis',`<div class="fld"><label>Hinweis *</label><textarea id="tx-t" rows="3" placeholder="z. B. Bremsen hinten bei nächster Inspektion prüfen"></textarea></div>
   <button class="btn btn-main" style="width:100%" data-act="text-save" data-oid="${a.id}" data-pid="${pk.id}">Hinzufügen</button>`);
  setTimeout(()=>$('#tx-t').focus(),150)};
 ACT['text-upd']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
@@ -1694,7 +1751,7 @@ ACT['text-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id==
  const bez=$('#tx-t').value.trim();if(!bez)return toast('Text fehlt',true);
  pk.pos.push({id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'text',bez,vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null});
  logUnlockEdit(a,pk,'Textposition „'+bez+'" hinzugefügt.');
- save();closeSheet();render();toast('Textposition hinzugefügt')};
+ save();closeSheet();render();toast('Hinweis hinzugefügt')};
 ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  sheet('Teil hinzufügen',`
   <div class="mkopf" aria-live="polite"><div class="mk-av">T</div>
@@ -1745,7 +1802,7 @@ ACT['pos-edit']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
    <button class="btn btn-main" data-act="befund-upd" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Speichern</button></div>`);
   return}
  if(x&&x.typ==='text'){
-  sheet('Textposition bearbeiten',`<div class="fld"><label>Text *</label><textarea id="tx-t" rows="3">${esc(x.bez)}</textarea></div>
+  sheet('Hinweis bearbeiten',`<div class="fld"><label>Text *</label><textarea id="tx-t" rows="3">${esc(x.bez)}</textarea></div>
    <div class="row2"><button class="btn btn-danger" data-act="pos-del" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Löschen</button>
    <button class="btn btn-main" data-act="text-upd" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Speichern</button></div>`);
   return}
@@ -1770,7 +1827,8 @@ ACT['pos-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
   zahler:$('#ps-z')?($('#ps-z').value||null):(x?x.zahler:null),
   zahlerTxt:$('#ps-zt')?$('#ps-zt').value.trim():(x?x.zahlerTxt||'':''),
   notizIntern:$('#ps-ni')?$('#ps-ni').value.trim():(x?x.notizIntern||'':''),
-  notizKunde:$('#ps-nk')?$('#ps-nk').value.trim():(x?x.notizKunde||'':'')};
+  notizKunde:$('#ps-nk')?$('#ps-nk').value.trim():(x?x.notizKunde||'':''),
+  code:$('#ps-code')?$('#ps-code').value.trim():(x?x.code||'':'')};
  /* Nach Freigabe: jede NEUE Position ist automatisch eine Erweiterung */
  vals.ext=x?x.ext:ordFreigegeben(a);
  const altPreis=x?posNetto(x):null;
@@ -2083,7 +2141,7 @@ function buildInvoiceHtml(a,pakIds,reNr){
   return `<tr class="paksep"><td colspan="4">${esc(pk.name)} · ${pk.klass==='so'&&pk.klassTxt?esc(pk.klassTxt):KLASS[pk.klass][0]}${pk.zahler!=='kunde'?' · zahlt: '+(pk.zahler==='son'&&pk.zahlerTxt?esc(pk.zahlerTxt):ZAHLER[pk.zahler]):''}</td></tr>`+
   pk.pos.map(p=>(p.typ==='text'||p.typ==='befund')?
    `<tr><td colspan="4" style="font-size:10px;color:#444">${esc(p.bez)}${p.abhilfe?' — Abhilfe: '+esc(p.abhilfe):''}</td></tr>`
-  :`<tr><td>${esc(p.bez)}${p.ext?' (Erweiterung)':''}${p.zahler&&p.zahler!==(pk.zahler||'kunde')?' <span style="font-size:9px;color:#555">· zahlt: '+(p.zahler==='son'&&p.zahlerTxt?esc(p.zahlerTxt):ZAHLER[p.zahler]||'')+'</span>':''}${p.notizKunde?'<br><span style="font-size:9px;color:#555">'+esc(p.notizKunde)+'</span>':''}</td>
+  :`<tr><td>${p.code?'<span style="font-size:9px;color:#555">'+esc(p.code)+'</span> ':''}${esc(p.bez)}${p.ext?' (Erweiterung)':''}${p.zahler&&p.zahler!==(pk.zahler||'kunde')?' <span style="font-size:9px;color:#555">· zahlt: '+(p.zahler==='son'&&p.zahlerTxt?esc(p.zahlerTxt):ZAHLER[p.zahler]||'')+'</span>':''}${p.notizKunde?'<br><span style="font-size:9px;color:#555;white-space:pre-wrap">'+esc(p.notizKunde)+'</span>':''}</td>
    <td class="tr">${p.typ==='teil'?(p.menge||1)+' ×':(p.aw?String(p.aw).replace('.',',')+' AW':'')}</td>
    <td class="tr">${fmt(p.vkCt)}</td><td class="tr">${fmt(posNetto(p))}</td></tr>`).join('')+
   (prab?`<tr><td colspan="3">Rabatt Paket</td><td class="tr">– ${fmt(prab)}</td></tr>`:'')}).join('');
