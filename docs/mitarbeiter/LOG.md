@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 18.10.2026 (Vormittag) — 2.64 Kalkulation im Vollbild
+- **Anlass:** Inhaber: „Die Kalkulation muss im Vollbild passieren, nichts anderes sollte dabei sein außer das Relevante für die Positionen.“
+- **Gebaut:** Neue Ansicht `vKalk` (Route `kalk`): nur Tabelle je Paket, Summenleiste (klebt unten), „Neues Paket“. Kein Menü, kein Kalk-Kopf, keine Abschnitte. Kopf: Kennzeichen + „Kalkulation“ + Knopf „Fertig“ (zurück zum Auftrag). Einstieg: Knopf „Positionen im Vollbild bearbeiten“ oben in „Pakete & Kalkulation“. Handy: Bezeichnung-Spalte breiter (seitlich wischen). SW v65.
+- **Test:** Smoke-Test grün, neue Prüfung (öffnet, nur Tabelle, Fertig → Auftrag). Screenshots 390/1280 angesehen.
+
 ## 18.10.2026 (Morgenlauf) — Kalkulations-Fokus Tag 2: 2.63 Kleinmaterial-Pauschale + Rabatt-Spalte
 - **Gebaut:** `kmBetrag/kmSync/kmSyncAlle` – Pauschale „Kleinmaterial & Entsorgung“ als automatische Position (`auto:'km'`, Art Teil) im ersten offenen Paket: % vom Arbeitslohn (Standard 5 %, min 5 €, max 25 €), wird bei jedem `save()` nachgeführt. In der Tabelle als graue „auto“-Zeile, × schaltet sie pro Auftrag ab (`a.kmAus`), Knopf zum Wiedereinschalten. Schutz: bestehende Aufträge bekommen sie bei der Umstellung nicht (Migration setzt `kmAus`), freigegebene/unterschriebene und abgeholte Aufträge werden nie verändert. Einstellungen → Kalkulation & Preise: an/aus, %, Min, Max, Bezeichnung. Tabelle: neue Spalte „Rabatt“ (`ktRab`: „10 %“ oder „10,00“ €). SW v64.
 - **Fehler unterwegs:** `ACT['km-tog']` stand vor `const ACT` → App startete nicht. Verschoben zu den anderen Positions-Aktionen.

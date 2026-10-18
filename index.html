@@ -361,9 +361,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.63';
+const APP_VER='2.64';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.64',d:'2026-10-18',p:['Kalkulation im Vollbild: Im Auftrag unter „Pakete & Kalkulation“ auf „Positionen im Vollbild bearbeiten“ tippen. Dann sehen Sie nur noch die Positionen, die Pakete und die Summe. Mit „Fertig“ geht es zurück zum Auftrag.']},
  {v:'2.63',d:'2026-10-18',p:['Kalkulation: Kleinmaterial & Entsorgung wird jetzt automatisch berechnet – 5 % vom Arbeitslohn, mindestens 5 €, höchstens 25 €. Die Zeile steht mit „auto“ in der Tabelle und lässt sich pro Auftrag mit × abschalten. Gilt für neue Aufträge. Bestehende und vom Kunden schon freigegebene Aufträge behalten ihren Preis. Werte stellen Sie unter Einstellungen → Kalkulation & Preise ein.','Neue Spalte „Rabatt“ in der Tabelle: Betrag (z. B. 10,00) oder Prozent (z. B. 10 %) eintippen.']},
  {v:'2.62',d:'2026-10-17',p:['Neu: Positionen als Tabelle – wie in Excel. Im Auftrag unter „Pakete & Kalkulation“ ist „Tabelle“ jetzt die erste Ansicht. Jede Zeile ist eine Arbeit oder ein Teil; die Summen rechnen sofort mit.','Bedienung mit der Tastatur: Tab springt ins nächste Feld, Enter in die nächste Zeile. In die leere letzte Zeile tippen legt eine neue Position an. Arbeitswerte füllen den Preis selbst, bei Teilen kommt der Verkaufspreis aus Ihrer Aufschlag-Staffel. Lagerteile werden beim Eintippen erkannt.']},
  {v:'2.61',d:'2026-10-17',p:['Neue Schrift: Manrope – rund, klar und ähnlich wie bei PayPal. Sie ist in der App eingebaut und funktioniert auch ohne Internet.']},
@@ -685,7 +686,7 @@ setInterval(()=>{
 /* ============ 5. VIEWS: PLANUNG + AUFTRÄGE ============ */
 const ACT={},FSET={};
 ACT.nav=el=>nav(el.dataset.v==='mehr'?'mehr':el.dataset.v);
-ACT.back=()=>{if(route._from&&route._from.v&&route._from.v!==route.v){const f=route._from;route={v:f.v,id:f.id};window.scrollTo(0,0);render()}else nav(route.v==='auftrag'?'auftraege':route.v==='kunde'?'kunden':route.v==='fahrzeug'?'fahrzeuge':'planung')};
+ACT.back=()=>{if(route._from&&route._from.v&&route._from.v!==route.v){const f=route._from;route={v:f.v,id:f.id};window.scrollTo(0,0);render()}else if(route.v==='kalk')nav('auftrag',route.id);else nav(route.v==='auftrag'?'auftraege':route.v==='kunde'?'kunden':route.v==='fahrzeug'?'fahrzeuge':'planung')};
 ACT['sheet-close']=()=>closeSheet();
 ACT.open=el=>nav(el.dataset.v,el.dataset.id);
 ACT['badge-tog']=async()=>{
@@ -1238,6 +1239,7 @@ function vAuftrag(id){
    <div class="kv"><span class="k">Rabatte gesamt</span><span class="v num" style="color:var(--blue)">– ${fmt(ordSub(a)-ordNetto(a)+a.pakete.reduce((s,pk)=>s+rabCt(pakBrutto(pk),pk.rabatt),0)+a.pakete.reduce((s,pk)=>s+pk.pos.reduce((x,p)=>x+rabCt(Math.round(p.vkCt*(p.menge||1)),p.rab),0),0))}</span></div>
    <div class="kv"><span class="k">Gewinn (DB)</span><span class="v num gain">${fmt(ordGewinn(a))}</span></div></div>`};
  const secPak=sec('pak','Pakete & Kalkulation',a.pakete.length+' Paket'+(a.pakete.length!==1?'e':''),`
+  <button class="btn btn-2nd kt-voll-btn" data-act="kalk-voll" data-oid="${a.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Positionen im Vollbild bearbeiten</button>
   <div class="seg" style="margin-bottom:13px">
    <button class="${mode==='tab'?'on':''}" data-act="calc-mode" data-oid="${a.id}" data-m="tab">Tabelle</button>
    <button class="${mode==='over'?'on':''}" data-act="calc-mode" data-oid="${a.id}" data-m="over">Übersicht</button>
@@ -1395,6 +1397,17 @@ function vAuftrag(id){
    <div class="bbtns"><button class="bb bb-2nd" data-act="print-kv" data-oid="${a.id}">PDF</button>
    <button class="bb bb-main" data-act="bill-all" data-oid="${a.id}">${offen>0?'Rechnung erstellen':'Alles abgerechnet'}</button></div></div>`;
 }
+/* Vollbild-Kalkulation: nur die Positionen (Tabelle), Pakete und Summen – sonst nichts */
+function vKalk(id){
+ const a=auftrag(id);if(!a)return shell('<div class="empty"><b>Auftrag nicht gefunden</b></div>',{title:'Kalkulation',back:1,hideNav:true});
+ const f=fzg(a.fzgId)||{};
+ const inner=`<div class="kalk-voll">${ktHtml(a)}<div class="klass" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px">
+   <span style="font-size:10px;color:var(--ink3);font-weight:700;letter-spacing:.06em">NEUES PAKET</span>
+   ${Object.entries(KLASS).map(([v,[l]])=>`<button class="chip" data-act="pak-new" data-oid="${a.id}" data-k="${v}">${l}</button>`).join('')}</div></div>`;
+ return shell(inner,{title:'Kalkulation',eyebrow:esc(f.kennz||a.nr),back:1,hideNav:true,ctx:'kalk',
+  side:`<button class="btn kv-fertig" data-act="back">Fertig</button>`});
+}
+ACT['kalk-voll']=el=>{calcMode[el.dataset.oid]='tab';nav('kalk',el.dataset.oid)};
 function fotoTile(a,fo){return `<div class="foto">${fo.isVideo?`<video src="${fo.data}" muted playsinline style="width:100%;height:100%;object-fit:cover" controls></video>`:`<img src="${fo.data}" alt="">`}<span class="loc">${esc(fo.label)}</span>
  <button class="fx" data-act="foto-del" data-oid="${a.id}" data-fid="${fo.id}">${xIco(13)}</button></div>`}
 function camTile(a,pid){return `<div class="foto cam" data-act="add-foto-btn" data-oid="${a.id}" data-pid="${pid}">+</div>`}
@@ -4383,7 +4396,7 @@ function syncBadge(){if(!badgeOK()||!S)return;const n=S.settings.badge?(S.anfrag
 function renderInner(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
- const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
+ const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kalk:()=>vKalk(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
   fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,status:vStatus,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz,apdb:vApDb,pakvorlagen:vPakVorlagen};
  if(!S.settings.onboarded&&!['buchen','impressum','datenschutz','status'].includes(route.v)){app.innerHTML=vOnboarding();return}
  app.innerHTML=(V[route.v]||vPlanung)();
