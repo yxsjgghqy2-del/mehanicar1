@@ -362,9 +362,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.67';
+const APP_VER='2.68';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.68',d:'2026-10-18',p:['Diagnose hat jetzt eine eigene Summe.','„Positionen auswählen“: mehrere Positionen antippen und dann gemeinsam nach oben oder unten schieben, in ein anderes Paket oder zwischen Diagnose und Abhilfe verschieben, das RKZ (wer zahlt) ändern oder löschen. Alles lässt sich rückgängig machen.']},
  {v:'2.67',d:'2026-10-18',p:['Kalkulation als Werkstattbericht – genau Ihr Ablauf: Beanstandung → Diagnose (mit Prüfung als Unterpunkt) → Befund → Abhilfe → Hinweise.','Freigaben: Rechts neben „Diagnose“ und „Abhilfe“ tragen Sie ein, bis zu welchem Betrag der Kunde freigegeben hat. Wird der Betrag überschritten, kommt einmal eine große Meldung, danach bleibt ein gelber Hinweis stehen.','Jede Position antippen = alle Details. Neu dort: „Gehört zu“ Diagnose oder Abhilfe.']},
  {v:'2.66',d:'2026-10-18',p:['Kalkulation als Liste – ohne seitliches Wischen: Jedes Paket ist ein Ordner. Darin steht jede Position mit Text, AW und Preis. Antippen zeigt alle Details.','Bei jeder Arbeit können Sie den Text ändern und darunter eine Beschreibung schreiben, zum Beispiel was geprüft wurde und Messwerte. Sie steht auf der Rechnung unter der Position.','Pro Paket: + Arbeit (aus Ihrer Liste suchen oder eigene Position), + Teil, + Befund (mit Abhilfe), + Hinweis.','Neues Feld „Positionscode“ in den Details.']},
  {v:'2.65',d:'2026-10-18',p:['Stundensätze nach Arbeitsart: In der Tabelle wählen Sie in der Spalte „Art“ jetzt Mechanik, Elektrik, Karosserie, Lack oder Teil. Für jede Art können Sie unter Einstellungen → Kalkulation & Preise einen eigenen Stundensatz eintragen. Leer bedeutet: gleicher Preis wie Mechanik.']},
@@ -509,6 +510,7 @@ function kmSyncAlle(){if(typeof S==='undefined'||!S||!S.auftraege)return;S.auftr
 /* ============ 4. SHELL, ROUTER, KOMPONENTEN ============ */
 let route={v:'planung'},navSlideDir=0,skipNextSlide=false,riseNext=false;
 function nav(v,id){
+ try{if(v!==route.v||id!==route.id){wbSel.oid=null;wbSel.ids.clear()}}catch(e){}
  const prev={v:route.v,id:route.id};
  const tabs=NAVITEMS.map(n=>n[0]);
  const fi=tabs.indexOf(prev.v),ti=tabs.indexOf(v);
@@ -1420,20 +1422,26 @@ function wbRahmen(pk,ph){const f=(pk.frei||{})[ph];if(!f||!f.ct)return null;cons
 function wbChip(a,pk,ph,lk){const r=wbRahmen(pk,ph),act=lk?'':` data-act="frei-set" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}" role="button" tabindex="0"`;
  if(!r)return lk?'':`<span class="wb-chip wb-chip-leer"${act}>Freigabe eintragen</span>`;
  return r.ueber?`<span class="wb-chip wb-chip-ueber"${act}>${fmt(r.f.ct)} freigegeben · ${fmt(r.ueber)} darüber</span>`:`<span class="wb-chip wb-chip-ok"${act}>${fmt(r.f.ct)} freigegeben</span>`}
+const wbSel={oid:null,ids:new Set()};
+const wbSelOn=a=>wbSel.oid===a.id;
 function lsHtml(a){
  if(!pakOpen[a.id]){pakOpen[a.id]=new Set();const f=a.pakete.find(p=>!p.abger);if(f)pakOpen[a.id].add(f.id)}
  const K=ordKalk(a);
- const act=(pk,x,lk)=>lk||x.auto?'':` data-act="pos-edit" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}" role="button" tabindex="0"`;
+ const sel=wbSelOn(a);
+ const act=(pk,x,lk)=>lk||x.auto?'':` data-act="${sel?'wb-pick':'pos-edit'}" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}" role="button" tabindex="0"${sel?` aria-pressed="${wbSel.ids.has(x.id)}"`:''}`;
+ const hak=(x,lk)=>sel&&!lk&&!x.auto?`<span class="wb-hak${wbSel.ids.has(x.id)?' on':''}" aria-hidden="true"></span>`:'';
+ const selCls=x=>sel&&wbSel.ids.has(x.id)?' wb-on':'';
  const zeile=(pk,x,lk)=>{const A=x.typ==='arbeit',m=[];
   if(x.auto==='km')m.push('automatisch · '+((S.settings.kleinmat||{}).pct||0)+' % vom Lohn');
   else if(A){if(x.aw)m.push(pct1(x.aw)+' AW');if(x.art&&x.art!=='mech')m.push(esc(artName(x.art)))}
   else m.push((x.menge||1)!==1?x.menge+' Stk':'Teil');
+  if(x.zahler&&x.zahler!==(pk.zahler||'kunde'))m.push('RKZ: '+(x.zahler==='son'&&x.zahlerTxt?esc(x.zahlerTxt):ZAHLER[x.zahler]||x.zahler));
   if(x.ext)m.push('<span class="wb-erw">Erweiterung</span>');
-  return`<div class="wb-pos${x.auto?' wb-auto':''}"${act(pk,x,lk)}><div class="wb-z"><span class="wb-b">${esc(x.bez)}</span><span class="wb-dots"></span><b class="num">${fmt(posNetto(x))}</b></div>
+  return`<div class="wb-pos${x.auto?' wb-auto':''}${selCls(x)}"${act(pk,x,lk)}><div class="wb-z">${hak(x,lk)}<span class="wb-b">${esc(x.bez)}</span><span class="wb-dots"></span><b class="num">${fmt(posNetto(x))}</b></div>
    ${m.length?`<div class="wb-m">${m.join(' · ')}</div>`:''}${x.notizKunde?`<div class="wb-d">${esc(x.notizKunde)}</div>`:''}</div>`};
  const txtFeld=(pk,f,ph,lk,leer)=>{const v=pk[f]||'';const at=lk?'':` data-act="wb-text" data-oid="${a.id}" data-pid="${pk.id}" data-f="${f}" role="button" tabindex="0"`;
   return v?`<div class="wb-txt"${at}>${esc(v)}</div>`:(lk?'':`<div class="wb-leer"${at}>${leer}</div>`)};
- const add=(lk,html)=>lk?'':`<div class="wb-add">${html}</div>`;
+ const add=(lk,html)=>lk||wbSelOn(a)?'':`<div class="wb-add">${html}</div>`;
  const bericht=pk=>{const lk=ktLocked(pk),open=pakOpen[a.id].has(pk.id),diag=wbDiag(pk),abh=wbAbh(pk),bef=pk.pos.filter(x=>x.typ==='befund'),hin=pk.pos.filter(x=>x.typ==='text');
   const voll=pk.ablauf||pk.klass!=='kw'||pk.problem||pk.pruefung||diag.length||bef.length;
   const b=(o)=>`data-oid="${a.id}" data-pid="${pk.id}"${o||''}`;
@@ -1444,25 +1452,61 @@ function lsHtml(a){
     ${voll?`<div class="wb-h"><span>Beanstandung</span></div>${txtFeld(pk,'problem','',lk,'+ Was sagt der Kunde?')}
     <div class="wb-h"><span>Diagnose</span>${wbChip(a,pk,'diag',lk)}</div>
     ${diag.map(x=>zeile(pk,x,lk)).join('')}
+    ${diag.length?`<div class="wb-z wb-zs"><span>Summe Diagnose</span><span class="wb-dots"></span><b class="num">${fmt(wbSum(diag))}</b></div>`:''}
     <div class="wb-sub"><div class="wb-sub-h">Prüfung</div>${txtFeld(pk,'pruefung','',lk,'+ Was wurde geprüft? Messwerte …')}</div>
     ${add(lk,`<button data-act="ls-kat" ${b(' data-ph="diag"')}>+ Diagnose-Position</button>`)}
     <div class="wb-h"><span>Befund</span></div>
-    ${bef.map(x=>`<div class="wb-pos"${act(pk,x,lk)}><div class="wb-txt0">${esc(x.bez)}</div>${x.abhilfe?`<div class="wb-m">Abhilfe: ${esc(x.abhilfe)}</div>`:''}</div>`).join('')||(lk?'':`<div class="wb-leer" data-act="add-befund" ${b()} role="button" tabindex="0">+ Was wurde festgestellt?</div>`)}
+    ${bef.map(x=>`<div class="wb-pos${selCls(x)}"${act(pk,x,lk)}><div class="wb-txt0">${hak(x,lk)}${esc(x.bez)}</div>${x.abhilfe?`<div class="wb-m">Abhilfe: ${esc(x.abhilfe)}</div>`:''}</div>`).join('')||(lk?'':`<div class="wb-leer" data-act="add-befund" ${b()} role="button" tabindex="0">+ Was wurde festgestellt?</div>`)}
     ${bef.length?add(lk,`<button data-act="add-befund" ${b()}>+ Befund</button>`):''}`:''}
     <div class="wb-h"><span>${voll?'Abhilfe':'Arbeiten'}</span>${wbChip(a,pk,'abh',lk)}</div>
     ${abh.map(x=>zeile(pk,x,lk)).join('')||'<div class="wb-m" style="padding:4px 0 2px">Noch keine Arbeiten oder Teile.</div>'}
     ${add(lk,`<button data-act="ls-kat" ${b(' data-ph="abh"')}>+ Arbeit</button><button data-act="add-teil" ${b()}>+ Teil</button>`)}
     ${abh.length?`<div class="wb-z wb-zs"><span>Summe ${voll?'Abhilfe':'Arbeiten'}</span><span class="wb-dots"></span><b class="num">${fmt(wbSum(abh))}</b></div>`:''}
     ${hin.length||!lk?`<div class="wb-h"><span>Hinweise</span></div>`:''}
-    ${hin.map(x=>`<div class="wb-pos"${act(pk,x,lk)}><div class="wb-txt0">${esc(x.bez)}</div></div>`).join('')}
+    ${hin.map(x=>`<div class="wb-pos${selCls(x)}"${act(pk,x,lk)}><div class="wb-txt0">${hak(x,lk)}${esc(x.bez)}</div></div>`).join('')}
     ${add(lk,`<button data-act="add-text" ${b()}>+ Hinweis</button>`)}
     ${lk?`<div class="wb-m" style="padding-top:10px">Abgerechnet – zum Ändern in der Ansicht „Kalkulation“ entsperren.</div>`:`<div class="wb-fuss">${voll?'':`<button class="ls-opt" data-act="wb-voll" ${b()}>+ Beanstandung, Diagnose und Befund</button>`}<button class="ls-opt" data-act="pak-opts" ${b()}>Paket: Name, Art, wer zahlt</button></div>`}
    </div>`:''}</div>`};
- return`<div class="ls">${a.pakete.map(bericht).join('')}
-  <button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="tb">+ Neues Problem / Paket</button>
+ const nSel=sel?wbSel.ids.size:0;
+ const leiste=sel?`<div class="wb-selbar" role="toolbar" aria-label="Auswahl"><div class="wb-selbar-k"><b>${nSel} ausgewählt</b><button data-act="wb-sel" data-oid="${a.id}">Auswahl beenden</button></div>
+  <div class="wb-selbar-b"><button data-act="wb-mv" data-dir="-1" data-oid="${a.id}"${nSel?'':' disabled'} aria-label="Nach oben">↑</button><button data-act="wb-mv" data-dir="1" data-oid="${a.id}"${nSel?'':' disabled'} aria-label="Nach unten">↓</button>
+  <button data-act="wb-move" data-oid="${a.id}"${nSel?'':' disabled'}>Verschieben</button><button data-act="wb-rkz" data-oid="${a.id}"${nSel?'':' disabled'}>RKZ</button><button data-act="wb-del" data-oid="${a.id}"${nSel?'':' disabled'}>Löschen</button></div></div>`
+  :`<button class="wb-selstart" data-act="wb-sel" data-oid="${a.id}">Positionen auswählen · verschieben · RKZ ändern</button>`;
+ return`<div class="ls">${a.pakete.length?leiste:''}${a.pakete.map(bericht).join('')}
+  ${sel?'':`<button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="tb">+ Neues Problem / Paket</button>`}
   ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<button class="ls-opt" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale wieder einschalten</button>`:''}
   <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b></span></div>
    <div class="ls-sum-b"><span>Kunde zahlt <small>inkl. ${S.settings.mwst} % MwSt</small></span><b class="num">${fmt(K.brutto)}</b></div></div></div>`}
+/* Mehrfachauswahl: markieren, verschieben (↑↓, in anderes Paket / Diagnose↔Abhilfe), RKZ ändern, löschen – alles mit Rückgängig */
+const wbGewaehlt=a=>{const r=[];a.pakete.forEach(pk=>{if(ktLocked(pk))return;pk.pos.forEach(x=>{if(wbSel.ids.has(x.id))r.push({pk,x})})});return r};
+ACT['wb-sel']=el=>{const a=auftrag(el.dataset.oid);if(wbSelOn(a)){wbSel.oid=null;wbSel.ids.clear()}else{wbSel.oid=a.id;wbSel.ids.clear()}render()};
+ACT['wb-pick']=el=>{const id=el.dataset.xid;wbSel.ids.has(id)?wbSel.ids.delete(id):wbSel.ids.add(id);render()};
+const wbBereich=x=>wbIstPos(x)?(x.phase==='diag'?'d':'a'):x.typ;
+ACT['wb-mv']=el=>{const a=auftrag(el.dataset.oid),dir=+el.dataset.dir;let bewegt=0;
+ a.pakete.forEach(pk=>{if(ktLocked(pk))return;const p=pk.pos;
+  const idx=dir<0?p.map((_,i)=>i):p.map((_,i)=>i).reverse();
+  idx.forEach(i=>{const x=p[i];if(!wbSel.ids.has(x.id)||x.auto)return;
+   let j=i+dir;while(j>=0&&j<p.length&&wbBereich(p[j])!==wbBereich(x))j+=dir;
+   if(j<0||j>=p.length||wbSel.ids.has(p[j].id)||p[j].auto)return;p[i]=p[j];p[j]=x;bewegt++})});
+ if(bewegt){save();render()}else toast(dir<0?'Schon ganz oben':'Schon ganz unten')};
+ACT['wb-move']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a);if(!g.length)return;
+ const ziele=a.pakete.filter(pk=>!ktLocked(pk));
+ sheet(g.length+' Position'+(g.length>1?'en':'')+' verschieben',`<div class="fld"><label>In welches Paket?</label><div class="selwrap"><select id="mv-p">${ziele.map(pk=>`<option value="${pk.id}"${pk.id===g[0].pk.id?' selected':''}>${esc(pk.name)}</option>`).join('')}</select></div></div>
+  <div class="fld"><label>Bereich <span style="text-transform:none;font-weight:400;color:var(--ink3)">(für Arbeiten und Teile)</span></label><div class="selwrap"><select id="mv-ph"><option value="">wie bisher</option><option value="abh">Abhilfe / Arbeiten</option><option value="diag">Diagnose</option></select></div></div>
+  <button class="btn btn-main" style="width:100%" data-act="wb-move-ok" data-oid="${a.id}">Verschieben</button>`)};
+ACT['wb-move-ok']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a),ziel=a.pakete.find(p=>p.id===$('#mv-p').value),ph=$('#mv-ph').value;if(!ziel)return;
+ mitRueckgaengig(g.length+' verschoben',()=>{g.forEach(({pk,x})=>{if(ph&&wbIstPos(x))x.phase=ph==='diag'?'diag':null;
+  if(pk!==ziel){pk.pos=pk.pos.filter(p=>p!==x);ziel.pos.push(x);logUnlockEdit(a,pk,'Position „'+x.bez+'" nach „'+ziel.name+'" verschoben.')}});pakOpen[a.id].add(ziel.id)})};
+ACT['wb-rkz']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a).filter(o=>wbIstPos(o.x));if(!g.length)return toast('Nur Arbeiten und Teile haben ein RKZ',true);
+ sheet('RKZ für '+g.length+' Position'+(g.length>1?'en':''),`<div class="fld"><label>Wer zahlt?</label><div class="selwrap"><select id="rk-z" onchange="document.getElementById('rk-tw').style.display=this.value==='son'?'block':'none'">
+   <option value="">Wie Paket</option>${Object.entries(ZAHLER).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div></div>
+  <div id="rk-tw" style="display:none"><div class="fld"><label>Sonstiges – wer zahlt?</label><input id="rk-t" placeholder="z. B. Versicherung Huk24"></div></div>
+  <button class="btn btn-main" style="width:100%" data-act="wb-rkz-ok" data-oid="${a.id}">Übernehmen</button>`)};
+ACT['wb-rkz-ok']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a).filter(o=>wbIstPos(o.x)),z=$('#rk-z').value||null,t=$('#rk-t').value.trim();
+ mitRueckgaengig('RKZ für '+g.length+' geändert',()=>g.forEach(({pk,x})=>{x.zahler=z;x.zahlerTxt=z==='son'?t:'';logUnlockEdit(a,pk,'RKZ „'+x.bez+'" → '+(z?ZAHLER[z]:'wie Paket')+'.')}))};
+ACT['wb-del']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a).filter(o=>!o.x.auto);if(!g.length)return;
+ mitRueckgaengig(g.length+' Position'+(g.length>1?'en':'')+' gelöscht',()=>{g.forEach(({pk,x})=>{if(x.lagerId&&x.best==='lager'){const l=lagerT(x.lagerId);if(l)l.bestand+=(x.menge||1)}
+  pk.pos=pk.pos.filter(p=>p!==x);logUnlockEdit(a,pk,'Position „'+x.bez+'" gelöscht ('+fmt(posNetto(x))+').')});wbSel.ids.clear()})};
 const WB_FELD={problem:['Beanstandung','Was sagt der Kunde? Möglichst wörtlich.','z. B. Motorkontrollleuchte leuchtet, Auto ruckelt beim Beschleunigen'],pruefung:['Prüfung','Was wurde geprüft? Messwerte, Fehlercodes …','z. B. Fehlerspeicher: P0302 Zündaussetzer Zyl. 2\nKompression Zyl. 1–4 je 12 bar']};
 ACT['wb-text']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),f=el.dataset.f,[t,l,ph]=WB_FELD[f];
  sheet(t,`<div class="fld"><label>${l}</label><textarea id="wb-t" rows="6" placeholder="${esc(ph)}">${esc(pk[f]||'')}</textarea></div>

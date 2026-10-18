@@ -509,6 +509,33 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (Object.values(wb).some(v => !v)) errs.push('Bericht: ' + JSON.stringify(wb));
   }
+  // Auswahl: Summe Diagnose, ↑↓, verschieben, RKZ, löschen + Rückgängig
+  {
+    const au = await page.evaluate(async () => {
+      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); if (!a) return { auftrag: false };
+      const snap = JSON.stringify(S.auftraege); const pk = a.pakete[0]; pk.entsperrt = true; pk.klass = 'tb';
+      const w = () => new Promise(r => setTimeout(r, 100));
+      const P = o => Object.assign({ id: 'x' + uid(), nr: 90, created: Date.now(), menge: 1, ekCt: 0, vkCt: 0, aw: 0, rab: null, ext: false, best: null, eta: null, lagerId: null }, o);
+      const d1 = P({ typ: 'arbeit', bez: 'D1', vkCt: 10000, phase: 'diag' }), d2 = P({ typ: 'arbeit', bez: 'D2', vkCt: 5000, phase: 'diag' }), a1 = P({ typ: 'arbeit', bez: 'A1', vkCt: 7000 });
+      pk.pos = [d1, a1, d2]; a.kmAus = true; delete calcMode[a.id]; pakOpen[a.id] = new Set([pk.id]); nav('kalk', a.id); await w();
+      const r = { summe: [...document.querySelectorAll('.wb-zs')].some(e => /Summe Diagnose/.test(e.textContent) && /150/.test(e.textContent)) };
+      document.querySelector('[data-act="wb-sel"]').click(); await w();
+      document.querySelector('[data-act="wb-pick"][data-xid="' + d2.id + '"]').click(); await w();
+      document.querySelector('[data-act="wb-mv"][data-dir="-1"]').click(); await w();
+      r.hoch = pk.pos.map(x => x.bez).join() === 'D2,A1,D1';
+      document.querySelector('[data-act="wb-pick"][data-xid="' + a1.id + '"]').click(); await w();
+      document.querySelector('[data-act="wb-rkz"]').click(); await w(); document.getElementById('rk-z').value = 'gar'; document.querySelector('[data-act="wb-rkz-ok"]').click(); await w();
+      r.rkz = pk.pos.filter(x => x.zahler === 'gar').length === 2;
+      document.querySelector('[data-act="wb-move"]').click(); await w(); document.getElementById('mv-ph').value = 'abh'; document.querySelector('[data-act="wb-move-ok"]').click(); await w();
+      r.verschoben = wbDiag(pk).length === 1 && wbAbh(pk).length === 2;
+      document.querySelector('[data-act="wb-del"]').click(); await w();
+      r.geloescht = pk.pos.length === 1;
+      const u = document.querySelector('.toast-undo button'); if (u) u.click(); await w();
+      r.rueckgaengig = auftrag(a.id).pakete[0].pos.length === 3;
+      S.auftraege = JSON.parse(snap); wbSel.oid = null; save(); nav('planung'); return r;
+    });
+    if (Object.values(au).some(v => !v)) errs.push('Auswahl: ' + JSON.stringify(au));
+  }
   // Stundensätze nach Arbeitsart: Art in der Tabelle wählen → eigener Satz
   {
     const ar = await page.evaluate(async () => {
