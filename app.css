@@ -1013,3 +1013,16 @@ tr.kt-auto td{background:var(--bg);color:var(--ink2);font-size:12.5px}
 .wb-add button{flex:1;min-height:44px;border-radius:11px;border:1px dashed var(--line);background:var(--bg);font:inherit;font-size:13.5px;font-weight:650;color:var(--ink)}
 .wb-fuss{margin-top:8px;border-top:1px solid var(--line)}
 .wb-warn{width:48px;height:48px;border-radius:24px;background:var(--amber-bg);color:var(--amber);display:grid;place-items:center;font-size:24px;font-weight:800;margin-bottom:10px}
+/* 2.68 Auswahl: verschieben, RKZ, löschen */
+.wb-selstart{min-height:44px;border:0;background:transparent;font:inherit;font-size:13px;color:var(--ink2);text-decoration:underline;text-underline-offset:3px;text-align:left;padding:0 2px}
+.wb-selbar{position:sticky;top:0;z-index:3;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:10px 12px;box-shadow:0 6px 18px rgba(0,0,0,.08)}
+.wb-selbar-k{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.wb-selbar-k b{font-size:14px}
+.wb-selbar-k button{min-height:36px;padding:0 14px;border-radius:10px;border:0;background:var(--acc);color:var(--card);font:inherit;font-weight:700}
+.wb-selbar-b{display:flex;gap:6px}
+.wb-selbar-b button{flex:1;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--bg);font:inherit;font-size:13px;font-weight:650;color:var(--ink)}
+.wb-selbar-b button[data-act="wb-mv"]{flex:0 0 44px;font-size:17px}
+.wb-selbar-b button:disabled{opacity:.45}
+.wb-hak{flex:none;width:20px;height:20px;border-radius:6px;border:1.5px solid var(--ink3);margin-right:10px;align-self:center;position:relative;display:inline-block;vertical-align:-4px}
+.wb-hak.on{background:var(--acc);border-color:var(--acc)}
+.wb-hak.on:after{content:"";position:absolute;left:6px;top:2px;width:5px;height:10px;border:solid var(--card);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.wb-on{background:var(--bg);margin:0 -14px;padding-left:14px;padding-right:14px}

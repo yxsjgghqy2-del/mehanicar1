@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 18.10.2026 (Nacht, Nachtrag) — 2.68 Summe Diagnose + Auswahl (verschieben, RKZ, löschen)
+- **Anlass:** Inhaber: „Summe Diagnose bitte separat, Positionen verschieben können, mehrere markieren können um z. B. RKZ zu ändern.“
+- **Gebaut:** Zeile „Summe Diagnose“. Auswahlmodus (`wbSel`, Link „Positionen auswählen …“): Zeilen bekommen Kästchen, Leiste oben (klebt) mit ↑ ↓ (innerhalb des Bereichs, `wb-mv`), Verschieben (Paket + Diagnose/Abhilfe, `wb-move`), RKZ (`x.zahler`, `wb-rkz`), Löschen (Lager zurückbuchen) – alles über `mitRueckgaengig`. RKZ abweichend vom Paket steht in der Zeile. Auswahl endet beim Verlassen des Auftrags. SW v69.
+- **Test:** Smoke-Test grün, neue Prüfung (Summe, ↑, RKZ für 2, Verschieben nach Abhilfe, Löschen + Rückgängig). Screenshot angesehen; doppeltes „Fertig“ → „Auswahl beenden“.
+
 ## 18.10.2026 (Nacht) — 2.67 Kalkulation als Werkstattbericht
 - **Anlass:** Inhaber: Ablauf „Kunde kommt mit Problem → Diagnosekosten klären → Prüfen → Befund → Abhilfe = Auftragserweiterung“; Kostenrahmen sichtbar, bei Überschreitung erst große Meldung, nach Bestätigung dauerhaft schlicht. Vorlagen `designs/kalkulation-ablauf.html` → gewählt Nr. 5 fürs Handy, ohne Live-Balken, Freigabe rechts neben Diagnose, Prüfung als Unterpunkt.
 - **Gebaut:** `lsHtml` neu: je Paket Abschnitte Beanstandung (`pk.problem`) · Diagnose (Positionen mit `x.phase='diag'`, Unterpunkt Prüfung `pk.pruefung`) · Befund (Befund-Positionen) · Abhilfe (alle übrigen Arbeiten/Teile) · Hinweise. Zeilen mit Punktlinie bis zum Preis, antippen = Details. Kundenwunsch-Pakete zeigen nur „Arbeiten“ (+ Link für vollen Ablauf, `pk.ablauf`). Freigaben `pk.frei.diag/abh` {ct,wie,ts} als Hinweis-Chip; Eintrag im Verlauf. `rahmenCheck()` nach jedem Zeichnen: Überschreitung → große Meldung (einmal je Betrag, `pk.rahmenAck`), danach gelber Chip + „Freigabe überschritten“ im Paketkopf. Positions-Blatt: „Gehört zu“ Diagnose/Abhilfe. Druck: Beanstandung, Prüfung, Befund/Hinweis beschriftet. Umschalter heißt „Bericht“. SW v68.
