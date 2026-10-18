@@ -477,28 +477,37 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (Object.values(km).some(v => !v)) errs.push('Kleinmaterial: ' + JSON.stringify(km));
   }
-  // Kalkulation als Liste: Ordner, kein seitliches Wischen, Arbeit aus Liste, Beschreibung, Befund/Hinweis
+  // Werkstattbericht: Beanstandung → Diagnose (+ Prüfung) → Befund → Abhilfe; Freigabe-Hinweis + Überschreitung
   {
-    const ls = await page.evaluate(async () => {
+    const wb = await page.evaluate(async () => {
       const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); if (!a) return { auftrag: false };
-      const pk = a.pakete[0], alt = JSON.parse(JSON.stringify(pk.pos)), altEnt = pk.entsperrt; pk.entsperrt = true;
-      delete calcMode[a.id]; pakOpen[a.id] = new Set([pk.id]); nav('kalk', a.id); await new Promise(r => setTimeout(r, 150));
-      const r = { liste: !!document.querySelector('.kalk-voll .ls-pk.open'), keinWischen: document.documentElement.scrollWidth <= innerWidth + 1 && [...document.querySelectorAll('.ls-pos')].every(e => e.scrollWidth <= e.clientWidth + 1) };
-      document.querySelector('[data-act="ls-kat"][data-pid="' + pk.id + '"]').click(); await new Promise(r => setTimeout(r, 120));
-      const q = document.getElementById('ls-q'); q.value = 'Zzz Testmessung'; q.dispatchEvent(new Event('input'));
-      const eig = document.querySelector('[data-act="ls-eigen"]'); r.eigen = !!eig && eig.dataset.bez === 'Zzz Testmessung';
-      const it = document.querySelector('#ls-kl [data-act="ls-kat-add"]');
-      if (S.apDb.length) { q.value = ''; q.dispatchEvent(new Event('input')); const b = document.querySelector('#ls-kl [data-act="ls-kat-add"]'); const n = pk.pos.length; b.click(); await new Promise(r => setTimeout(r, 80)); r.katalog = pk.pos.length === n + 1 && pk.pos[pk.pos.length - 1].typ === 'arbeit'; } else r.katalog = true;
-      closeSheet();
-      const x = pk.pos.find(p => p.typ === 'arbeit' && !p.auto); posSheet(a, pk, x); await new Promise(r => setTimeout(r, 80));
-      document.getElementById('ps-b').value = 'Motor prüfen'; document.getElementById('ps-nk').value = 'Kompression 12 bar'; document.getElementById('ps-code').value = '0101';
-      document.querySelector('[data-act="pos-save"]').click(); await new Promise(r => setTimeout(r, 120));
-      r.text = x.bez === 'Motor prüfen' && x.notizKunde === 'Kompression 12 bar' && x.code === '0101' && document.querySelector('.ls-d') && /Kompression 12 bar/.test(document.querySelector('.kalk-voll').textContent);
-      pk.pos.push({ id: 'xbf', nr: 97, typ: 'befund', bez: 'Testbefund', abhilfe: 'Testabhilfe', vkCt: 0, ekCt: 0, aw: 0, menge: 1 }, { id: 'xhw', nr: 96, typ: 'text', bez: 'Testhinweis', vkCt: 0, ekCt: 0, aw: 0, menge: 1 }); render();
-      r.befundHinweis = !!document.querySelector('.ls-bef') && !!document.querySelector('.ls-hin');
-      pk.pos = alt; pk.entsperrt = altEnt; save(); nav('planung'); return r;
+      const pk = a.pakete[0], alt = JSON.parse(JSON.stringify(pk)); pk.entsperrt = true; pk.klass = 'tb';
+      const w = () => new Promise(r => setTimeout(r, 120));
+      delete calcMode[a.id]; pakOpen[a.id] = new Set([pk.id]); nav('kalk', a.id); await w();
+      const r = { bericht: !!document.querySelector('.kalk-voll .wb-pk.open'), reihenfolge: [...document.querySelectorAll('.wb-pk.open .wb-h > span:first-child')].map(e => e.textContent).join() === 'Beanstandung,Diagnose,Befund,Abhilfe,Hinweise',
+        keinWischen: document.documentElement.scrollWidth <= innerWidth + 1 };
+      document.querySelector('[data-act="wb-text"][data-f="problem"]').click(); await w();
+      document.getElementById('wb-t').value = 'MKL leuchtet'; document.querySelector('[data-act="wb-text-ok"]').click(); await w();
+      document.querySelector('[data-act="wb-text"][data-f="pruefung"]').click(); await w();
+      document.getElementById('wb-t').value = 'P0302'; document.querySelector('[data-act="wb-text-ok"]').click(); await w();
+      r.texte = pk.problem === 'MKL leuchtet' && pk.pruefung === 'P0302' && !!document.querySelector('.wb-sub .wb-txt');
+      document.querySelector('[data-act="ls-kat"][data-ph="diag"]').click(); await w();
+      const q = document.getElementById('ls-q'); q.value = 'Zzz Diagnose'; q.dispatchEvent(new Event('input'));
+      r.eigen = document.querySelector('[data-act="ls-eigen"]').dataset.bez === 'Zzz Diagnose';
+      document.querySelector('[data-act="ls-eigen"]').click(); await w();
+      r.phaseVor = document.getElementById('ps-ph').value === 'diag';
+      document.getElementById('ps-aw').value = '2'; document.getElementById('ps-aw').dispatchEvent(new Event('input')); document.getElementById('ps-vk').value = '250,00';
+      document.querySelector('[data-act="pos-save"]').click(); await w();
+      const x = pk.pos.find(p => p.bez === 'Zzz Diagnose'); r.diagPos = !!x && x.phase === 'diag' && wbDiag(pk).includes(x);
+      document.querySelector('[data-act="frei-set"][data-ph="diag"]').click(); await w();
+      document.getElementById('fr-ct').value = '200,00'; document.querySelector('[data-act="frei-ok"]').click(); await w(); await w();
+      r.meldung = !!document.querySelector('#sheetbg .wb-warn');
+      const ok = [...document.querySelectorAll('[data-act="rahmen-ok"]')].pop(); if (ok) ok.click(); await w(); await w();
+      r.hinweis = !document.querySelector('#sheetbg') && !!document.querySelector('.wb-chip-ueber') && /50 €/.test(document.querySelector('.wb-chip-ueber').textContent);
+      const p = document.querySelector('.wb-pos[data-act="pos-edit"]'); if (p) { p.click(); await w(); } r.details = !!document.getElementById('ps-b') || !!document.getElementById('bf-b'); closeSheet();
+      Object.keys(pk).forEach(k => delete pk[k]); Object.assign(pk, alt); save(); nav('planung'); return r;
     });
-    if (Object.values(ls).some(v => !v)) errs.push('Liste: ' + JSON.stringify(ls));
+    if (Object.values(wb).some(v => !v)) errs.push('Bericht: ' + JSON.stringify(wb));
   }
   // Stundensätze nach Arbeitsart: Art in der Tabelle wählen → eigener Satz
   {

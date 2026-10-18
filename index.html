@@ -362,9 +362,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.66';
+const APP_VER='2.67';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.67',d:'2026-10-18',p:['Kalkulation als Werkstattbericht – genau Ihr Ablauf: Beanstandung → Diagnose (mit Prüfung als Unterpunkt) → Befund → Abhilfe → Hinweise.','Freigaben: Rechts neben „Diagnose“ und „Abhilfe“ tragen Sie ein, bis zu welchem Betrag der Kunde freigegeben hat. Wird der Betrag überschritten, kommt einmal eine große Meldung, danach bleibt ein gelber Hinweis stehen.','Jede Position antippen = alle Details. Neu dort: „Gehört zu“ Diagnose oder Abhilfe.']},
  {v:'2.66',d:'2026-10-18',p:['Kalkulation als Liste – ohne seitliches Wischen: Jedes Paket ist ein Ordner. Darin steht jede Position mit Text, AW und Preis. Antippen zeigt alle Details.','Bei jeder Arbeit können Sie den Text ändern und darunter eine Beschreibung schreiben, zum Beispiel was geprüft wurde und Messwerte. Sie steht auf der Rechnung unter der Position.','Pro Paket: + Arbeit (aus Ihrer Liste suchen oder eigene Position), + Teil, + Befund (mit Abhilfe), + Hinweis.','Neues Feld „Positionscode“ in den Details.']},
  {v:'2.65',d:'2026-10-18',p:['Stundensätze nach Arbeitsart: In der Tabelle wählen Sie in der Spalte „Art“ jetzt Mechanik, Elektrik, Karosserie, Lack oder Teil. Für jede Art können Sie unter Einstellungen → Kalkulation & Preise einen eigenen Stundensatz eintragen. Leer bedeutet: gleicher Preis wie Mechanik.']},
  {v:'2.64',d:'2026-10-18',p:['Kalkulation im Vollbild: Im Auftrag unter „Pakete & Kalkulation“ auf „Positionen im Vollbild bearbeiten“ tippen. Dann sehen Sie nur noch die Positionen, die Pakete und die Summe. Mit „Fertig“ geht es zurück zum Auftrag.']},
@@ -1250,7 +1251,7 @@ function vAuftrag(id){
  const secPak=sec('pak','Pakete & Kalkulation',a.pakete.length+' Paket'+(a.pakete.length!==1?'e':''),`
   <button class="btn btn-2nd kt-voll-btn" data-act="kalk-voll" data-oid="${a.id}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>Positionen im Vollbild bearbeiten</button>
   <div class="seg" style="margin-bottom:13px">
-   <button class="${mode==='liste'||mode==='over'?'on':''}" data-act="calc-mode" data-oid="${a.id}" data-m="liste">Liste</button>
+   <button class="${mode==='liste'||mode==='over'?'on':''}" data-act="calc-mode" data-oid="${a.id}" data-m="liste">Bericht</button>
    <button class="seg-tab ${mode==='tab'?'on':''}" data-act="calc-mode" data-oid="${a.id}" data-m="tab">Tabelle</button>
    <button class="${mode==='calc'?'on':''}" data-act="calc-mode" data-oid="${a.id}" data-m="calc">Kalkulation</button></div>
   ${mode==='over'?a.pakete.map(pakHtml).join('')+`
@@ -1409,30 +1410,90 @@ function vAuftrag(id){
 }
 /* Kalkulation als Liste (Inhaber 18.10.): Paket = Ordner, Zeilen nur Text · AW · Preis; Details beim Antippen. Kein seitliches Wischen. */
 const LS_ORD='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h4.2l2 2h8.8A1.5 1.5 0 0 1 21 9.5v8A1.5 1.5 0 0 1 19.5 19h-15A1.5 1.5 0 0 1 3 17.5z"/></svg>';
+/* Werkstattbericht-Ansicht (Inhaber 18.10., Vorlage 5): je Paket Beanstandung → Diagnose (mit Prüfung als Unterpunkt) → Befund → Abhilfe → Hinweise.
+   Freigaben als Hinweis rechts neben Diagnose/Abhilfe; bei Überschreitung einmal große Meldung, danach dauerhaft gelber Hinweis. */
+const wbIstPos=x=>x.typ==='arbeit'||x.typ==='teil';
+const wbDiag=pk=>pk.pos.filter(x=>wbIstPos(x)&&x.phase==='diag');
+const wbAbh=pk=>pk.pos.filter(x=>wbIstPos(x)&&x.phase!=='diag');
+const wbSum=l=>l.reduce((s,x)=>s+posNetto(x),0);
+function wbRahmen(pk,ph){const f=(pk.frei||{})[ph];if(!f||!f.ct)return null;const ist=wbSum(ph==='diag'?wbDiag(pk):wbAbh(pk));return{f,ist,ueber:Math.max(0,ist-f.ct)}}
+function wbChip(a,pk,ph,lk){const r=wbRahmen(pk,ph),act=lk?'':` data-act="frei-set" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}" role="button" tabindex="0"`;
+ if(!r)return lk?'':`<span class="wb-chip wb-chip-leer"${act}>Freigabe eintragen</span>`;
+ return r.ueber?`<span class="wb-chip wb-chip-ueber"${act}>${fmt(r.f.ct)} freigegeben · ${fmt(r.ueber)} darüber</span>`:`<span class="wb-chip wb-chip-ok"${act}>${fmt(r.f.ct)} freigegeben</span>`}
 function lsHtml(a){
  if(!pakOpen[a.id]){pakOpen[a.id]=new Set();const f=a.pakete.find(p=>!p.abger);if(f)pakOpen[a.id].add(f.id)}
  const K=ordKalk(a);
- const zeile=(pk,x,lk)=>{const act=lk||x.auto?'':` data-act="pos-edit" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}" role="button" tabindex="0"`;
-  if(x.typ==='befund')return`<div class="ls-pos ls-bef"${act}><div class="ls-t"><span class="ls-lab">Befund</span><div class="ls-txt">${esc(x.bez)}</div>${x.abhilfe?`<span class="ls-lab ls-ab">Abhilfe</span><div class="ls-txt">${esc(x.abhilfe)}</div>`:''}</div></div>`;
-  if(x.typ==='text')return`<div class="ls-pos ls-hin"${act}><div class="ls-t"><span class="ls-lab">Hinweis</span><div class="ls-txt">${esc(x.bez)}</div></div></div>`;
-  const A=x.typ==='arbeit';
-  const sub=x.auto==='km'?'automatisch · '+((S.settings.kleinmat||{}).pct||0)+' % vom Lohn':A?(x.art&&x.art!=='mech'?esc(artName(x.art)):''):((x.menge||1)!==1?(x.menge+' Stk'):'Teil');
-  return`<div class="ls-pos${x.auto?' ls-auto':''}${x.ext?' ls-ext':''}"${act}><div class="ls-t"><div class="ls-b">${esc(x.bez)}</div>${x.notizKunde?`<div class="ls-d">${esc(x.notizKunde)}</div>`:''}${sub?`<div class="ls-m">${sub}</div>`:''}</div>
-   <div class="ls-r"><b class="num">${fmt(posNetto(x))}</b>${A&&x.aw?`<small class="num">${pct1(x.aw)} AW</small>`:''}</div></div>`};
- const ordner=(pk)=>{const lk=ktLocked(pk),open=pakOpen[a.id].has(pk.id),n=pk.pos.length;
-  return`<div class="ls-pk${open?' open':''}"><div class="ls-pk-h" data-act="pak-tog" data-oid="${a.id}" data-pid="${pk.id}" role="button" tabindex="0" aria-expanded="${open}">
-   <span class="ls-ico">${LS_ORD}</span><span class="ls-pk-n"><b>${esc(pk.name)}</b><small>${n} Position${n!==1?'en':''}${lk?' · abgerechnet':''}</small></span>
-   <b class="num ls-pk-s">${fmt(pakNetto(pk))}</b><span class="ls-chev" aria-hidden="true"></span></div>
-   ${open?`<div class="ls-pk-b">${pk.pos.map(x=>zeile(pk,x,lk)).join('')||'<div class="ls-leer">Noch leer – unten Arbeit, Teil, Befund oder Hinweis hinzufügen.</div>'}
-    ${lk?`<div class="ls-leer">Abgerechnet – zum Ändern im Paket „Entsperren“ (Ansicht „Kalkulation“).</div>`:`<div class="ls-add">
-     <button data-act="ls-kat" data-oid="${a.id}" data-pid="${pk.id}">+ Arbeit</button><button data-act="add-teil" data-oid="${a.id}" data-pid="${pk.id}">+ Teil</button>
-     <button data-act="add-befund" data-oid="${a.id}" data-pid="${pk.id}">+ Befund</button><button data-act="add-text" data-oid="${a.id}" data-pid="${pk.id}">+ Hinweis</button></div>
-     <button class="ls-opt" data-act="pak-opts" data-oid="${a.id}" data-pid="${pk.id}">Paket: Name, Art, wer zahlt</button>`}</div>`:''}</div>`};
- return`<div class="ls">${a.pakete.map(ordner).join('')}
-  <button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="${Object.keys(KLASS)[0]}">+ Neues Paket</button>
+ const act=(pk,x,lk)=>lk||x.auto?'':` data-act="pos-edit" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}" role="button" tabindex="0"`;
+ const zeile=(pk,x,lk)=>{const A=x.typ==='arbeit',m=[];
+  if(x.auto==='km')m.push('automatisch · '+((S.settings.kleinmat||{}).pct||0)+' % vom Lohn');
+  else if(A){if(x.aw)m.push(pct1(x.aw)+' AW');if(x.art&&x.art!=='mech')m.push(esc(artName(x.art)))}
+  else m.push((x.menge||1)!==1?x.menge+' Stk':'Teil');
+  if(x.ext)m.push('<span class="wb-erw">Erweiterung</span>');
+  return`<div class="wb-pos${x.auto?' wb-auto':''}"${act(pk,x,lk)}><div class="wb-z"><span class="wb-b">${esc(x.bez)}</span><span class="wb-dots"></span><b class="num">${fmt(posNetto(x))}</b></div>
+   ${m.length?`<div class="wb-m">${m.join(' · ')}</div>`:''}${x.notizKunde?`<div class="wb-d">${esc(x.notizKunde)}</div>`:''}</div>`};
+ const txtFeld=(pk,f,ph,lk,leer)=>{const v=pk[f]||'';const at=lk?'':` data-act="wb-text" data-oid="${a.id}" data-pid="${pk.id}" data-f="${f}" role="button" tabindex="0"`;
+  return v?`<div class="wb-txt"${at}>${esc(v)}</div>`:(lk?'':`<div class="wb-leer"${at}>${leer}</div>`)};
+ const add=(lk,html)=>lk?'':`<div class="wb-add">${html}</div>`;
+ const bericht=pk=>{const lk=ktLocked(pk),open=pakOpen[a.id].has(pk.id),diag=wbDiag(pk),abh=wbAbh(pk),bef=pk.pos.filter(x=>x.typ==='befund'),hin=pk.pos.filter(x=>x.typ==='text');
+  const voll=pk.ablauf||pk.klass!=='kw'||pk.problem||pk.pruefung||diag.length||bef.length;
+  const b=(o)=>`data-oid="${a.id}" data-pid="${pk.id}"${o||''}`;
+  return`<div class="wb-pk${open?' open':''}"><div class="wb-pk-h" data-act="pak-tog" ${b()} role="button" tabindex="0" aria-expanded="${open}">
+   <span class="wb-pk-n"><b>${esc(pk.name)}</b><small>${KLASS[pk.klass]?KLASS[pk.klass][0]:''}${lk?' · abgerechnet':''}${(()=>{const u=['diag','abh'].map(ph=>wbRahmen(pk,ph)).filter(r=>r&&r.ueber);return u.length?' · <span class="wb-erw">Freigabe überschritten</span>':''})()}</small></span>
+   <b class="num">${fmt(pakNetto(pk))}</b><span class="ls-chev" aria-hidden="true"></span></div>
+   ${open?`<div class="wb-b-in">
+    ${voll?`<div class="wb-h"><span>Beanstandung</span></div>${txtFeld(pk,'problem','',lk,'+ Was sagt der Kunde?')}
+    <div class="wb-h"><span>Diagnose</span>${wbChip(a,pk,'diag',lk)}</div>
+    ${diag.map(x=>zeile(pk,x,lk)).join('')}
+    <div class="wb-sub"><div class="wb-sub-h">Prüfung</div>${txtFeld(pk,'pruefung','',lk,'+ Was wurde geprüft? Messwerte …')}</div>
+    ${add(lk,`<button data-act="ls-kat" ${b(' data-ph="diag"')}>+ Diagnose-Position</button>`)}
+    <div class="wb-h"><span>Befund</span></div>
+    ${bef.map(x=>`<div class="wb-pos"${act(pk,x,lk)}><div class="wb-txt0">${esc(x.bez)}</div>${x.abhilfe?`<div class="wb-m">Abhilfe: ${esc(x.abhilfe)}</div>`:''}</div>`).join('')||(lk?'':`<div class="wb-leer" data-act="add-befund" ${b()} role="button" tabindex="0">+ Was wurde festgestellt?</div>`)}
+    ${bef.length?add(lk,`<button data-act="add-befund" ${b()}>+ Befund</button>`):''}`:''}
+    <div class="wb-h"><span>${voll?'Abhilfe':'Arbeiten'}</span>${wbChip(a,pk,'abh',lk)}</div>
+    ${abh.map(x=>zeile(pk,x,lk)).join('')||'<div class="wb-m" style="padding:4px 0 2px">Noch keine Arbeiten oder Teile.</div>'}
+    ${add(lk,`<button data-act="ls-kat" ${b(' data-ph="abh"')}>+ Arbeit</button><button data-act="add-teil" ${b()}>+ Teil</button>`)}
+    ${abh.length?`<div class="wb-z wb-zs"><span>Summe ${voll?'Abhilfe':'Arbeiten'}</span><span class="wb-dots"></span><b class="num">${fmt(wbSum(abh))}</b></div>`:''}
+    ${hin.length||!lk?`<div class="wb-h"><span>Hinweise</span></div>`:''}
+    ${hin.map(x=>`<div class="wb-pos"${act(pk,x,lk)}><div class="wb-txt0">${esc(x.bez)}</div></div>`).join('')}
+    ${add(lk,`<button data-act="add-text" ${b()}>+ Hinweis</button>`)}
+    ${lk?`<div class="wb-m" style="padding-top:10px">Abgerechnet – zum Ändern in der Ansicht „Kalkulation“ entsperren.</div>`:`<div class="wb-fuss">${voll?'':`<button class="ls-opt" data-act="wb-voll" ${b()}>+ Beanstandung, Diagnose und Befund</button>`}<button class="ls-opt" data-act="pak-opts" ${b()}>Paket: Name, Art, wer zahlt</button></div>`}
+   </div>`:''}</div>`};
+ return`<div class="ls">${a.pakete.map(bericht).join('')}
+  <button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="tb">+ Neues Problem / Paket</button>
   ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<button class="ls-opt" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale wieder einschalten</button>`:''}
   <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b></span></div>
    <div class="ls-sum-b"><span>Kunde zahlt <small>inkl. ${S.settings.mwst} % MwSt</small></span><b class="num">${fmt(K.brutto)}</b></div></div></div>`}
+const WB_FELD={problem:['Beanstandung','Was sagt der Kunde? Möglichst wörtlich.','z. B. Motorkontrollleuchte leuchtet, Auto ruckelt beim Beschleunigen'],pruefung:['Prüfung','Was wurde geprüft? Messwerte, Fehlercodes …','z. B. Fehlerspeicher: P0302 Zündaussetzer Zyl. 2\nKompression Zyl. 1–4 je 12 bar']};
+ACT['wb-text']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),f=el.dataset.f,[t,l,ph]=WB_FELD[f];
+ sheet(t,`<div class="fld"><label>${l}</label><textarea id="wb-t" rows="6" placeholder="${esc(ph)}">${esc(pk[f]||'')}</textarea></div>
+  <button class="btn btn-main" style="width:100%" data-act="wb-text-ok" data-oid="${a.id}" data-pid="${pk.id}" data-f="${f}">Speichern</button>`);
+ setTimeout(()=>{const e=$('#wb-t');if(e)e.focus()},150)};
+ACT['wb-text-ok']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);pk[el.dataset.f]=$('#wb-t').value.trim();save();closeSheet();render()};
+ACT['wb-voll']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);pk.ablauf=true;save();render()};
+const FREI_WIE={tel:'Telefon',wa:'WhatsApp',ort:'vor Ort',sig:'Unterschrift',mail:'E-Mail'};
+ACT['frei-set']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),ph=el.dataset.ph,f=(pk.frei||{})[ph]||{};
+ const ist=wbSum(ph==='diag'?wbDiag(pk):wbAbh(pk));
+ sheet(ph==='diag'?'Freigabe Diagnose':'Freigabe Abhilfe',`<div class="fld"><label>Kunde hat freigegeben bis (€)</label><input id="fr-ct" inputmode="decimal" value="${f.ct?fmtIn(f.ct):''}" placeholder="${fmtIn(ist||0)}"></div>
+  <div class="fld"><label>Wie?</label><div class="selwrap"><select id="fr-wie">${Object.entries(FREI_WIE).map(([v,l])=>`<option value="${v}"${f.wie===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
+  <div class="wb-m" style="margin:-4px 2px 12px">Bisher kalkuliert: ${fmt(ist)}${f.ts?' · eingetragen '+dtLabel(f.ts):''}</div>
+  <div class="row2">${f.ct?`<button class="btn btn-2nd" data-act="frei-weg" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}">Entfernen</button>`:'<span></span>'}
+  <button class="btn btn-main" data-act="frei-ok" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}">Speichern</button></div>`)};
+ACT['frei-ok']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),ph=el.dataset.ph,ct=parseEuro($('#fr-ct').value)||0;
+ if(!(ct>0))return toast('Betrag fehlt',true);pk.frei=pk.frei||{};pk.frei[ph]={ct,wie:$('#fr-wie').value,ts:Date.now()};
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:(ph==='diag'?'Diagnose':'Abhilfe')+' „'+pk.name+'" freigegeben bis '+fmt(ct)+' ('+FREI_WIE[pk.frei[ph].wie]+').',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
+ save();closeSheet();render();toast('Freigabe gespeichert')};
+ACT['frei-weg']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(pk.frei)delete pk.frei[el.dataset.ph];save();closeSheet();render()};
+/* Große Meldung, sobald eine Freigabe überschritten wird – einmal je Freigabe-Betrag; danach bleibt nur der gelbe Hinweis */
+function rahmenCheck(){if(!['auftrag','kalk'].includes(route.v)||$('#sheetbg'))return;const a=auftrag(route.id);if(!a)return;
+ for(const pk of a.pakete)for(const ph of ['diag','abh']){const r=wbRahmen(pk,ph);if(!r||!r.ueber)continue;pk.rahmenAck=pk.rahmenAck||{};if(pk.rahmenAck[ph]===r.f.ct)continue;
+  const k=kunde(a.kundeId)||{};
+  sheet('Freigabe überschritten',`<div class="wb-warn">!</div><div style="font-size:14px;line-height:1.5;margin-bottom:12px">„${esc(pk.name)}“ – ${ph==='diag'?'Diagnose':'Abhilfe'}: Der Kunde hat bis ${fmt(r.f.ct)} freigegeben. Die Kalkulation liegt jetzt darüber. Bitte informieren Sie den Kunden, bevor Sie weiterarbeiten.</div>
+   <div class="kv"><span class="k">Freigegeben</span><span class="v num">${fmt(r.f.ct)}</span></div><div class="kv"><span class="k">Jetzt</span><span class="v num">${fmt(r.ist)}</span></div><div class="kv"><span class="k">Darüber</span><span class="v num" style="color:var(--amber);font-weight:700">${fmt(r.ueber)}</span></div>
+   ${k.id?`<button class="btn btn-main" style="width:100%;margin-top:14px" data-act="rahmen-ok" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}" data-wa="${k.id}">Kunden jetzt fragen (WhatsApp)</button>`:''}
+   <button class="btn btn-2nd" style="width:100%;margin-top:8px" data-act="rahmen-ok" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}">Verstanden</button>`);
+  return}}
+ACT['rahmen-ok']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),r=wbRahmen(pk,el.dataset.ph);pk.rahmenAck=pk.rahmenAck||{};if(r)pk.rahmenAck[el.dataset.ph]=r.f.ct;save();closeSheet();
+ if(el.dataset.wa&&ACT.wa)ACT.wa({dataset:{id:el.dataset.wa}})};
 /* Arbeit aus Liste wählen (Arbeitswert-Katalog) oder eigene Position */
 function lsKatListe(a,pk,roh){const qq=(roh||'').trim(),q=qq.toLowerCase();const marke=(fzg(a.fzgId)||{}).marke;
  const alle=(S.apDb||[]).slice().reverse().filter(e=>!q||e.bez.toLowerCase().includes(q)).slice(0,60);
@@ -1440,16 +1501,17 @@ function lsKatListe(a,pk,roh){const qq=(roh||'').trim(),q=qq.toLowerCase();const
  return(q?`<button class="ls-kat-it ls-kat-eigen" data-act="ls-eigen" data-oid="${a.id}" data-pid="${pk.id}" data-bez="${esc(qq)}"><span class="ls-t"><b>„${esc(qq)}“ als eigene Arbeit</b><small>Text, AW und Preis selbst festlegen</small></span><span class="ls-plus">+</span></button>`:`<button class="ls-kat-it ls-kat-eigen" data-act="ls-eigen" data-oid="${a.id}" data-pid="${pk.id}" data-bez=""><span class="ls-t"><b>Eigene Position</b><small>Freier Text, AW und Preis</small></span><span class="ls-plus">+</span></button>`)+
   alle.map(e=>{const aw=apAwFor(e.bez,marke)||e.aw||0,on=drin.has(e.bez.toLowerCase());return`<button class="ls-kat-it${on?' on':''}" data-act="ls-kat-add" data-oid="${a.id}" data-pid="${pk.id}" data-bez="${esc(e.bez)}"><span class="ls-t"><b>${esc(e.bez)}</b><small class="num">${aw?pct1(aw)+' AW · '+fmt(Math.round(aw*ktSatz(a,null))):'ohne AW'}</small></span><span class="ls-plus">${on?'✓':'+'}</span></button>`}).join('')||
   (q?'':'<div class="ls-leer">Noch keine Arbeiten gespeichert – eigene Arbeit oben eintippen.</div>')}
-ACT['ls-kat']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!a||!pk)return;
- sheet('Arbeit hinzufügen',`<div class="ls-kat-such"><input id="ls-q" type="search" placeholder="Suchen oder eigene Arbeit eintippen" autocomplete="off" enterkeyhint="done" aria-label="Arbeit suchen"></div>
+let lsPhase=null;
+ACT['ls-kat']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!a||!pk)return;lsPhase=el.dataset.ph||null;
+ sheet(lsPhase==='diag'?'Diagnose-Position hinzufügen':'Arbeit hinzufügen',`<div class="ls-kat-such"><input id="ls-q" type="search" placeholder="Suchen oder eigene Arbeit eintippen" autocomplete="off" enterkeyhint="done" aria-label="Arbeit suchen"></div>
   <div id="ls-kl">${lsKatListe(a,pk,'')}</div>`);
  const q=$('#ls-q');q.addEventListener('input',()=>{$('#ls-kl').innerHTML=lsKatListe(a,pk,q.value)})};
 ACT['ls-kat-add']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!a||!pk||ktLocked(pk))return;
  const bez=el.dataset.bez,marke=(fzg(a.fzgId)||{}).marke,aw=apAwFor(bez,marke)||0,vorher=ordNetto(a);
- const x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'arbeit',bez,menge:1,aw,ekCt:0,vkCt:Math.round(aw*ktSatz(a,null)),rab:null,best:null,eta:null,lagerId:null,ext:ordFreigegeben(a),notizKunde:'',notizIntern:''};
+ const x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'arbeit',bez,menge:1,aw,ekCt:0,vkCt:Math.round(aw*ktSatz(a,null)),rab:null,best:null,eta:null,lagerId:null,ext:ordFreigegeben(a),notizKunde:'',notizIntern:''};if(lsPhase==='diag')x.phase='diag';
  pk.pos.push(x);if(x.ext)logExtension(a,pk,x,vorher);logUnlockEdit(a,pk,'Position „'+bez+'" hinzugefügt ('+fmt(posNetto(x))+').');
  save();render();el.classList.add('on');const p=el.querySelector('.ls-plus');if(p)p.textContent='✓';toast('„'+bez+'“ hinzugefügt')};
-ACT['ls-eigen']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);const q=$('#ls-q');closeSheet();posSheet(a,pk,null,el.dataset.bez||(q?q.value.trim():''))};
+ACT['ls-eigen']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);const q=$('#ls-q');closeSheet();posSheet(a,pk,null,el.dataset.bez||(q?q.value.trim():''));const ph=$('#ps-ph');if(ph)ph.value=lsPhase==='diag'?'diag':''};
 /* Paket-Einstellungen als Blatt (Name, Klassifizierung, wer zahlt, löschen) */
 ACT['pak-opts']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!a||!pk)return;const lk=ktLocked(pk);
  sheet('Paket',`<div class="fld"><label>Name</label><input id="po-n" value="${esc(pk.name)}" ${lk?'disabled':''}></div>
@@ -1684,7 +1746,8 @@ function posSheet(a,pk,x,prefillBez){
   <div class="fld"><label>Bezeichnung *</label><input id="ps-b" list="ap-dl" value="${x?esc(x.bez):esc(prefillBez||'')}" placeholder="z. B. Bremsscheiben wechseln" autocomplete="off">
    <datalist id="ap-dl">${(S.apDb||[]).map(e=>`<option value="${esc(e.bez)}">`).join('')}</datalist></div>
   <div class="fld"><label>Beschreibung – was geprüft oder gemacht, Messwerte <span style="text-transform:none;font-weight:400;color:var(--ink3)">(steht auf der Rechnung unter der Position)</span></label><textarea id="ps-nk" rows="4" placeholder="z. B. Kompression gemessen: Zyl. 1–4 je 12 bar, Zündkerzen geprüft, Fehlerspeicher gelöscht">${x?esc(x.notizKunde||''):''}</textarea></div>
-  <div class="fld"><label>Positionscode <span style="text-transform:none;font-weight:400;color:var(--ink3)">(freiwillig)</span></label><input id="ps-code" value="${x?esc(x.code||''):''}" placeholder="z. B. 42 10 0001" autocomplete="off"></div>
+  <div class="row2"><div class="fld"><label>Positionscode <span style="text-transform:none;font-weight:400;color:var(--ink3)">(freiwillig)</span></label><input id="ps-code" value="${x?esc(x.code||''):''}" placeholder="z. B. 42 10 0001" autocomplete="off"></div>
+  <div class="fld"><label>Gehört zu</label><div class="selwrap"><select id="ps-ph"><option value="">Abhilfe / Arbeiten</option><option value="diag"${x&&x.phase==='diag'?' selected':''}>Diagnose</option></select></div></div></div>
   ${!isT?`<div class="row3">
    <div class="fld"><label>AW <span id="ps-aw-hint" style="text-transform:none;font-weight:400;color:var(--violet)"></span></label><input id="ps-aw" inputmode="decimal" value="${x&&x.aw?String(x.aw).replace('.',','):''}" placeholder="1,5"></div>
    <div class="fld"><label>AW-Satz €</label><input id="ps-aws" inputmode="decimal" value="${fmtIn(awSatz)}"></div>
@@ -1828,7 +1891,8 @@ ACT['pos-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
   zahlerTxt:$('#ps-zt')?$('#ps-zt').value.trim():(x?x.zahlerTxt||'':''),
   notizIntern:$('#ps-ni')?$('#ps-ni').value.trim():(x?x.notizIntern||'':''),
   notizKunde:$('#ps-nk')?$('#ps-nk').value.trim():(x?x.notizKunde||'':''),
-  code:$('#ps-code')?$('#ps-code').value.trim():(x?x.code||'':'')};
+  code:$('#ps-code')?$('#ps-code').value.trim():(x?x.code||'':''),
+  phase:$('#ps-ph')?($('#ps-ph').value||null):(x?x.phase||null:null)};
  /* Nach Freigabe: jede NEUE Position ist automatisch eine Erweiterung */
  vals.ext=x?x.ext:ordFreigegeben(a);
  const altPreis=x?posNetto(x):null;
@@ -2139,8 +2203,10 @@ function buildInvoiceHtml(a,pakIds,reNr){
  const rows=paks.map(pk=>{
   const prab=rabCt(pakBrutto(pk),pk.rabatt);
   return `<tr class="paksep"><td colspan="4">${esc(pk.name)} · ${pk.klass==='so'&&pk.klassTxt?esc(pk.klassTxt):KLASS[pk.klass][0]}${pk.zahler!=='kunde'?' · zahlt: '+(pk.zahler==='son'&&pk.zahlerTxt?esc(pk.zahlerTxt):ZAHLER[pk.zahler]):''}</td></tr>`+
+  (pk.problem?`<tr><td colspan="4" style="font-size:10px;color:#444;white-space:pre-wrap"><b>Beanstandung:</b> ${esc(pk.problem)}</td></tr>`:'')+
+  (pk.pruefung?`<tr><td colspan="4" style="font-size:10px;color:#444;white-space:pre-wrap"><b>Prüfung:</b> ${esc(pk.pruefung)}</td></tr>`:'')+
   pk.pos.map(p=>(p.typ==='text'||p.typ==='befund')?
-   `<tr><td colspan="4" style="font-size:10px;color:#444">${esc(p.bez)}${p.abhilfe?' — Abhilfe: '+esc(p.abhilfe):''}</td></tr>`
+   `<tr><td colspan="4" style="font-size:10px;color:#444">${p.typ==='befund'?'<b>Befund:</b> ':'<b>Hinweis:</b> '}${esc(p.bez)}${p.abhilfe?' — Abhilfe: '+esc(p.abhilfe):''}</td></tr>`
   :`<tr><td>${p.code?'<span style="font-size:9px;color:#555">'+esc(p.code)+'</span> ':''}${esc(p.bez)}${p.ext?' (Erweiterung)':''}${p.zahler&&p.zahler!==(pk.zahler||'kunde')?' <span style="font-size:9px;color:#555">· zahlt: '+(p.zahler==='son'&&p.zahlerTxt?esc(p.zahlerTxt):ZAHLER[p.zahler]||'')+'</span>':''}${p.notizKunde?'<br><span style="font-size:9px;color:#555;white-space:pre-wrap">'+esc(p.notizKunde)+'</span>':''}</td>
    <td class="tr">${p.typ==='teil'?(p.menge||1)+' ×':(p.aw?String(p.aw).replace('.',',')+' AW':'')}</td>
    <td class="tr">${fmt(p.vkCt)}</td><td class="tr">${fmt(posNetto(p))}</td></tr>`).join('')+
@@ -4473,6 +4539,7 @@ function renderInner(){
  if(!S.settings.onboarded&&!['buchen','impressum','datenschutz','status'].includes(route.v)){app.innerHTML=vOnboarding();return}
  app.innerHTML=(V[route.v]||vPlanung)();
  linkLabels(app);
+ setTimeout(()=>{try{rahmenCheck()}catch(e){}},0);
  syncWakeLock();
  syncBadge();
  if(riseNext){
