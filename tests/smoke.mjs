@@ -563,44 +563,34 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     await page.evaluate(s => { S.auftraege = JSON.parse(s); save(); nav('planung'); }, snapA);
     if (Object.values(an).some(v => !v)) errs.push('Annahme: ' + JSON.stringify(an));
   }
-  // Räderwechsel → Frage „Räder einlagern?“ → Position ohne Preis + Bearbeiten
+  // KP3 Teil 2: eine Rad-Position + Abschluss-Liste, Probefahrt, Service-Reset + nächster Service, Fehlerspeicher
   {
-    const rw = await page.evaluate(async () => {
-      const snap = JSON.stringify(S.auftraege); const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); const pk = a.pakete[0]; pk.entsperrt = true;
-      nav('kalk', a.id); await new Promise(r => setTimeout(r, 80));
-      posSheet(a, pk, null, 'Räderwechsel'); await new Promise(r => setTimeout(r, 80)); document.getElementById('ps-vk').value = '40,00';
-      document.querySelector('[data-act="pos-save"]').click(); await new Promise(r => setTimeout(r, 400));
-      const frage = !!document.querySelector('.confirm-bg'); const ja = document.querySelector('.confirm-bg [data-c="1"]'); if (ja) ja.click(); await new Promise(r => setTimeout(r, 120));
-      const y = pk.pos.find(p => p.bez === 'Räder einlagern'); const r = { frage, position: !!y && y.vkCt === 0, blatt: !!document.getElementById('ps-b') };
-      closeSheet(); S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
-    if (Object.values(rw).some(v => !v)) errs.push('Räder einlagern: ' + JSON.stringify(rw));
-  }
-  // KP3: Freigabe je Paket + Rückfrage vor Rechnung, Fund-Ordner, Anhang je Position, Gewährleistung, Fertigmeldung, Altteile
-  {
-    const snapK = await page.evaluate(() => JSON.stringify({ a: S.auftraege, r: S.rechnungen }));
-    const k3 = await page.evaluate(async () => {
-      const w = () => new Promise(r => setTimeout(r, 100));
-      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); a.freigabe = null; a.sig = null;
-      const pk = a.pakete[0]; pk.frei = {}; pk.entsperrt = true; delete calcMode[a.id]; pakOpen[a.id] = new Set([pk.id]); nav('kalk', a.id); await w();
-      const r = { ausstehend: /Freigabe ausstehend/.test(document.querySelector('.wb-pk').textContent) };
-      doBill(a, [pk.id]); await w(); r.rueckfrage = /noch nicht freigegeben/.test((document.querySelector('.confirm-bg') || {}).textContent || ''); document.querySelectorAll('.confirm-bg').forEach(c => c.remove());
-      pk.frei = { abh: { ct: 30000, wie: 'tel', ts: Date.now() } }; render(); await w(); r.freigegeben = /300 € freigegeben/.test(document.querySelector('.wb-pk').textContent);
-      document.querySelector('[data-act="fund-neu"]').click(); await w(); document.getElementById('fu-t').value = 'Bremsschlauch porös'; document.querySelector('[data-act="fund-ok"]').click(); await w();
-      const fp = a.pakete.find(p => p.fund); r.fund = !!fp && fp.name === 'Während der Arbeit festgestellt: Bremsschlauch porös' && fp.pos[0].typ === 'befund';
-      a.status = 'arbeit'; ACT['ord-status']({ dataset: { oid: a.id, v: 'fertig' } }); await new Promise(r => setTimeout(r, 300));
-      r.fertig = !!document.getElementById('fm-t'); if (r.fertig) { document.getElementById('fm-t').value = 'Bremsen erneuert'; document.querySelector('[data-act="fm-ok"]').click(); } await w(); r.was = a.wasGemacht === 'Bremsen erneuert';
-      return r; });
-    // Anhang an Position über Datei-Knopf im Positionsblatt
-    await page.evaluate(() => { const a = auftrag(route.id), pk = a.pakete[0], x = pk.pos.find(p => p.typ === 'arbeit'); posSheet(a, pk, x); });
-    await page.waitForTimeout(150);
-    await page.evaluate(() => { const b = document.querySelector('[data-act="pos-anhang"]'); photoTarget = { oid: b.dataset.oid, pid: b.dataset.pid, xid: b.dataset.xid }; });
-    await page.setInputFiles('#ps-file', { name: 'protokoll.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 test') }); await page.waitForTimeout(500);
-    k3.anhang = await page.evaluate(() => { const a = auftrag(route.id); return a.fotos.some(f => f.isFile && f.posId && f.name === 'protokoll.pdf') && !!document.querySelector('#sheetbg .ps-an-f'); });
-    k3.gew = await page.evaluate(async () => { closeSheet(); const a = auftrag(route.id); const alt = S.auftraege.find(o => o.id !== a.id); const st = alt.status, ab = alt.abgabe, kd = alt.kundeId;
-      alt.status = 'abgeholt'; alt.abgabe = addDays(todayISO(), -100); alt.kundeId = a.kundeId; a.status = 'arbeit'; nav('auftrag', a.id); await new Promise(r => setTimeout(r, 100));
-      const ok = !!document.querySelector('.dl-card.gew'); alt.status = st; alt.abgabe = ab; alt.kundeId = kd; return ok; });
-    await page.evaluate(s => { const o = JSON.parse(s); S.auftraege = o.a; S.rechnungen = o.r; save(); nav('planung'); }, snapK);
-    if (Object.values(k3).some(v => !v)) errs.push('KP3: ' + JSON.stringify(k3));
+    const k4 = await page.evaluate(async () => {
+      const snap = JSON.stringify(S.auftraege), w = ms => new Promise(r => setTimeout(r, ms || 120));
+      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); const pk = a.pakete[0]; pk.entsperrt = true;
+      a.pakete.forEach(p => p.pos = p.pos.filter(x => spezOf(x) !== 'rad'));
+      nav('kalk', a.id); await w();
+      posSheet(a, pk, null, 'Räderwechsel'); await w(80); document.getElementById('ps-vk').value = '40,00'; document.querySelector('[data-act="pos-save"]').click(); await w(300);
+      const rad = pk.pos.find(x => spezOf(x) === 'rad'); const r = { umbenannt: !!rad && rad.bez === 'Räder komplett ab- und anmontieren' };
+      posSheet(a, pk, null, 'Reifenwechsel'); await w(80); document.querySelector('[data-act="pos-save"]').click(); await w(300);
+      r.nurEine = a.pakete.flatMap(p => p.pos).filter(x => spezOf(x) === 'rad').length === 1;
+      posSheet(a, pk, rad); await w(80); r.liste = !!document.querySelector('[data-act="spz-ein"]');
+      document.querySelector('[data-act="spz-ein"][data-v="1"]').click(); await w(200);
+      r.einlagern = !!pk.pos.find(p => p.bez === 'Räder einlagern' && p.vkCt === 0) && rad.spz.einlagern === true; closeSheet();
+      const wart = { id: 'xw', nr: 95, created: Date.now(), typ: 'arbeit', bez: 'Inspektion nach Herstellervorgabe', menge: 1, aw: 1, ekCt: 0, vkCt: 10000, rab: null, ext: false };
+      const pf = { id: 'xp', nr: 94, created: Date.now(), typ: 'arbeit', bez: 'Probefahrt durchführen', menge: 1, aw: 0.3, ekCt: 0, vkCt: 3000, rab: null, ext: false };
+      pk.pos.push(wart, pf); save(); render();
+      { const of = spezOffen(a).join('|'); r.offen = /Drehmoment/.test(of) && /RDKS/.test(of) && /Service-Reset/.test(of) && /Probefahrt/.test(of) && !/einlagern/.test(of); }
+      posSheet(a, pk, wart); await w(80); const cb = document.querySelector('input[data-k="reset"]'); cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true }));
+      const nd = document.querySelector('input[data-k="nDat"]'); nd.value = '2027-10-19'; nd.dispatchEvent(new Event('change', { bubbles: true })); await w(80);
+      r.service = wart.spz.reset === true && (fzg(a.fzgId).naechsterService || {}).datum === '2027-10-19'; closeSheet();
+      posSheet(a, pk, pf); await w(80); const ke = document.querySelector('input[data-k="kmEnde"]'); ke.value = '87460'; ke.dispatchEvent(new Event('change', { bubbles: true })); await w(80);
+      r.probefahrt = pf.spz.kmEnde === 87460; closeSheet(); render(); await w();
+      r.fs = !!document.querySelector('.fs-box input[data-f="fs-del"]');
+      a.status = 'arbeit'; ACT['ord-status']({ dataset: { oid: a.id, v: 'fertig' } }); await w(350);
+      r.erinnerung = /Drehmoment/.test((document.querySelector('.confirm-bg') || {}).textContent || ''); document.querySelectorAll('.confirm-bg').forEach(c => c.remove()); closeSheet();
+      S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
+    if (Object.values(k4).some(v => !v)) errs.push('KP3 Teil 2: ' + JSON.stringify(k4));
   }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {

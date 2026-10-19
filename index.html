@@ -278,6 +278,7 @@ function migrate2(){
  if(S.settings.designV5===undefined){S.settings.designV5=true;S.settings.theme='dark'}
  if(S.settings.stundensatzCt===undefined)S.settings.stundensatzCt=S.settings.awCt||12500;
  if(S.settings.diagFreiStd===undefined||S.settings.diagFreiStd===50000)S.settings.diagFreiStd=30000; // Inhaber 19.10.: Standard 300 €, je Auftrag mit Kunde klären
+ ['Räder komplett ab- und anmontieren','Probefahrt durchführen','Ausgangskurztest'].forEach(b=>{if(S.apDb&&!S.apDb.some(e=>e.bez===b))S.apDb.push({bez:b,aw:0,byMarke:{}})});
  if(!S.settings.arten)S.settings.arten=ARTEN_STD.map(x=>({...x}));
  if(!S.settings.kleinmat){S.settings.kleinmat={aktiv:true,pct:5,minCt:500,maxCt:2500,bez:'Kleinmaterial & Entsorgung'};(S.auftraege||[]).forEach(a=>{a.kmAus=true})} // bestehende Aufträge behalten ihren Preis
  if(!S.settings.aufschlag)S.settings.aufschlag={staffel:AUFSCHLAG_STD.map(x=>({...x})),runden:true};
@@ -363,9 +364,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.72';
+const APP_VER='2.73';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.73',d:'2026-10-19',p:['Räder: Pro Auftrag gibt es genau eine Position „Räder komplett ab- und anmontieren“. Dazu kommt eine Abschluss-Liste: einlagern ja/nein, Drehmoment, RDKS.','Probefahrt: Bei der Position „Probefahrt durchführen“ tragen Sie Kilometerstand und Uhrzeit für Start und Ende ein.','Wartung: Der Service-Reset ist ein Pflicht-Haken. Den nächsten Service (Datum und Kilometer) trägt die App beim Fahrzeug ein.','Fehlerspeicher: Unten in der Kalkulation gibt es den Haken „gelöscht“ und Platz für das Protokoll vorher und nachher.','Bei „Fertig“ erinnert die App an offene Punkte.']},
  {v:'2.72',d:'2026-10-19',p:['Jedes Paket zeigt jetzt, ob es freigegeben ist („300 € freigegeben“) oder ob die „Freigabe ausstehend“ ist. Vor der Rechnung fragt die App nach, wenn noch eine Freigabe fehlt. Sie können aber trotzdem fortfahren.','Neuer Knopf „Während der Arbeit festgestellt“: Er legt einen eigenen Ordner an. Die Kosten klären Sie neu mit dem Kunden.','An jede Position können Sie Bilder, Videos oder Dateien anhängen, zum Beispiel Fotos von Altteilen oder ein Fehlerprotokoll.','Kommt ein Kunde oder ein Fahrzeug innerhalb von 12 Monaten wieder, zeigt der Auftrag einen Hinweis.','Bei „Fertig“ fragt die App nach einer kurzen Zusammenfassung „Was wurde gemacht?“ für den Kunden. Neu ist auch die Altteile-Frage. Die Stechuhr ist aus dem Auftrag entfernt (im Team-Bereich bleibt sie).']},
  {v:'2.71',d:'2026-10-19',p:['Fahrzeugannahme: Jede angekreuzte Zusatzleistung (z. B. Batterietest) wird ein eigener Ordner im Auftrag, mit der neuen Art „Zusatzleistung“. Die Positionen tragen Sie dort selbst ein.','Diagnose-Freigabe bei der Annahme: Standard jetzt 300 €, bei jedem Auftrag änderbar.','Bei „Räderwechsel“ fragt die App: „Räder einlagern?“ – bei Ja wird die Position angelegt, und Sie tragen den Preis ein.']},
  {v:'2.70',d:'2026-10-19',p:['Neu: Fahrzeugannahme. Oben im Auftrag auf „Fahrzeugannahme starten“ tippen. Die Beanstandung ist vorausgefüllt und wird mit dem Kunden besprochen. Dazu kommen der Fahrzeugcheck (nur ✓ oder ✗, zu jedem Punkt Fotos), Pflichtfotos von allen 4 Seiten, die Zusatzleistungen und die Unterschrift des Kunden.','Jedes ✗ wird beim Abschluss automatisch zur technischen Beanstandung, in einem eigenen Ordner in der Kalkulation. Es werden keine Preise und keine Arbeiten automatisch angelegt.','Bei einem Befund gibt es jetzt den Knopf „Kunde informiert – will nichts gemacht haben“.','Annahme übersprungen? Dann bleibt ein roter Hinweis im Auftrag stehen.']},
@@ -1344,6 +1346,7 @@ function vAuftrag(id){
    const autos=[];
    if(f.hu){const[hy,hm]=f.hu.split('-').map(Number);const hd=(hy-new Date().getFullYear())*12+(hm-1-new Date().getMonth());
     autos.push({t:'HU fällig',d:String(hm).padStart(2,'0')+'/'+hy,warn:hd<=2})}
+   if(f.naechsterService&&(f.naechsterService.datum||f.naechsterService.km))autos.push({t:'Nächster Service',d:[f.naechsterService.datum?dLabel(f.naechsterService.datum):'',f.naechsterService.km?Number(f.naechsterService.km).toLocaleString('de-DE')+' km':''].filter(Boolean).join(' · '),warn:!!(f.naechsterService.datum&&f.naechsterService.datum<=todayISO())});
    const lastW=f.wartung||S.auftraege.filter(x2=>x2.fzgId===a.fzgId&&x2.id!==a.id&&x2.status==='abgeholt').map(x2=>x2.abgabe||x2.annahme).sort().pop();
    if(lastW){const nx=addDays(lastW,365);
     autos.push({t:'Nächste Wartung (12 Mon. nach letzter)',d:dLabel(nx),warn:nx<=todayISO()})}
@@ -1444,6 +1447,7 @@ function lsHtml(a){
   else if(A){if(x.aw)m.push(pct1(x.aw)+' AW');if(x.art&&x.art!=='mech')m.push(esc(artName(x.art)))}
   else m.push((x.menge||1)!==1?x.menge+' Stk':'Teil');
   {const n=a.fotos.filter(fo=>fo.posId===x.id).length;if(n)m.push(n+' Anhang'+(n>1?'e':''))}
+  if(spezOf(x)&&spezOffen({pakete:[{pos:[x]}]}).length)m.push('<span class="wb-erw">Abschluss offen</span>');
   if(x.zahler&&x.zahler!==(pk.zahler||'kunde'))m.push('RKZ: '+(x.zahler==='son'&&x.zahlerTxt?esc(x.zahlerTxt):ZAHLER[x.zahler]||x.zahler));
   if(x.ext)m.push('<span class="wb-erw">Erweiterung</span>');
   return`<div class="wb-pos${x.auto?' wb-auto':''}${selCls(x)}"${act(pk,x,lk)}><div class="wb-z">${hak(x,lk)}<span class="wb-b">${esc(x.bez)}</span><span class="wb-dots"></span><b class="num">${fmt(posNetto(x))}</b></div>
@@ -1481,7 +1485,7 @@ function lsHtml(a){
   <div class="wb-selbar-b"><button data-act="wb-mv" data-dir="-1" data-oid="${a.id}"${nSel?'':' disabled'} aria-label="Nach oben">↑</button><button data-act="wb-mv" data-dir="1" data-oid="${a.id}"${nSel?'':' disabled'} aria-label="Nach unten">↓</button>
   <button data-act="wb-move" data-oid="${a.id}"${nSel?'':' disabled'}>Verschieben</button><button data-act="wb-rkz" data-oid="${a.id}"${nSel?'':' disabled'}>RKZ</button><button data-act="wb-del" data-oid="${a.id}"${nSel?'':' disabled'}>Löschen</button></div></div>`
   :`<button class="wb-selstart" data-act="wb-sel" data-oid="${a.id}">Positionen auswählen · verschieben · RKZ ändern</button>`;
- return`<div class="ls">${a.pakete.length?leiste:''}${a.pakete.map(bericht).join('')}
+ return`<div class="ls">${a.pakete.length?leiste:''}${a.pakete.map(bericht).join('')}${a.pakete.length&&!sel?fsHtml(a):''}
   ${sel?'':`<button class="ls-neu" data-act="fund-neu" data-oid="${a.id}">+ Während der Arbeit festgestellt</button><button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="tb">+ Neues Problem / Paket</button>`}
   ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<button class="ls-opt" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale wieder einschalten</button>`:''}
   <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b></span></div>
@@ -1693,12 +1697,52 @@ function dlgKarte(a){const d=a.dlg;if(a.status==='abgeholt'&&!d)return'';
   return`<div class="dl-card ok" data-act="annahme" data-oid="${a.id}" role="button" tabindex="0"><b>Fahrzeugannahme ✓</b><span>${dtLabel(d.done)} · ${xs?xs+' Beanstandung'+(xs>1?'en':''):'alles i.O.'}${zus.length?' · Interesse: '+esc(zus.join(', ')):''}</span></div>`}
  if(d&&d.skip)return`<div class="dl-card rot" data-act="annahme" data-oid="${a.id}" role="button" tabindex="0"><b>Keine Dialogannahme gemacht</b><span>Fotos, Fahrzeugzustand und Unterschrift fehlen. Antippen zum Nachholen.</span></div>`;
  return`<button class="dl-card start" data-act="annahme" data-oid="${a.id}"><b>Fahrzeugannahme starten</b><span>Beanstandung besprechen · Fahrzeugcheck · Fotos · Unterschrift</span></button>`}
-/* Kontextvorschlag (Inhaber): bei „Räderwechsel“ fragen, ob die Räder eingelagert werden sollen. Preis trägt der Inhaber jedes Mal selbst ein. */
-const RAD_RE=/r(ä|ae)der\s*-?wechsel|radwechsel|reifenwechsel|(r(ä|ae)der|reifen)\s+(um|wechs)/i;
-function raederFrage(a,pk,x){if(!x||x.typ!=='arbeit'||!RAD_RE.test(x.bez||'')||pk.pos.some(p=>/einlager/i.test(p.bez||'')))return;
- setTimeout(()=>confirmBox('Räder einlagern?','Sollen die Räder des Kunden eingelagert werden?','Ja, einlagern',()=>{
-  const y={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'arbeit',bez:'Räder einlagern',menge:1,aw:0,ekCt:0,vkCt:0,rab:null,best:null,eta:null,lagerId:null,ext:ordFreigegeben(a),notizKunde:'',notizIntern:''};
-  pk.pos.push(y);save();closeSheet();render();posSheet(a,pk,y);toast('Bitte Preis für die Einlagerung eintragen')},false),250)}
+/* Besondere Positionen (KP3, Inhaber 19.10.):
+   Räder = genau EINE Position „Räder komplett ab- und anmontieren“ mit Abschluss-Liste (einlagern? Drehmoment? RDKS?)
+   Probefahrt = km/Uhrzeit Start und Ende · Wartung = Service-Reset Pflicht + nächster Service am Fahrzeug */
+const RAD_BEZ='Räder komplett ab- und anmontieren';
+const RAD_RE=/r(ä|ae)der\s*-?wechsel|radwechsel|reifenwechsel|(r(ä|ae)der|reifen)\s+(um|wechs)|r(ä|ae)der\s+(komplett\s+)?ab-?\s*und\s+an/i;
+const spezOf=x=>!x||x.typ!=='arbeit'?null:RAD_RE.test(x.bez||'')?'rad':/probefahrt/i.test(x.bez||'')?'pf':/inspektion|wartung|ölservice|ölwechsel|oelwechsel|jahresservice/i.test(x.bez||'')?'wart':null;
+function raederFrage(a,pk,x){if(spezOf(x)!=='rad')return;
+ const andere=a.pakete.flatMap(p=>p.pos.map(q=>({p,q}))).filter(o=>o.q!==x&&spezOf(o.q)==='rad');
+ if(andere.length){pk.pos=pk.pos.filter(q=>q!==x);save();render();toast('Pro Auftrag gibt es nur eine Rad-Position – sie ist schon vorhanden',true);return}
+ if(x.bez!==RAD_BEZ){x.bez=RAD_BEZ;save();render()}}
+function spezOffen(a){const r=[];a.pakete.forEach(pk=>pk.pos.forEach(x=>{const sp=spezOf(x),d=x.spz||{};
+  if(sp==='rad'){if(d.einlagern==null)r.push('Räder: einlagern ja/nein');if(!d.drehmoment)r.push('Räder: mit Drehmoment angezogen');if(!d.rdks)r.push('Räder: RDKS geprüft/angelernt')}
+  if(sp==='wart'&&!d.reset)r.push('Wartung: Service-Reset')}));
+ if(a.pakete.some(pk=>pk.pos.some(x=>spezOf(x)==='pf'&&!((x.spz||{}).kmEnde))))r.push('Probefahrt: km am Ende');return r}
+function spezHtml(a,pk,x){const sp=spezOf(x);if(!sp)return'';const d=x.spz||{},at=`data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}"`;
+ const hk=(k,t)=>`<label class="sp-hk"><input type="checkbox" data-f="spz" data-k="${k}" ${at}${d[k]?' checked':''}> ${t}</label>`;
+ const ein=(k,t,typ,ph)=>`<label class="sp-in">${t}<input ${typ==='n'?'inputmode="numeric"':typ==='t'?'type="time"':typ==='d'?'type="date"':''} data-f="spz" data-k="${k}" ${at} value="${esc(d[k]==null?'':String(d[k]))}" placeholder="${ph||''}"></label>`;
+ if(sp==='rad')return mSec('Abschluss-Liste Räder',spezOffen({pakete:[{pos:[x]}]}).length?'offen':'erledigt',true,`
+  <div class="sp-fr">Sollen die Räder eingelagert werden?<div class="seg"><button class="${d.einlagern===true?'on':''}" data-act="spz-ein" data-v="1" ${at}>Ja</button><button class="${d.einlagern===false?'on':''}" data-act="spz-ein" data-v="0" ${at}>Nein</button></div></div>
+  ${hk('drehmoment','Räder mit vorgeschriebenem Drehmoment angezogen')}${hk('rdks','Reifendruck-Kontrollsystem (RDKS) geprüft bzw. angelernt')}`);
+ if(sp==='pf')return mSec('Probefahrt – Dokumentation',d.kmEnde?'dokumentiert':'offen',true,`<div class="sp-g">${ein('kmStart','km Start','n',(fzg(a.fzgId)||{}).km||'')}${ein('kmEnde','km Ende','n')}${ein('zStart','Uhrzeit Start','t')}${ein('zEnde','Uhrzeit Ende','t')}</div>
+  <label class="sp-in" style="margin-top:8px">Ergebnis / Auffälligkeiten<input data-f="spz" data-k="notiz" ${at} value="${esc(d.notiz||'')}" placeholder="z. B. ohne Befund, Geräusch weg"></label>`);
+ if(sp==='wart')return mSec('Wartung – Abschluss',d.reset?'Reset erledigt':'Pflicht offen',true,`${hk('reset','Service-Reset durchgeführt (Pflicht)')}
+  <div class="sp-sub">Nächster Service – wird beim Fahrzeug eingetragen</div><div class="sp-g">${ein('nDat','Datum','d')}${ein('nKm','Kilometerstand','n')}</div>`);
+ return''}
+FSET['spz']=el=>{const a=auftrag(el.dataset.oid),pk=a&&a.pakete.find(p=>p.id===el.dataset.pid),x=pk&&pk.pos.find(p=>p.id===el.dataset.xid);if(!x)return;
+ const d=x.spz=x.spz||{},k=el.dataset.k;d[k]=el.type==='checkbox'?el.checked:(['kmStart','kmEnde','nKm'].includes(k)?(parseInt(el.value)||null):el.value.trim());
+ if(k==='nDat'||k==='nKm'){const f=fzg(a.fzgId);if(f){f.naechsterService={datum:d.nDat||null,km:d.nKm||null,auftragId:a.id};if(d.nDat)f.wartung=null}}
+ if(k==='reset'&&el.checked)a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Service-Reset durchgeführt.',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
+ save()};
+ACT['spz-ein']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),x=pk.pos.find(p=>p.id===el.dataset.xid),v=el.dataset.v==='1';
+ const d=x.spz=x.spz||{};d.einlagern=v;let y=pk.pos.find(p=>/einlager/i.test(p.bez||''));
+ if(v&&!y){y={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'arbeit',bez:'Räder einlagern',menge:1,aw:0,ekCt:0,vkCt:0,rab:null,best:null,eta:null,lagerId:null,ext:ordFreigegeben(a),notizKunde:'',notizIntern:''};pk.pos.push(y);save();closeSheet();render();posSheet(a,pk,y);toast('Bitte Preis für die Einlagerung eintragen');return}
+ save();closeSheet();render();posSheet(a,pk,x)};
+/* Fehlerspeicher nach der Reparatur: Haken + Protokoll vorher/nachher (Anhänge am Auftrag) */
+function fsHtml(a){const v=a.fotos.find(f=>f.fs==='vorher'),n=a.fotos.find(f=>f.fs==='nachher'),dl=f=>f?(f.isFile?`<a class="ps-an-f" href="${f.data}" download="${esc(f.name||'Protokoll')}">${esc(f.name||'Protokoll')}</a>`:`<img src="${f.data}" alt="">`):'';
+ return`<div class="wb-pk fs-box"><div class="wb-b-in"><div class="wb-h"><span>Fehlerspeicher</span>${a.fsGeloescht?'<span class="wb-chip wb-chip-ok">gelöscht</span>':''}</div>
+  <label class="sp-hk"><input type="checkbox" data-f="fs-del" data-oid="${a.id}"${a.fsGeloescht?' checked':''}> Fehlerspeicher nach der Reparatur gelöscht</label>
+  <div class="fs-pr"><div><div class="sp-sub">Protokoll vorher</div>${dl(v)}<button class="btn-ghost" data-act="fs-an" data-oid="${a.id}" data-r="vorher">${v?'Ersetzen':'Anhängen'}</button></div>
+  <div><div class="sp-sub">Protokoll nachher</div>${dl(n)}<button class="btn-ghost" data-act="fs-an" data-oid="${a.id}" data-r="nachher">${n?'Ersetzen':'Anhängen'}</button></div></div>
+  <input type="file" id="fs-file" accept="image/*,application/pdf,.pdf" style="display:none"></div></div>`}
+FSET['fs-del']=el=>{const a=auftrag(el.dataset.oid);a.fsGeloescht=el.checked?Date.now():null;save();render()};
+ACT['fs-an']=el=>{const a=auftrag(el.dataset.oid),r=el.dataset.r,i=$('#fs-file');if(!i)return;
+ i.onchange=e=>{const file=e.target.files[0];e.target.value='';if(!file)return;if(file.size>6*1024*1024)return toast('Datei zu groß (max. 6 MB)',true);
+  const fr=new FileReader();fr.onload=()=>{a.fotos=a.fotos.filter(f=>f.fs!==r);const pdf=/pdf/i.test(file.type)||/\.pdf$/i.test(file.name||'');
+   a.fotos.push({id:'fo'+uid(),paketId:null,label:'Fehlerprotokoll '+r,name:file.name||('Fehlerprotokoll-'+r),data:fr.result,isFile:pdf,fs:r});save();render();toast('Protokoll '+r+' gespeichert')};fr.readAsDataURL(file)};i.click()};
 /* Vollbild-Kalkulation: nur die Positionen (Tabelle), Pakete und Summen – sonst nichts */
 function vKalk(id){
  const a=auftrag(id);if(!a)return shell('<div class="empty"><b>Auftrag nicht gefunden</b></div>',{title:'Kalkulation',back:1,hideNav:true});
@@ -1755,7 +1799,8 @@ ACT['ord-status']=el=>{const a=auftrag(el.dataset.oid);a.status=el.dataset.v;if(
  if(el.dataset.v==='fertig'&&a.timerStart){a.zeiten.push({start:a.timerStart,end:Date.now(),mid:curMid||'m1'});a.timerStart=null}
  save();render();hap();if(el.dataset.v==='fertig')nachFertig(a)};
 /* Fertigmeldung (KP3): kurze kundenfreundliche Zusammenfassung „Was wurde gemacht?“ */
-function nachFertig(a){if(!a||a.status!=='fertig')return;
+function nachFertig(a,weiter){if(!a||a.status!=='fertig')return;
+ const off=weiter?[]:spezOffen(a);if(off.length)return setTimeout(()=>confirmBox('Noch offen','Bitte noch erledigen: '+off.map(esc).join(' · ')+'.','Weiter',()=>nachFertig(a,true),false),150);
  const vorschlag=a.wasGemacht||a.pakete.flatMap(pk=>pk.pos).filter(x=>x.typ==='arbeit'&&!x.auto&&x.phase!=='diag').map(x=>x.bez).join(', ');
  setTimeout(()=>sheet('Was wurde gemacht?',`<div style="font-size:13px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Kurz und kundenfreundlich – erscheint auf der Rechnung und bei der Übergabe.</div>
   <div class="fld"><textarea id="fm-t" rows="5">${esc(vorschlag)}</textarea></div>
@@ -1931,6 +1976,7 @@ function posSheet(a,pk,x,prefillBez){
   <div class="fld"><label>Bezeichnung *</label><input id="ps-b" list="ap-dl" value="${x?esc(x.bez):esc(prefillBez||'')}" placeholder="z. B. Bremsscheiben wechseln" autocomplete="off">
    <datalist id="ap-dl">${(S.apDb||[]).map(e=>`<option value="${esc(e.bez)}">`).join('')}</datalist></div>
   <div class="fld"><label>Beschreibung – was geprüft oder gemacht, Messwerte <span style="text-transform:none;font-weight:400;color:var(--ink3)">(steht auf der Rechnung unter der Position)</span></label><textarea id="ps-nk" rows="4" placeholder="z. B. Kompression gemessen: Zyl. 1–4 je 12 bar, Zündkerzen geprüft, Fehlerspeicher gelöscht">${x?esc(x.notizKunde||''):''}</textarea></div>
+  ${x?spezHtml(a,pk,x):''}
   <div class="row2"><div class="fld"><label>Positionscode <span style="text-transform:none;font-weight:400;color:var(--ink3)">(freiwillig)</span></label><input id="ps-code" value="${x?esc(x.code||''):''}" placeholder="z. B. 42 10 0001" autocomplete="off"></div>
   <div class="fld"><label>Gehört zu</label><div class="selwrap"><select id="ps-ph"><option value="">Abhilfe / Arbeiten</option><option value="diag"${x&&x.phase==='diag'?' selected':''}>Diagnose</option></select></div></div></div>
   ${!isT?`<div class="row3">
