@@ -362,9 +362,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.68';
+const APP_VER='2.69';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.69',d:'2026-10-19',p:['Handy und Mac gleichen sich jetzt ab: Die App sieht beim Öffnen, beim Zurückkehren und jede Minute nach, ob auf dem anderen Gerät etwas geändert wurde, und lädt es.','Haben beide Geräte gleichzeitig etwas geändert, wird nichts überschrieben. Die App fragt, welchen Stand Sie behalten wollen.','Beim Einschalten des Backups fragt die App jetzt: erstes Gerät oder mit anderem Gerät verbinden? Wichtig: Beide Geräte brauchen denselben Backup-Code.']},
  {v:'2.68',d:'2026-10-18',p:['Diagnose hat jetzt eine eigene Summe.','„Positionen auswählen“: mehrere Positionen antippen und dann gemeinsam nach oben oder unten schieben, in ein anderes Paket oder zwischen Diagnose und Abhilfe verschieben, das RKZ (wer zahlt) ändern oder löschen. Alles lässt sich rückgängig machen.']},
  {v:'2.67',d:'2026-10-18',p:['Kalkulation als Werkstattbericht – genau Ihr Ablauf: Beanstandung → Diagnose (mit Prüfung als Unterpunkt) → Befund → Abhilfe → Hinweise.','Freigaben: Rechts neben „Diagnose“ und „Abhilfe“ tragen Sie ein, bis zu welchem Betrag der Kunde freigegeben hat. Wird der Betrag überschritten, kommt einmal eine große Meldung, danach bleibt ein gelber Hinweis stehen.','Jede Position antippen = alle Details. Neu dort: „Gehört zu“ Diagnose oder Abhilfe.']},
  {v:'2.66',d:'2026-10-18',p:['Kalkulation als Liste – ohne seitliches Wischen: Jedes Paket ist ein Ordner. Darin steht jede Position mit Text, AW und Preis. Antippen zeigt alle Details.','Bei jeder Arbeit können Sie den Text ändern und darunter eine Beschreibung schreiben, zum Beispiel was geprüft wurde und Messwerte. Sie steht auf der Rechnung unter der Position.','Pro Paket: + Arbeit (aus Ihrer Liste suchen oder eigene Position), + Teil, + Befund (mit Abhilfe), + Hinweis.','Neues Feld „Positionscode“ in den Details.']},
@@ -2882,7 +2883,8 @@ function vEinstellungen(){
      <button class="btn btn-2nd btn-sm" data-act="sync-tog">Ausschalten</button></div>`
    :`<div style="font-size:11px;color:var(--ink3);margin:6px 0 10px;line-height:1.55">Sichert jede Änderung automatisch verschlüsselt übertragen in deine Supabase-Datenbank — nichts mehr zu drücken, nichts zu vergessen. Einmalige Einrichtung nötig (siehe unten).</div>
     <button class="btn btn-main" style="width:100%" data-act="sync-tog">Automatisches Backup einschalten</button>`}
-   <button class="btn-ghost" style="width:100%;margin-top:8px" data-act="sync-restore">Aus Cloud wiederherstellen (neues Gerät)</button>
+   <button class="btn-ghost" style="width:100%;margin-top:8px" data-act="sync-restore">Mit anderem Gerät verbinden (Backup-Code eingeben)</button>
+   <div style="font-size:10.5px;color:var(--ink3);margin-top:6px;line-height:1.5">Handy und Mac müssen <b>denselben Backup-Code</b> haben, sonst sichern sie getrennt.</div>
    <div class="sec" style="margin:12px 0 0;animation:none">
     <div class="sec-h" data-act="sec-plain" style="padding:10px 12px"><span class="t" style="font-size:12px">Einmalige Einrichtung & Erweitert</span><span class="chev"></span></div>
     <div class="sec-b"><div class="sec-in" style="padding:0 12px 12px">
@@ -3133,16 +3135,19 @@ let syncT=null,syncBusy=false;
 const syncState={last:null,err:null,pending:false};
 function scheduleSync(){const c=syncCfg();if(!c.on||!c.url||!c.key||!c.id)return;
  syncState.pending=true;clearTimeout(syncT);syncT=setTimeout(cloudPush,6000)}
-async function cloudPush(){const c=syncCfg();if(!c.on||!c.id||syncBusy)return;syncBusy=true;
- try{const size=JSON.stringify(S).length;
+async function cloudPush(){const c=syncCfg();if(!c.on||!c.id||syncBusy||syncState.konflikt)return;
+ if(c.base&&Date.now()-(syncState.geprueft||0)>45000){const k=await syncPruefen(true);if(k!=='senden'&&k!=='gleich')return}
+ syncBusy=true;
+ try{const size=JSON.stringify(S).length;const gesendet=(S.meta||{}).savedAt||0;
   if(size>8000000)throw new Error('Datenbestand zu groß für Cloud ('+Math.round(size/1e6)+' MB) — alte Fotos löschen');
   let r=await sbRpc('backup_put',{p_id:c.id,p_payload:S});
   if(r.status===404)r=await fetch(c.url+'/rest/v1/backup?on_conflict=id',{method:'POST',
    headers:{apikey:c.key,Authorization:'Bearer '+c.key,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},
    body:JSON.stringify([{id:c.id,payload:S,updated_at:new Date().toISOString()}])});
   if(!r.ok)throw new Error('Server-Antwort '+r.status);
+  c.base=gesendet;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
   statusLinksPush();buchungAnmelden();
-  syncState.last=Date.now();syncState.err=null;syncState.pending=false;syncUi()}
+  syncState.last=Date.now();syncState.geprueft=Date.now();syncState.err=null;syncState.pending=false;syncUi()}
  catch(e){syncState.err=e.message||String(e);syncUi()}
  finally{syncBusy=false}}
 /* Supabase-Funktionen (RPC): Daten nur mit genauem Schlüssel lesbar, siehe SB_SQL */
@@ -3154,9 +3159,46 @@ async function cloudPull(code){const c=syncCfg();
   {headers:{apikey:c.key,Authorization:'Bearer '+c.key}});
  if(!r.ok)throw new Error('Server-Antwort '+r.status);
  const rows=await r.json();return rows&&rows[0]?rows[0]:null}
+/* Abgleich zwischen Geräten (Inhaber 18.10.: iPhone-Daten fehlten am Mac).
+   c.base = Stand (meta.savedAt), den dieses Gerät zuletzt mit der Cloud geteilt hat.
+   Cloud anders als base + hier nichts Neues → übernehmen. Beides geändert → nachfragen statt überschreiben. */
+function syncVergleich(row){const c=syncCfg(),lokal=(S.meta||{}).savedAt||0;
+ if(!row)return'senden';
+ const remote=((row.payload||{}).meta||{}).savedAt||Date.parse(row.updated_at)||0;
+ if(!c.base){return remote>lokal+2000?'holen':lokal>remote+2000?'senden':'gleich'}
+ const dortNeu=remote!==c.base,hierNeu=lokal!==c.base;
+ if(!dortNeu)return hierNeu?'senden':'gleich';
+ return hierNeu?'konflikt':'holen'}
+async function syncPruefen(still){const c=syncCfg();if(!c.on||!c.id||syncState.konflikt)return'gleich';
+ let row;try{row=await cloudPull()}catch(e){syncState.err=e.message||String(e);syncUi();return'fehler'}
+ syncState.geprueft=Date.now();const k=syncVergleich(row);
+ if(k==='holen'){cloudAdopt(row);syncCfg().base=((row.payload||{}).meta||{}).savedAt||0;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}
+  syncState.last=Date.now();syncState.err=null;render();toast('Neuester Stand vom anderen Gerät geladen')}
+ else if(k==='konflikt'){syncState.konflikt=row;syncKonflikt(row)}
+ else if(k==='senden'&&!still){setTimeout(cloudPush,0)}
+ return k}
+function syncKonflikt(row){const p=row.payload||{},dort=(p.meta||{}).savedAt||Date.parse(row.updated_at)||0,hier=(S.meta||{}).savedAt||0;
+ const n=x=>((x&&x.auftraege)||[]).length;
+ sheet('Zwei Geräte – zwei Stände',`<div style="font-size:14px;line-height:1.5;margin-bottom:12px">Auf einem anderen Gerät wurde gespeichert, während hier auch etwas geändert wurde. Damit nichts verloren geht, entscheiden Sie bitte:</div>
+  <div class="kv"><span class="k">Anderes Gerät</span><span class="v">${dtLabel(dort)} · ${n(p)} Aufträge</span></div>
+  <div class="kv"><span class="k">Dieses Gerät</span><span class="v">${dtLabel(hier)} · ${n(S)} Aufträge</span></div>
+  <button class="btn btn-main" style="width:100%;margin-top:14px" data-act="sync-k-holen">Stand vom anderen Gerät übernehmen</button>
+  <div style="font-size:11.5px;color:var(--ink3);margin:4px 2px 10px">Ihre letzten Änderungen hier gehen dabei verloren.</div>
+  <button class="btn btn-2nd" style="width:100%" data-act="sync-k-senden">Diesen Stand behalten</button>
+  <div style="font-size:11.5px;color:var(--ink3);margin:4px 2px 0">Der Stand auf dem anderen Gerät wird überschrieben.</div>`)}
+ACT['sync-k-holen']=()=>{const row=syncState.konflikt;syncState.konflikt=null;if(!row)return closeSheet();
+ cloudAdopt(row);syncCfg().base=((row.payload||{}).meta||{}).savedAt||0;try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}closeSheet();render();toast('Stand vom anderen Gerät übernommen')};
+ACT['sync-k-senden']=()=>{const row=syncState.konflikt;syncState.konflikt=null;if(row)syncCfg().base=((row.payload||{}).meta||{}).savedAt||0;
+ S.meta=S.meta||{};S.meta.savedAt=Date.now();closeSheet();syncState.geprueft=Date.now();cloudPush();toast('Dieser Stand wird gesichert')};
+/* Beim Zurückkehren in die App und jede Minute (wenn sichtbar) nachsehen, ob ein anderes Gerät etwas geändert hat */
+let syncPollT=null;
+function syncTakt(){clearTimeout(syncPollT);syncPollT=setTimeout(async()=>{if(document.visibilityState==='visible'&&!syncBusy&&!$('#sheetbg'))await syncPruefen(true);syncTakt()},60000)}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState!=='visible')return;const c=S&&S.settings&&S.settings.sync;
+ if(c&&c.on&&c.id&&Date.now()-(syncState.geprueft||0)>15000&&!syncBusy)syncPruefen()});
 function cloudAdopt(row,code){const keep={...syncCfg()};if(code)keep.id=code;keep.on=true;
+ keep.base=((row.payload||{}).meta||{}).savedAt||0;
  S=row.payload;S.settings=S.settings||{};S.settings.sync=keep;
- S.meta=S.meta||{};S.meta.savedAt=Date.parse(row.updated_at)||Date.now();
+ S.meta=S.meta||{};S.meta.savedAt=S.meta.savedAt||Date.parse(row.updated_at)||Date.now();
  kunNorm();migrate2();
  try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
 function syncUi(){const el=$('#sync-status');if(!el)return;
@@ -3168,29 +3210,28 @@ function syncUi(){const el=$('#sync-status');if(!el)return;
   :'<span class="tag t-green">Aktiv</span> wartet auf erste Änderung'}
 async function syncStartup(){const c=syncCfg();if(!c.on||!c.id)return;
  buchungAnmelden();anfragenHolen();anfragenTakt();
- try{const row=await cloudPull();
-  if(row){const remote=Date.parse(row.updated_at)||0,local=S.meta&&S.meta.savedAt||0;
-   if(remote>local+2000){cloudAdopt(row);render();toast('Neuester Stand aus der Cloud geladen')}
-   else if(local>remote+2000)cloudPush();
-   else{syncState.last=remote;syncUi()}}
-  else cloudPush()}
+ try{await syncPruefen();syncTakt()}
  catch(e){syncState.err=e.message||String(e);syncUi()}}
 window.addEventListener('online',()=>{const c=syncCfg&&S?syncCfg():null;
  if(c&&c.on&&(syncState.pending||syncState.err))cloudPush()});
 ACT['sync-tog']=()=>{const c=syncCfg();
- if(!c.on){if(!c.id)c.id=genCode();c.on=true;save();render();cloudPush()}
+ if(!c.on&&!c.id){sheet('Cloud-Backup einschalten',`<div style="font-size:14px;line-height:1.5;margin-bottom:14px">Ist das Ihr <b>erstes Gerät</b> mit mehanicar, oder läuft die App schon auf einem anderen Gerät (z. B. iPhone) mit Backup?</div>
+  <button class="btn btn-main" style="width:100%" data-act="sync-neu">Erstes Gerät – neues Backup anlegen</button>
+  <button class="btn btn-2nd" style="width:100%;margin-top:8px" data-act="sync-restore">Mit anderem Gerät verbinden (Backup-Code eingeben)</button>`);return}
+ if(!c.on){c.on=true;save();render();syncPruefen();syncTakt()}
  else{c.on=false;save();render()}};
+ACT['sync-neu']=()=>{const c=syncCfg();c.id=genCode();c.on=true;c.base=0;closeSheet();save();render();cloudPush();syncTakt()};
 ACT['sync-now']=()=>{toast('Sichere…');cloudPush()};
 ACT['sync-restore']=()=>{
- sheet('Aus Cloud wiederherstellen',`
-  <div class="fld"><label>Backup-Code des anderen Geräts</label><input id="sy-code" style="text-transform:uppercase;font-family:ui-monospace,monospace;letter-spacing:2px" placeholder="z. B. K7NPQ2WXAB"></div>
-  <div style="font-size:11.5px;color:var(--ink3);line-height:1.5;margin-bottom:12px">Achtung: Die Daten auf diesem Gerät werden durch den Cloud-Stand ersetzt.</div>
+ sheet('Mit anderem Gerät verbinden',`
+  <div class="fld"><label>Backup-Code des anderen Geräts (steht dort unter Einstellungen → Cloud-Backup)</label><input id="sy-code" style="text-transform:uppercase;font-family:ui-monospace,monospace;letter-spacing:2px" placeholder="z. B. K7NPQ2WXAB"></div>
+  <div style="font-size:11.5px;color:var(--ink3);line-height:1.5;margin-bottom:12px">Achtung: Was nur auf diesem Gerät eingetragen ist, wird durch den Stand des anderen Geräts ersetzt.</div>
   <button class="btn btn-main" style="width:100%" data-act="sync-restore-go">Wiederherstellen</button>`)};
 ACT['sync-restore-go']=async()=>{const code=($('#sy-code').value||'').trim().toUpperCase();
  if(code.length<6)return toast('Code prüfen',true);
  try{toast('Suche Backup…');const row=await cloudPull(code);
   if(!row)return toast('Kein Backup unter diesem Code',true);
-  cloudAdopt(row,code);closeSheet();render();toast('Wiederhergestellt — Cloud-Backup aktiv')}
+  cloudAdopt(row,code);closeSheet();render();syncTakt();toast('Verbunden – Daten vom anderen Gerät geladen')}
  catch(e){toast('Fehler: '+(e.message||e),true)}};
 FSET['sync-url']=el=>{syncCfg().url=el.value.trim().replace(/\/+$/,'');save()};
 FSET['sync-key']=el=>{syncCfg().key=el.value.trim();save()};
