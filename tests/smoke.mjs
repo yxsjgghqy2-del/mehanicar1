@@ -536,6 +536,22 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (Object.values(au).some(v => !v)) errs.push('Auswahl: ' + JSON.stringify(au));
   }
+  // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
+  {
+    const sy = await page.evaluate(async () => {
+      const alt = JSON.stringify(S.settings.sync || null), altMeta = JSON.stringify(S.meta || {});
+      const c = syncCfg(); c.base = 1000; S.meta = S.meta || {};
+      const row = t => ({ payload: { meta: { savedAt: t } }, updated_at: new Date().toISOString() });
+      S.meta.savedAt = 1000; const r = { gleich: syncVergleich(row(1000)) === 'gleich', holen: syncVergleich(row(2000)) === 'holen' };
+      S.meta.savedAt = 1500; r.senden = syncVergleich(row(1000)) === 'senden'; r.konflikt = syncVergleich(row(2000)) === 'konflikt';
+      r.leer = syncVergleich(null) === 'senden';
+      S.meta.savedAt = 500; r.uhr = syncVergleich(row(1000)) === 'senden';
+      c.on = false; c.id = ''; ACT['sync-tog'](); await new Promise(r => setTimeout(r, 80));
+      r.frage = !!document.querySelector('#sheetbg [data-act="sync-neu"]') && !!document.querySelector('#sheetbg [data-act="sync-restore"]'); closeSheet();
+      S.settings.sync = JSON.parse(alt) || undefined; if (!S.settings.sync) delete S.settings.sync; S.meta = JSON.parse(altMeta); save(); return r;
+    });
+    if (Object.values(sy).some(v => !v)) errs.push('Abgleich: ' + JSON.stringify(sy));
+  }
   // Stundensätze nach Arbeitsart: Art in der Tabelle wählen → eigener Satz
   {
     const ar = await page.evaluate(async () => {

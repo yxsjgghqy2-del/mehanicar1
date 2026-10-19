@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 19.10.2026 (Morgenlauf) — 2.69 Geräte-Abgleich Handy ↔ Mac
+- **Anlass:** Inhaber hat Supabase neu eingerichtet (eigenes Projekt, 18.10. abends). Danach: „sehe die Autos vom iPhone auf meinem Mac nicht, bei beiden Backup aktiv“ → jedes Gerät hatte beim Einschalten einen eigenen Backup-Code erzeugt. Außerdem überschrieb bisher das zuletzt sichernde Gerät blind das andere; abgeglichen wurde nur beim Start.
+- **Gebaut:** `c.base` (zuletzt mit der Cloud geteilter Stand, `meta.savedAt`), `syncVergleich(row)` → gleich/holen/senden/konflikt, `syncPruefen()` beim Start, beim Zurückkehren in die App (`visibilitychange`) und jede Minute (`syncTakt`), vor dem Senden (wenn > 45 s nicht geprüft). Beide geändert → Blatt „Zwei Geräte – zwei Stände“ (übernehmen / behalten), kein stilles Überschreiben. Einschalten fragt: „Erstes Gerät – neues Backup“ oder „Mit anderem Gerät verbinden (Backup-Code)“. Hinweis „denselben Backup-Code“. SW v70. Ausnahme vom Kalkulations-Fokus: Datensicherheit geht vor.
+- **Test:** Smoke-Test grün (neue Prüfung Vergleichslogik inkl. Uhr-Abweichung + Einschalt-Frage). Zusätzlich lokal zwei Browser-„Geräte“ mit simulierter Cloud: verbinden, Abgleich beide Richtungen, Konflikt fragt nach, „behalten“ überschreibt, anderes Gerät holt danach – alles richtig.
+
 ## 18.10.2026 (Nacht, Nachtrag) — 2.68 Summe Diagnose + Auswahl (verschieben, RKZ, löschen)
 - **Anlass:** Inhaber: „Summe Diagnose bitte separat, Positionen verschieben können, mehrere markieren können um z. B. RKZ zu ändern.“
 - **Gebaut:** Zeile „Summe Diagnose“. Auswahlmodus (`wbSel`, Link „Positionen auswählen …“): Zeilen bekommen Kästchen, Leiste oben (klebt) mit ↑ ↓ (innerhalb des Bereichs, `wb-mv`), Verschieben (Paket + Diagnose/Abhilfe, `wb-move`), RKZ (`x.zahler`, `wb-rkz`), Löschen (Lager zurückbuchen) – alles über `mitRueckgaengig`. RKZ abweichend vom Paket steht in der Zeile. Auswahl endet beim Verlassen des Auftrags. SW v69.
