@@ -3,6 +3,10 @@
 Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Jede Idee hat eine Herkunft (Inhaber / Recherche / Fehlerfund).
 
 ## A — Wünsche des Inhabers
+- **NEU 19.10.: Prozesskonzept des Inhabers → `docs/mitarbeiter/PROZESSE.md` (7 Kernprozesse). Hat Vorrang vor allem Übrigen in A.** Vor jedem Baustein Rückfragen stellen (Inhaber-Wunsch). Bausteine (Reihenfolge mit Inhaber klären):
+  - KP1: Anfrageformular neu (Kategorie, Pflichtfelder Name/Tel/FIN-oder-Scheinfoto/km/Anliegen, optional Mail/Medien), Bestandskunden-Erkennung (Tel/FIN), Status „Bestätigung ausstehend“, Slots blockieren (am Auftrag + frei), Bestätigung (Mail / Aufgabe „anrufen“ / SMS), Erinnerungen 3+1 Tage (einstellbar)
+  - KP2: Dialogannahme mit vorausgefüllter Beanstandung + Unterschrift, roter Hinweis beim Überspringen, Kostenrahmen (Diagnose-Betrag bzw. KVA + Pauschale), Checkliste ✓/✗ mit Fotos (4 Seiten Pflicht), ✗ → technische Beanstandung (eigener Ordner, keine Positionen), Zusatzleistungen unten, „Räder einlagern?“ bei Räderwechsel
+  - KP3: Diagnose-Freigabe Standard 500 €, Freigabe-Protokoll (Kanal/Zeit/Betrag/mit wem), Freigabe-Link per E-Mail (Freigeben/Ablehnen), Erinnerung bei fehlender Freigabe, abgelehnte Arbeiten beim nächsten Besuch zeigen
 - **FOKUS 17.–20.10.2026: nur Kalkulation** *(Inhaber 17.10.: „Konzentrier dich jetzt bitte 3 Tage lang nur auf die Kalkulation und gib alles, diese weiter auszubauen.“)* Alles andere ruht bis 20.10. abends (auch Design-Läufe und „Einfach“-Umbau). Reihenfolge:
   1. ~~Teile-Aufschlag-Staffel + VK-Vorschlag~~ (2.60)
   2. ~~Kleinmaterial- & Entsorgungs-Pauschale automatisch (% vom Lohn mit Min/Max, Altöl/Altteile), je Auftrag abschaltbar, auf Rechnung/E-Rechnung~~ → 2.63 (18.10.)

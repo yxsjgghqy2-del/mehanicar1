@@ -536,6 +536,33 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     });
     if (Object.values(au).some(v => !v)) errs.push('Auswahl: ' + JSON.stringify(au));
   }
+  // Fahrzeugannahme: ✓/✗, Foto über Datei-Knopf, Pflicht 4 Seiten + Unterschrift, ✗ → technische Beanstandung, Überspringen → roter Hinweis
+  {
+    const snapA = await page.evaluate(() => JSON.stringify(S.auftraege));
+    const oid = await page.evaluate(async () => { const a = S.auftraege.find(o => o.status !== 'abgeholt'); delete a.dlg; nav('auftrag', a.id); await new Promise(r => setTimeout(r, 100)); return a.id; });
+    const an = { karte: await page.evaluate(() => !!document.querySelector('.dl-card.start')) };
+    await page.click('.dl-card.start'); await page.waitForTimeout(150);
+    an.ansicht = await page.evaluate(() => route.v === 'annahme' && document.querySelectorAll('.dl-it').length > 30 && !!document.querySelector('.dl-ta').value.length >= 0);
+    await page.click('[data-act="dlg-v"][data-i="bb-h"][data-v="0"]'); await page.waitForTimeout(80);
+    await page.click('[data-act="dlg-v"][data-i="oel"][data-v="1"]'); await page.waitForTimeout(80);
+    await page.fill('.dl-note[data-i="bb-h"]', '2 mm'); await page.press('.dl-note[data-i="bb-h"]', 'Tab'); await page.waitForTimeout(80);
+    const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAIAAAACCAYAAABytg0kAAAAFElEQVR4nGP8z8Dwn4GBgYGJAQoAHxcCAqqGq6MAAAAASUVORK5CYII=', 'base64');
+    await page.evaluate(() => { photoTarget = { oid: route.id, pid: null, dlg: 'f4:vorne' }; });
+    await page.setInputFiles('#photoinp', { name: 'v.png', mimeType: 'image/png', buffer: png }); await page.waitForTimeout(600);
+    an.foto = await page.evaluate(() => !!auftrag(route.id).dlg.f4.vorne && !!document.querySelector('.dl-f4i.da img'));
+    await page.evaluate(() => ACT['dlg-fertig']({ dataset: { oid: route.id } })); await page.waitForTimeout(80);
+    an.pflicht = await page.evaluate(() => route.v === 'annahme' && !auftrag(route.id).dlg.done);
+    await page.evaluate(() => { const a = auftrag(route.id); ['hinten', 'links', 'rechts'].forEach(k => { const id = 'fo' + uid(); a.fotos.push({ id, paketId: null, label: 'x', data: 'data:image/png;base64,' }); dlgFotoZiel(a, { dlg: 'f4:' + k }, id); }); a.dlg.sig = 'data:image/png;base64,'; a.dlg.txt = 'MKL leuchtet'; a.dlg.frei = 50000; save(); render(); });
+    await page.evaluate(() => ACT['dlg-fertig']({ dataset: { oid: route.id } })); await page.waitForTimeout(80);
+    const ok = await page.$('.confirm-bg [data-c="1"]'); if (ok) await ok.click(); await page.waitForTimeout(200);
+    Object.assign(an, await page.evaluate(oid => { const a = auftrag(oid), cp = a.pakete.find(p => p.dlgCheck), tb = a.pakete.find(p => p.klass === 'tb' && !p.dlgCheck);
+      return { fertig: !!a.dlg.done && route.v === 'auftrag', beanstandung: !!cp && cp.pos.length === 1 && cp.pos[0].typ === 'befund' && cp.pos[0].bez === 'Bremsbeläge hinten nicht in Ordnung – 2 mm',
+        keinePreise: !!cp && !cp.pos.some(x => x.typ === 'arbeit' || x.typ === 'teil'), problem: !!tb && tb.problem === 'MKL leuchtet' && tb.frei && tb.frei.diag.ct === 50000, karteOk: !!document.querySelector('.dl-card.ok') }; }, oid));
+    await page.evaluate(oid => { const a = auftrag(oid); a.dlg = { skip: Date.now(), chk: {}, f4: {}, zus: {} }; save(); render(); }, oid);
+    an.rot = await page.evaluate(() => !!document.querySelector('.dl-card.rot'));
+    await page.evaluate(s => { S.auftraege = JSON.parse(s); save(); nav('planung'); }, snapA);
+    if (Object.values(an).some(v => !v)) errs.push('Annahme: ' + JSON.stringify(an));
+  }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
     const sy = await page.evaluate(async () => {
