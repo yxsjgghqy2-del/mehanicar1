@@ -277,6 +277,7 @@ function migrate2(){
  if(S.settings.designV4===undefined){S.settings.designV4=true;S.settings.theme='light'}
  if(S.settings.designV5===undefined){S.settings.designV5=true;S.settings.theme='dark'}
  if(S.settings.stundensatzCt===undefined)S.settings.stundensatzCt=S.settings.awCt||12500;
+ if(S.settings.diagFreiStd===undefined)S.settings.diagFreiStd=50000;
  if(!S.settings.arten)S.settings.arten=ARTEN_STD.map(x=>({...x}));
  if(!S.settings.kleinmat){S.settings.kleinmat={aktiv:true,pct:5,minCt:500,maxCt:2500,bez:'Kleinmaterial & Entsorgung'};(S.auftraege||[]).forEach(a=>{a.kmAus=true})} // bestehende Aufträge behalten ihren Preis
  if(!S.settings.aufschlag)S.settings.aufschlag={staffel:AUFSCHLAG_STD.map(x=>({...x})),runden:true};
@@ -362,9 +363,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.69';
+const APP_VER='2.70';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.70',d:'2026-10-19',p:['Neu: Fahrzeugannahme. Oben im Auftrag auf „Fahrzeugannahme starten“ tippen. Die Beanstandung ist vorausgefüllt und wird mit dem Kunden besprochen. Dazu kommen der Fahrzeugcheck (nur ✓ oder ✗, zu jedem Punkt Fotos), Pflichtfotos von allen 4 Seiten, die Zusatzleistungen und die Unterschrift des Kunden.','Jedes ✗ wird beim Abschluss automatisch zur technischen Beanstandung, in einem eigenen Ordner in der Kalkulation. Es werden keine Preise und keine Arbeiten automatisch angelegt.','Bei einem Befund gibt es jetzt den Knopf „Kunde informiert – will nichts gemacht haben“.','Annahme übersprungen? Dann bleibt ein roter Hinweis im Auftrag stehen.']},
  {v:'2.69',d:'2026-10-19',p:['Handy und Mac gleichen sich jetzt ab: Die App sieht beim Öffnen, beim Zurückkehren und jede Minute nach, ob auf dem anderen Gerät etwas geändert wurde, und lädt es.','Haben beide Geräte gleichzeitig etwas geändert, wird nichts überschrieben. Die App fragt, welchen Stand Sie behalten wollen.','Beim Einschalten des Backups fragt die App jetzt: erstes Gerät oder mit anderem Gerät verbinden? Wichtig: Beide Geräte brauchen denselben Backup-Code.']},
  {v:'2.68',d:'2026-10-18',p:['Diagnose hat jetzt eine eigene Summe.','„Positionen auswählen“: mehrere Positionen antippen und dann gemeinsam nach oben oder unten schieben, in ein anderes Paket oder zwischen Diagnose und Abhilfe verschieben, das RKZ (wer zahlt) ändern oder löschen. Alles lässt sich rückgängig machen.']},
  {v:'2.67',d:'2026-10-18',p:['Kalkulation als Werkstattbericht – genau Ihr Ablauf: Beanstandung → Diagnose (mit Prüfung als Unterpunkt) → Befund → Abhilfe → Hinweise.','Freigaben: Rechts neben „Diagnose“ und „Abhilfe“ tragen Sie ein, bis zu welchem Betrag der Kunde freigegeben hat. Wird der Betrag überschritten, kommt einmal eine große Meldung, danach bleibt ein gelber Hinweis stehen.','Jede Position antippen = alle Details. Neu dort: „Gehört zu“ Diagnose oder Abhilfe.']},
@@ -1396,7 +1398,7 @@ function vAuftrag(id){
    ordFreigegeben(a)?`<span class="tag t-green" style="flex-shrink:0">Freigegeben${a.freigabe&&a.freigabe.art!=='sig'?' · '+({tel:'telefonisch',mail:'per E-Mail',wa:'per WhatsApp',ig:'per Instagram',pers:'persönlich'}[a.freigabe.art]||''):' · Unterschrift'}</span>`
    :`<button class="tag t-amber" style="border:none;cursor:pointer;font-family:inherit;flex-shrink:0" data-act="freigabe-sheet" data-oid="${a.id}">Noch nicht freigegeben</button>`}
  </div>`;
- const inner=`<div class="stag">${secKunde}${secFzg}${secPak}${secKomm}${secFoto}${secZeit}${secOrga}${secSig}</div>
+ const inner=`${dlgKarte(a)}<div class="stag">${secKunde}${secFzg}${secPak}${secKomm}${secFoto}${secZeit}${secOrga}${secSig}</div>
   <div style="height:96px"></div>
   <input type="file" accept="image/*,video/*,.pdf,application/pdf,.heic,.heif" multiple id="photoinp" style="display:none">`;
  const side=a.notiz?`<button class="hd-note" data-act="goto-orga" data-oid="${a.id}"><span class="nb">!</span>Notiz</button>`:'';
@@ -1457,7 +1459,7 @@ function lsHtml(a){
     <div class="wb-sub"><div class="wb-sub-h">Prüfung</div>${txtFeld(pk,'pruefung','',lk,'+ Was wurde geprüft? Messwerte …')}</div>
     ${add(lk,`<button data-act="ls-kat" ${b(' data-ph="diag"')}>+ Diagnose-Position</button>`)}
     <div class="wb-h"><span>Befund</span></div>
-    ${bef.map(x=>`<div class="wb-pos${selCls(x)}"${act(pk,x,lk)}><div class="wb-txt0">${hak(x,lk)}${esc(x.bez)}</div>${x.abhilfe?`<div class="wb-m">Abhilfe: ${esc(x.abhilfe)}</div>`:''}</div>`).join('')||(lk?'':`<div class="wb-leer" data-act="add-befund" ${b()} role="button" tabindex="0">+ Was wurde festgestellt?</div>`)}
+    ${bef.map(x=>`<div class="wb-pos${selCls(x)}"${act(pk,x,lk)}><div class="wb-txt0">${hak(x,lk)}${esc(x.bez)}</div>${x.abhilfe?`<div class="wb-m">Abhilfe: ${esc(x.abhilfe)}</div>`:''}${x.nein?`<div class="wb-m wb-nein">Kunde informiert – will nichts gemacht haben (${dLabel(new Date(x.nein).toISOString().slice(0,10))})</div>`:''}</div>`).join('')||(lk?'':`<div class="wb-leer" data-act="add-befund" ${b()} role="button" tabindex="0">+ Was wurde festgestellt?</div>`)}
     ${bef.length?add(lk,`<button data-act="add-befund" ${b()}>+ Befund</button>`):''}`:''}
     <div class="wb-h"><span>${voll?'Abhilfe':'Arbeiten'}</span>${wbChip(a,pk,'abh',lk)}</div>
     ${abh.map(x=>zeile(pk,x,lk)).join('')||'<div class="wb-m" style="padding:4px 0 2px">Noch keine Arbeiten oder Teile.</div>'}
@@ -1568,6 +1570,105 @@ ACT['pak-opts']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
   <button class="btn btn-main" data-act="pak-opts-ok" data-oid="${a.id}" data-pid="${pk.id}">Fertig</button></div>`)};
 ACT['pak-opts-ok']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);const n=$('#po-n');
  if(pk&&n&&!n.disabled&&n.value.trim())pk.name=n.value.trim();save();closeSheet();render()};
+/* ============ DIALOGANNAHME / FAHRZEUGANNAHME (Prozesskonzept KP2, Inhaber 19.10.) ============
+   Nur ✓ (i.O.) oder ✗ (n.i.O.) – keine Ampel. Jedes ✗ wird beim Abschluss automatisch technische Beanstandung (Befund, keine Positionen).
+   Pflicht: 4 Seitenfotos + Unterschrift. Überspringen erlaubt, dann roter Hinweis im Auftrag. Daten in a.dlg. */
+const DLG_CHK=[
+ ['Außen',[['karo','Karosserie / Vorschäden','Karosserie: Vorschäden'],['wss','Windschutzscheibe (Steinschläge)','Windschutzscheibe nicht in Ordnung (Steinschlag)'],['wisch','Scheibenwischer','Scheibenwischer nicht in Ordnung'],['hupe','Hupe','Hupe ohne Funktion']]],
+ ['Beleuchtung',[['abl-l','Abblendlicht links'],['abl-r','Abblendlicht rechts'],['fern','Fernlicht'],['bl-vl','Blinker vorne links'],['bl-vr','Blinker vorne rechts'],['bl-hl','Blinker hinten links'],['bl-hr','Blinker hinten rechts'],['brems-l','Bremslichter'],['rueck','Rückleuchten'],['nsl','Nebelschlussleuchte'],['rfl','Rückfahrlicht'],['kzl','Kennzeichenbeleuchtung']]],
+ ['Kombiinstrument',[['warn','Warnleuchten im Kombi','Warnleuchte im Kombiinstrument aktiv']]],
+ ['Reifen',[['rp-vl','Reifen vorne links – Profil'],['rt-vl','Reifen vorne links – Tragbild'],['rp-vr','Reifen vorne rechts – Profil'],['rt-vr','Reifen vorne rechts – Tragbild'],['rp-hl','Reifen hinten links – Profil'],['rt-hl','Reifen hinten links – Tragbild'],['rp-hr','Reifen hinten rechts – Profil'],['rt-hr','Reifen hinten rechts – Tragbild']]],
+ ['Bremse',[['bs-v','Bremsscheiben vorne'],['bb-v','Bremsbeläge vorne'],['bs-h','Bremsscheiben hinten'],['bb-h','Bremsbeläge hinten']]],
+ ['Flüssigkeiten',[['oel','Ölstand'],['kuehl','Kühlmittel'],['bfl','Bremsflüssigkeit'],['swa','Scheibenwaschwasser']]],
+ ['Elektronik',[['fs','Fehlerspeicher-Schnelltest','Fehlerspeicher: Einträge vorhanden']]],
+ ['Innenraum',[['innen','Innenraum allgemein']]],
+ ['Fahrzeug angehoben',[['leit','Leitungen an den Rädern korrekt eingehängt (Brems- und Elektroleitungen)','Leitungen an den Rädern nicht korrekt eingehängt'],['dicht','Undichtigkeiten','Undichtigkeit festgestellt'],['ausp','Auspuff'],['manch','Achsmanschetten'],['ub','Unterboden (grob)']]]];
+const DLG_ZUS=[['batt','Batterietest'],['klima','Klimaservice'],['hu','HU-Vorbereitung (inkl. Vorführung)'],['ubs','Unterbodenschutz / Hohlraumversiegelung'],['wert','Wertgutachten']];
+const DL_CAM='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-2.5h6L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.5"/></svg>';
+const DLG_SEITEN=[['vorne','Vorne'],['hinten','Hinten'],['links','Links'],['rechts','Rechts']];
+const dlgItems=()=>DLG_CHK.flatMap(([g,l])=>l.map(([id,t,b])=>({id,t,g,b:b||t+' nicht in Ordnung'})));
+function dlgVorschlagTxt(a){const p=a.pakete.map(pk=>pk.problem).filter(Boolean);if(p.length)return p.join('\n');
+ const b=a.pakete.flatMap(pk=>pk.pos).find(x=>x.typ==='befund'&&/^Kundenbeanstandung/.test(x.bez));if(b)return b.bez.replace(/^Kundenbeanstandung \(wörtlich\):\s*/,'').replace(/^„|"$|“$/g,'');
+ const q=(S.anfragen||[]).find(q=>q.auftragId===a.id);return q&&q.original||''}
+function dlgStart(a){if(!a.dlg||a.dlg.skip&&!a.dlg.done)a.dlg={txt:dlgVorschlagTxt(a),km:a.kmAn||'',tank:a.tank||'',frei:S.settings.diagFreiStd||50000,chk:{},f4:{},zus:{},sig:null,ts:Date.now()};return a.dlg}
+function vAnnahme(id){const a=auftrag(id);if(!a)return shell('<div class="empty"><b>Auftrag nicht gefunden</b></div>',{title:'Annahme',back:1,hideNav:true});
+ const d=dlgStart(a),f=fzg(a.fzgId)||{},k=kunde(a.kundeId)||{},lk=!!d.done;
+ const foto=fid=>{const fo=a.fotos.find(x=>x.id===fid);return fo?`<img src="${fo.data}" alt="">`:''};
+ const its=dlgItems(),nOk=its.filter(i=>(d.chk[i.id]||{}).v===1).length,nX=its.filter(i=>(d.chk[i.id]||{}).v===0).length,n4=DLG_SEITEN.filter(([k])=>d.f4[k]).length;
+ const zeile=it=>{const c=d.chk[it.id]||{},fs=(c.fotos||[]);
+  return`<div class="dl-it${c.v===0?' dl-x':''}"><div class="dl-r"><span class="dl-t">${esc(it.t)}</span>
+   <button class="dl-b dl-ok${c.v===1?' on':''}" data-act="dlg-v" data-oid="${a.id}" data-i="${it.id}" data-v="1" aria-label="${esc(it.t)} in Ordnung" aria-pressed="${c.v===1}"${lk?' disabled':''}>✓</button>
+   <button class="dl-b dl-no${c.v===0?' on':''}" data-act="dlg-v" data-oid="${a.id}" data-i="${it.id}" data-v="0" aria-label="${esc(it.t)} nicht in Ordnung" aria-pressed="${c.v===0}"${lk?' disabled':''}>✗</button>
+   <button class="dl-b dl-cam" data-act="dlg-foto" data-oid="${a.id}" data-ziel="chk:${it.id}" aria-label="Foto zu ${esc(it.t)}"${lk?' disabled':''}>${DL_CAM}${fs.length?`<i>${fs.length}</i>`:''}</button></div>
+   ${c.v===0?`<input class="dl-note" data-f="dlg-note" data-oid="${a.id}" data-i="${it.id}" value="${esc(c.note||'')}" placeholder="Genauer: was ist nicht in Ordnung? (z. B. 2 mm, Riss …)"${lk?' disabled':''}>`:''}
+   ${fs.length?`<div class="dl-fs">${fs.map(foto).join('')}</div>`:''}</div>`};
+ const inner=`<div class="dl">
+  ${lk?`<div class="dl-fertig">Annahme abgeschlossen am ${dtLabel(d.done)} · ${nOk} i.O. · ${nX} n.i.O.</div>`:''}
+  <div class="dl-sec"><div class="dl-h">Beanstandung / Kundenwunsch</div>
+   <textarea class="dl-ta" rows="4" data-f="dlg-txt" data-oid="${a.id}" placeholder="Was sagt der Kunde? Mit dem Kunden besprechen und ergänzen."${lk?' disabled':''}>${esc(d.txt||'')}</textarea>
+   <div class="dl-row3"><label>Kilometerstand<input inputmode="numeric" data-f="dlg-km" data-oid="${a.id}" value="${esc(String(d.km||''))}"${lk?' disabled':''}></label>
+   <label>Tank<select data-f="dlg-tank" data-oid="${a.id}"${lk?' disabled':''}>${['','0','25','50','75','100'].map(v=>`<option value="${v}"${String(d.tank)===v?' selected':''}>${v===''?'–':v==='0'?'Reserve':v+' %'}</option>`).join('')}</select></label>
+   <label>Diagnose freigegeben bis €<input inputmode="decimal" data-f="dlg-frei" data-oid="${a.id}" value="${d.frei?fmtIn(d.frei):''}"${lk?' disabled':''}></label></div>
+   <div class="dl-hint">Bei Service statt Beanstandung: Kostenvoranschlag mit Pauschale in der Kalkulation – Freigabefeld dann leer lassen.</div></div>
+  <div class="dl-sec"><div class="dl-h">Fotos von allen 4 Seiten <span class="dl-pfl${n4<4?' offen':''}">${n4}/4 Pflicht</span></div>
+   <div class="dl-f4">${DLG_SEITEN.map(([k2,l])=>`<button class="dl-f4i${d.f4[k2]?' da':''}" data-act="dlg-foto" data-oid="${a.id}" data-ziel="f4:${k2}"${lk?' disabled':''}>${d.f4[k2]?foto(d.f4[k2]):`<span>${DL_CAM}</span>`}<b>${l}</b></button>`).join('')}</div></div>
+  ${DLG_CHK.map(([g,l])=>`<div class="dl-sec"><div class="dl-h">${g}</div>${l.map(([id])=>zeile(its.find(i=>i.id===id))).join('')}</div>`).join('')}
+  <div class="dl-sec dl-zus"><div class="dl-h">Zusatzleistungen <span class="dl-hint" style="margin:0">Kunde interessiert?</span></div>
+   ${DLG_ZUS.map(([id,t])=>`<label class="dl-zi"><input type="checkbox" data-f="dlg-zus" data-oid="${a.id}" data-i="${id}"${d.zus[id]?' checked':''}${lk?' disabled':''}> ${t}</label>`).join('')}</div>
+  <div class="dl-sec"><div class="dl-h">Unterschrift Kunde</div>
+   ${d.sig?`<img class="sig-img" src="${d.sig}" alt="Unterschrift">${lk?'':`<button class="btn-ghost" style="width:100%;margin-top:8px" data-act="dlg-sig-neu" data-oid="${a.id}">Neu unterschreiben</button>`}`
+   :`<div class="dl-hint">Der Kunde bestätigt Beanstandung, Fahrzeugzustand und Diagnose-Freigabe.</div><canvas class="sigc" id="dlgsig-${a.id}"></canvas>
+   <div class="sig-foot"><span>Mit dem Finger unterschreiben</span><span><button style="color:var(--ink3);font-weight:600;font-size:12px;margin-right:14px" data-act="dlg-sig-clear" data-oid="${a.id}">Löschen</button>
+   <button style="color:var(--blue);font-weight:700;font-size:12px" data-act="dlg-sig" data-oid="${a.id}">Übernehmen</button></span></div>`}</div>
+  ${lk?`<button class="btn btn-2nd" style="width:100%" data-act="dlg-auf" data-oid="${a.id}">Annahme nochmal bearbeiten</button>`
+  :`<button class="btn btn-main dl-go" data-act="dlg-fertig" data-oid="${a.id}">Annahme abschließen${nX?' · '+nX+' Beanstandung'+(nX>1?'en':''):''}</button>
+   <button class="dl-skip" data-act="dlg-skip" data-oid="${a.id}">Annahme überspringen</button>`}
+  <input type="file" accept="image/*" capture="environment" id="photoinp" style="display:none"></div>`;
+ return shell(inner,{title:'Fahrzeugannahme',eyebrow:esc((f.kennz||'')+(k.name?' · '+k.name:'')),back:1,hideNav:true,ctx:'annahme',side:`<span class="dl-cnt">${nOk+nX}/${its.length}</span>`})}
+const dlgA=el=>{const a=auftrag(el.dataset.oid);if(a)dlgStart(a);return a};
+ACT['annahme']=el=>{const a=auftrag(el.dataset.oid);dlgStart(a);save();nav('annahme',a.id)};
+ACT['dlg-v']=el=>{const a=dlgA(el),c=a.dlg.chk[el.dataset.i]=a.dlg.chk[el.dataset.i]||{};const v=+el.dataset.v;c.v=c.v===v?undefined:v;save();render();hap()};
+FSET['dlg-txt']=el=>{dlgA(el).dlg.txt=el.value;save()};
+FSET['dlg-km']=el=>{dlgA(el).dlg.km=parseInt(el.value)||'';save()};
+FSET['dlg-tank']=el=>{dlgA(el).dlg.tank=el.value;save()};
+FSET['dlg-frei']=el=>{dlgA(el).dlg.frei=parseEuro(el.value)||0;save()};
+FSET['dlg-note']=el=>{const a=dlgA(el);(a.dlg.chk[el.dataset.i]=a.dlg.chk[el.dataset.i]||{}).note=el.value.trim();save()};
+FSET['dlg-zus']=el=>{const a=dlgA(el);a.dlg.zus[el.dataset.i]=el.checked;save()};
+ACT['dlg-foto']=el=>{photoTarget={oid:el.dataset.oid,pid:null,dlg:el.dataset.ziel};$('#photoinp').click()};
+function dlgFotoZiel(a,t,fid){if(!t.dlg||!a.dlg)return;const[art,k]=t.dlg.split(':'),it=dlgItems().find(i=>i.id===k),fo=a.fotos.find(x=>x.id===fid);
+ if(art==='f4'){a.dlg.f4[k]=fid;if(fo)fo.label='Annahme · '+(DLG_SEITEN.find(s=>s[0]===k)||['',''])[1]}
+ else{const c=a.dlg.chk[k]=a.dlg.chk[k]||{};(c.fotos=c.fotos||[]).push(fid);if(fo&&it)fo.label='Annahme · '+it.t}}
+ACT['dlg-sig-clear']=el=>{const cv=$('#dlgsig-'+el.dataset.oid);if(cv){cv.getContext('2d').clearRect(0,0,cv.width,cv.height);cv._drawn=false}};
+ACT['dlg-sig']=el=>{const cv=$('#dlgsig-'+el.dataset.oid);if(!cv||!cv._drawn)return toast('Bitte erst unterschreiben',true);dlgA(el).dlg.sig=cv.toDataURL('image/png');save();render();toast('Unterschrift gespeichert')};
+ACT['dlg-sig-neu']=el=>{dlgA(el).dlg.sig=null;save();render()};
+ACT['dlg-auf']=el=>{const a=dlgA(el);a.dlg.done=null;save();render()};
+ACT['dlg-skip']=el=>{const a=dlgA(el);confirmBox('Annahme überspringen?','Ohne Dialogannahme fehlen Fotos, Fahrzeugzustand und Unterschrift. Im Auftrag bleibt ein roter Hinweis stehen.','Überspringen',()=>{a.dlg.skip=Date.now();save();nav('auftrag',a.id)})};
+ACT['dlg-fertig']=el=>{const a=dlgA(el),d=a.dlg;
+ const fehlt=[];if(DLG_SEITEN.some(([k])=>!d.f4[k]))fehlt.push('Fotos von allen 4 Seiten');if(!d.sig)fehlt.push('Unterschrift des Kunden');
+ if(fehlt.length)return toast('Noch nötig: '+fehlt.join(' und '),true);
+ const its=dlgItems(),offen=its.filter(i=>d.chk[i.id]==null||d.chk[i.id].v==null).length;
+ const los=()=>{dlgAbschluss(a);save();nav('auftrag',a.id);toast('Annahme abgeschlossen')};
+ if(offen)confirmBox('Noch nicht alles geprüft',offen+' Punkte haben weder ✓ noch ✗. Trotzdem abschließen?','Abschließen',los,false);else los()};
+function dlgAbschluss(a){const d=a.dlg;d.done=Date.now();d.skip=null;
+ if(d.km)a.kmAn=d.km;if(d.tank!=='')a.tank=d.tank;
+ let tb=a.pakete.find(pk=>pk.klass==='tb'&&!ktLocked(pk)&&!pk.dlgCheck);
+ if(d.txt&&d.txt.trim()){if(!tb){tb={id:'p'+uid(),name:'Beanstandung',klass:'tb',zahler:'kunde',status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,pos:[]};a.pakete.unshift(tb)}tb.problem=d.txt.trim()}
+ if(tb&&d.frei>0){tb.frei=tb.frei||{};tb.frei.diag={ct:d.frei,wie:'sig',ts:d.done}}
+ const xs=dlgItems().filter(i=>(d.chk[i.id]||{}).v===0);
+ let cp=a.pakete.find(pk=>pk.dlgCheck);
+ if(xs.length&&!cp){cp={id:'p'+uid(),name:'Technische Beanstandungen (Fahrzeugcheck)',klass:'tb',zahler:'kunde',status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,pos:[],dlgCheck:true,ablauf:true};a.pakete.push(cp)}
+ if(cp){const ids=new Set(xs.map(i=>i.id));cp.pos=cp.pos.filter(x=>!x.chk||ids.has(x.chk)||x.typ!=='befund');
+  xs.forEach(i=>{const n=(d.chk[i.id]||{}).note,txt=i.b+(n?' – '+n:'');let x=cp.pos.find(p=>p.chk===i.id);
+   if(x)x.bez=txt;else cp.pos.push({id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'befund',bez:txt,abhilfe:'',chk:i.id,vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null})});
+  if(pakOpen[a.id])pakOpen[a.id].add(cp.id)}
+ const zus=DLG_ZUS.filter(([id])=>d.zus[id]).map(z=>z[1]);
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:d.done,txt:'Dialogannahme abgeschlossen und unterschrieben: '+dlgItems().filter(i=>(d.chk[i.id]||{}).v===1).length+' i.O., '+xs.length+' n.i.O.'+(d.frei?' · Diagnose freigegeben bis '+fmt(d.frei):'')+(zus.length?' · Kunde interessiert an: '+zus.join(', '):''),preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null})}
+/* Hinweis/Karte im Auftrag */
+function dlgKarte(a){const d=a.dlg;if(a.status==='abgeholt'&&!d)return'';
+ if(d&&d.done){const xs=dlgItems().filter(i=>(d.chk[i.id]||{}).v===0).length,zus=DLG_ZUS.filter(([id])=>d.zus[id]).map(z=>z[1]);
+  return`<div class="dl-card ok" data-act="annahme" data-oid="${a.id}" role="button" tabindex="0"><b>Fahrzeugannahme ✓</b><span>${dtLabel(d.done)} · ${xs?xs+' Beanstandung'+(xs>1?'en':''):'alles i.O.'}${zus.length?' · Interesse: '+esc(zus.join(', ')):''}</span></div>`}
+ if(d&&d.skip)return`<div class="dl-card rot" data-act="annahme" data-oid="${a.id}" role="button" tabindex="0"><b>Keine Dialogannahme gemacht</b><span>Fotos, Fahrzeugzustand und Unterschrift fehlen. Antippen zum Nachholen.</span></div>`;
+ return`<button class="dl-card start" data-act="annahme" data-oid="${a.id}"><b>Fahrzeugannahme starten</b><span>Beanstandung besprechen · Fahrzeugcheck · Fotos · Unterschrift</span></button>`}
 /* Vollbild-Kalkulation: nur die Positionen (Tabelle), Pakete und Summen – sonst nichts */
 function vKalk(id){
  const a=auftrag(id);if(!a)return shell('<div class="empty"><b>Auftrag nicht gefunden</b></div>',{title:'Kalkulation',back:1,hideNav:true});
@@ -1906,6 +2007,7 @@ ACT['pos-edit']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
   sheet('Befund & Abhilfe bearbeiten',`
    <div class="fld"><label>Befund *</label><textarea id="bf-b" rows="3">${esc(x.bez)}</textarea></div>
    <div class="fld"><label>Abhilfe</label><textarea id="bf-a" rows="2">${esc(x.abhilfe||'')}</textarea></div>
+   <button class="btn btn-2nd" style="width:100%;margin-bottom:10px" data-act="bf-nein" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">${x.nein?'Vermerk „Kunde will nichts“ entfernen':'Kunde informiert – will nichts gemacht haben'}</button>
    <div class="row2"><button class="btn btn-danger" data-act="pos-del" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Löschen</button>
    <button class="btn btn-main" data-act="befund-upd" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Speichern</button></div>`);
   return}
@@ -1961,6 +2063,8 @@ ACT['befund-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id
 ACT['befund-upd']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const x=pk.pos.find(p=>p.id===el.dataset.xid);const b=$('#bf-b').value.trim();
  if(!b)return toast('Befund fehlt',true);x.bez=b;x.abhilfe=$('#bf-a').value.trim();save();closeSheet();render();toast('Gespeichert')};
+ACT['bf-nein']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),x=pk.pos.find(p=>p.id===el.dataset.xid);
+ x.nein=x.nein?null:Date.now();if(x.nein)a.komm.push({id:'m'+uid(),kanal:'sys',ts:x.nein,txt:'Kunde informiert, will nichts gemacht haben: '+x.bez,preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});save();closeSheet();render();toast(x.nein?'Vermerkt':'Vermerk entfernt')};
 /* Kombi-Vorschlag: passende Zusatzarbeit mit einem Tipp übernehmen */
 ACT['add-kombi']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  posSheet(a,pk,null,el.dataset.bez);
@@ -2128,8 +2232,8 @@ function handlePhotos(files){const t=photoTarget;if(!t)return;const a=auftrag(t.
    const max=1100,sc=Math.min(1,max/Math.max(img.width,img.height));
    const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-   a.fotos.push({id:'fo'+uid(),paketId:t.pid,label:pk?pk.name:'Annahme',data:c.toDataURL('image/jpeg',.72)});
-   save();render();toast('Foto gespeichert')};
+   const fid='fo'+uid();a.fotos.push({id:fid,paketId:t.pid,label:pk?pk.name:'Annahme',data:c.toDataURL('image/jpeg',.72)});
+   dlgFotoZiel(a,t,fid);save();render();toast('Foto gespeichert')};
   img.onerror=()=>toast('Bildformat wird nicht unterstützt — bitte als JPG/Foto wählen',true);
   img.src=r.result};r.readAsDataURL(file)})}
 ACT['foto-del']=el=>{const a=auftrag(el.dataset.oid);
@@ -4619,7 +4723,7 @@ function syncBadge(){if(!badgeOK()||!S)return;const n=S.settings.badge?(S.anfrag
 function renderInner(){
  const main=$('#main');const sTop=main?main.scrollTop:0;
  const app=$('#app');
- const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kalk:()=>vKalk(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
+ const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kalk:()=>vKalk(route.id),annahme:()=>vAnnahme(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
   fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,status:vStatus,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz,apdb:vApDb,pakvorlagen:vPakVorlagen};
  if(!S.settings.onboarded&&!['buchen','impressum','datenschutz','status'].includes(route.v)){app.innerHTML=vOnboarding();return}
  app.innerHTML=(V[route.v]||vPlanung)();
