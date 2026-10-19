@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 19.10.2026 (Vormittag, Nachtrag) — 2.71 Annahme: Zusatzleistung als Ordner, 300 €, Räder einlagern
+- **Anlass:** Antworten des Inhabers auf die Rückfragen (siehe PROZESSE.md, Entscheidungen).
+- **Gebaut:** neue Paket-Art `zl` „Zusatzleistung“; angekreuzte Zusatzleistungen erzeugen beim Abschluss je einen leeren Ordner (`pk.zus`). Standard-Diagnosefreigabe 300 € (`settings.diagFreiStd`, Migration von 500). `raederFrage()` nach dem Anlegen einer Arbeit (Katalog, Positionsblatt, Tabelle): Räderwechsel → „Räder einlagern?“ → Position ohne Preis + Blatt öffnet sich. SW v72.
+- **Test:** Smoke-Test grün (Ordner „Batterietest“ entsteht leer; Räderwechsel → Frage → Position 0 € + Blatt).
+- **Offen:** Checkliste für den Kunden ausdrucken.
+
 ## 19.10.2026 (Vormittag) — Prozesskonzept + 2.70 Fahrzeugannahme (KP2)
 - **Anlass:** Inhaber schickt Briefing aus Voice-Chat (7 Kernprozesse, KP1+2 fertig, KP3 begonnen) → abgelegt in `docs/mitarbeiter/PROZESSE.md`, BACKLOG oben. Rückfragen gestellt: Reihenfolge „egal“ → Start mit KP2-Annahme; E-Mails = App öffnet fertige Mail; Freigabe-Link per E-Mail UND WhatsApp; Annahme auf iPad und iPhone.
 - **Gebaut:** Route `annahme` (`vAnnahme`), Daten `a.dlg` {txt, km, tank, frei, chk{id:{v,note,fotos}}, f4, zus, sig, done, skip}. Beanstandung vorausgefüllt (`dlgVorschlagTxt`: Paket-Problem → „Kundenbeanstandung (wörtlich)“ → Anfrage). Checkliste `DLG_CHK` (Außen, Beleuchtung einzeln, Kombi, Reifen Profil+Tragbild je Rad, Bremse granular, Flüssigkeiten, Fehlerspeicher, Innenraum, angehoben) nur ✓/✗, Foto je Punkt, Notiz bei ✗. Pflicht: 4 Seitenfotos + Unterschrift. Zusatzleistungen unten (Batterietest, Klima, HU-Vorbereitung, Unterbodenschutz, Wertgutachten) als „Kunde interessiert“. Abschluss (`dlgAbschluss`): km/Tank in Auftrag, Text → Problem des Beanstandungs-Pakets, Diagnose-Freigabe (Standard 500 €, `settings.diagFreiStd`) → `pk.frei.diag` (wie: Unterschrift), jedes ✗ → Befund im Ordner „Technische Beanstandungen (Fahrzeugcheck)“ (`pk.dlgCheck`, keine Positionen/Preise), Verlauf-Eintrag. Karte oben im Auftrag (starten / ✓ / rot „Keine Dialogannahme“ nach Überspringen). Befund: „Kunde informiert – will nichts gemacht haben“ (`x.nein`, im Bericht blau). SW v71.

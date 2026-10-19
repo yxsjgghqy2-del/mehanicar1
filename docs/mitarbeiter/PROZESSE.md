@@ -48,3 +48,13 @@ Status: KP 1 und 2 fertig besprochen · KP 3 begonnen · KP 4–7 offen.
 
 ## Nächste Schritte (laut Inhaber)
 KP 3 fertig besprechen → KP 4–7 → Umsetzung schrittweise, vor dem Bauen Rückfragen.
+
+## Entscheidungen des Inhabers (Rückfragen 19.10.)
+- Reihenfolge: egal → Start mit KP2 Annahme (2.70)
+- E-Mails an Kunden: App öffnet fertig vorbereitete Mail (kein Versanddienst)
+- Freigabe-Link: per E-Mail UND WhatsApp
+- Annahme muss auf iPad und iPhone gehen
+- Zusatzleistungen: Serviceberater fragt den Kunden, hakt an → je Zusatzleistung ein eigener Ordner der neuen Art „Zusatzleistung“ (neben Techn. Beanstandung, Kundenwunsch); Positionen trägt der Inhaber selbst ein (z. B. Batterietest bei SUV aufwendiger) → 2.71
+- Diagnose-Freigabe Standard 300 €, immer mit dem Kunden klären, je Auftrag änderbar → 2.71
+- „Räder einlagern?“: Position anlegen, Preis jedes Mal selbst eintragen → 2.71
+- Checkliste soll dem Kunden am Ende ausgedruckt werden können → offen
