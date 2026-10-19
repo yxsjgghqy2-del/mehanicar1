@@ -552,16 +552,28 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     an.foto = await page.evaluate(() => !!auftrag(route.id).dlg.f4.vorne && !!document.querySelector('.dl-f4i.da img'));
     await page.evaluate(() => ACT['dlg-fertig']({ dataset: { oid: route.id } })); await page.waitForTimeout(80);
     an.pflicht = await page.evaluate(() => route.v === 'annahme' && !auftrag(route.id).dlg.done);
-    await page.evaluate(() => { const a = auftrag(route.id); ['hinten', 'links', 'rechts'].forEach(k => { const id = 'fo' + uid(); a.fotos.push({ id, paketId: null, label: 'x', data: 'data:image/png;base64,' }); dlgFotoZiel(a, { dlg: 'f4:' + k }, id); }); a.dlg.sig = 'data:image/png;base64,'; a.dlg.txt = 'MKL leuchtet'; a.dlg.frei = 50000; save(); render(); });
+    await page.evaluate(() => { const a = auftrag(route.id); ['hinten', 'links', 'rechts'].forEach(k => { const id = 'fo' + uid(); a.fotos.push({ id, paketId: null, label: 'x', data: 'data:image/png;base64,' }); dlgFotoZiel(a, { dlg: 'f4:' + k }, id); }); a.dlg.sig = 'data:image/png;base64,'; a.dlg.txt = 'MKL leuchtet'; a.dlg.frei = 50000; a.dlg.zus.batt = true; save(); render(); });
     await page.evaluate(() => ACT['dlg-fertig']({ dataset: { oid: route.id } })); await page.waitForTimeout(80);
     const ok = await page.$('.confirm-bg [data-c="1"]'); if (ok) await ok.click(); await page.waitForTimeout(200);
     Object.assign(an, await page.evaluate(oid => { const a = auftrag(oid), cp = a.pakete.find(p => p.dlgCheck), tb = a.pakete.find(p => p.klass === 'tb' && !p.dlgCheck);
       return { fertig: !!a.dlg.done && route.v === 'auftrag', beanstandung: !!cp && cp.pos.length === 1 && cp.pos[0].typ === 'befund' && cp.pos[0].bez === 'Bremsbeläge hinten nicht in Ordnung – 2 mm',
-        keinePreise: !!cp && !cp.pos.some(x => x.typ === 'arbeit' || x.typ === 'teil'), problem: !!tb && tb.problem === 'MKL leuchtet' && tb.frei && tb.frei.diag.ct === 50000, karteOk: !!document.querySelector('.dl-card.ok') }; }, oid));
+        keinePreise: !!cp && !cp.pos.some(x => x.typ === 'arbeit' || x.typ === 'teil'), problem: !!tb && tb.problem === 'MKL leuchtet' && tb.frei && tb.frei.diag.ct === 50000 && a.pakete.some(p => p.klass === 'zl' && p.name === 'Batterietest' && !p.pos.length), karteOk: !!document.querySelector('.dl-card.ok') }; }, oid));
     await page.evaluate(oid => { const a = auftrag(oid); a.dlg = { skip: Date.now(), chk: {}, f4: {}, zus: {} }; save(); render(); }, oid);
     an.rot = await page.evaluate(() => !!document.querySelector('.dl-card.rot'));
     await page.evaluate(s => { S.auftraege = JSON.parse(s); save(); nav('planung'); }, snapA);
     if (Object.values(an).some(v => !v)) errs.push('Annahme: ' + JSON.stringify(an));
+  }
+  // Räderwechsel → Frage „Räder einlagern?“ → Position ohne Preis + Bearbeiten
+  {
+    const rw = await page.evaluate(async () => {
+      const snap = JSON.stringify(S.auftraege); const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); const pk = a.pakete[0]; pk.entsperrt = true;
+      nav('kalk', a.id); await new Promise(r => setTimeout(r, 80));
+      posSheet(a, pk, null, 'Räderwechsel'); await new Promise(r => setTimeout(r, 80)); document.getElementById('ps-vk').value = '40,00';
+      document.querySelector('[data-act="pos-save"]').click(); await new Promise(r => setTimeout(r, 400));
+      const frage = !!document.querySelector('.confirm-bg'); const ja = document.querySelector('.confirm-bg [data-c="1"]'); if (ja) ja.click(); await new Promise(r => setTimeout(r, 120));
+      const y = pk.pos.find(p => p.bez === 'Räder einlagern'); const r = { frage, position: !!y && y.vkCt === 0, blatt: !!document.getElementById('ps-b') };
+      closeSheet(); S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
+    if (Object.values(rw).some(v => !v)) errs.push('Räder einlagern: ' + JSON.stringify(rw));
   }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
