@@ -1069,3 +1069,10 @@ tr.kt-auto td{background:var(--bg);color:var(--ink2);font-size:12.5px}
 .dl-skip{display:block;margin:12px auto 0;min-height:44px;border:0;background:transparent;font:inherit;font-size:13px;color:var(--red);text-decoration:underline;text-underline-offset:3px}
 .dl-cnt{font-size:12.5px;font-weight:700;color:var(--ink2)}
 .wb-nein{color:var(--blue);font-weight:650}
+/* 2.72 KP3: Freigabe je Paket, Gewährleistung, Anhänge */
+.dl-card.gew{background:var(--amber-bg);border:1.5px solid var(--amber)}.dl-card.gew b{color:var(--amber)}
+.wb-frei-ok{color:var(--green);font-weight:700}
+.ps-an{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.ps-an img,.ps-an video{width:92px;height:70px;object-fit:cover;border-radius:9px;border:1px solid var(--line)}
+.ps-an-f,.foto-datei{display:flex;align-items:center;min-height:44px;padding:8px 12px;border-radius:9px;border:1px solid var(--line);background:var(--bg);font-size:12.5px;color:var(--ink);text-decoration:none;word-break:break-all}
+.foto-datei{height:100%;justify-content:center;text-align:center}

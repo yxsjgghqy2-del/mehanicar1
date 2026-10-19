@@ -58,3 +58,20 @@ KP 3 fertig besprechen → KP 4–7 → Umsetzung schrittweise, vor dem Bauen R�
 - Diagnose-Freigabe Standard 300 €, immer mit dem Kunden klären, je Auftrag änderbar → 2.71
 - „Räder einlagern?“: Position anlegen, Preis jedes Mal selbst eintragen → 2.71
 - Checkliste soll dem Kunden am Ende ausgedruckt werden können → offen
+
+## Briefing-Update 19.10. (KP3 fertig besprochen, KP4 weitgehend) – Inhaber: „kannst es schon einführen“
+**Achtung: Nachricht kam abgeschnitten an** (endet bei „Übernahme als NEUE Kategorie „“). Rest zu „Bekannte Probleme“ und KP4 Nachkontrolle beim Inhaber angefragt.
+AW-Feedback/Selbstlernen: **nur To-Do**, nicht bauen.
+
+### KP3 – Ergänzungen
+- **Zeiterfassung:** KEINE Zeiterfassung/Stoppuhren im Auftrag → Zeitfunktionen im AUFTRAG entfernen. Zeiterfassung im Team-Bereich bleibt.
+- **Anhänge:** in JEDER Position optional Bild, Video oder Datei, ohne Hinweis/Aufforderung (z. B. Altteile-Fotos)
+- **Funde während der Arbeit:** neuer Fund → neue technische Beanstandung als Ordner, z. B. „Während der Arbeit festgestellt: …“; Kosten neu klären. Hinter JEDER technischen Beanstandung (jedem Paket) steht der freigegebene Preis; noch nicht freigegeben → Warnmeldung „Freigabe ausstehend“. Vor Rechnungserstellung professionelle Rückfrage, wenn Freigabe aussteht („Kunde hat noch nicht freigegeben, wirklich fortfahren?“), KEINE harte Sperre.
+- **Teile & Bestellung:** Teil aus Katalog, Teileliste oder per Teilenummer · Auftragsmaske prüft Lager: „im Haus“ oder „muss bestellt werden“ · nicht vorrätig → automatisch „in Bestellung“ · beim Speichern Rückfrage „Sollen diese Teile wirklich bestellt werden?“ → Ja → „bestellt“, Bestellung geht raus · nach Buchung im Wareneingang → Auftrag automatisch „Teile da“ + Benachrichtigung
+- **Räder:** pro Auftrag nur EINE Rad-Position „Räder komplett ab- und anmontieren“, keine mehreren. Daran Abschluss-Liste: Räder einlagern? · Räder mit Drehmoment angezogen? (professionell formuliert) · RDKS geprüft/angelernt? KEIN Hinweis „nach 50 km nachziehen“. Weitere Kopplungen NICHT.
+- **Probefahrt:** neue AW-Position „Probefahrt durchführen“; wenn auf dem Auftrag: Felder km Start/Ende, Uhrzeit usw.
+- **Wartung:** Service-Reset als PFLICHT-Haken bei jeder Wartung · nach Wartung nächsten fälligen Service (Datum + km) beim Fahrzeug eintragen
+- **Fehlerspeicher:** Haken „Fehlerspeicher gelöscht“ nach Reparatur, mit Fehlerprotokoll vorher und nachher als Anhang · Ausgangskurztest = eigene AW-Position, fügt Inhaber SELBST hinzu, NICHT automatisieren
+- **Weitere Felder:** interne Notiz pro Auftrag (nie für Kunden sichtbar) · Altteile-Frage: Kunde will alte Teile mitnehmen? · bei Fertigmeldung kurze kundenfreundliche Zusammenfassung „Was wurde gemacht?“ → für Kunden (Rechnung/Übergabe)
+- **Gewährleistungs-Hinweis:** Fahrzeug innerhalb 12 Monaten wieder (gleiches Kennzeichen, gleiche FIN oder gleicher Kunde) → „Kunde war vor unter 12 Monaten hier, Problem könnte mit unserer Arbeit zusammenhängen – bitte prüfen“
+- **Bekannte Probleme („TIPS“ wie Mercedes):** eigener Bereich in den EINSTELLUNGEN, nicht prominent · beliebig viele Regeln, filterbar nach Baureihe/Modell, Motor, Baujahr/Zeitraum bis auf den Monat (z. B. „E-Klasse ab 2019“, „C-Klasse 2015 bis Januar 2016“) · jede Regel: bekanntes Problem, bekannte Abhilfe, Anforderungen · passt ein Fahrzeug → beim Öffnen des Auftrags Frage, ob die Punkte übernommen werden · Übernahme als NEUE Kategorie „… **(abgeschnitten)**

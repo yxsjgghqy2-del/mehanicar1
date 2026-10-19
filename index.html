@@ -363,9 +363,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.71';
+const APP_VER='2.72';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.72',d:'2026-10-19',p:['Jedes Paket zeigt jetzt, ob es freigegeben ist („300 € freigegeben“) oder ob die „Freigabe ausstehend“ ist. Vor der Rechnung fragt die App nach, wenn noch eine Freigabe fehlt. Sie können aber trotzdem fortfahren.','Neuer Knopf „Während der Arbeit festgestellt“: Er legt einen eigenen Ordner an. Die Kosten klären Sie neu mit dem Kunden.','An jede Position können Sie Bilder, Videos oder Dateien anhängen, zum Beispiel Fotos von Altteilen oder ein Fehlerprotokoll.','Kommt ein Kunde oder ein Fahrzeug innerhalb von 12 Monaten wieder, zeigt der Auftrag einen Hinweis.','Bei „Fertig“ fragt die App nach einer kurzen Zusammenfassung „Was wurde gemacht?“ für den Kunden. Neu ist auch die Altteile-Frage. Die Stechuhr ist aus dem Auftrag entfernt (im Team-Bereich bleibt sie).']},
  {v:'2.71',d:'2026-10-19',p:['Fahrzeugannahme: Jede angekreuzte Zusatzleistung (z. B. Batterietest) wird ein eigener Ordner im Auftrag, mit der neuen Art „Zusatzleistung“. Die Positionen tragen Sie dort selbst ein.','Diagnose-Freigabe bei der Annahme: Standard jetzt 300 €, bei jedem Auftrag änderbar.','Bei „Räderwechsel“ fragt die App: „Räder einlagern?“ – bei Ja wird die Position angelegt, und Sie tragen den Preis ein.']},
  {v:'2.70',d:'2026-10-19',p:['Neu: Fahrzeugannahme. Oben im Auftrag auf „Fahrzeugannahme starten“ tippen. Die Beanstandung ist vorausgefüllt und wird mit dem Kunden besprochen. Dazu kommen der Fahrzeugcheck (nur ✓ oder ✗, zu jedem Punkt Fotos), Pflichtfotos von allen 4 Seiten, die Zusatzleistungen und die Unterschrift des Kunden.','Jedes ✗ wird beim Abschluss automatisch zur technischen Beanstandung, in einem eigenen Ordner in der Kalkulation. Es werden keine Preise und keine Arbeiten automatisch angelegt.','Bei einem Befund gibt es jetzt den Knopf „Kunde informiert – will nichts gemacht haben“.','Annahme übersprungen? Dann bleibt ein roter Hinweis im Auftrag stehen.']},
  {v:'2.69',d:'2026-10-19',p:['Handy und Mac gleichen sich jetzt ab: Die App sieht beim Öffnen, beim Zurückkehren und jede Minute nach, ob auf dem anderen Gerät etwas geändert wurde, und lädt es.','Haben beide Geräte gleichzeitig etwas geändert, wird nichts überschrieben. Die App fragt, welchen Stand Sie behalten wollen.','Beim Einschalten des Backups fragt die App jetzt: erstes Gerät oder mit anderem Gerät verbinden? Wichtig: Beide Geräte brauchen denselben Backup-Code.']},
@@ -854,7 +855,7 @@ ACT['row-done']=el=>{const a=auftrag(el.dataset.id);if(!a)return;
  const row=$('#sw-'+a.id);
  const finish=()=>{if(a.status==='fertig'){a.status='abgeholt';a.pinned=false;toast(a.nr+' als abgeholt markiert')}
   else{a.status='fertig';a.pakete.forEach(p=>{if(!p.abger)p.status='fertig'});if(a.timerStart){a.zeiten.push({start:a.timerStart,end:Date.now(),mid:curMid||'m1'});a.timerStart=null}toast(a.nr+' fertig')}
-  save();render()};
+  save();render();nachFertig(a)};
  if(row){const r=row.querySelector('.sw-row');const fl=document.createElement('div');fl.className='checkflash';fl.innerHTML=IC.check;r.appendChild(fl);
   row.classList.add('done-anim');row.style.maxHeight=row.offsetHeight+'px';
   setTimeout(()=>row.classList.add('out'),60);setTimeout(finish,620)}else finish();hap()};
@@ -1319,16 +1320,7 @@ function vAuftrag(id){
  /* --- Stechuhr & Dokumente --- */
  const ms=istMs(a),eff=effizienz(a);
  const clDone=(a.check||[]).filter(c=>c.done).length;
- const secZeit=sec('zeit','Stechuhr & Dokumente',`<span class="num mini-tick" data-tick="${a.id}">--:--:--</span>`,`
-  ${maChips(a)}
-  <div class="timer"><div class="tt num" data-tick="${a.id}">00:00:00</div>
-   <div class="eff"><div>Ist<b class="num" data-ist="${a.id}">${(ms/3600000).toFixed(2).replace('.',',')} h</b></div>
-    <div>Verkauft<b class="num">${pct1(soldAW(a))} AW</b></div>
-    <div>Effizienz<b class="num ${eff?(eff>=100?'hi':'lo'):''}" data-eff="${a.id}">${eff?eff+' %':'—'}</b></div></div>
-   <div class="tbtns">
-    <button class="tbtn" style="background:${a.timerStart?'var(--amber)':'var(--green)'};color:#fff" data-act="timer-tog" data-oid="${a.id}">${a.timerStart?'Pause':'Start'}</button>
-    <button class="tbtn" style="background:var(--bg);color:var(--ink2);border:1px solid var(--line)" data-act="timer-reset" data-oid="${a.id}">Zurücksetzen</button></div>
-   ${a.timerStart&&('wakeLock' in navigator)?'<div class="wl-hint">Bildschirm bleibt an, solange die Zeit läuft.</div>':''}</div>
+ const secZeit=sec('zeit','Checkliste & Dokumente','',`
   <div class="lbl">Checkliste · ${clDone} von ${(a.check||[]).length}</div>
   ${(a.check||[]).map((c,i)=>`<div class="cl ${c.done?'done':''}" data-act="cl-tog" data-oid="${a.id}" data-i="${i}">
    <div class="cb"><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg></div><span class="ct">${esc(c.t)}</span>
@@ -1364,7 +1356,12 @@ function vAuftrag(id){
     <input style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;font-size:12px" placeholder="z. B. Ölwechsel" value="${esc(a.erinnerung||'')}" data-f="o-erinn" data-oid="${a.id}">
     <div style="font-weight:600;font-size:11px;color:var(--ink3);margin:8px 0 3px;letter-spacing:.05em;text-transform:uppercase">Datum</div>
     <input type="date" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:12px" value="${a.erinnerungDat||''}" data-f="o-erinnd" data-oid="${a.id}"></div>
-  <div class="lbl">Interne Notiz — erscheint nicht auf der Rechnung</div>
+  <div class="lbl">Altteile</div>
+  <div class="seg" style="margin-bottom:4px"><button class="${a.altteile===true?'on':''}" data-act="o-alt" data-oid="${a.id}" data-v="1">Kunde nimmt sie mit</button><button class="${a.altteile===false?'on':''}" data-act="o-alt" data-oid="${a.id}" data-v="0">Entsorgen</button></div>
+  ${a.altteile==null?'<div style="font-size:11px;color:var(--amber);margin-bottom:6px">Noch nicht gefragt: Will der Kunde seine Altteile mitnehmen?</div>':''}
+  <div class="lbl">Was wurde gemacht? — für den Kunden (Rechnung, Übergabe)</div>
+  <textarea rows="3" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 12px" data-f="o-was" data-oid="${a.id}" placeholder="Kurz und kundenfreundlich, z. B. Bremsen vorne erneuert, Probefahrt ohne Befund.">${esc(a.wasGemacht||'')}</textarea>
+  <div class="lbl">Interne Notiz — nie für den Kunden sichtbar</div>
   <textarea rows="2" style="width:100%;background:var(--bg);border:1px solid var(--line);border-radius:11px;padding:11px 12px" data-f="o-notiz" data-oid="${a.id}" placeholder="Notiz...">${esc(a.notiz||'')}</textarea>
   <button class="btn btn-danger" style="width:100%;margin-top:14px" data-act="ord-del" data-oid="${a.id}">Auftrag löschen</button>`);
 
@@ -1399,7 +1396,7 @@ function vAuftrag(id){
    ordFreigegeben(a)?`<span class="tag t-green" style="flex-shrink:0">Freigegeben${a.freigabe&&a.freigabe.art!=='sig'?' · '+({tel:'telefonisch',mail:'per E-Mail',wa:'per WhatsApp',ig:'per Instagram',pers:'persönlich'}[a.freigabe.art]||''):' · Unterschrift'}</span>`
    :`<button class="tag t-amber" style="border:none;cursor:pointer;font-family:inherit;flex-shrink:0" data-act="freigabe-sheet" data-oid="${a.id}">Noch nicht freigegeben</button>`}
  </div>`;
- const inner=`${dlgKarte(a)}<div class="stag">${secKunde}${secFzg}${secPak}${secKomm}${secFoto}${secZeit}${secOrga}${secSig}</div>
+ const inner=`${gewHinweis(a)}${dlgKarte(a)}<div class="stag">${secKunde}${secFzg}${secPak}${secKomm}${secFoto}${secZeit}${secOrga}${secSig}</div>
   <div style="height:96px"></div>
   <input type="file" accept="image/*,video/*,.pdf,application/pdf,.heic,.heif" multiple id="photoinp" style="display:none">`;
  const side=a.notiz?`<button class="hd-note" data-act="goto-orga" data-oid="${a.id}"><span class="nb">!</span>Notiz</button>`:'';
@@ -1423,6 +1420,13 @@ const wbDiag=pk=>pk.pos.filter(x=>wbIstPos(x)&&x.phase==='diag');
 const wbAbh=pk=>pk.pos.filter(x=>wbIstPos(x)&&x.phase!=='diag');
 const wbSum=l=>l.reduce((s,x)=>s+posNetto(x),0);
 function wbRahmen(pk,ph){const f=(pk.frei||{})[ph];if(!f||!f.ct)return null;const ist=wbSum(ph==='diag'?wbDiag(pk):wbAbh(pk));return{f,ist,ueber:Math.max(0,ist-f.ct)}}
+/* Freigabe je Paket (KP3): hinter jeder Beanstandung steht der freigegebene Betrag, sonst „Freigabe ausstehend“ */
+function pkFrei(a,pk){const pos=pk.pos.filter(x=>wbIstPos(x)&&posNetto(x)>0);if(!pos.length||pk.abger)return null;
+ const f=pk.frei||{},ct=((f.diag||{}).ct||0)+((f.abh||{}).ct||0);
+ if(ct>0)return{ok:true,ct};
+ if(a.freigabe&&!pk.ext&&!pos.some(x=>x.ext))return{ok:true,ct:0,auftrag:true};
+ return{ok:false}}
+function pkFreiTxt(a,pk){const r=pkFrei(a,pk);if(!r)return'';return r.ok?` · <span class="wb-frei-ok">${r.auftrag?'mit Auftrag freigegeben':fmt(r.ct)+' freigegeben'}</span>`:' · <span class="wb-erw">Freigabe ausstehend</span>'}
 function wbChip(a,pk,ph,lk){const r=wbRahmen(pk,ph),act=lk?'':` data-act="frei-set" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}" role="button" tabindex="0"`;
  if(!r)return lk?'':`<span class="wb-chip wb-chip-leer"${act}>Freigabe eintragen</span>`;
  return r.ueber?`<span class="wb-chip wb-chip-ueber"${act}>${fmt(r.f.ct)} freigegeben · ${fmt(r.ueber)} darüber</span>`:`<span class="wb-chip wb-chip-ok"${act}>${fmt(r.f.ct)} freigegeben</span>`}
@@ -1439,6 +1443,7 @@ function lsHtml(a){
   if(x.auto==='km')m.push('automatisch · '+((S.settings.kleinmat||{}).pct||0)+' % vom Lohn');
   else if(A){if(x.aw)m.push(pct1(x.aw)+' AW');if(x.art&&x.art!=='mech')m.push(esc(artName(x.art)))}
   else m.push((x.menge||1)!==1?x.menge+' Stk':'Teil');
+  {const n=a.fotos.filter(fo=>fo.posId===x.id).length;if(n)m.push(n+' Anhang'+(n>1?'e':''))}
   if(x.zahler&&x.zahler!==(pk.zahler||'kunde'))m.push('RKZ: '+(x.zahler==='son'&&x.zahlerTxt?esc(x.zahlerTxt):ZAHLER[x.zahler]||x.zahler));
   if(x.ext)m.push('<span class="wb-erw">Erweiterung</span>');
   return`<div class="wb-pos${x.auto?' wb-auto':''}${selCls(x)}"${act(pk,x,lk)}><div class="wb-z">${hak(x,lk)}<span class="wb-b">${esc(x.bez)}</span><span class="wb-dots"></span><b class="num">${fmt(posNetto(x))}</b></div>
@@ -1450,7 +1455,7 @@ function lsHtml(a){
   const voll=pk.ablauf||!['kw','zl'].includes(pk.klass)||pk.problem||pk.pruefung||diag.length||bef.length;
   const b=(o)=>`data-oid="${a.id}" data-pid="${pk.id}"${o||''}`;
   return`<div class="wb-pk${open?' open':''}"><div class="wb-pk-h" data-act="pak-tog" ${b()} role="button" tabindex="0" aria-expanded="${open}">
-   <span class="wb-pk-n"><b>${esc(pk.name)}</b><small>${KLASS[pk.klass]?KLASS[pk.klass][0]:''}${lk?' · abgerechnet':''}${(()=>{const u=['diag','abh'].map(ph=>wbRahmen(pk,ph)).filter(r=>r&&r.ueber);return u.length?' · <span class="wb-erw">Freigabe überschritten</span>':''})()}</small></span>
+   <span class="wb-pk-n"><b>${esc(pk.name)}</b><small>${KLASS[pk.klass]?KLASS[pk.klass][0]:''}${lk?' · abgerechnet':''}${lk?'':pkFreiTxt(a,pk)}${(()=>{const u=['diag','abh'].map(ph=>wbRahmen(pk,ph)).filter(r=>r&&r.ueber);return u.length?' · <span class="wb-erw">Freigabe überschritten</span>':''})()}</small></span>
    <b class="num">${fmt(pakNetto(pk))}</b><span class="ls-chev" aria-hidden="true"></span></div>
    ${open?`<div class="wb-b-in">
     ${voll?`<div class="wb-h"><span>Beanstandung</span></div>${txtFeld(pk,'problem','',lk,'+ Was sagt der Kunde?')}
@@ -1477,7 +1482,7 @@ function lsHtml(a){
   <button data-act="wb-move" data-oid="${a.id}"${nSel?'':' disabled'}>Verschieben</button><button data-act="wb-rkz" data-oid="${a.id}"${nSel?'':' disabled'}>RKZ</button><button data-act="wb-del" data-oid="${a.id}"${nSel?'':' disabled'}>Löschen</button></div></div>`
   :`<button class="wb-selstart" data-act="wb-sel" data-oid="${a.id}">Positionen auswählen · verschieben · RKZ ändern</button>`;
  return`<div class="ls">${a.pakete.length?leiste:''}${a.pakete.map(bericht).join('')}
-  ${sel?'':`<button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="tb">+ Neues Problem / Paket</button>`}
+  ${sel?'':`<button class="ls-neu" data-act="fund-neu" data-oid="${a.id}">+ Während der Arbeit festgestellt</button><button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="tb">+ Neues Problem / Paket</button>`}
   ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<button class="ls-opt" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale wieder einschalten</button>`:''}
   <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b></span></div>
    <div class="ls-sum-b"><span>Kunde zahlt <small>inkl. ${S.settings.mwst} % MwSt</small></span><b class="num">${fmt(K.brutto)}</b></div></div></div>`}
@@ -1511,6 +1516,15 @@ ACT['wb-rkz-ok']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a).filter(o=>
 ACT['wb-del']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a).filter(o=>!o.x.auto);if(!g.length)return;
  mitRueckgaengig(g.length+' Position'+(g.length>1?'en':'')+' gelöscht',()=>{g.forEach(({pk,x})=>{if(x.lagerId&&x.best==='lager'){const l=lagerT(x.lagerId);if(l)l.bestand+=(x.menge||1)}
   pk.pos=pk.pos.filter(p=>p!==x);logUnlockEdit(a,pk,'Position „'+x.bez+'" gelöscht ('+fmt(posNetto(x))+').')});wbSel.ids.clear()})};
+ACT['fund-neu']=el=>{const a=auftrag(el.dataset.oid);sheet('Während der Arbeit festgestellt',`<div class="fld"><label>Was wurde festgestellt?</label><textarea id="fu-t" rows="3" placeholder="z. B. Bremsschlauch hinten links porös"></textarea></div>
+  <div style="font-size:12px;color:var(--ink3);margin:-4px 2px 12px">Wird ein eigener Ordner (technische Beanstandung). Die Kosten klären Sie neu mit dem Kunden – bis dahin steht „Freigabe ausstehend“.</div>
+  <button class="btn btn-main" style="width:100%" data-act="fund-ok" data-oid="${a.id}">Anlegen</button>`);setTimeout(()=>{const e=$('#fu-t');if(e)e.focus()},150)};
+ACT['fund-ok']=el=>{const a=auftrag(el.dataset.oid),t=$('#fu-t').value.trim();if(!t)return toast('Bitte kurz beschreiben',true);
+ const pk={id:'p'+uid(),name:'Während der Arbeit festgestellt: '+t,klass:'tb',zahler:'kunde',status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:ordFreigegeben(a),ablauf:true,fund:true,
+  pos:[{id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'befund',bez:t,abhilfe:'',vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null}]};
+ a.pakete.push(pk);(pakOpen[a.id]=pakOpen[a.id]||new Set()).add(pk.id);
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Während der Arbeit festgestellt: '+t+' – Freigabe beim Kunden einholen.',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
+ save();closeSheet();render();toast('Neuer Ordner angelegt – Freigabe ausstehend')};
 const WB_FELD={problem:['Beanstandung','Was sagt der Kunde? Möglichst wörtlich.','z. B. Motorkontrollleuchte leuchtet, Auto ruckelt beim Beschleunigen'],pruefung:['Prüfung','Was wurde geprüft? Messwerte, Fehlercodes …','z. B. Fehlerspeicher: P0302 Zündaussetzer Zyl. 2\nKompression Zyl. 1–4 je 12 bar']};
 ACT['wb-text']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),f=el.dataset.f,[t,l,ph]=WB_FELD[f];
  sheet(t,`<div class="fld"><label>${l}</label><textarea id="wb-t" rows="6" placeholder="${esc(ph)}">${esc(pk[f]||'')}</textarea></div>
@@ -1666,6 +1680,13 @@ function dlgAbschluss(a){const d=a.dlg;d.done=Date.now();d.skip=null;
   const pk={id:'p'+uid(),name:t,klass:'zl',zahler:'kunde',status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,pos:[],zus:id};a.pakete.push(pk);if(pakOpen[a.id])pakOpen[a.id].add(pk.id)});
  const zus=DLG_ZUS.filter(([id])=>d.zus[id]).map(z=>z[1]);
  a.komm.push({id:'m'+uid(),kanal:'sys',ts:d.done,txt:'Dialogannahme abgeschlossen und unterschrieben: '+dlgItems().filter(i=>(d.chk[i.id]||{}).v===1).length+' i.O., '+xs.length+' n.i.O.'+(d.frei?' · Diagnose freigegeben bis '+fmt(d.frei):'')+(zus.length?' · Kunde interessiert an: '+zus.join(', '):''),preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null})}
+/* Gewährleistungs-Hinweis (KP3): gleiches Fahrzeug (Kennzeichen/FIN) oder gleicher Kunde innerhalb von 12 Monaten wieder da */
+function gewHinweis(a){if(a.status==='abgeholt')return'';const f=fzg(a.fzgId)||{},heute=a.annahme||todayISO(),ab=addDays(heute,-365),norm=x=>String(x||'').replace(/[\s-]/g,'').toUpperCase();
+ const frueher=S.auftraege.filter(o=>o.id!==a.id&&['fertig','abgeholt'].includes(o.status)&&(o.abgabe||o.annahme||'')>=ab&&(o.annahme||'')<=heute&&(()=>{const g=fzg(o.fzgId)||{};
+  return o.kundeId===a.kundeId||o.fzgId===a.fzgId||(f.kennz&&norm(g.kennz)===norm(f.kennz))||(f.vin&&norm(g.vin)===norm(f.vin))})());
+ if(!frueher.length)return'';const o=frueher.sort((x,y)=>(y.abgabe||y.annahme||'').localeCompare(x.abgabe||x.annahme||''))[0];
+ return`<div class="dl-card gew" data-act="gew-open" data-id="${o.id}" role="button" tabindex="0"><b>Kunde war vor unter 12 Monaten hier</b><span>${esc(o.nr)} am ${dLabel(o.abgabe||o.annahme)}. Das Problem könnte mit unserer Arbeit zusammenhängen – bitte prüfen.</span></div>`}
+ACT['gew-open']=el=>nav('auftrag',el.dataset.id);
 /* Hinweis/Karte im Auftrag */
 function dlgKarte(a){const d=a.dlg;if(a.status==='abgeholt'&&!d)return'';
  if(d&&d.done){const xs=dlgItems().filter(i=>(d.chk[i.id]||{}).v===0).length,zus=DLG_ZUS.filter(([id])=>d.zus[id]).map(z=>z[1]);
@@ -1689,7 +1710,7 @@ function vKalk(id){
   side:`<button class="btn kv-fertig" data-act="back">Fertig</button>`});
 }
 ACT['kalk-voll']=el=>{if(calcMode[el.dataset.oid]==='over'||(calcMode[el.dataset.oid]==='tab'&&innerWidth<700))calcMode[el.dataset.oid]='liste';nav('kalk',el.dataset.oid)};
-function fotoTile(a,fo){return `<div class="foto">${fo.isVideo?`<video src="${fo.data}" muted playsinline style="width:100%;height:100%;object-fit:cover" controls></video>`:`<img src="${fo.data}" alt="">`}<span class="loc">${esc(fo.label)}</span>
+function fotoTile(a,fo){return `<div class="foto">${fo.isFile?`<a class="foto-datei" href="${fo.data}" download="${esc(fo.name||'Datei')}">${esc(fo.name||'Datei')}</a>`:fo.isVideo?`<video src="${fo.data}" muted playsinline style="width:100%;height:100%;object-fit:cover" controls></video>`:`<img src="${fo.data}" alt="">`}<span class="loc">${esc(fo.label)}</span>
  <button class="fx" data-act="foto-del" data-oid="${a.id}" data-fid="${fo.id}">${xIco(13)}</button></div>`}
 function camTile(a,pid){return `<div class="foto cam" data-act="add-foto-btn" data-oid="${a.id}" data-pid="${pid}">+</div>`}
 
@@ -1705,7 +1726,7 @@ FSET['ord-status-sel']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;const v
  a.status=v;if(v==='abgeholt')a.pinned=false;
  if(v==='fertig'&&a.timerStart){a.zeiten.push({start:a.timerStart,end:Date.now(),mid:curMid||'m1'});a.timerStart=null}
  a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Status geändert: '+(v==='sonst'?(a.statusTxt||'Sonstiges'):statL(v)[1])+'.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
- save();render()};
+ save();render();if(v==='fertig')nachFertig(a)};
 FSET['ord-status-txt']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;a.statusTxt=el.value.trim();save()};
 ACT['freigabe-sheet']=el=>freigabeSheet(auftrag(el.dataset.oid));
 function freigabeSheet(a){
@@ -1732,7 +1753,14 @@ ACT['freigabe-save']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;
  save();closeSheet();render();toast('Freigabe festgehalten — neue Positionen gelten ab jetzt als Erweiterung')};
 ACT['ord-status']=el=>{const a=auftrag(el.dataset.oid);a.status=el.dataset.v;if(el.dataset.v==='abgeholt')a.pinned=false;
  if(el.dataset.v==='fertig'&&a.timerStart){a.zeiten.push({start:a.timerStart,end:Date.now(),mid:curMid||'m1'});a.timerStart=null}
- save();render();hap()};
+ save();render();hap();if(el.dataset.v==='fertig')nachFertig(a)};
+/* Fertigmeldung (KP3): kurze kundenfreundliche Zusammenfassung „Was wurde gemacht?“ */
+function nachFertig(a){if(!a||a.status!=='fertig')return;
+ const vorschlag=a.wasGemacht||a.pakete.flatMap(pk=>pk.pos).filter(x=>x.typ==='arbeit'&&!x.auto&&x.phase!=='diag').map(x=>x.bez).join(', ');
+ setTimeout(()=>sheet('Was wurde gemacht?',`<div style="font-size:13px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Kurz und kundenfreundlich – erscheint auf der Rechnung und bei der Übergabe.</div>
+  <div class="fld"><textarea id="fm-t" rows="5">${esc(vorschlag)}</textarea></div>
+  <button class="btn btn-main" style="width:100%" data-act="fm-ok" data-oid="${a.id}">Speichern</button>`),120)}
+ACT['fm-ok']=el=>{const a=auftrag(el.dataset.oid);a.wasGemacht=$('#fm-t').value.trim();save();closeSheet();render();toast('Zusammenfassung gespeichert')};
 ACT['goto-orga']=el=>{const a=auftrag(el.dataset.oid);secOpen[a.id].add('orga');render();
  setTimeout(()=>{const s=$('#sec-orga');if(s)s.scrollIntoView({behavior:'smooth',block:'start'})},60)};
 ACT['goto-komm']=el=>{const a=auftrag(el.dataset.oid);secOpen[a.id].add('komm');render();
@@ -1834,6 +1862,8 @@ FSET['o-teiler']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;let t=parseFl
  a.awTeiler=(t!==g)?t:null;const nw=Math.round((S.settings.stundensatzCt||0)/t);a.awCt=(nw&&nw!==S.settings.awCt)?nw:null;save();render();toast('AW-Teiler für diesen Auftrag: '+pct1(t)+' → '+fmt(a.awCt||S.settings.awCt)+'/AW — gilt für neue Positionen')};
 FSET['o-erinn']=el=>{auftrag(el.dataset.oid).erinnerung=el.value;save()};
 FSET['o-erinnd']=el=>{auftrag(el.dataset.oid).erinnerungDat=el.value||null;save()};
+ACT['o-alt']=el=>{const a=auftrag(el.dataset.oid),v=el.dataset.v==='1';a.altteile=a.altteile===v?null:v;save();render()};
+FSET['o-was']=el=>{auftrag(el.dataset.oid).wasGemacht=el.value.trim();save()};
 FSET['o-notiz']=el=>{auftrag(el.dataset.oid).notiz=el.value.trim();save();render()};
 FSET['p-klass']=el=>{const a=auftrag(el.dataset.oid);a.pakete.find(p=>p.id===el.dataset.pid).klass=el.value;save();render()};
 FSET['p-zahler']=el=>{const a=auftrag(el.dataset.oid);a.pakete.find(p=>p.id===el.dataset.pid).zahler=el.value;save();render()};
@@ -1925,10 +1955,14 @@ function posSheet(a,pk,x,prefillBez){
    <div class="fld" style="margin-bottom:0"><label>ETA</label><input type="date" id="ps-eta" value="${x&&x.eta?x.eta:''}"></div></div>`):''}
   ${mSec('Interne Notiz',x&&x.notizIntern?'vorhanden':'',!!(x&&x.notizIntern),`
   <div class="fld"><label>Interne Notiz — nur für die Werkstatt, nie auf der Rechnung</label><textarea id="ps-ni" rows="2" placeholder="z. B. Spezialwerkzeug nötig …">${x?esc(x.notizIntern||''):''}</textarea></div>`)}
+  ${x?(()=>{const an=a.fotos.filter(fo=>fo.posId===x.id);return mSec('Anhänge',an.length?an.length+' Datei'+(an.length>1?'en':''):'',an.length>0,`<div class="ps-an">${an.map(fo=>fo.isFile?`<a class="ps-an-f" href="${fo.data}" download="${esc(fo.name||'Datei')}">${esc(fo.name||'Datei')}</a>`:fo.isVideo?`<video src="${fo.data}" muted playsinline controls></video>`:`<img src="${fo.data}" alt="">`).join('')}</div>
+   <button class="btn-ghost" style="width:100%" data-act="pos-anhang" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Bild, Video oder Datei anhängen</button>
+   <input type="file" id="ps-file" accept="image/*,video/*,application/pdf,.pdf" multiple style="display:none">`)})():''}
   ${x?`<div style="font-size:10px;color:var(--ink3);margin:2px 2px 10px">Position ${x.nr?'#'+x.nr:''}${x.created?' · angelegt '+dtLabel(x.created):''}</div>`:''}
   <div class="row2" style="margin-top:6px">
    ${x?`<button class="btn btn-danger" data-act="pos-del" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Löschen</button>`:'<span></span>'}
    <button class="btn btn-main" data-act="pos-save" data-oid="${a.id}" data-pid="${pk.id}" ${x?`data-xid="${x.id}"`:''} data-typ="${x?x.typ:'arbeit'}">Speichern</button></div>`);
+ {const i=$('#ps-file');if(i&&!i._b){i._b=true;i.addEventListener('change',e=>{if(e.target.files.length)handlePhotos(e.target.files);e.target.value=''})}}
  /* Vorschau-Kopf: Bezeichnung, Gesamtpreis, bei Teilen EK → VK und Aufschlag */
  const pv=()=>{const b=$('#ps-b');if(!b)return;
   $('#mk-n').textContent=b.value.trim()||(isT?'Neues Teil':'Neue Arbeit');
@@ -2225,24 +2259,28 @@ ACT['komm-src']=el=>{const a=auftrag(el.dataset.oid),m=a.komm.find(x=>x.id===el.
 
 /* Fotos */
 let photoTarget=null;
+ACT['pos-anhang']=el=>{photoTarget={oid:el.dataset.oid,pid:el.dataset.pid,xid:el.dataset.xid};const i=$('#ps-file');if(i)i.click()};
+function anhangFertig(a,t){if(!t||!t.xid)return;const pk=a.pakete.find(p=>p.id===t.pid),x=pk&&pk.pos.find(p=>p.id===t.xid);if(pk&&x&&$('#sheetbg')){closeSheet();posSheet(a,pk,x)}}
 ACT['add-foto-btn']=el=>{photoTarget={oid:el.dataset.oid,pid:el.dataset.pid||null};$('#photoinp').click()};
 function handlePhotos(files){const t=photoTarget;if(!t)return;const a=auftrag(t.oid);if(!a)return;
  const pk=t.pid?a.pakete.find(p=>p.id===t.pid):null;
  [...files].forEach(file=>{
   if(file.type.startsWith('video/')&&file.size>12*1024*1024)return toast('Video zu groß (max. 12 MB) — bitte kürzer aufnehmen',true);
+  if(t.xid&&(file.type==='application/pdf'||/\.pdf$/i.test(file.name||''))){if(file.size>6*1024*1024)return toast('Datei zu groß (max. 6 MB)',true);
+   const fr=new FileReader();fr.onload=()=>{a.fotos.push({id:'fo'+uid(),paketId:t.pid,posId:t.xid,label:file.name||'Datei',name:file.name||'Datei.pdf',data:fr.result,isFile:true});save();render();anhangFertig(a,t);toast('Datei angehängt')};fr.readAsDataURL(file);return}
   if(file.type==='application/pdf'||/\.pdf$/i.test(file.name||'')){
    a.docs=a.docs||[];a.docs.push({name:file.name||'Dokument.pdf',typ:'PDF'});
    save();render();toast('PDF unter „Dokumente" vermerkt');return}
   const r=new FileReader();r.onload=()=>{
   if(file.type.startsWith('video/')){
-   a.fotos.push({id:'fo'+uid(),paketId:t.pid,label:pk?pk.name:'Annahme',data:r.result,isVideo:true});
-   save();render();toast('Video gespeichert');return}
+   a.fotos.push({id:'fo'+uid(),paketId:t.pid,posId:t.xid||null,label:pk?pk.name:'Annahme',data:r.result,isVideo:true});
+   save();render();anhangFertig(a,t);toast('Video gespeichert');return}
   const img=new Image();img.onload=()=>{
    const max=1100,sc=Math.min(1,max/Math.max(img.width,img.height));
    const c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
    c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-   const fid='fo'+uid();a.fotos.push({id:fid,paketId:t.pid,label:pk?pk.name:'Annahme',data:c.toDataURL('image/jpeg',.72)});
-   dlgFotoZiel(a,t,fid);save();render();toast('Foto gespeichert')};
+   const fid='fo'+uid();a.fotos.push({id:fid,paketId:t.pid,posId:t.xid||null,label:pk?pk.name:'Annahme',data:c.toDataURL('image/jpeg',.72)});
+   dlgFotoZiel(a,t,fid);save();render();anhangFertig(a,t);toast('Foto gespeichert')};
   img.onerror=()=>toast('Bildformat wird nicht unterstützt — bitte als JPG/Foto wählen',true);
   img.src=r.result};r.readAsDataURL(file)})}
 ACT['foto-del']=el=>{const a=auftrag(el.dataset.oid);
@@ -2358,7 +2396,8 @@ function buildInvoiceHtml(a,pakIds,reNr){
  const mwst=Math.round(netto*S.settings.mwst/100),brutto=netto+mwst;
  const restAnz=Math.max(0,(a.anzahlungCt||0)-(a.anzVerrCt||0));
  const anz=Math.min(restAnz,brutto);
- const rows=paks.map(pk=>{
+ const rowsKopf=(a.wasGemacht?`<tr><td colspan="4" style="font-size:11px;white-space:pre-wrap;padding-bottom:8px"><b>Durchgeführte Arbeiten:</b> ${esc(a.wasGemacht)}</td></tr>`:'')+(a.altteile!=null?`<tr><td colspan="4" style="font-size:10px;color:#444">Altteile: ${a.altteile?'vom Kunden mitgenommen':'fachgerecht entsorgt'}</td></tr>`:'');
+ const rows=rowsKopf+paks.map(pk=>{
   const prab=rabCt(pakBrutto(pk),pk.rabatt);
   return `<tr class="paksep"><td colspan="4">${esc(pk.name)} · ${pk.klass==='so'&&pk.klassTxt?esc(pk.klassTxt):KLASS[pk.klass][0]}${pk.zahler!=='kunde'?' · zahlt: '+(pk.zahler==='son'&&pk.zahlerTxt?esc(pk.zahlerTxt):ZAHLER[pk.zahler]):''}</td></tr>`+
   (pk.problem?`<tr><td colspan="4" style="font-size:10px;color:#444;white-space:pre-wrap"><b>Beanstandung:</b> ${esc(pk.problem)}</td></tr>`:'')+
@@ -2394,8 +2433,10 @@ ACT['print-kv']=el=>{const a=auftrag(el.dataset.oid);
 ACT['bill-pak']=el=>doBill(auftrag(el.dataset.oid),[el.dataset.pid]);
 ACT['bill-all']=el=>{const a=auftrag(el.dataset.oid);const open=a.pakete.filter(p=>!p.abger).map(p=>p.id);
  if(!open.length)return toast('Alle Pakete sind bereits abgerechnet');doBill(a,open)};
-function doBill(a,pakIds){
+function doBill(a,pakIds,trotz){
  const paks=a.pakete.filter(p=>pakIds.includes(p.id));
+ const offen=paks.filter(pk=>{const r=pkFrei(a,pk);return r&&!r.ok});
+ if(offen.length&&!trotz)return confirmBox('Freigabe ausstehend','Der Kunde hat '+offen.map(p=>'„'+esc(p.name)+'“').join(', ')+' noch nicht freigegeben. Möchten Sie die Rechnung trotzdem erstellen?','Trotzdem fortfahren',()=>doBill(a,pakIds,true),false);
  confirmBox('Rechnung erstellen?',paks.map(p=>'„'+esc(p.name)+'"').join(', ')+' wird abgerechnet und als Rechnung gedruckt.','Rechnung erstellen',()=>{
   const y=new Date().getFullYear();
   const reNr='RE-'+y+'-'+String(S.settings.nextRe++).padStart(4,'0');

@@ -575,6 +575,33 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       closeSheet(); S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
     if (Object.values(rw).some(v => !v)) errs.push('Räder einlagern: ' + JSON.stringify(rw));
   }
+  // KP3: Freigabe je Paket + Rückfrage vor Rechnung, Fund-Ordner, Anhang je Position, Gewährleistung, Fertigmeldung, Altteile
+  {
+    const snapK = await page.evaluate(() => JSON.stringify({ a: S.auftraege, r: S.rechnungen }));
+    const k3 = await page.evaluate(async () => {
+      const w = () => new Promise(r => setTimeout(r, 100));
+      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); a.freigabe = null; a.sig = null;
+      const pk = a.pakete[0]; pk.frei = {}; pk.entsperrt = true; delete calcMode[a.id]; pakOpen[a.id] = new Set([pk.id]); nav('kalk', a.id); await w();
+      const r = { ausstehend: /Freigabe ausstehend/.test(document.querySelector('.wb-pk').textContent) };
+      doBill(a, [pk.id]); await w(); r.rueckfrage = /noch nicht freigegeben/.test((document.querySelector('.confirm-bg') || {}).textContent || ''); document.querySelectorAll('.confirm-bg').forEach(c => c.remove());
+      pk.frei = { abh: { ct: 30000, wie: 'tel', ts: Date.now() } }; render(); await w(); r.freigegeben = /300 € freigegeben/.test(document.querySelector('.wb-pk').textContent);
+      document.querySelector('[data-act="fund-neu"]').click(); await w(); document.getElementById('fu-t').value = 'Bremsschlauch porös'; document.querySelector('[data-act="fund-ok"]').click(); await w();
+      const fp = a.pakete.find(p => p.fund); r.fund = !!fp && fp.name === 'Während der Arbeit festgestellt: Bremsschlauch porös' && fp.pos[0].typ === 'befund';
+      a.status = 'arbeit'; ACT['ord-status']({ dataset: { oid: a.id, v: 'fertig' } }); await new Promise(r => setTimeout(r, 300));
+      r.fertig = !!document.getElementById('fm-t'); if (r.fertig) { document.getElementById('fm-t').value = 'Bremsen erneuert'; document.querySelector('[data-act="fm-ok"]').click(); } await w(); r.was = a.wasGemacht === 'Bremsen erneuert';
+      return r; });
+    // Anhang an Position über Datei-Knopf im Positionsblatt
+    await page.evaluate(() => { const a = auftrag(route.id), pk = a.pakete[0], x = pk.pos.find(p => p.typ === 'arbeit'); posSheet(a, pk, x); });
+    await page.waitForTimeout(150);
+    await page.evaluate(() => { const b = document.querySelector('[data-act="pos-anhang"]'); photoTarget = { oid: b.dataset.oid, pid: b.dataset.pid, xid: b.dataset.xid }; });
+    await page.setInputFiles('#ps-file', { name: 'protokoll.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 test') }); await page.waitForTimeout(500);
+    k3.anhang = await page.evaluate(() => { const a = auftrag(route.id); return a.fotos.some(f => f.isFile && f.posId && f.name === 'protokoll.pdf') && !!document.querySelector('#sheetbg .ps-an-f'); });
+    k3.gew = await page.evaluate(async () => { closeSheet(); const a = auftrag(route.id); const alt = S.auftraege.find(o => o.id !== a.id); const st = alt.status, ab = alt.abgabe, kd = alt.kundeId;
+      alt.status = 'abgeholt'; alt.abgabe = addDays(todayISO(), -100); alt.kundeId = a.kundeId; a.status = 'arbeit'; nav('auftrag', a.id); await new Promise(r => setTimeout(r, 100));
+      const ok = !!document.querySelector('.dl-card.gew'); alt.status = st; alt.abgabe = ab; alt.kundeId = kd; return ok; });
+    await page.evaluate(s => { const o = JSON.parse(s); S.auftraege = o.a; S.rechnungen = o.r; save(); nav('planung'); }, snapK);
+    if (Object.values(k3).some(v => !v)) errs.push('KP3: ' + JSON.stringify(k3));
+  }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
     const sy = await page.evaluate(async () => {

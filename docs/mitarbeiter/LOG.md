@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 19.10.2026 (Mittag) — 2.72 KP3 Teil 1 (Briefing-Update)
+- **Anlass:** Briefing-Update des Inhabers (KP3 fertig, KP4 weitgehend) – „kannst es schon einführen“, AW-Feedback nur To-Do. Nachricht kam abgeschnitten an (ab „Bekannte Probleme … NEUE Kategorie“, KP4 fehlt) → Rest angefragt. Inhalt in PROZESSE.md.
+- **Gebaut:** Stechuhr aus dem Auftrag entfernt (Abschnitt heißt „Checkliste & Dokumente“; Team-Zeiterfassung unverändert). Freigabe je Paket (`pkFrei`: Summe `pk.frei` oder Auftragsfreigabe ohne Erweiterung) im Bericht-Kopf „x € freigegeben“ / „Freigabe ausstehend“; `doBill` fragt bei ausstehender Freigabe nach („Trotzdem fortfahren“, keine Sperre). Knopf „Während der Arbeit festgestellt“ → Ordner „Während der Arbeit festgestellt: …“ (tb, `pk.fund`, Befund drin, Verlauf). Anhänge je Position im Positionsblatt (Bild/Video/PDF bis 6 MB, `fo.posId`, `isFile`), Zähler in der Zeile, Dateikachel in Fotos. Gewährleistungs-Hinweis (`gewHinweis`: gleicher Kunde/Fahrzeug/Kennzeichen/FIN, fertig/abgeholt in den letzten 365 Tagen). Altteile-Frage (`a.altteile`) + „Was wurde gemacht?“ (`a.wasGemacht`, Abfrage bei Fertig über `nachFertig`) – beides auf dem Ausdruck. SW v73.
+- **Test:** Smoke-Test grün, neue Prüfung (ausstehend → Rückfrage → freigegeben, Fund-Ordner, Fertig → Zusammenfassung, PDF-Anhang per Datei-Knopf, Gewährleistung). Fehlerfund: Datei-Feld war erst nach Knopfdruck verbunden → jetzt beim Öffnen des Blatts.
+- **Nächste KP3-Bausteine:** Räder als EINE Position mit Abschluss-Liste (ersetzt die 2.71-Frage), Probefahrt-Position mit km/Uhrzeit, Service-Reset-Pflicht + nächster Service am Fahrzeug, Fehlerspeicher-gelöscht-Haken mit Protokoll vorher/nachher, Teile & Bestellung (Lager-Prüfung, Bestell-Rückfrage, Wareneingang → „Teile da“), Bekannte Probleme (wartet auf Rest der Nachricht).
+
 ## 19.10.2026 (Vormittag, Nachtrag) — 2.71 Annahme: Zusatzleistung als Ordner, 300 €, Räder einlagern
 - **Anlass:** Antworten des Inhabers auf die Rückfragen (siehe PROZESSE.md, Entscheidungen).
 - **Gebaut:** neue Paket-Art `zl` „Zusatzleistung“; angekreuzte Zusatzleistungen erzeugen beim Abschluss je einen leeren Ordner (`pk.zus`). Standard-Diagnosefreigabe 300 € (`settings.diagFreiStd`, Migration von 500). `raederFrage()` nach dem Anlegen einer Arbeit (Katalog, Positionsblatt, Tabelle): Räderwechsel → „Räder einlagern?“ → Position ohne Preis + Blatt öffnet sich. SW v72.
