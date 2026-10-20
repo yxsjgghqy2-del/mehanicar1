@@ -1087,3 +1087,4 @@ tr.kt-auto td{background:var(--bg);color:var(--ink2);font-size:12.5px}
 .fs-pr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .fs-pr img{width:100%;max-height:120px;object-fit:cover;border-radius:9px;margin-bottom:6px}
 .fs-pr .btn-ghost{width:100%;min-height:44px}
+.dl-card.tl{background:var(--red-bg);border:1.5px solid var(--red)}.dl-card.tl b{color:var(--red)}
