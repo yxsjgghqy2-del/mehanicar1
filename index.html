@@ -364,9 +364,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.73';
+const APP_VER='2.74';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.74',d:'2026-10-20',p:['Teile: Beim Hinzufügen prüft die App das Lager (auch per Teilenummer). Ist das Teil „im Haus“, wird es reserviert. Sonst steht es auf „muss bestellt werden“.','Im Auftrag erscheint dann „Teile müssen bestellt werden“. Beim Verlassen des Auftrags fragt die App: „Sollen diese Teile wirklich bestellt werden?“ Bei Ja wird die Bestellung angelegt, und der Auftrag steht auf „Wartet auf Teile“.','Unter Bestellungen schicken Sie die Bestellung als fertige E-Mail an Ihren Lieferanten.','Wareneingang: Sind alle Teile eines Auftrags eingebucht, springt der Auftrag automatisch auf „Teile da“, und Sie bekommen einen Hinweis.']},
  {v:'2.73',d:'2026-10-19',p:['Räder: Pro Auftrag gibt es genau eine Position „Räder komplett ab- und anmontieren“. Dazu kommt eine Abschluss-Liste: einlagern ja/nein, Drehmoment, RDKS.','Probefahrt: Bei der Position „Probefahrt durchführen“ tragen Sie Kilometerstand und Uhrzeit für Start und Ende ein.','Wartung: Der Service-Reset ist ein Pflicht-Haken. Den nächsten Service (Datum und Kilometer) trägt die App beim Fahrzeug ein.','Fehlerspeicher: Unten in der Kalkulation gibt es den Haken „gelöscht“ und Platz für das Protokoll vorher und nachher.','Bei „Fertig“ erinnert die App an offene Punkte.']},
  {v:'2.72',d:'2026-10-19',p:['Jedes Paket zeigt jetzt, ob es freigegeben ist („300 € freigegeben“) oder ob die „Freigabe ausstehend“ ist. Vor der Rechnung fragt die App nach, wenn noch eine Freigabe fehlt. Sie können aber trotzdem fortfahren.','Neuer Knopf „Während der Arbeit festgestellt“: Er legt einen eigenen Ordner an. Die Kosten klären Sie neu mit dem Kunden.','An jede Position können Sie Bilder, Videos oder Dateien anhängen, zum Beispiel Fotos von Altteilen oder ein Fehlerprotokoll.','Kommt ein Kunde oder ein Fahrzeug innerhalb von 12 Monaten wieder, zeigt der Auftrag einen Hinweis.','Bei „Fertig“ fragt die App nach einer kurzen Zusammenfassung „Was wurde gemacht?“ für den Kunden. Neu ist auch die Altteile-Frage. Die Stechuhr ist aus dem Auftrag entfernt (im Team-Bereich bleibt sie).']},
  {v:'2.71',d:'2026-10-19',p:['Fahrzeugannahme: Jede angekreuzte Zusatzleistung (z. B. Batterietest) wird ein eigener Ordner im Auftrag, mit der neuen Art „Zusatzleistung“. Die Positionen tragen Sie dort selbst ein.','Diagnose-Freigabe bei der Annahme: Standard jetzt 300 €, bei jedem Auftrag änderbar.','Bei „Räderwechsel“ fragt die App: „Räder einlagern?“ – bei Ja wird die Position angelegt, und Sie tragen den Preis ein.']},
@@ -424,11 +425,11 @@ const posZahler=(p,pk)=>p.zahler||pk.zahler||'kunde';
 const pakZahlerKurz=pk=>{const set=[...new Set((pk.pos||[]).filter(p=>p.typ==='arbeit'||p.typ==='teil').map(p=>posZahler(p,pk)))];
  if(!set.length)set.push(pk.zahler||'kunde');return set.map(z=>ZAHLER_KURZ[z]||'?').join('+')};
 const nextPosNr=a=>1+a.pakete.reduce((m,pk)=>pk.pos.reduce((m2,p)=>Math.max(m2,p.nr||0),m),0);
-const STATI=[['offen','Offen','#9C6420'],['arbeit','In Arbeit','#3E5A73'],['teile','Wartet auf Teile','#9C6420'],['fertig','Fertig','#2E7650'],['abgeholt','Abgeholt','#6B6B73'],['sonst','Sonstiges','#5C6670']];
+const STATI=[['offen','Offen','#9C6420'],['arbeit','In Arbeit','#3E5A73'],['teile','Wartet auf Teile','#9C6420'],['teileda','Teile da','#2E7650'],['fertig','Fertig','#2E7650'],['abgeholt','Abgeholt','#6B6B73'],['sonst','Sonstiges','#5C6670']];
 const statL=s=>(STATI.find(x=>x[0]===s)||STATI[0]);
 const ordStatusLabel=a=>a.status==='sonst'&&(a.statusTxt||'').trim()?a.statusTxt.trim():statL(a.status)[1];
 const ordFreigegeben=a=>!!(a.sig||a.freigabe);
-const BEST={lager:['Lager','t-green'],bestellt:['bestellt','t-amber'],da:['eingetroffen','t-blue'],verbaut:['verbaut','t-gray']};
+const BEST={inbest:['muss bestellt werden','t-red'],lager:['im Haus','t-green'],bestellt:['bestellt','t-amber'],da:['eingetroffen','t-blue'],verbaut:['verbaut','t-gray']};
 
 /* ============ 3. KALKULATIONS-ENGINE (pur, Cent-genau) ============ */
 /*TEST-START*/
@@ -704,7 +705,8 @@ setInterval(()=>{
 /* ============ 5. VIEWS: PLANUNG + AUFTRÄGE ============ */
 const ACT={},FSET={};
 ACT.nav=el=>nav(el.dataset.v==='mehr'?'mehr':el.dataset.v);
-ACT.back=()=>{if(route._from&&route._from.v&&route._from.v!==route.v){const f=route._from;route={v:f.v,id:f.id};window.scrollTo(0,0);render()}else if(route.v==='kalk')nav('auftrag',route.id);else nav(route.v==='auftrag'?'auftraege':route.v==='kunde'?'kunden':route.v==='fahrzeug'?'fahrzeuge':'planung')};
+ACT.back=()=>{if(['auftrag','kalk'].includes(route.v)){const a=auftrag(route.id);if(a&&tlOffen(a).length&&!tlGefragt.has(a.id)){tlGefragt.add(a.id);return ACT['tl-best']({dataset:{oid:a.id}})}}
+ if(route._from&&route._from.v&&route._from.v!==route.v){const f=route._from;route={v:f.v,id:f.id};window.scrollTo(0,0);render()}else if(route.v==='kalk')nav('auftrag',route.id);else nav(route.v==='auftrag'?'auftraege':route.v==='kunde'?'kunden':route.v==='fahrzeug'?'fahrzeuge':'planung')};
 ACT['sheet-close']=()=>closeSheet();
 ACT.open=el=>nav(el.dataset.v,el.dataset.id);
 ACT['badge-tog']=async()=>{
@@ -1399,7 +1401,7 @@ function vAuftrag(id){
    ordFreigegeben(a)?`<span class="tag t-green" style="flex-shrink:0">Freigegeben${a.freigabe&&a.freigabe.art!=='sig'?' · '+({tel:'telefonisch',mail:'per E-Mail',wa:'per WhatsApp',ig:'per Instagram',pers:'persönlich'}[a.freigabe.art]||''):' · Unterschrift'}</span>`
    :`<button class="tag t-amber" style="border:none;cursor:pointer;font-family:inherit;flex-shrink:0" data-act="freigabe-sheet" data-oid="${a.id}">Noch nicht freigegeben</button>`}
  </div>`;
- const inner=`${gewHinweis(a)}${dlgKarte(a)}<div class="stag">${secKunde}${secFzg}${secPak}${secKomm}${secFoto}${secZeit}${secOrga}${secSig}</div>
+ const inner=`${gewHinweis(a)}${dlgKarte(a)}${tlKarte(a)}<div class="stag">${secKunde}${secFzg}${secPak}${secKomm}${secFoto}${secZeit}${secOrga}${secSig}</div>
   <div style="height:96px"></div>
   <input type="file" accept="image/*,video/*,.pdf,application/pdf,.heic,.heif" multiple id="photoinp" style="display:none">`;
  const side=a.notiz?`<button class="hd-note" data-act="goto-orga" data-oid="${a.id}"><span class="nb">!</span>Notiz</button>`:'';
@@ -1485,7 +1487,7 @@ function lsHtml(a){
   <div class="wb-selbar-b"><button data-act="wb-mv" data-dir="-1" data-oid="${a.id}"${nSel?'':' disabled'} aria-label="Nach oben">↑</button><button data-act="wb-mv" data-dir="1" data-oid="${a.id}"${nSel?'':' disabled'} aria-label="Nach unten">↓</button>
   <button data-act="wb-move" data-oid="${a.id}"${nSel?'':' disabled'}>Verschieben</button><button data-act="wb-rkz" data-oid="${a.id}"${nSel?'':' disabled'}>RKZ</button><button data-act="wb-del" data-oid="${a.id}"${nSel?'':' disabled'}>Löschen</button></div></div>`
   :`<button class="wb-selstart" data-act="wb-sel" data-oid="${a.id}">Positionen auswählen · verschieben · RKZ ändern</button>`;
- return`<div class="ls">${a.pakete.length?leiste:''}${a.pakete.map(bericht).join('')}${a.pakete.length&&!sel?fsHtml(a):''}
+ return`<div class="ls">${sel?'':tlKarte(a)}${a.pakete.length?leiste:''}${a.pakete.map(bericht).join('')}${a.pakete.length&&!sel?fsHtml(a):''}
   ${sel?'':`<button class="ls-neu" data-act="fund-neu" data-oid="${a.id}">+ Während der Arbeit festgestellt</button><button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="tb">+ Neues Problem / Paket</button>`}
   ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<button class="ls-opt" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale wieder einschalten</button>`:''}
   <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b></span></div>
@@ -1743,6 +1745,28 @@ ACT['fs-an']=el=>{const a=auftrag(el.dataset.oid),r=el.dataset.r,i=$('#fs-file')
  i.onchange=e=>{const file=e.target.files[0];e.target.value='';if(!file)return;if(file.size>6*1024*1024)return toast('Datei zu groß (max. 6 MB)',true);
   const fr=new FileReader();fr.onload=()=>{a.fotos=a.fotos.filter(f=>f.fs!==r);const pdf=/pdf/i.test(file.type)||/\.pdf$/i.test(file.name||'');
    a.fotos.push({id:'fo'+uid(),paketId:null,label:'Fehlerprotokoll '+r,name:file.name||('Fehlerprotokoll-'+r),data:fr.result,isFile:pdf,fs:r});save();render();toast('Protokoll '+r+' gespeichert')};fr.readAsDataURL(file)};i.click()};
+/* Teile & Bestellung (KP3): nicht im Haus → „muss bestellt werden“ → Rückfrage → Bestellung; Wareneingang → „Teile da“ + Hinweis */
+const tlGefragt=new Set();
+const tlOffen=a=>a.pakete.flatMap(pk=>pk.pos.map(x=>({pk,x}))).filter(o=>o.x.typ==='teil'&&o.x.best==='inbest'&&!o.pk.abger);
+function tlKarte(a){const o=tlOffen(a);if(!o.length)return'';
+ return`<div class="dl-card tl" data-act="tl-best" data-oid="${a.id}" role="button" tabindex="0"><b>${o.length} Teil${o.length>1?'e':''} muss bestellt werden</b><span>${esc(o.map(z=>z.x.bez).join(', '))} – antippen zum Bestellen</span></div>`}
+ACT['tl-best']=el=>{const a=auftrag(el.dataset.oid),o=tlOffen(a);if(!o.length)return;
+ sheet('Sollen diese Teile wirklich bestellt werden?',`${o.map(({x})=>`<label class="sp-hk"><input type="checkbox" class="tl-cb" value="${x.id}" checked> ${esc((x.menge||1)+' × '+x.bez)}${x.artnr?' <span style="color:var(--ink3)">('+esc(x.artnr)+')</span>':''}</label>`).join('')}
+  <div class="row2" style="margin-top:8px"><div class="fld"><label>Lieferant</label><input id="tl-lief" placeholder="z. B. Stahlgruber" value="${esc(S.settings.lieferantStd||'')}"></div><div class="fld"><label>Erwartet am</label><input type="date" id="tl-eta" value="${addDays(todayISO(),1)}"></div></div>
+  <button class="btn btn-main" style="width:100%" data-act="tl-best-ok" data-oid="${a.id}">Ja, bestellen</button>`)};
+ACT['tl-best-ok']=el=>{const a=auftrag(el.dataset.oid),ids=new Set($$('.tl-cb').filter(c=>c.checked).map(c=>c.value)),o=tlOffen(a).filter(z=>ids.has(z.x.id));
+ if(!o.length)return toast('Nichts ausgewählt',true);const lief=$('#tl-lief').value.trim(),eta=$('#tl-eta').value||null;if(lief)S.settings.lieferantStd=lief;
+ const y=new Date().getFullYear();S.settings.nextBe=S.settings.nextBe||1;
+ const b={id:'b'+uid(),nr:'BE-'+y+'-'+String(S.settings.nextBe++).padStart(4,'0'),ts:Date.now(),lieferant:lief,eta,auftragId:a.id,
+  pos:o.map(({x})=>({lagerId:x.lagerId||null,teil:x.bez,artnr:x.artnr||'',menge:x.menge||1,ekCt:x.ekCt||0,da:0,oid:a.id,xid:x.id}))};
+ S.bestellungen.push(b);o.forEach(({x})=>{x.best='bestellt';x.eta=eta;x.beId=b.id});
+ if(['offen','arbeit'].includes(a.status))a.status='teile';
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Teile bestellt ('+b.nr+(lief?', '+lief:'')+'): '+o.map(z=>(z.x.menge||1)+' × '+z.x.bez).join(', ')+'.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
+ save();closeSheet();render();toast('Bestellung '+b.nr+' angelegt')};
+function teileDaPruefen(oid){const a=auftrag(oid);if(!a)return;
+ const warte=a.pakete.some(pk=>pk.pos.some(x=>x.typ==='teil'&&['inbest','bestellt'].includes(x.best)));
+ if(!warte&&a.status==='teile'){a.status='teileda';a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Alle bestellten Teile sind eingetroffen.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
+  setTimeout(()=>toast('Teile für '+a.nr+' sind da'),400)}}
 /* Vollbild-Kalkulation: nur die Positionen (Tabelle), Pakete und Summen – sonst nichts */
 function vKalk(id){
  const a=auftrag(id);if(!a)return shell('<div class="empty"><b>Auftrag nicht gefunden</b></div>',{title:'Kalkulation',back:1,hideNav:true});
@@ -2059,7 +2083,8 @@ ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
    <option value="">— Freies Teil (ohne Lager) —</option>
    ${S.lager.map(l=>`<option value="${l.id}">${esc(l.teil)} · Bestand ${l.bestand} · ${fmt(l.vkCt)}</option>`).join('')}</select></div></div>`)}
   ${mSec('Teil & Preis','',true,`
-  <div class="fld"><label>Bezeichnung *</label><input id="pt-b" placeholder="Teilname"></div>
+  <div class="row2"><div class="fld"><label>Bezeichnung *</label><input id="pt-b" placeholder="Teilname"></div><div class="fld"><label>Teilenummer</label><input id="pt-nr" placeholder="z. B. 0 986 494 123" autocomplete="off"></div></div>
+  <div id="pt-lag" class="pt-lag"></div>
   <div class="row3">
    <div class="fld" style="margin-bottom:0"><label>Menge</label><input id="pt-m" inputmode="numeric" value="1"></div>
    <div class="fld" style="margin-bottom:0"><label>EK / Stück €</label><input id="pt-ek" inputmode="decimal" value="0,00"></div>
@@ -2068,6 +2093,8 @@ ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
   ${ordFreigegeben(a)?`<div style="font-size:11px;background:var(--amber-bg);border:1px solid rgba(194,113,10,.3);border-radius:9px;padding:8px 11px;margin-bottom:12px;color:var(--amber)">Auftrag ist freigegeben — dieses Teil wird automatisch als <b>Erweiterung</b> protokolliert.</div>`:''}
   <button class="btn btn-main" style="width:100%;margin-top:6px" data-act="teil-save" data-oid="${a.id}" data-pid="${pk.id}">Hinzufügen</button>`);
  /* Vorschau-Kopf: Menge × EK → VK, Summe, Aufschlag, Lagerbestand */
+ const nrIn=$('#pt-nr');if(nrIn)nrIn.addEventListener('change',()=>{const v=nrIn.value.replace(/\s/g,'').toLowerCase();if(!v)return;const l=S.lager.find(z=>(z.artnr||'').replace(/\s/g,'').toLowerCase()===v);
+  if(l){$('#pt-l').value=l.id;$('#pt-l').dispatchEvent(new Event('change'))}});
  const pv=()=>{const m=Math.max(1,parseInt($('#pt-m').value)||1),ek=parseEuro($('#pt-ek').value)||0,vk=parseEuro($('#pt-vk').value)||0,l=lagerT($('#pt-l').value);
   $('#mk-n').textContent=$('#pt-b').value.trim()||'Neues Teil';
   $('#mk-s').textContent=m+' × EK '+fmt(ek)+' → VK '+fmt(vk)+(l?' · '+(l.bestand>=m?'Lager: '+l.bestand+' da':'nur '+l.bestand+' im Lager — wird bestellt'):'');
@@ -2078,18 +2105,19 @@ ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
  $('#sheetbg').addEventListener('input',pv);pv()};
 ACT['teil-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const bez=$('#pt-b').value.trim();if(!bez)return toast('Bezeichnung fehlt',true);
- const lid=$('#pt-l').value||null,menge=Math.max(1,parseInt($('#pt-m').value)||1);
+ const artnr=($('#pt-nr')||{value:''}).value.trim();let lid=$('#pt-l').value||null;const menge=Math.max(1,parseInt($('#pt-m').value)||1);
+ if(!lid){const l=S.lager.find(z=>(artnr&&(z.artnr||'').replace(/\s/g,'')===artnr.replace(/\s/g,''))||z.teil.toLowerCase()===bez.toLowerCase());if(l)lid=l.id}
  const ext=ordFreigegeben(a);
  const vorher=ordNetto(a);
  const x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'teil',bez,aw:0,menge,ekCt:Math.max(0,parseEuro($('#pt-ek').value)),vkCt:Math.max(0,parseEuro($('#pt-vk').value)),
-  best:lid?'lager':null,eta:null,lagerId:lid,ext};
+  best:'inbest',eta:null,lagerId:lid,artnr,ext};
  if(lid){const l=lagerT(lid);
   if(l.bestand>=menge){l.bestand-=menge;x.best='lager'}
-  else{x.best='bestellt';x.eta=addDays(todayISO(),1);toast('Bestand reicht nicht — als „bestellt" markiert',true)}}
+  else toast('Nur '+l.bestand+' im Haus – muss bestellt werden',true)}
  pk.pos.push(x);
  if(ext)logExtension(a,pk,x,vorher);
  logUnlockEdit(a,pk,'Teil „'+bez+'" hinzugefügt ('+fmt(x.vkCt*(x.menge||1))+').');
- save();closeSheet();render();toast('Teil hinzugefügt')};
+ save();closeSheet();render();toast(x.best==='lager'?'Teil hinzugefügt – im Haus':'Teil hinzugefügt – muss bestellt werden')};
 ACT['pos-edit']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const x=pk.pos.find(p=>p.id===el.dataset.xid);
  if(x&&x.typ==='befund'){
@@ -2228,7 +2256,7 @@ function ktCommit(el){const a=auftrag(el.dataset.oid);if(!a)return null;const pk
   if(A){if(v.art&&v.art!=='mech'){x.art=v.art;x.awSatz=artSatz(a,v.art)}x.aw=v.aw||apAwFor(v.bez,marke)||0;x.vkCt=v.vkLeer||k==='aw'?Math.round(x.aw*ktSatz(a,x)):v.vkCt}
   else if(l){x.lagerId=l.id;x.ekCt=l.ekCt;x.vkCt=l.vkCt;x.vkAuto=false;
    if(l.bestand>=x.menge){l.bestand-=x.menge;x.best='lager'}else{x.best='bestellt';x.eta=addDays(todayISO(),1);toast('Nur '+l.bestand+' im Lager – als „bestellt“ markiert',true)}}
-  else{x.ekCt=v.ekCt;x.vkAuto=v.vkLeer;x.vkCt=v.vkLeer?vkVorschlag(v.ekCt):v.vkCt}
+  else{x.ekCt=v.ekCt;x.vkAuto=v.vkLeer;x.vkCt=v.vkLeer?vkVorschlag(v.ekCt):v.vkCt;x.best='inbest'}
   x.rab=v.rab;pk.pos.push(x);if(x.ext)logExtension(a,pk,x,vorher);
   logUnlockEdit(a,pk,'Position „'+x.bez+'" hinzugefügt ('+fmt(posNetto(x))+').');
   if(A&&x.aw>0)apLearn(x.bez,x.aw,marke);save();raederFrage(a,pk,x);return x}
@@ -2710,7 +2738,7 @@ function vFahrzeug(id){
    ${f.zustand?`<div class="kv"><span class="k">Fahrzeugzustand</span><span class="v">${f.zustand==='son'?esc(f.zustandTxt||'Sonstiges'):{gut:'Gut',rep:'Reparaturbedürftig',totalschaden:'Totalschaden'}[f.zustand]||esc(f.zustand)}</span></div>`:''}
    ${f.notiz?`<div class="kv"><span class="k">Notiz</span><span class="v">${esc(f.notiz)}</span></div>`:''}</div>
   <div class="card"><div class="sec-h" style="cursor:default"><span class="t">Historie</span><span class="mini">${ords.length} Aufträge</span></div>
-   ${ords.map(a=>{const[,sl,sc]=statL(a.status);const aktiv=['offen','arbeit','teile','fertig'].includes(a.status);return `<div class="lrow" data-act="open" data-v="auftrag" data-id="${a.id}">
+   ${ords.map(a=>{const[,sl,sc]=statL(a.status);const aktiv=['offen','arbeit','teile','teileda','fertig'].includes(a.status);return `<div class="lrow" data-act="open" data-v="auftrag" data-id="${a.id}">
     <div class="lt"><b>${a.nr} · ${dLabel(a.annahme)}</b>
      <span>${esc(a.pakete.map(p=>p.name).join(', ')||'—')}</span>
      ${aktiv?`<span style="display:flex;align-items:center;gap:5px;margin-top:3px"><span class="tag t-gray" data-act="buehne-pick" data-id="${a.id}" style="cursor:pointer">Bühne ${a.buehne||'—'}</span></span>`:''}
@@ -4032,8 +4060,9 @@ ACT['ma-cur']=el=>{curMid=el.dataset.id;render()};
 const BSTAT=b=>{const tot=b.pos.reduce((s,p)=>s+p.menge,0),da=b.pos.reduce((s,p)=>s+(p.da||0),0);
  return da<=0?['offen','t-amber']:da<tot?['teilweise','t-blue']:['eingetroffen','t-green']};
 function beVerbuche(b,p){if(p.da>=p.menge)return 0;
- const l=S.lager.find(x=>x.id===p.lagerId);const add=p.menge-(p.da||0);
- if(l)l.bestand+=add;p.da=p.menge;return add}
+ const add=p.menge-(p.da||0);p.da=p.menge;
+ if(p.oid&&p.xid){const a=auftrag(p.oid),x=a&&a.pakete.flatMap(pk=>pk.pos).find(q=>q.id===p.xid);if(x){x.best='da';teileDaPruefen(p.oid)}return add} /* für einen Auftrag bestellt → nicht ins Lager */
+ const l=S.lager.find(x=>x.id===p.lagerId);if(l)l.bestand+=add;return add}
 function vBestellungen(){
  const off=S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen');
  const wertCt=off.reduce((s,b)=>s+b.pos.reduce((x,p)=>x+p.ekCt*(p.menge-(p.da||0)),0),0);
@@ -4056,10 +4085,12 @@ function vBestellungen(){
     <span class="v" style="display:flex;gap:8px;align-items:center">
      <span class="num" style="font-size:11px;color:var(--ink3)">${p.menge} × ${fmt(p.ekCt)}</span>
      ${p.da>=p.menge?'<span class="tag t-green">eingebucht</span>'
-      :`<button class="btn btn-2nd btn-sm" data-act="be-pos-in" data-bid="${b.id}" data-pid="${p.lagerId}">Da? Einbuchen</button>`}</span></div>`).join('')}
+      :`<button class="btn btn-2nd btn-sm" data-act="be-pos-in" data-bid="${b.id}" data-i="${b.pos.indexOf(p)}">Da? Einbuchen</button>`}</span></div>`).join('')}
    <div class="row2" style="margin-top:10px">
     <button class="btn btn-danger" data-act="be-del" data-id="${b.id}">Löschen</button>
     ${BSTAT(b)[0]!=='eingetroffen'?`<button class="btn btn-soft-green" data-act="be-all-in" data-id="${b.id}">Alles eingetroffen</button>`:'<span></span>'}</div>
+   ${b.auftragId?`<div style="font-size:11px;color:var(--ink3);margin-top:8px">Für Auftrag ${esc((auftrag(b.auftragId)||{}).nr||'')}</div>`:''}
+   ${BSTAT(b)[0]!=='eingetroffen'?`<button class="btn-ghost" style="width:100%;margin-top:8px" data-act="be-mail" data-id="${b.id}">Bestellung per E-Mail an Lieferant</button>`:''}
   </div>`}).join('')
   :'<div class="card"><div class="empty"><b>Keine Bestellungen</b>Im Lager: „Bestellliste" → „Als Bestellung anlegen" — oder oben manuell anlegen.</div></div>'}
  <div style="font-size:11px;color:var(--ink3);margin-top:10px;text-align:center;line-height:1.6">Einbuchen erhöht den Lagerbestand automatisch — einmalig, doppeltes Antippen bucht nichts doppelt.</div>`;
@@ -4105,12 +4136,15 @@ ACT['be-new']=()=>{const it=orderListItems();
   pos:it.map(({l,menge})=>({lagerId:l.id,teil:l.teil,artnr:l.artnr||'',menge,ekCt:l.ekCt,da:0}))};
  S.bestellungen.push(b);save();closeSheet();nav('bestellungen');toast('Bestellung '+b.nr+' angelegt')};
 ACT['be-pos-in']=el=>{const b=S.bestellungen.find(x=>x.id===el.dataset.bid);if(!b)return;
- const p=b.pos.find(x=>x.lagerId===el.dataset.pid);if(!p)return;
+ const p=el.dataset.i!=null?b.pos[+el.dataset.i]:b.pos.find(x=>x.lagerId===el.dataset.pid);if(!p)return;
  const add=beVerbuche(b,p);save();render();hap();
  if(add)toast(add+' × '+p.teil+' ins Lager gebucht')};
 ACT['be-all-in']=el=>{const b=S.bestellungen.find(x=>x.id===el.dataset.id);if(!b)return;
  let n=0;b.pos.forEach(p=>{n+=beVerbuche(b,p)});save();render();hap();
  toast(n?'Wareneingang verbucht — Lager aktualisiert':'Bereits verbucht')};
+ACT['be-mail']=el=>{const b=S.bestellungen.find(x=>x.id===el.dataset.id);if(!b)return;const fi=S.settings.firma||{};
+ const txt='Guten Tag,\n\nbitte liefern Sie folgende Teile (Bestellung '+b.nr+'):\n\n'+b.pos.map(p=>'- '+p.menge+' × '+p.teil+(p.artnr?' (Teilenr. '+p.artnr+')':'')).join('\n')+'\n\nVielen Dank\n'+(fi.name||'');
+ location.href='mailto:?subject='+encodeURIComponent('Bestellung '+b.nr+(fi.name?' – '+fi.name:''))+'&body='+encodeURIComponent(txt)};
 ACT['be-del']=el=>{const b=S.bestellungen.find(x=>x.id===el.dataset.id);
  const teils=b.pos.some(p=>p.da>0);
  confirmBox('Bestellung löschen?',(teils?'Bereits eingebuchte Teile bleiben im Lager. ':'')+b.nr+' wird entfernt.','Löschen',
@@ -4586,7 +4620,7 @@ ACT['termin-save']=el=>{
 ACT['termin-del']=el=>{S.termine=(S.termine||[]).filter(x=>x.id!==el.dataset.id);save();closeSheet();render();toast('Termin gelöscht')};
 
 /* ============ ONLINE-TERMINBUCHUNG (öffentlich, kein Login) ============ */
-const ST_TXT={offen:['Angenommen','Ihr Fahrzeug ist bei uns angekommen. Wir beginnen in Kürze.'],arbeit:['In Arbeit','Wir arbeiten gerade an Ihrem Fahrzeug.'],
+const ST_TXT={teileda:['In Arbeit','Die Teile sind da – wir arbeiten weiter an Ihrem Fahrzeug.'],offen:['Angenommen','Ihr Fahrzeug ist bei uns angekommen. Wir beginnen in Kürze.'],arbeit:['In Arbeit','Wir arbeiten gerade an Ihrem Fahrzeug.'],
  teile:['Wartet auf Teile','Wir warten noch auf Ersatzteile.'],fertig:['Fertig','Ihr Fahrzeug ist fertig und kann abgeholt werden.'],abgeholt:['Abgeholt','Vielen Dank für Ihren Besuch.']};
 let stView={id:null,d:null,err:null};
 async function statusLaden(id){stView={id,d:null,err:null};
@@ -4599,7 +4633,7 @@ function vStatus(){const id=route.id||'';
  const d=stView.d,box=b=>`<div style="min-height:100%;background:var(--bg);padding:calc(var(--sat,0px) + 24px) 16px calc(40px + var(--sab,0px))"><div style="max-width:480px;margin:0 auto">${b}</div></div>`;
  if(!d&&!stView.err)return box('<div class="empty" style="margin-top:30vh"><b>Lädt …</b>Stand Ihres Fahrzeugs wird abgerufen.</div>');
  if(!d)return box(`<div class="empty" style="margin-top:24vh"><b>${stView.err==='weg'?'Link nicht mehr gültig':'Keine Verbindung'}</b>${stView.err==='weg'?'Dieser Link ist abgelaufen. Bitte rufen Sie Ihre Werkstatt an.':'Bitte prüfen Sie Ihre Internetverbindung und laden Sie die Seite neu.'}</div>`);
- const [stL,stT]=ST_TXT[d.st]||[d.st,''];const stp=['offen','arbeit','fertig','abgeholt'],cur=stp.indexOf(d.st==='teile'?'arbeit':d.st);
+ const [stL,stT]=ST_TXT[d.st]||[d.st,''];const stp=['offen','arbeit','fertig','abgeholt'],cur=stp.indexOf(d.st==='teile'||d.st==='teileda'?'arbeit':d.st);
  const tel=(d.tel||'').replace(/[^\d+]/g,'');
  return box(`<div style="text-align:center;margin-bottom:18px"><div style="font-size:20px;font-weight:800;letter-spacing:-.02em">${esc(d.ws||'Ihre Werkstatt')}</div>
   ${d.adr?`<div style="font-size:12.5px;color:var(--ink3);margin-top:2px">${esc(d.adr)}</div>`:''}</div>

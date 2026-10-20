@@ -592,6 +592,27 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
     if (Object.values(k4).some(v => !v)) errs.push('KP3 Teil 2: ' + JSON.stringify(k4));
   }
+  // Teile & Bestellung: Lager-Prüfung, „muss bestellt werden“, Rückfrage beim Verlassen, Bestellung, Wareneingang → „Teile da“
+  {
+    const tl = await page.evaluate(async () => {
+      const snap = JSON.stringify({ a: S.auftraege, b: S.bestellungen, l: S.lager }), w = ms => new Promise(r => setTimeout(r, ms || 120));
+      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); a.status = 'arbeit'; const pk = a.pakete[0]; pk.entsperrt = true;
+      a.pakete.forEach(p => p.pos.forEach(x => { if (x.typ === 'teil' && ['inbest', 'bestellt'].includes(x.best)) x.best = 'lager'; }));
+      const l = S.lager[0]; l.bestand = 5; l.artnr = 'AB 123';
+      nav('auftrag', a.id); await w();
+      ACT['add-teil']({ dataset: { oid: a.id, pid: pk.id } }); await w(); document.getElementById('pt-b').value = 'Testteil'; document.getElementById('pt-nr').value = 'AB123'; document.getElementById('pt-nr').dispatchEvent(new Event('change'));
+      document.querySelector('[data-act="teil-save"]').click(); await w();
+      const nx = pk.pos[pk.pos.length - 1]; const r = { imHaus: nx.typ === 'teil' && nx.best === 'lager' && nx.lagerId === l.id && nx.artnr === 'AB123' && l.bestand === 4 };
+      ACT['add-teil']({ dataset: { oid: a.id, pid: pk.id } }); await w(); document.getElementById('pt-b').value = 'Sonderteil XY'; document.querySelector('[data-act="teil-save"]').click(); await w();
+      const sx = pk.pos.find(x => x.bez === 'Sonderteil XY'); r.mussBestellt = !!sx && sx.best === 'inbest' && !!document.querySelector('.dl-card.tl');
+      ACT.back(); await w(); r.rueckfrage = route.v === 'auftrag' && !!document.querySelector('[data-act="tl-best-ok"]');
+      document.querySelector('[data-act="tl-best-ok"]').click(); await w();
+      const b = S.bestellungen.find(x => x.auftragId === a.id); r.bestellt = !!b && sx.best === 'bestellt' && a.status === 'teile';
+      nav('bestellungen'); await w(); const btn = document.querySelector('[data-act="be-pos-in"][data-bid="' + (b || {}).id + '"]'); if (btn) btn.click(); await w(500);
+      r.teileDa = sx.best === 'da' && a.status === 'teileda' && l.bestand === 4;
+      const o = JSON.parse(snap); S.auftraege = o.a; S.bestellungen = o.b; S.lager = o.l; save(); nav('planung'); return r; });
+    if (Object.values(tl).some(v => !v)) errs.push('Teile: ' + JSON.stringify(tl));
+  }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
     const sy = await page.evaluate(async () => {
