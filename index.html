@@ -364,9 +364,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.74';
+const APP_VER='2.75';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.75',d:'2026-10-20',p:['Fahrzeugannahme: Nach dem Abschluss können Sie das Prüfprotokoll für den Kunden drucken oder als PDF speichern. Es enthält Kunde, Fahrzeug, Beanstandung, Diagnose-Freigabe, die 4 Seitenfotos, alle Prüfpunkte mit ✓/✗ und die Unterschrift.']},
  {v:'2.74',d:'2026-10-20',p:['Teile: Beim Hinzufügen prüft die App das Lager (auch per Teilenummer). Ist das Teil „im Haus“, wird es reserviert. Sonst steht es auf „muss bestellt werden“.','Im Auftrag erscheint dann „Teile müssen bestellt werden“. Beim Verlassen des Auftrags fragt die App: „Sollen diese Teile wirklich bestellt werden?“ Bei Ja wird die Bestellung angelegt, und der Auftrag steht auf „Wartet auf Teile“.','Unter Bestellungen schicken Sie die Bestellung als fertige E-Mail an Ihren Lieferanten.','Wareneingang: Sind alle Teile eines Auftrags eingebucht, springt der Auftrag automatisch auf „Teile da“, und Sie bekommen einen Hinweis.']},
  {v:'2.73',d:'2026-10-19',p:['Räder: Pro Auftrag gibt es genau eine Position „Räder komplett ab- und anmontieren“. Dazu kommt eine Abschluss-Liste: einlagern ja/nein, Drehmoment, RDKS.','Probefahrt: Bei der Position „Probefahrt durchführen“ tragen Sie Kilometerstand und Uhrzeit für Start und Ende ein.','Wartung: Der Service-Reset ist ein Pflicht-Haken. Den nächsten Service (Datum und Kilometer) trägt die App beim Fahrzeug ein.','Fehlerspeicher: Unten in der Kalkulation gibt es den Haken „gelöscht“ und Platz für das Protokoll vorher und nachher.','Bei „Fertig“ erinnert die App an offene Punkte.']},
  {v:'2.72',d:'2026-10-19',p:['Jedes Paket zeigt jetzt, ob es freigegeben ist („300 € freigegeben“) oder ob die „Freigabe ausstehend“ ist. Vor der Rechnung fragt die App nach, wenn noch eine Freigabe fehlt. Sie können aber trotzdem fortfahren.','Neuer Knopf „Während der Arbeit festgestellt“: Er legt einen eigenen Ordner an. Die Kosten klären Sie neu mit dem Kunden.','An jede Position können Sie Bilder, Videos oder Dateien anhängen, zum Beispiel Fotos von Altteilen oder ein Fehlerprotokoll.','Kommt ein Kunde oder ein Fahrzeug innerhalb von 12 Monaten wieder, zeigt der Auftrag einen Hinweis.','Bei „Fertig“ fragt die App nach einer kurzen Zusammenfassung „Was wurde gemacht?“ für den Kunden. Neu ist auch die Altteile-Frage. Die Stechuhr ist aus dem Auftrag entfernt (im Team-Bereich bleibt sie).']},
@@ -1641,7 +1642,7 @@ function vAnnahme(id){const a=auftrag(id);if(!a)return shell('<div class="empty"
    :`<div class="dl-hint">Der Kunde bestätigt Beanstandung, Fahrzeugzustand und Diagnose-Freigabe.</div><canvas class="sigc" id="dlgsig-${a.id}"></canvas>
    <div class="sig-foot"><span>Mit dem Finger unterschreiben</span><span><button style="color:var(--ink3);font-weight:600;font-size:12px;margin-right:14px" data-act="dlg-sig-clear" data-oid="${a.id}">Löschen</button>
    <button style="color:var(--blue);font-weight:700;font-size:12px" data-act="dlg-sig" data-oid="${a.id}">Übernehmen</button></span></div>`}</div>
-  ${lk?`<button class="btn btn-2nd" style="width:100%" data-act="dlg-auf" data-oid="${a.id}">Annahme nochmal bearbeiten</button>`
+  ${lk?`<button class="btn btn-main" style="width:100%;margin-bottom:8px" data-act="dlg-druck" data-oid="${a.id}">Prüfprotokoll für den Kunden drucken</button><button class="btn btn-2nd" style="width:100%" data-act="dlg-auf" data-oid="${a.id}">Annahme nochmal bearbeiten</button>`
   :`<button class="btn btn-main dl-go" data-act="dlg-fertig" data-oid="${a.id}">Annahme abschließen${nX?' · '+nX+' Beanstandung'+(nX>1?'en':''):''}</button>
    <button class="dl-skip" data-act="dlg-skip" data-oid="${a.id}">Annahme überspringen</button>`}
   <input type="file" accept="image/*" capture="environment" id="photoinp" style="display:none"></div>`;
@@ -1693,6 +1694,23 @@ function gewHinweis(a){if(a.status==='abgeholt')return'';const f=fzg(a.fzgId)||{
  if(!frueher.length)return'';const o=frueher.sort((x,y)=>(y.abgabe||y.annahme||'').localeCompare(x.abgabe||x.annahme||''))[0];
  return`<div class="dl-card gew" data-act="gew-open" data-id="${o.id}" role="button" tabindex="0"><b>Kunde war vor unter 12 Monaten hier</b><span>${esc(o.nr)} am ${dLabel(o.abgabe||o.annahme)}. Das Problem könnte mit unserer Arbeit zusammenhängen – bitte prüfen.</span></div>`}
 ACT['gew-open']=el=>nav('auftrag',el.dataset.id);
+/* Prüfprotokoll der Annahme zum Ausdrucken für den Kunden (Inhaber 19.10.) */
+function dlgDruckHtml(a){const d=a.dlg||{},fi=S.settings.firma||{},k=kunde(a.kundeId)||{},f=fzg(a.fzgId)||{};
+ const foto=id=>{const fo=a.fotos.find(x=>x.id===id);return fo&&!fo.isFile&&!fo.isVideo?`<img src="${fo.data}" style="width:100%;height:30mm;object-fit:cover;border:1px solid #ddd">`:'<div style="height:30mm;border:1px dashed #bbb"></div>'};
+ const erg=it=>{const c=d.chk[it.id]||{};return c.v===1?'✓ i.O.':c.v===0?'<b>✗ n.i.O.</b>':'–'};
+ const zus=DLG_ZUS.filter(([id])=>d.zus&&d.zus[id]).map(z=>z[1]);
+ return`<div class="ph"><div><h1>${esc(fi.name||'')}</h1><div class="small">${esc(fi.adresse||'')}<br>${esc(fi.tel||'')}${fi.email?' · '+esc(fi.email):''}</div></div>
+  <div class="small" style="text-align:right"><b style="font-size:14px;color:#111">Fahrzeugannahme · Prüfprotokoll</b><br>Auftrag ${esc(a.nr)}<br>${d.done?new Date(d.done).toLocaleString('de-DE',{dateStyle:'medium',timeStyle:'short'}):new Date().toLocaleDateString('de-DE')}</div></div>
+  <table><tr><td style="width:50%"><b>Kunde</b><br>${esc(k.name||'')}<br>${esc(k.tel||'')}</td><td><b>Fahrzeug</b><br>${esc([f.marke,f.modell].filter(Boolean).join(' '))} · ${esc(f.kennz||'')}<br>${f.vin?'FIN '+esc(f.vin)+'<br>':''}Kilometerstand ${d.km?Number(d.km).toLocaleString('de-DE'):'–'} · Tank ${d.tank===''||d.tank==null?'–':d.tank==='0'?'Reserve':d.tank+' %'}</td></tr></table>
+  ${d.txt?`<div style="margin:6px 0 10px"><b>Beanstandung / Kundenwunsch</b><div style="white-space:pre-wrap">${esc(d.txt)}</div></div>`:''}
+  ${d.frei?`<div style="margin-bottom:10px"><b>Diagnose freigegeben bis ${fmt(d.frei)}</b> (inkl. Prüfung; darüber hinaus nur nach Rücksprache)</div>`:''}
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:6px 0 4px">${DLG_SEITEN.map(([k2,l])=>`<div>${foto((d.f4||{})[k2])}<div class="small" style="text-align:center">${l}</div></div>`).join('')}</div>
+  <table><tr><th>Prüfpunkt</th><th style="width:22mm">Ergebnis</th><th>Bemerkung</th></tr>
+  ${DLG_CHK.map(([g,l])=>`<tr class="paksep"><td colspan="3">${g}</td></tr>`+l.map(([id])=>{const it=dlgItems().find(i=>i.id===id),c=(d.chk||{})[id]||{};return`<tr><td>${esc(it.t)}</td><td>${erg(it)}</td><td>${esc(c.note||'')}</td></tr>`}).join('')).join('')}</table>
+  ${zus.length?`<div style="margin:6px 0"><b>Gewünschte Zusatzleistungen:</b> ${esc(zus.join(', '))}</div>`:''}
+  <div style="display:flex;justify-content:space-between;gap:10mm;margin-top:10mm"><div class="small" style="max-width:60%">Mit seiner Unterschrift bestätigt der Kunde die Beanstandung, den festgehaltenen Fahrzeugzustand und die Diagnose-Freigabe. Mit ✗ markierte Punkte sind technische Beanstandungen; Arbeiten daran erfolgen nur nach Freigabe.</div>
+  <div style="text-align:center">${d.sig?`<img src="${d.sig}" style="height:22mm">`:'<div style="height:22mm"></div>'}<div class="small" style="border-top:1px solid #111;min-width:55mm;padding-top:2px">Unterschrift Kunde</div></div></div>`}
+ACT['dlg-druck']=el=>{const a=auftrag(el.dataset.oid);if(!a||!a.dlg)return toast('Noch keine Annahme',true);$('#printarea').innerHTML=dlgDruckHtml(a);setTimeout(()=>window.print(),60)};
 /* Hinweis/Karte im Auftrag */
 function dlgKarte(a){const d=a.dlg;if(a.status==='abgeholt'&&!d)return'';
  if(d&&d.done){const xs=dlgItems().filter(i=>(d.chk[i.id]||{}).v===0).length,zus=DLG_ZUS.filter(([id])=>d.zus[id]).map(z=>z[1]);

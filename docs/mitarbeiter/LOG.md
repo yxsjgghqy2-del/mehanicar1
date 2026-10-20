@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 20.10.2026 (Abendlauf) — 2.75 Prüfprotokoll der Annahme drucken
+- **Gebaut:** `dlgDruckHtml(a)` (Firmenkopf, Kunde, Fahrzeug mit FIN/km/Tank, Beanstandung, Diagnose-Freigabe, 4 Seitenfotos, alle Prüfpunkte nach Gruppen mit ✓ i.O. / ✗ n.i.O. + Bemerkung, gewünschte Zusatzleistungen, Bestätigungstext + Unterschrift). Knopf „Prüfprotokoll für den Kunden drucken“ in der abgeschlossenen Annahme (Drucken oder als PDF sichern über das Druckmenü). Druck immer auf weißem Hintergrund (auch im Dunkelmodus). SW v76.
+- **Test:** Smoke-Test grün (Protokoll enthält ✗-Punkt mit Notiz), Druckansicht angesehen.
+- **Offen beim Inhaber:** Rest des Briefings (Bekannte Probleme, KP4) – zweimal erinnert.
+
 ## 20.10.2026 (Morgenlauf) — 2.74 KP3 Teile & Bestellung
 - **Gebaut:** BEST-Status neu `inbest` „muss bestellt werden“, `lager` heißt „im Haus“; Auftragsstatus neu `teileda` „Teile da“ (auch auf der Kunden-Statusseite als „In Arbeit“). „Teil hinzufügen“ hat Feld Teilenummer (`x.artnr`); Lager-Treffer per Auswahl, Teilenummer oder gleichem Namen → im Haus (Bestand reserviert), sonst `inbest` (auch in der Tabelle). Karte „N Teile müssen bestellt werden“ im Auftrag und im Bericht → Blatt „Sollen diese Teile wirklich bestellt werden?“ (Auswahl, Lieferant gemerkt, Liefertermin) → Bestellung mit Auftragsbezug (`b.auftragId`, `p.oid/xid`), Teile „bestellt“, Auftrag „Wartet auf Teile“, Verlauf. Beim Verlassen des Auftrags fragt die App einmal je Sitzung. Bestellungen: „per E-Mail an Lieferant“ (fertige Mail, Inhaber-Entscheidung). Wareneingang (Einbuchen jetzt per Index): Auftragsteile gehen nicht ins Lager, sondern auf „eingetroffen“; sind alle da → Auftrag „Teile da“ + Hinweis + Verlauf. SW v75.
 - **Test:** Smoke-Test grün, neue Prüfung (Teilenummer → im Haus + Bestand −1, freies Teil → muss bestellt, Rückfrage beim Verlassen, Bestellung, Einbuchen → Teile da, Lager unverändert).

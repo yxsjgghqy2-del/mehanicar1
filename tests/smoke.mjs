@@ -557,7 +557,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
     const ok = await page.$('.confirm-bg [data-c="1"]'); if (ok) await ok.click(); await page.waitForTimeout(200);
     Object.assign(an, await page.evaluate(oid => { const a = auftrag(oid), cp = a.pakete.find(p => p.dlgCheck), tb = a.pakete.find(p => p.klass === 'tb' && !p.dlgCheck);
       return { fertig: !!a.dlg.done && route.v === 'auftrag', beanstandung: !!cp && cp.pos.length === 1 && cp.pos[0].typ === 'befund' && cp.pos[0].bez === 'Bremsbeläge hinten nicht in Ordnung – 2 mm',
-        keinePreise: !!cp && !cp.pos.some(x => x.typ === 'arbeit' || x.typ === 'teil'), problem: !!tb && tb.problem === 'MKL leuchtet' && tb.frei && tb.frei.diag.ct === 50000 && a.pakete.some(p => p.klass === 'zl' && p.name === 'Batterietest' && !p.pos.length), karteOk: !!document.querySelector('.dl-card.ok') }; }, oid));
+        keinePreise: !!cp && !cp.pos.some(x => x.typ === 'arbeit' || x.typ === 'teil'), problem: !!tb && tb.problem === 'MKL leuchtet' && tb.frei && tb.frei.diag.ct === 50000 && a.pakete.some(p => p.klass === 'zl' && p.name === 'Batterietest' && !p.pos.length), karteOk: !!document.querySelector('.dl-card.ok'), druck: (() => { const h = dlgDruckHtml(a); return /Prüfprotokoll/.test(h) && /Bremsbeläge hinten/.test(h) && /n\.i\.O\./.test(h) && /2 mm/.test(h); })() }; }, oid));
     await page.evaluate(oid => { const a = auftrag(oid); a.dlg = { skip: Date.now(), chk: {}, f4: {}, zus: {} }; save(); render(); }, oid);
     an.rot = await page.evaluate(() => !!document.querySelector('.dl-card.rot'));
     await page.evaluate(s => { S.auftraege = JSON.parse(s); save(); nav('planung'); }, snapA);
