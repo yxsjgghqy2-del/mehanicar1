@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 21.10.2026 (Morgenlauf) — 2.76 Freigabe-Link + Kundenlinks mit eigenem Cloud-Projekt
+- **Fehlerfund (wichtig):** Status- und Buchungsseite benutzten auf Kunden-Handys immer das Voreinstellungs-Projekt (`SYNC_DEF`), nicht das neue eigene Supabase-Projekt des Inhabers → Online-Anfragen/Status wären nie angekommen. Lösung: Links tragen jetzt einen Projektcode (`#/status/<id>/<code>`, `#/buchen/<id>/<code>`, `pubCfgCode`/`pubCfgAusHash`/`pubCfg`); angenommen wird nur `https://….supabase.co` (kein Umleiten auf fremde Server). **Inhaber muss den Buchungslink neu weitergeben.**
+- **Gebaut (KP3 NEU):** Knopf „Freigabe beim Kunden anfragen (Link)“ bei Paketen mit „Freigabe ausstehend“ → `pk.freiAnfrage` {Befund, Abhilfe-Positionen brutto, Summe, bis 3 Fotos verkleinert} in die Statusdaten (`fr`, `bid`) → WhatsApp oder fertige E-Mail mit Link. Kundenseite: Karte mit Befund, Fotos, Positionen, Summe, „Freigeben“ (mit Rückfrage) / „Ablehnen“ → über vorhandenes `anfrage_neu` (kein neues SQL nötig) → `anfragenHolen` erkennt `typ:'freigabe'` → `freigabeAntwort`: Ja → `pk.frei.abh` (wie: Freigabe-Link), Nein → `fzg.abgelehnt`; Verlauf + Hinweis. Nachhaken: Paketkopf „Freigabe angefragt vor X Std – nachhaken“ ab 3 Std. Abgelehnte Arbeiten (Link-Ablehnung + Befund „will nichts“) als Karte beim nächsten Auftrag desselben Fahrzeugs. Freigabe eintragen: Feld „Mit wem gesprochen?“. SW v77.
+- **Test:** Smoke-Test grün (Projektcode, fremde Server abgelehnt, nachhaken, Ablehnung → nächster Besuch). Zusätzlich lokal Werkstatt + Kunde als zwei Browser mit simulierter Cloud: Link → Kunde sieht Freigabe → Freigeben → Werkstatt trägt automatisch ein; Kunde sprach nur mit dem eigenen Projekt.
+
 ## 20.10.2026 (Abendlauf) — 2.75 Prüfprotokoll der Annahme drucken
 - **Gebaut:** `dlgDruckHtml(a)` (Firmenkopf, Kunde, Fahrzeug mit FIN/km/Tank, Beanstandung, Diagnose-Freigabe, 4 Seitenfotos, alle Prüfpunkte nach Gruppen mit ✓ i.O. / ✗ n.i.O. + Bemerkung, gewünschte Zusatzleistungen, Bestätigungstext + Unterschrift). Knopf „Prüfprotokoll für den Kunden drucken“ in der abgeschlossenen Annahme (Drucken oder als PDF sichern über das Druckmenü). Druck immer auf weißem Hintergrund (auch im Dunkelmodus). SW v76.
 - **Test:** Smoke-Test grün (Protokoll enthält ✗-Punkt mit Notiz), Druckansicht angesehen.

@@ -613,6 +613,26 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       const o = JSON.parse(snap); S.auftraege = o.a; S.bestellungen = o.b; S.lager = o.l; save(); nav('planung'); return r; });
     if (Object.values(tl).some(v => !v)) errs.push('Teile: ' + JSON.stringify(tl));
   }
+  // Freigabe-Link: Projektcode im Link (nur *.supabase.co), Antwort des Kunden wird eingetragen, Ablehnung beim nächsten Besuch
+  {
+    const fr = await page.evaluate(async () => {
+      const snap = JSON.stringify(S.auftraege), syncAlt = JSON.stringify(S.settings.sync || null), hashAlt = location.hash;
+      const c = syncCfg(); c.url = 'https://abcdefgh.supabase.co'; c.key = 'sb_publishable_X';
+      const code = pubCfgCode(); location.hash = '#/status/0123456789abcdef0123456789/' + code; await new Promise(r => setTimeout(r, 50));
+      const r = { link: !!pubCfgAusHash() && pubCfgAusHash().url === 'https://abcdefgh.supabase.co' };
+      const boese = btoa(JSON.stringify(['https://boese.example.com', 'x'])); location.hash = '#/status/0123456789abcdef0123456789/' + boese; await new Promise(r => setTimeout(r, 50));
+      r.nurSupabase = pubCfgAusHash() === null;
+      history.replaceState(null, '', hashAlt || '#/planung'); nav('planung');
+      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); a.freigabe = null; a.sig = null; a.statusLink = { id: 'sl' + uid() };
+      const pk = a.pakete[0]; pk.frei = {}; pk.freiAnfrage = { id: 'f1', ts: Date.now() - 4 * 3600000, ct: 10000, status: 'offen', daten: {} };
+      r.nachhaken = /nachhaken/.test(pkFreiTxt(a, pk));
+      freigabeAntwort({ sl: a.statusLink.id, fid: 'f1', antwort: 'nein' });
+      r.abgelehnt = pk.freiAnfrage.status === 'nein' && (fzg(a.fzgId).abgelehnt || []).some(x => x.auftragId === a.id);
+      const b2 = S.auftraege.find(o => o.id !== a.id && o.status !== 'abgeholt'); const fAlt = b2.fzgId; b2.fzgId = a.fzgId; nav('auftrag', b2.id); await new Promise(r => setTimeout(r, 100));
+      r.naechsterBesuch = !!document.querySelector('.dl-card.abg'); b2.fzgId = fAlt;
+      S.auftraege = JSON.parse(snap); S.settings.sync = JSON.parse(syncAlt) || undefined; if (!S.settings.sync) delete S.settings.sync; const f = fzg(a.fzgId); if (f) delete f.abgelehnt; save(); nav('planung'); return r; });
+    if (Object.values(fr).some(v => !v)) errs.push('Freigabe-Link: ' + JSON.stringify(fr));
+  }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
     const sy = await page.evaluate(async () => {
