@@ -1094,3 +1094,11 @@ tr.kt-auto td{background:var(--bg);color:var(--ink2);font-size:12.5px}
 .dl-card.abg{background:var(--blue-bg);border:1.5px solid var(--blue)}.dl-card.abg b{color:var(--blue)}
 .stl-fotos{display:flex;gap:8px;overflow-x:auto;margin:4px 0 10px}.stl-fotos img{height:110px;border-radius:10px;flex:none}
 .stl-fr-ok{margin-top:12px;background:var(--green-bg);color:var(--green);font-weight:700;border-radius:11px;padding:12px;font-size:14px;text-align:center}
+/* 2.77 Online-Anfrage (KP1) */
+.bk-kat{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.bk-kat label{display:flex;align-items:center;gap:8px;min-height:44px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);font-size:13.5px;font-weight:600;text-transform:none;letter-spacing:0;color:var(--ink)}
+.bk-kat input{width:18px;height:18px}
+.bk-oder{font-size:12.5px;color:var(--ink2);margin:-4px 0 12px;display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.bk-foto-btn{min-height:40px;padding:0 12px;border-radius:10px;border:1px dashed var(--line);background:var(--bg);font:inherit;font-size:13px;font-weight:650;color:var(--ink)}
+#bk-schein-ok,#bk-bild-ok{color:var(--green);font-weight:700}
+#bk-fin::placeholder,#bk-kz::placeholder{text-transform:none}
