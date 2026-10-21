@@ -364,9 +364,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.75';
+const APP_VER='2.76';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.76',d:'2026-10-21',p:['Freigabe-Link: Bei „Freigabe ausstehend“ tippen Sie auf „Freigabe beim Kunden anfragen“. Der Kunde bekommt per WhatsApp oder E-Mail einen Link mit Befund, Arbeiten, Fotos und Betrag. Dort tippt er „Freigeben“ oder „Ablehnen“, und die Antwort wird hier automatisch eingetragen.','Nach 3 Stunden ohne Antwort steht beim Paket „nachhaken“.','Abgelehnte Arbeiten werden beim nächsten Besuch des Fahrzeugs angezeigt.','Bei telefonischer Freigabe können Sie jetzt eintragen, mit wem Sie gesprochen haben.','Wichtig: Status- und Buchungslinks funktionieren jetzt mit Ihrem eigenen Cloud-Projekt. Bitte den Buchungslink einmal neu weitergeben.']},
  {v:'2.75',d:'2026-10-20',p:['Fahrzeugannahme: Nach dem Abschluss können Sie das Prüfprotokoll für den Kunden drucken oder als PDF speichern. Es enthält Kunde, Fahrzeug, Beanstandung, Diagnose-Freigabe, die 4 Seitenfotos, alle Prüfpunkte mit ✓/✗ und die Unterschrift.']},
  {v:'2.74',d:'2026-10-20',p:['Teile: Beim Hinzufügen prüft die App das Lager (auch per Teilenummer). Ist das Teil „im Haus“, wird es reserviert. Sonst steht es auf „muss bestellt werden“.','Im Auftrag erscheint dann „Teile müssen bestellt werden“. Beim Verlassen des Auftrags fragt die App: „Sollen diese Teile wirklich bestellt werden?“ Bei Ja wird die Bestellung angelegt, und der Auftrag steht auf „Wartet auf Teile“.','Unter Bestellungen schicken Sie die Bestellung als fertige E-Mail an Ihren Lieferanten.','Wareneingang: Sind alle Teile eines Auftrags eingebucht, springt der Auftrag automatisch auf „Teile da“, und Sie bekommen einen Hinweis.']},
  {v:'2.73',d:'2026-10-19',p:['Räder: Pro Auftrag gibt es genau eine Position „Räder komplett ab- und anmontieren“. Dazu kommt eine Abschluss-Liste: einlagern ja/nein, Drehmoment, RDKS.','Probefahrt: Bei der Position „Probefahrt durchführen“ tragen Sie Kilometerstand und Uhrzeit für Start und Ende ein.','Wartung: Der Service-Reset ist ein Pflicht-Haken. Den nächsten Service (Datum und Kilometer) trägt die App beim Fahrzeug ein.','Fehlerspeicher: Unten in der Kalkulation gibt es den Haken „gelöscht“ und Platz für das Protokoll vorher und nachher.','Bei „Fertig“ erinnert die App an offene Punkte.']},
@@ -1402,7 +1403,7 @@ function vAuftrag(id){
    ordFreigegeben(a)?`<span class="tag t-green" style="flex-shrink:0">Freigegeben${a.freigabe&&a.freigabe.art!=='sig'?' · '+({tel:'telefonisch',mail:'per E-Mail',wa:'per WhatsApp',ig:'per Instagram',pers:'persönlich'}[a.freigabe.art]||''):' · Unterschrift'}</span>`
    :`<button class="tag t-amber" style="border:none;cursor:pointer;font-family:inherit;flex-shrink:0" data-act="freigabe-sheet" data-oid="${a.id}">Noch nicht freigegeben</button>`}
  </div>`;
- const inner=`${gewHinweis(a)}${dlgKarte(a)}${tlKarte(a)}<div class="stag">${secKunde}${secFzg}${secPak}${secKomm}${secFoto}${secZeit}${secOrga}${secSig}</div>
+ const inner=`${gewHinweis(a)}${abgelehntKarte(a)}${dlgKarte(a)}${tlKarte(a)}<div class="stag">${secKunde}${secFzg}${secPak}${secKomm}${secFoto}${secZeit}${secOrga}${secSig}</div>
   <div style="height:96px"></div>
   <input type="file" accept="image/*,video/*,.pdf,application/pdf,.heic,.heif" multiple id="photoinp" style="display:none">`;
  const side=a.notiz?`<button class="hd-note" data-act="goto-orga" data-oid="${a.id}"><span class="nb">!</span>Notiz</button>`:'';
@@ -1432,7 +1433,9 @@ function pkFrei(a,pk){const pos=pk.pos.filter(x=>wbIstPos(x)&&posNetto(x)>0);if(
  if(ct>0)return{ok:true,ct};
  if(a.freigabe&&!pk.ext&&!pos.some(x=>x.ext))return{ok:true,ct:0,auftrag:true};
  return{ok:false}}
-function pkFreiTxt(a,pk){const r=pkFrei(a,pk);if(!r)return'';return r.ok?` · <span class="wb-frei-ok">${r.auftrag?'mit Auftrag freigegeben':fmt(r.ct)+' freigegeben'}</span>`:' · <span class="wb-erw">Freigabe ausstehend</span>'}
+function pkFreiTxt(a,pk){const r=pkFrei(a,pk);if(!r)return'';const fa=pk.freiAnfrage;
+ if(!r.ok&&fa&&fa.status==='offen'){const h=Math.floor((Date.now()-fa.ts)/3600000);return` · <span class="wb-erw">Freigabe angefragt${h>=1?' vor '+h+' Std':''}${h>=3?' – nachhaken':''}</span>`}
+ if(!r.ok&&fa&&fa.status==='nein')return' · <span class="wb-erw">vom Kunden abgelehnt</span>';return r.ok?` · <span class="wb-frei-ok">${r.auftrag?'mit Auftrag freigegeben':fmt(r.ct)+' freigegeben'}</span>`:' · <span class="wb-erw">Freigabe ausstehend</span>'}
 function wbChip(a,pk,ph,lk){const r=wbRahmen(pk,ph),act=lk?'':` data-act="frei-set" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}" role="button" tabindex="0"`;
  if(!r)return lk?'':`<span class="wb-chip wb-chip-leer"${act}>Freigabe eintragen</span>`;
  return r.ueber?`<span class="wb-chip wb-chip-ueber"${act}>${fmt(r.f.ct)} freigegeben · ${fmt(r.ueber)} darüber</span>`:`<span class="wb-chip wb-chip-ok"${act}>${fmt(r.f.ct)} freigegeben</span>`}
@@ -1477,6 +1480,7 @@ function lsHtml(a){
     <div class="wb-h"><span>${voll?'Abhilfe':'Arbeiten'}</span>${wbChip(a,pk,'abh',lk)}</div>
     ${abh.map(x=>zeile(pk,x,lk)).join('')||'<div class="wb-m" style="padding:4px 0 2px">Noch keine Arbeiten oder Teile.</div>'}
     ${add(lk,`<button data-act="ls-kat" ${b(' data-ph="abh"')}>+ Arbeit</button><button data-act="add-teil" ${b()}>+ Teil</button>`)}
+    ${!lk&&!sel&&abh.length&&(()=>{const r=pkFrei(a,pk);return r&&!r.ok})()?`<button class="wb-fr" data-act="fr-anfrage" ${b()}>${pk.freiAnfrage&&pk.freiAnfrage.status==='offen'?'Freigabe erneut anfragen':'Freigabe beim Kunden anfragen (Link)'}</button>`:''}
     ${abh.length?`<div class="wb-z wb-zs"><span>Summe ${voll?'Abhilfe':'Arbeiten'}</span><span class="wb-dots"></span><b class="num">${fmt(wbSum(abh))}</b></div>`:''}
     ${hin.length||!lk?`<div class="wb-h"><span>Hinweise</span></div>`:''}
     ${hin.map(x=>`<div class="wb-pos${selCls(x)}"${act(pk,x,lk)}><div class="wb-txt0">${hak(x,lk)}${esc(x.bez)}</div></div>`).join('')}
@@ -1539,17 +1543,18 @@ ACT['wb-text']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===e
  setTimeout(()=>{const e=$('#wb-t');if(e)e.focus()},150)};
 ACT['wb-text-ok']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);pk[el.dataset.f]=$('#wb-t').value.trim();save();closeSheet();render()};
 ACT['wb-voll']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);pk.ablauf=true;save();render()};
-const FREI_WIE={tel:'Telefon',wa:'WhatsApp',ort:'vor Ort',sig:'Unterschrift',mail:'E-Mail'};
+const FREI_WIE={link:'Freigabe-Link',tel:'Telefon',wa:'WhatsApp',ort:'vor Ort',sig:'Unterschrift',mail:'E-Mail'};
 ACT['frei-set']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),ph=el.dataset.ph,f=(pk.frei||{})[ph]||{};
  const ist=wbSum(ph==='diag'?wbDiag(pk):wbAbh(pk));
  sheet(ph==='diag'?'Freigabe Diagnose':'Freigabe Abhilfe',`<div class="fld"><label>Kunde hat freigegeben bis (€)</label><input id="fr-ct" inputmode="decimal" value="${f.ct?fmtIn(f.ct):''}" placeholder="${fmtIn(ist||0)}"></div>
   <div class="fld"><label>Wie?</label><div class="selwrap"><select id="fr-wie">${Object.entries(FREI_WIE).map(([v,l])=>`<option value="${v}"${f.wie===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
+  <div class="fld"><label>Mit wem gesprochen? (bei Telefon)</label><input id="fr-wer" value="${esc(f.wer||'')}" placeholder="z. B. Herr Weber selbst"></div>
   <div class="wb-m" style="margin:-4px 2px 12px">Bisher kalkuliert: ${fmt(ist)}${f.ts?' · eingetragen '+dtLabel(f.ts):''}</div>
   <div class="row2">${f.ct?`<button class="btn btn-2nd" data-act="frei-weg" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}">Entfernen</button>`:'<span></span>'}
   <button class="btn btn-main" data-act="frei-ok" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}">Speichern</button></div>`)};
 ACT['frei-ok']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),ph=el.dataset.ph,ct=parseEuro($('#fr-ct').value)||0;
- if(!(ct>0))return toast('Betrag fehlt',true);pk.frei=pk.frei||{};pk.frei[ph]={ct,wie:$('#fr-wie').value,ts:Date.now()};
- a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:(ph==='diag'?'Diagnose':'Abhilfe')+' „'+pk.name+'" freigegeben bis '+fmt(ct)+' ('+FREI_WIE[pk.frei[ph].wie]+').',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
+ if(!(ct>0))return toast('Betrag fehlt',true);pk.frei=pk.frei||{};pk.frei[ph]={ct,wie:$('#fr-wie').value,wer:($('#fr-wer')||{value:''}).value.trim(),ts:Date.now()};
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:(ph==='diag'?'Diagnose':'Abhilfe')+' „'+pk.name+'" freigegeben bis '+fmt(ct)+' ('+FREI_WIE[pk.frei[ph].wie]+(pk.frei[ph].wer?', mit '+pk.frei[ph].wer:'')+').',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
  save();closeSheet();render();toast('Freigabe gespeichert')};
 ACT['frei-weg']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(pk.frei)delete pk.frei[el.dataset.ph];save();closeSheet();render()};
 /* Große Meldung, sobald eine Freigabe überschritten wird – einmal je Freigabe-Betrag; danach bleibt nur der gelbe Hinweis */
@@ -1711,6 +1716,43 @@ function dlgDruckHtml(a){const d=a.dlg||{},fi=S.settings.firma||{},k=kunde(a.kun
   <div style="display:flex;justify-content:space-between;gap:10mm;margin-top:10mm"><div class="small" style="max-width:60%">Mit seiner Unterschrift bestätigt der Kunde die Beanstandung, den festgehaltenen Fahrzeugzustand und die Diagnose-Freigabe. Mit ✗ markierte Punkte sind technische Beanstandungen; Arbeiten daran erfolgen nur nach Freigabe.</div>
   <div style="text-align:center">${d.sig?`<img src="${d.sig}" style="height:22mm">`:'<div style="height:22mm"></div>'}<div class="small" style="border-top:1px solid #111;min-width:55mm;padding-top:2px">Unterschrift Kunde</div></div></div>`}
 ACT['dlg-druck']=el=>{const a=auftrag(el.dataset.oid);if(!a||!a.dlg)return toast('Noch keine Annahme',true);$('#printarea').innerHTML=dlgDruckHtml(a);setTimeout(()=>window.print(),60)};
+/* Freigabe-Link (KP3): Kunde sieht Befund, Arbeiten, Fotos, Betrag und tippt Freigeben/Ablehnen → kommt über anfrage_neu zurück */
+function fotoKlein(src){return new Promise(res=>{const img=new Image();img.onload=()=>{const sc=Math.min(1,520/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);c.getContext('2d').drawImage(img,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.6))};img.onerror=()=>res(null);img.src=src})}
+ACT['fr-anfrage']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),k=kunde(a.kundeId)||{},c=syncCfg();
+ const netto=wbSum(wbAbh(pk))||pakNetto(pk),brutto=Math.round(netto*(1+S.settings.mwst/100));
+ const fotos=a.fotos.filter(fo=>!fo.isFile&&!fo.isVideo&&(fo.paketId===pk.id||pk.pos.some(x=>x.id===fo.posId)));
+ if(!c.on||!c.id)return toast('Für den Freigabe-Link muss das Cloud-Backup eingeschaltet sein',true);
+ sheet('Freigabe beim Kunden anfragen',`<div class="kv"><span class="k">${esc(pk.name)}</span><span class="v num"><b>${fmt(brutto)}</b> inkl. MwSt</span></div>
+  <div style="font-size:12.5px;color:var(--ink2);margin:8px 0 12px;line-height:1.5">Der Kunde bekommt einen Link. Dort sieht er Befund, Arbeiten${fotos.length?', '+Math.min(3,fotos.length)+' Foto'+(fotos.length>1?'s':''):''} und den Betrag und tippt „Freigeben“ oder „Ablehnen“. Die Antwort wird hier automatisch eingetragen.</div>
+  ${k.tel?`<button class="btn btn-main" style="width:100%;margin-bottom:8px" data-act="fr-senden" data-weg="wa" data-oid="${a.id}" data-pid="${pk.id}">Per WhatsApp senden</button>`:''}
+  <button class="btn ${k.tel?'btn-2nd':'btn-main'}" style="width:100%" data-act="fr-senden" data-weg="mail" data-oid="${a.id}" data-pid="${pk.id}">Per E-Mail senden</button>
+  <div style="font-size:11.5px;color:var(--ink3);margin-top:10px">Telefonisch freigegeben? Dann rechts neben „Abhilfe“ auf „Freigabe eintragen“ tippen.</div>`)};
+ACT['fr-senden']=async el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),k=kunde(a.kundeId)||{},weg=el.dataset.weg;el.disabled=true;
+ const netto=wbSum(wbAbh(pk))||pakNetto(pk),brutto=Math.round(netto*(1+S.settings.mwst/100));
+ const fotos=[];for(const fo of a.fotos.filter(fo=>!fo.isFile&&!fo.isVideo&&(fo.paketId===pk.id||pk.pos.some(x=>x.id===fo.posId))).slice(0,3)){const k2=await fotoKlein(fo.data);if(k2)fotos.push(k2)}
+ const fid=stlId().slice(0,16);
+ pk.freiAnfrage={id:fid,ts:Date.now(),ct:netto,status:'offen',weg,daten:{fid,name:pk.name,bef:pk.pos.filter(x=>x.typ==='befund').map(x=>x.bez).join('\n')||pk.problem||'',
+  pos:wbAbh(pk).map(x=>[x.bez,Math.round(posNetto(x)*(1+S.settings.mwst/100))]),sum:brutto,fotos}};
+ const neu=!a.statusLink;if(neu)a.statusLink={id:stlId()};
+ try{await statusLinkPush(a)}catch(e){if(neu)delete a.statusLink;delete pk.freiAnfrage;el.disabled=false;return toast((e.message||'Fehler')+' – Link konnte nicht erstellt werden',true)}
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Freigabe angefragt ('+(weg==='wa'?'WhatsApp':'E-Mail')+'): „'+pk.name+'“ – '+fmt(brutto)+' inkl. MwSt.',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
+ save();closeSheet();render();
+ const txt='Guten Tag'+(k.name?' '+k.name:'')+',\n\nbei Ihrem Fahrzeug haben wir Folgendes festgestellt: '+pk.name+'.\nKosten: '+fmt(brutto)+' inkl. MwSt.\n\nHier sehen Sie alle Details und können mit einem Tipp freigeben oder ablehnen:\n'+statusLinkUrl(a)+'\n\n'+wsGruss();
+ if(weg==='wa'&&k.tel)location.href='https://wa.me/'+k.tel.replace(/[^\d]/g,'')+'?text='+encodeURIComponent(txt);
+ else location.href='mailto:'+encodeURIComponent(k.email||'')+'?subject='+encodeURIComponent('Freigabe: '+pk.name)+'&body='+encodeURIComponent(txt)};
+/* Antwort des Kunden (kommt mit den Online-Anfragen herein) */
+function freigabeAntwort(d){const a=S.auftraege.find(o=>o.statusLink&&o.statusLink.id===d.sl);if(!a)return false;
+ const pk=a.pakete.find(p=>p.freiAnfrage&&p.freiAnfrage.id===d.fid);if(!pk||pk.freiAnfrage.status!=='offen')return true;
+ const ja=d.antwort==='ja',fa=pk.freiAnfrage;fa.status=ja?'ja':'nein';fa.antwortTs=Date.now();
+ if(ja){pk.frei=pk.frei||{};pk.frei.abh={ct:fa.ct,wie:'link',ts:fa.antwortTs}}
+ else{const f=fzg(a.fzgId);if(f){f.abgelehnt=f.abgelehnt||[];f.abgelehnt.push({ts:fa.antwortTs,auftragId:a.id,nr:a.nr,text:pk.name,ct:fa.ct})}}
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:fa.antwortTs,txt:'Kunde hat über den Link '+(ja?'FREIGEGEBEN':'ABGELEHNT')+': „'+pk.name+'“ ('+fmt(Math.round(fa.ct*(1+S.settings.mwst/100)))+' inkl. MwSt).',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
+ setTimeout(()=>toast(a.nr+': Kunde hat '+(ja?'freigegeben':'abgelehnt')+' – '+pk.name),300);return true}
+/* Abgelehnte Arbeiten beim nächsten Besuch des Fahrzeugs zeigen */
+function abgelehntKarte(a){const f=fzg(a.fzgId)||{};if(a.status==='abgeholt')return'';
+ const l=(f.abgelehnt||[]).filter(x=>x.auftragId!==a.id).concat(S.auftraege.filter(o=>o.id!==a.id&&o.fzgId===a.fzgId).flatMap(o=>o.pakete.flatMap(pk=>pk.pos.filter(x=>x.typ==='befund'&&x.nein).map(x=>({ts:x.nein,nr:o.nr,text:x.bez})))));
+ if(!l.length)return'';const z=l.sort((x,y)=>y.ts-x.ts).slice(0,4);
+ return`<div class="dl-card abg"><b>Beim letzten Besuch abgelehnt</b><span>${z.map(x=>esc(x.text)+' ('+esc(x.nr||'')+(x.ct?', '+fmt(Math.round(x.ct*(1+S.settings.mwst/100))):'')+')').join(' · ')} – bitte beim Kunden noch einmal ansprechen.</span></div>`}
 /* Hinweis/Karte im Auftrag */
 function dlgKarte(a){const d=a.dlg;if(a.status==='abgeholt'&&!d)return'';
  if(d&&d.done){const xs=dlgItems().filter(i=>(d.chk[i.id]||{}).v===0).length,zus=DLG_ZUS.filter(([id])=>d.zus[id]).map(z=>z[1]);
@@ -1889,9 +1931,17 @@ function statusDaten(a){const f=fzg(a.fzgId)||{},fi=S.settings.firma||{};
  const teilEta=a.pakete.flatMap(pk=>pk.pos).filter(p=>p.best==='bestellt'&&p.eta).map(p=>p.eta).sort().pop()||'';
  return{ws:fi.name||'',tel:fi.tel||'',adr:fi.adresse||'',kz:kzKurz(f.kennz),fz:[f.marke,f.modell].filter(Boolean).join(' '),st:a.status,
   fertig:!['fertig','abgeholt'].includes(a.status)&&a.abgabe?a.abgabe+(a.abgabeZeit?' '+a.abgabeZeit:''):'',teile:a.status==='teile'?teilEta:'',
-  hu:f.hu?f.hu.split('-').reverse().join('/'):''}}
+  hu:f.hu?f.hu.split('-').reverse().join('/'):'',bid:S.settings.buchId||'',
+  fr:a.pakete.filter(pk=>pk.freiAnfrage&&pk.freiAnfrage.status==='offen').map(pk=>pk.freiAnfrage.daten)}}
 function stlId(){const b=new Uint8Array(16);crypto.getRandomValues(b);return[...b].map(x=>x.toString(16).padStart(2,'0')).join('')}
-function statusLinkUrl(a){return location.origin+location.pathname+'#/status/'+a.statusLink.id}
+/* Kundenlinks (Status, Buchung, Freigabe) nennen das Supabase-Projekt der Werkstatt – sonst landen Kunden-Handys beim Voreinstellungs-Projekt.
+   Nur https://….supabase.co wird angenommen; der Publishable Key ist ohnehin öffentlich. */
+function pubCfgCode(){const c=syncCfg();if(!c.url||!c.key||c.url===SYNC_DEF.url)return'';return btoa(JSON.stringify([c.url,c.key])).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function pubCfgAusHash(){const h=location.hash.replace('#/','').split('/');if(!h[2])return null;
+ try{const j=JSON.parse(atob(h[2].replace(/-/g,'+').replace(/_/g,'/')));if(Array.isArray(j)&&/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(j[0])&&typeof j[1]==='string')return{url:j[0],key:j[1]}}catch(e){}return null}
+const pubCfg=()=>pubCfgAusHash()||(syncCfg().on?null:SYNC_DEF);
+const linkCode=()=>{const c=pubCfgCode();return c?'/'+c:''};
+function statusLinkUrl(a){return location.origin+location.pathname+'#/status/'+a.statusLink.id+linkCode()}
 function statusLinkAblauf(a){const L=a.statusLink;if(a.status==='abgeholt'){L.abg=L.abg||Date.now();return L.abg+30*STL_TAG}L.abg=0;return Date.now()+60*STL_TAG}
 async function statusLinkPush(a){const c=syncCfg();if(!c.on||!c.id||!a.statusLink)throw new Error('Cloud-Backup ist aus');
  const d=statusDaten(a),h=JSON.stringify(d)+a.status;
@@ -1899,7 +1949,7 @@ async function statusLinkPush(a){const c=syncCfg();if(!c.on||!c.id||!a.statusLin
  if(!r.ok)throw new Error(r.status===404?'Statusseite noch nicht eingerichtet':'Server-Antwort '+r.status);
  a.statusLink.h=h}
 /* Online-Terminbuchung über Supabase: Kunde schreibt nur hinein (anfrage_neu), Werkstatt holt mit ihrem Backup-Code ab */
-function buchUrl(){const id=S.settings.buchId;return location.origin+location.pathname+'#/buchen'+(id?'/'+id:'')}
+function buchUrl(){const id=S.settings.buchId;return location.origin+location.pathname+'#/buchen'+(id?'/'+id+linkCode():'')}
 let buchInfoH='';
 async function buchungAnmelden(){const c=syncCfg();if(!c.on||!c.id)return;
  if(!S.settings.buchId){S.settings.buchId=stlId().slice(0,20);save()}
@@ -1910,8 +1960,8 @@ let holT=null;
 async function anfragenHolen(){const c=syncCfg();if(!c.on||!c.id||!S.settings.buchId)return 0;
  try{const r=await sbRpc('anfragen_holen',{p_backup_id:c.id});if(!r.ok)return 0;
   const rows=await r.json();if(!Array.isArray(rows)||!rows.length)return 0;
-  rows.forEach(d=>{if(!d||(S.anfragen||[]).some(q=>q.rid===d.rid))return;S.anfragen.push(anfrageAusBuchung(d))});
-  save();render();toast(rows.length===1?'Neue Online-Terminanfrage':rows.length+' neue Online-Terminanfragen');syncBadge();return rows.length}
+  let n=0;rows.forEach(d=>{if(!d)return;if(d.typ==='freigabe'){freigabeAntwort(d);return}if((S.anfragen||[]).some(q=>q.rid===d.rid))return;S.anfragen.push(anfrageAusBuchung(d));n++});
+  save();render();if(n)toast(n===1?'Neue Online-Terminanfrage':n+' neue Online-Terminanfragen');syncBadge();return rows.length}
  catch(e){return 0}}
 function anfragenTakt(){clearTimeout(holT);holT=setTimeout(async()=>{if(document.visibilityState==='visible')await anfragenHolen();anfragenTakt()},180000)}
 let stlBusy=false;
@@ -4642,7 +4692,7 @@ const ST_TXT={teileda:['In Arbeit','Die Teile sind da – wir arbeiten weiter an
  teile:['Wartet auf Teile','Wir warten noch auf Ersatzteile.'],fertig:['Fertig','Ihr Fahrzeug ist fertig und kann abgeholt werden.'],abgeholt:['Abgeholt','Vielen Dank für Ihren Besuch.']};
 let stView={id:null,d:null,err:null};
 async function statusLaden(id){stView={id,d:null,err:null};
- try{const r=await sbRpc('status_get',{p_id:id},syncCfg().url?null:SYNC_DEF);
+ try{const r=await sbRpc('status_get',{p_id:id},pubCfg());
   if(!r.ok)throw new Error('x');const d=await r.json();stView.d=d&&typeof d==='object'&&!Array.isArray(d)&&d.st?d:null;if(!stView.d)stView.err='weg'}
  catch(e){stView.err='netz'}
  if(route.v==='status'&&route.id===id)render()}
@@ -4662,15 +4712,28 @@ function vStatus(){const id=route.id||'';
    <ol class="stl-steps">${['Angenommen','In Arbeit','Fertig','Abgeholt'].map((l,i)=>`<li class="${i<cur?'done':i===cur?'on':''}">${l}</li>`).join('')}</ol>
    ${d.fertig?`<div class="kv"><span class="k">Voraussichtlich fertig</span><span class="v">${esc(dLabel(d.fertig.slice(0,10)))}${d.fertig.length>10?' · '+esc(d.fertig.slice(11))+' Uhr':''}</span></div>`:''}
    ${d.hu?`<div class="kv"><span class="k">Nächste Hauptuntersuchung</span><span class="v">${esc(d.hu)}</span></div>`:''}
-   <div style="font-size:11px;color:var(--ink3);margin-top:10px">Stand: ${new Date(d.upd||Date.now()).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} Uhr</div>
+   <div style="font-size:11px;color:var(--ink3);margin-top:10px" data-x="1">Stand: ${new Date(d.upd||Date.now()).toLocaleString('de-DE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})} Uhr</div>
   </div>
+  ${(d.fr||[]).map(r=>{const ant=(()=>{try{return localStorage.getItem('mc_fr_'+r.fid)}catch(e){return null}})();
+   return`<div class="card stl-fr" style="padding:18px;margin-top:14px"><div style="font-size:12px;color:var(--ink3)">Ihre Freigabe wird benötigt</div>
+   <div style="font-size:17px;font-weight:750;margin:2px 0 8px">${esc(r.name)}</div>
+   ${r.bef?`<div style="font-size:14px;line-height:1.5;white-space:pre-wrap;margin-bottom:8px">${esc(r.bef)}</div>`:''}
+   ${(r.fotos||[]).length?`<div class="stl-fotos">${r.fotos.map(src=>`<img src="${src}" alt="Foto">`).join('')}</div>`:''}
+   ${(r.pos||[]).map(([t,ct])=>`<div class="kv"><span class="k">${esc(t)}</span><span class="v num">${fmt(ct)}</span></div>`).join('')}
+   <div class="kv" style="border:0"><span class="k"><b>Gesamt inkl. MwSt</b></span><span class="v num"><b>${fmt(r.sum)}</b></span></div>
+   ${ant?`<div class="stl-fr-ok">${ant==='ja'?'Danke – Sie haben freigegeben. Wir legen los.':'Danke – Sie haben abgelehnt. Wir melden uns bei Ihnen.'}</div>`
+   :`<div class="row2" style="margin-top:12px"><button class="btn btn-2nd" data-act="stl-fr" data-fid="${r.fid}" data-v="nein">Ablehnen</button><button class="btn btn-main" data-act="stl-fr" data-fid="${r.fid}" data-v="ja">Freigeben</button></div>`}</div>`}).join('')}
   ${tel?`<a class="btn btn-main" style="width:100%;margin-top:14px;display:flex;align-items:center;justify-content:center;text-decoration:none" href="tel:${esc(tel)}">Werkstatt anrufen</a>`:''}
   <div style="text-align:center;margin-top:18px;font-size:11.5px"><a href="#/datenschutz" style="color:var(--ink3)">Datenschutz</a></div>`)}
+ACT['stl-fr']=el=>{const d=stView.d,fid=el.dataset.fid,v=el.dataset.v;if(!d||!d.bid)return toast('Bitte die Werkstatt anrufen',true);
+ const los=async()=>{el.disabled=true;try{const r=await sbRpc('anfrage_neu',{p_buch_id:d.bid,p_data:{name:'Freigabe',tel:'-',typ:'freigabe',sl:route.id,fid,antwort:v}},pubCfg());if(!r.ok)throw new Error(r.status);
+  try{localStorage.setItem('mc_fr_'+fid,v)}catch(e){}render();toast(v==='ja'?'Freigabe übermittelt – danke!':'Antwort übermittelt – danke!')}catch(e){el.disabled=false;toast('Senden fehlgeschlagen – bitte die Werkstatt anrufen',true)}};
+ if(v==='ja')confirmBox('Arbeiten freigeben?','Sie geben die Arbeiten für '+fmt((d.fr.find(r=>r.fid===fid)||{}).sum||0)+' inkl. MwSt frei.','Freigeben',los,false);else los()};
 let buchInfo={id:null,d:null};
 function vBuchen(){
  let fi=S.settings.firma;
  if(route.id&&buchInfo.id!==route.id){buchInfo={id:route.id,d:null};const id=route.id;
-  sbRpc('buchung_info',{p_buch_id:id},syncCfg().on?null:SYNC_DEF).then(r=>r.ok?r.json():null).then(d=>{if(d&&d.ws!==undefined&&buchInfo.id===id){buchInfo.d=d;if(route.v==='buchen')render()}}).catch(()=>{})}
+  sbRpc('buchung_info',{p_buch_id:id},pubCfg()).then(r=>r.ok?r.json():null).then(d=>{if(d&&d.ws!==undefined&&buchInfo.id===id){buchInfo.d=d;if(route.v==='buchen')render()}}).catch(()=>{})}
  if(route.id&&buchInfo.d){const d=buchInfo.d;fi={...fi,name:d.ws,tel:d.tel,adresse:d.adr,email:d.email,web:d.web}}
  return`<div style="min-height:100%;background:var(--bg);padding:calc(var(--sat,0px) + 20px) 16px calc(40px + var(--sab,0px));font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif">
   <div style="max-width:480px;margin:0 auto">
@@ -4805,7 +4868,7 @@ ACT['buchen-send']=async el=>{
  const dat=($('#bk-dat').value)||addDays(todayISO(),2),uhr=($('#bk-uhr').value)||'09:00';
  const daten={name,tel,anl,kz,fzg:fzgBez,dat,uhr};
  if(route.id){if(el)el.disabled=true;
-  try{const r=await sbRpc('anfrage_neu',{p_buch_id:route.id,p_data:daten},syncCfg().on?null:SYNC_DEF);if(!r.ok)throw new Error(r.status)}
+  try{const r=await sbRpc('anfrage_neu',{p_buch_id:route.id,p_data:daten},pubCfg());if(!r.ok)throw new Error(r.status)}
   catch(e){if(el)el.disabled=false;return toast('Senden hat nicht geklappt. Bitte erneut versuchen oder anrufen.',true)}}
  else S.anfragen.push(anfrageAusBuchung(daten));
  save();

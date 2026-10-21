@@ -1089,3 +1089,8 @@ tr.kt-auto td{background:var(--bg);color:var(--ink2);font-size:12.5px}
 .fs-pr .btn-ghost{width:100%;min-height:44px}
 .dl-card.tl{background:var(--red-bg);border:1.5px solid var(--red)}.dl-card.tl b{color:var(--red)}
 @media print{html,body,body.theme-dark{background:#fff!important;color:#111!important}}
+/* 2.76 Freigabe-Link */
+.wb-fr{display:block;width:100%;min-height:46px;margin:8px 0 4px;border-radius:11px;border:1.5px solid var(--acc);background:var(--card);font:inherit;font-size:14px;font-weight:700;color:var(--acc)}
+.dl-card.abg{background:var(--blue-bg);border:1.5px solid var(--blue)}.dl-card.abg b{color:var(--blue)}
+.stl-fotos{display:flex;gap:8px;overflow-x:auto;margin:4px 0 10px}.stl-fotos img{height:110px;border-radius:10px;flex:none}
+.stl-fr-ok{margin-top:12px;background:var(--green-bg);color:var(--green);font-weight:700;border-radius:11px;padding:12px;font-size:14px;text-align:center}
