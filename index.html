@@ -364,9 +364,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.76';
+const APP_VER='2.77';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.77',d:'2026-10-21',p:['Online-Terminanfrage neu: Der Kunde wählt, worum es geht (Wartung, Problem, Reifen …). Pflicht sind Name, Telefon, FIN oder ein Foto vom Fahrzeugschein, Kilometerstand und ein Anliegen so genau wie möglich. Freiwillig sind E-Mail und bis zu 3 Bilder.','Bestandskunden werden automatisch erkannt, über Telefonnummer, FIN oder Kennzeichen. Die Anfrage hängt dann am richtigen Kunden und Fahrzeug.','Online-Anfragen stehen auf „Neu – Bestätigung ausstehend“, bis Sie sie bestätigen.','Damit Fotos ankommen: einmal den Befehl aus Einstellungen → Cloud-Backup → „Einmalige Einrichtung“ erneut in Supabase ausführen.']},
  {v:'2.76',d:'2026-10-21',p:['Freigabe-Link: Bei „Freigabe ausstehend“ tippen Sie auf „Freigabe beim Kunden anfragen“. Der Kunde bekommt per WhatsApp oder E-Mail einen Link mit Befund, Arbeiten, Fotos und Betrag. Dort tippt er „Freigeben“ oder „Ablehnen“, und die Antwort wird hier automatisch eingetragen.','Nach 3 Stunden ohne Antwort steht beim Paket „nachhaken“.','Abgelehnte Arbeiten werden beim nächsten Besuch des Fahrzeugs angezeigt.','Bei telefonischer Freigabe können Sie jetzt eintragen, mit wem Sie gesprochen haben.','Wichtig: Status- und Buchungslinks funktionieren jetzt mit Ihrem eigenen Cloud-Projekt. Bitte den Buchungslink einmal neu weitergeben.']},
  {v:'2.75',d:'2026-10-20',p:['Fahrzeugannahme: Nach dem Abschluss können Sie das Prüfprotokoll für den Kunden drucken oder als PDF speichern. Es enthält Kunde, Fahrzeug, Beanstandung, Diagnose-Freigabe, die 4 Seitenfotos, alle Prüfpunkte mit ✓/✗ und die Unterschrift.']},
  {v:'2.74',d:'2026-10-20',p:['Teile: Beim Hinzufügen prüft die App das Lager (auch per Teilenummer). Ist das Teil „im Haus“, wird es reserviert. Sonst steht es auf „muss bestellt werden“.','Im Auftrag erscheint dann „Teile müssen bestellt werden“. Beim Verlassen des Auftrags fragt die App: „Sollen diese Teile wirklich bestellt werden?“ Bei Ja wird die Bestellung angelegt, und der Auftrag steht auf „Wartet auf Teile“.','Unter Bestellungen schicken Sie die Bestellung als fertige E-Mail an Ihren Lieferanten.','Wareneingang: Sind alle Teile eines Auftrags eingebucht, springt der Auftrag automatisch auf „Teile da“, und Sie bekommen einen Hinweis.']},
@@ -3411,7 +3412,7 @@ create or replace function anfrage_neu(p_buch_id text, p_data jsonb) returns voi
  language plpgsql security definer set search_path=public as $$
  begin
   if not exists(select 1 from buch_keys where buch_id=p_buch_id) then raise exception 'unbekannt'; end if;
-  if coalesce(p_data->>'name','')='' or coalesce(p_data->>'tel','')='' or length(p_data::text)>4000 then raise exception 'ungültig'; end if;
+  if coalesce(p_data->>'name','')='' or coalesce(p_data->>'tel','')='' or length(p_data::text)>900000 then raise exception 'ungültig'; end if;
   if (select count(*) from anfragen_eingang where buch_id=p_buch_id and created_at>now()-interval '1 hour')>=30 then raise exception 'zu viele'; end if;
   insert into anfragen_eingang(buch_id,data) values(p_buch_id,p_data);
  end $$;
@@ -3547,7 +3548,7 @@ const KICON={
  theke:'<svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.6"/><path d="M5 20c1-4 3.6-6 7-6s6 2 7 6"/></svg>'};
 /* Kanal-Symbole sind Strich-Icons: Linienfarbe = Textfarbe (vorher teils schwarz gefüllt) */
 Object.keys(KICON).forEach(k=>{KICON[k]=KICON[k].replace('<svg ','<svg fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" ')});
-const QSTAT={neu:['Neu','#3E5A73'],beantwortet:['Kontaktiert','#5C6670'],termin:['Termin','#9C6420'],gewonnen:['Auftrag erteilt','#2E7650'],verloren:['Abgesagt','#6B6B73']};
+const QSTAT={neu:['Neu – Bestätigung ausstehend','#3E5A73'],beantwortet:['Kontaktiert','#5C6670'],termin:['Termin','#9C6420'],gewonnen:['Auftrag erteilt','#2E7650'],verloren:['Abgesagt','#6B6B73']};
 const anfrage=id=>S.anfragen.find(q=>q.id===id);
 /*TEST-RULE-START*/
 function ruleAnalyze(txt){
@@ -3788,13 +3789,13 @@ ACT['anfrage-convert']=el=>{const v=readQSheet();
  if(x)Object.assign(x,v);
  else{x={id:'q'+uid(),ts:Date.now(),auftragId:null,kiQuelle:null,grund:'',original:nwOrig(),...v};S.anfragen.push(x)}
  const digits=t=>String(t||'').replace(/[^\d]/g,'').slice(-9);
- let k=S.kunden.find(kk=>v.tel&&digits(kk.tel)===digits(v.tel)&&digits(v.tel).length>5);
+ let k=(x.kundeId&&kunde(x.kundeId))||S.kunden.find(kk=>v.tel&&digits(kk.tel)===digits(v.tel)&&digits(v.tel).length>5);
  if(!k){k={id:'k'+uid(),name:v.name||'Neuer Kunde',tel:v.tel,wa:['wa','ig'].includes(v.kanal),email:'',adresse:'',
   stamm:false,moral:'Gut',notiz:'Aus Kundenanfrage übernommen',created:Date.now()};S.kunden.push(k)}
  const y=new Date().getFullYear();
  const kMap={wa:'wa',ig:'wa',mail:'mail',tel:'call',ab:'call',theke:'pers',web:'mail'};
- const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:k.id,fzgId:null,
-  status:'offen',annahme:todayISO(),abgabe:addDays(todayISO(),2),abgabeZeit:'',kmAn:null,kmAb:null,tank:'50',
+ const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:k.id,fzgId:anfFzgId(x,k),
+  status:'offen',annahme:todayISO(),abgabe:addDays(todayISO(),2),abgabeZeit:'',kmAn:x.km||null,kmAb:null,tank:'50',
   anzahlungCt:0,rabatt:{typ:'eur',wert:0},buehne:null,
   pakete:[{id:'p'+uid(),name:x.betreff||((x.original||'Anfrage').slice(0,40)),klass:'tb',zahler:'kunde',
    status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,
@@ -3814,13 +3815,13 @@ ACT['anfr-mail']=el=>{const x=anfrage(el.dataset.id);if(!x||!x.email)return toas
  location.href='mailto:'+x.email+'?subject='+encodeURIComponent('Re: '+(x.betreff||'Ihre Anfrage'))+(msg?'&body='+encodeURIComponent(msg):'')};
 ACT['anfr-convert-quick']=el=>{const x=anfrage(el.dataset.id);if(!x)return;
  const digits=t=>String(t||'').replace(/[^\d]/g,'').slice(-9);
- let k=S.kunden.find(kk=>x.tel&&digits(kk.tel)===digits(x.tel)&&digits(x.tel).length>5);
+ let k=(x.kundeId&&kunde(x.kundeId))||S.kunden.find(kk=>x.tel&&digits(kk.tel)===digits(x.tel)&&digits(x.tel).length>5);
  if(!k){k={id:'k'+uid(),name:x.name||'Neuer Kunde',tel:x.tel||'',wa:['wa','ig'].includes(x.kanal),email:x.email||'',adresse:'',
   stamm:false,moral:'Gut',notiz:'Aus Anfrage erstellt',created:Date.now()};S.kunden.push(k)}
  const y=new Date().getFullYear();
  const kMap={wa:'wa',ig:'wa',mail:'mail',tel:'call',ab:'call',theke:'pers',web:'mail'};
- const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:k.id,fzgId:null,
-  status:'offen',annahme:todayISO(),abgabe:addDays(todayISO(),2),abgabeZeit:'',kmAn:null,kmAb:null,tank:'50',
+ const a={id:'a'+uid(),nr:'AU-'+y+'-'+String(S.settings.nextAu++).padStart(4,'0'),kundeId:k.id,fzgId:anfFzgId(x,k),
+  status:'offen',annahme:todayISO(),abgabe:addDays(todayISO(),2),abgabeZeit:'',kmAn:x.km||null,kmAb:null,tank:'50',
   anzahlungCt:0,rabatt:{typ:'eur',wert:0},buehne:null,
   pakete:[{id:'p'+uid(),name:x.betreff||((x.original||'Anfrage').slice(0,40)),klass:'tb',zahler:'kunde',
    status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:false,
@@ -4729,6 +4730,11 @@ ACT['stl-fr']=el=>{const d=stView.d,fid=el.dataset.fid,v=el.dataset.v;if(!d||!d.
  const los=async()=>{el.disabled=true;try{const r=await sbRpc('anfrage_neu',{p_buch_id:d.bid,p_data:{name:'Freigabe',tel:'-',typ:'freigabe',sl:route.id,fid,antwort:v}},pubCfg());if(!r.ok)throw new Error(r.status);
   try{localStorage.setItem('mc_fr_'+fid,v)}catch(e){}render();toast(v==='ja'?'Freigabe übermittelt – danke!':'Antwort übermittelt – danke!')}catch(e){el.disabled=false;toast('Senden fehlgeschlagen – bitte die Werkstatt anrufen',true)}};
  if(v==='ja')confirmBox('Arbeiten freigeben?','Sie geben die Arbeiten für '+fmt((d.fr.find(r=>r.fid===fid)||{}).sum||0)+' inkl. MwSt frei.','Freigeben',los,false);else los()};
+const BUCH_KAT=[['wartung','Wartung / Inspektion'],['beanst','Problem / Reparatur'],['reifen','Reifen / Räder'],['hu','HU / AU'],['klima','Klimaanlage'],['sonst','Sonstiges']];
+const bkFotos={schein:null,bild:[]};
+ACT['bk-foto']=el=>{const z=el.dataset.z,i=$('#bk-file');if(!i)return;if(z==='bild'&&bkFotos.bild.length>=3)return toast('Höchstens 3 Bilder',true);
+ i.onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const r=new FileReader();r.onload=async()=>{const k=await fotoKlein(r.result);if(!k)return toast('Bild konnte nicht gelesen werden',true);
+  if(z==='schein'){bkFotos.schein=k;$('#bk-schein-ok').textContent='✓ Foto angehängt'}else{bkFotos.bild.push(k);$('#bk-bild-ok').textContent='✓ '+bkFotos.bild.length+' Bild'+(bkFotos.bild.length>1?'er':'')}};r.readAsDataURL(f)};i.click()};
 let buchInfo={id:null,d:null};
 function vBuchen(){
  let fi=S.settings.firma;
@@ -4744,15 +4750,20 @@ function vBuchen(){
    <div class="card" style="padding:18px">
     <div style="font-size:16px;font-weight:750;margin-bottom:3px">Online-Terminanfrage</div>
     <div style="font-size:12px;color:var(--ink2);margin-bottom:14px;line-height:1.5">Wir bestätigen Ihren Wunschtermin persönlich — per Anruf oder WhatsApp.</div>
-    <div class="fld"><label>Ihr Name *</label><input id="bk-name" placeholder="Max Mustermann"></div>
-    <div class="fld"><label>Telefon / WhatsApp *</label><input id="bk-tel" inputmode="tel" placeholder="+49 ..."></div>
-    <div class="row2">
-     <div class="fld"><label>Kennzeichen</label><input id="bk-kz" placeholder="HU-XX 000" style="text-transform:uppercase"></div>
-     <div class="fld"><label>Fahrzeug</label><input id="bk-fzg" placeholder="VW Golf 7"></div></div>
-    <div class="row2">
-     <div class="fld"><label>Wunschdatum</label><input type="date" id="bk-dat" value="${addDays(todayISO(),2)}"></div>
-     <div class="fld"><label>Wunschzeit</label><input type="time" id="bk-uhr" value="09:00"></div></div>
-    <div class="fld"><label>Ihr Anliegen *</label><textarea id="bk-anl" rows="3" placeholder="z.B. Bremsscheiben vorne wechseln, TÜV-Vorbereitung..."></textarea></div>
+    <div class="fld"><label>Worum geht es? *</label><div class="bk-kat">${BUCH_KAT.map(([v,l])=>`<label><input type="radio" name="bk-kat" value="${v}"> ${l}</label>`).join('')}</div></div>
+    <div class="fld"><label>Vor- und Nachname *</label><input id="bk-name" autocomplete="name" placeholder="Max Mustermann"></div>
+    <div class="row2"><div class="fld"><label>Telefon / WhatsApp *</label><input id="bk-tel" inputmode="tel" autocomplete="tel" placeholder="+49 ..."></div>
+     <div class="fld"><label>E-Mail <span style="font-weight:400">(freiwillig)</span></label><input id="bk-mail" type="email" autocomplete="email" placeholder="für die Bestätigung"></div></div>
+    <div class="fld"><label>Fahrgestellnummer (FIN) *</label><input id="bk-fin" maxlength="17" style="text-transform:uppercase" placeholder="17 Zeichen – Fahrzeugschein Feld E"></div>
+    <div class="bk-oder">oder statt der FIN: <button type="button" class="bk-foto-btn" data-act="bk-foto" data-z="schein">Foto vom Fahrzeugschein</button> <span id="bk-schein-ok"></span></div>
+    <div class="row2"><div class="fld"><label>Kilometerstand *</label><input id="bk-km" inputmode="numeric" placeholder="z. B. 87500"></div>
+     <div class="fld"><label>Kennzeichen</label><input id="bk-kz" placeholder="HU-XX 000" style="text-transform:uppercase"></div></div>
+    <div class="fld"><label>Ihr Anliegen – so genau wie möglich *</label><textarea id="bk-anl" rows="5" placeholder="Was ist los? Seit wann? Wann tritt es auf (kalt/warm, beim Bremsen, bei Tempo …)? Leuchtet eine Warnlampe?"></textarea></div>
+    <div class="bk-oder">Bilder zum Problem <span style="color:var(--ink3)">(freiwillig, bis 3)</span>: <button type="button" class="bk-foto-btn" data-act="bk-foto" data-z="bild">Bild hinzufügen</button> <span id="bk-bild-ok"></span></div>
+    <div class="row2" style="margin-top:12px">
+     <div class="fld"><label>Wunschtermin</label><input type="date" id="bk-dat" min="${todayISO()}" value="${addDays(todayISO(),2)}"></div>
+     <div class="fld"><label>Uhrzeit</label><input type="time" id="bk-uhr" value="09:00"></div></div>
+    <input type="file" id="bk-file" accept="image/*" style="display:none">
     <div style="font-size:11px;color:var(--ink3);background:rgba(194,113,10,.08);border:1px solid rgba(194,113,10,.25);border-radius:9px;padding:9px 11px;margin-bottom:13px;line-height:1.55">Hinweis: Terminwünsche werden persönlich von unserem Team geprüft und bestätigt. Sie erhalten Rückmeldung per Telefon oder WhatsApp.</div>
     <button class="btn btn-main" style="width:100%" data-act="buchen-send">Terminanfrage absenden</button>
    </div>
@@ -4849,28 +4860,38 @@ function vDatenschutz(){
   </div></div>`;
  return shell(inner,{title:'Datenschutz',eyebrow:'Rechtliches',back:1,hideNav:route._from&&route._from.v==='buchen'});
 }
+/* Bestandskunden/-fahrzeug erkennen (KP1): FIN, Kennzeichen oder Telefonnummer */
+function anfFzgId(x,k){let f=(x.fzgId&&fzg(x.fzgId))||null;if(!f&&(x.fin||x.kz)){f={id:'f'+uid(),kundeId:k.id,kennz:x.kz||'',marke:'',modell:'',bj:null,vin:x.fin||'',km:x.km||null,hu:'',notiz:'Aus Online-Anfrage'};S.fahrzeuge.push(f)}return f?f.id:null}
 function anfrageAusBuchung(d){const anl=String(d.anl||'').slice(0,1500),kz=String(d.kz||'').slice(0,20),fzgBez=String(d.fzg||'').slice(0,80);
+ const fin=String(d.fin||'').toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,17),km=parseInt(d.km)||null,mail=String(d.mail||'').slice(0,120),kat=(BUCH_KAT.find(x=>x[0]===d.kat)||[])[1]||'';
+ const dg=t=>String(t||'').replace(/[^\d]/g,'').slice(-9),norm=t=>String(t||'').replace(/[\s-]/g,'').toUpperCase();
+ const fz=fin?S.fahrzeuge.find(f=>norm(f.vin)===fin):(kz?S.fahrzeuge.find(f=>norm(f.kennz)===norm(kz)):null);
+ const ku=(fz&&kunde(fz.kundeId))||S.kunden.find(k=>dg(d.tel).length>5&&dg(k.tel)===dg(d.tel))||null;
+ const fotoListe=[d.schein?{dataUrl:d.schein,name:'Fahrzeugschein'}:null].concat((Array.isArray(d.bilder)?d.bilder:[]).slice(0,3).map((u,i)=>({dataUrl:u,name:'Bild '+(i+1)}))).filter(f=>f&&/^data:image\//.test(f.dataUrl));
  const dat=/^\d{4}-\d{2}-\d{2}$/.test(d.dat||'')?d.dat:addDays(todayISO(),2),uhr=/^\d{2}:\d{2}$/.test(d.uhr||'')?d.uhr:'09:00';
  const r=ruleAnalyze(anl);
  return{id:'q'+uid(),rid:d.rid||null,ts:d.ts||Date.now(),kanal:'web',name:String(d.name||'').slice(0,80),tel:String(d.tel||'').slice(0,40),
   betreff:r.betreff||(kz||'Terminanfrage'),
-  original:anl+(kz?'\nFahrzeug: '+kz+(fzgBez?' '+fzgBez:''):'')+'\nWunschtermin: '+dat+' '+uhr,
-  origUrl:'',notiz:'Online-Terminanfrage — bitte telefonisch bestätigen.',status:'neu',
+  original:(kat?'['+kat+'] ':'')+anl+(kz?'\nKennzeichen: '+kz:'')+(fzgBez?'\nFahrzeug: '+fzgBez:'')+(fin?'\nFIN: '+fin:'')+(km?'\nKilometerstand: '+km.toLocaleString('de-DE'):'')+(mail?'\nE-Mail: '+mail:'')+'\nWunschtermin: '+dat+' '+uhr+(d.fotosFehlen?'\n(Kunde hat Fotos angehängt – Übertragung erst nach erneuter „Einmaliger Einrichtung“ möglich)':''),
+  origUrl:'',notiz:(ku?'Bestandskunde: '+ku.name+(fz?' · '+(fz.kennz||fz.vin):'')+' – ':'')+'Termin: Bestätigung ausstehend – bitte persönlich bestätigen.',status:'neu',kat,email:mail,fin,km,kz,kundeId:ku?ku.id:null,fzgId:fz?fz.id:null,wunsch:dat+' '+uhr,
   prio:r.prio,grund:'Online-Terminanfrage: immer persönlich bestätigen.',kiQuelle:'web',
-  antwort:r.antwort,wertCt:r.wertCt||25000,followUp:dat,auftragId:null,wonTs:null,fotos:[],antworten:[],kiSugg:[]}}
+  antwort:r.antwort,wertCt:r.wertCt||25000,followUp:dat,auftragId:null,wonTs:null,fotos:fotoListe,antworten:[],kiSugg:[]}}
 ACT['buchen-send']=async el=>{
- const name=($('#bk-name').value||'').trim(),tel=($('#bk-tel').value||'').trim();
- const anl=($('#bk-anl').value||'').trim();
- if(!name||!tel)return toast('Name und Telefon sind Pflichtfelder',true);
- if(!anl)return toast('Bitte Ihr Anliegen beschreiben',true);
- const kz=($('#bk-kz').value||'').trim().toUpperCase();
- const fzgBez=($('#bk-fzg').value||'').trim();
+ const v=id=>(($('#'+id)||{}).value||'').trim();const kat=(document.querySelector('input[name="bk-kat"]:checked')||{}).value||'';
+ const name=v('bk-name'),tel=v('bk-tel'),anl=v('bk-anl'),mail=v('bk-mail'),fin=v('bk-fin').toUpperCase().replace(/\s/g,''),km=parseInt(v('bk-km').replace(/\D/g,''))||0;
+ const fehlt=[];if(!kat)fehlt.push('Worum geht es');if(!name)fehlt.push('Name');if(!tel)fehlt.push('Telefon');if(!fin&&!bkFotos.schein)fehlt.push('FIN oder Foto vom Fahrzeugschein');if(!km)fehlt.push('Kilometerstand');if(!anl)fehlt.push('Anliegen');
+ if(fehlt.length)return toast('Bitte noch ausfüllen: '+fehlt.join(', '),true);
+ if(fin&&fin.length!==17)return toast('Die FIN hat 17 Zeichen – bitte prüfen oder ein Foto vom Fahrzeugschein anhängen',true);
+ const kz=v('bk-kz').toUpperCase();
  const dat=($('#bk-dat').value)||addDays(todayISO(),2),uhr=($('#bk-uhr').value)||'09:00';
- const daten={name,tel,anl,kz,fzg:fzgBez,dat,uhr};
+ const daten={name,tel,anl,kz,fzg:'',dat,uhr,kat,mail,fin,km};
+ const mitFotos={...daten,schein:bkFotos.schein||'',bilder:bkFotos.bild};
  if(route.id){if(el)el.disabled=true;
-  try{const r=await sbRpc('anfrage_neu',{p_buch_id:route.id,p_data:daten},pubCfg());if(!r.ok)throw new Error(r.status)}
+  try{let r=await sbRpc('anfrage_neu',{p_buch_id:route.id,p_data:(mitFotos.schein||mitFotos.bilder.length)?mitFotos:daten},pubCfg());
+   if(!r.ok&&(mitFotos.schein||mitFotos.bilder.length)){daten.fotosFehlen=1;r=await sbRpc('anfrage_neu',{p_buch_id:route.id,p_data:daten},pubCfg())} /* ältere Einrichtung: nur Text */
+   if(!r.ok)throw new Error(r.status)}
   catch(e){if(el)el.disabled=false;return toast('Senden hat nicht geklappt. Bitte erneut versuchen oder anrufen.',true)}}
- else S.anfragen.push(anfrageAusBuchung(daten));
+ else S.anfragen.push(anfrageAusBuchung(mitFotos));
  save();
  if(S.settings.pushAnfragen&&'Notification'in window&&Notification.permission==='granted'){
   new Notification('mehanicar — Neue Terminanfrage',{body:name+' · '+anl.slice(0,80),icon:'./icon.svg',tag:'anfrage-'+Date.now()})}

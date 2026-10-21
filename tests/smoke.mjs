@@ -355,13 +355,18 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       const set = (id, v) => { const e = document.getElementById(id); if (e) e.value = v; };
       set('bk-name', 'Test Kunde'); set('bk-tel', '0170 1234567'); set('bk-anl', 'Bremsen quietschen'); set('bk-kz', 'HU-XY 12');
       document.querySelector('[data-act="buchen-send"]').click(); await w(150);
-      const imPostfach = box.length === 1 && S.anfragen.length === vorher;
+      const pflicht = box.length === 0; /* ohne Kategorie, FIN/Foto und km nicht absendbar */
+      const fz0 = S.fahrzeuge.find(f => f.vin && kunde(f.kundeId));
+      document.querySelector('input[name="bk-kat"][value="beanst"]').checked = true; set('bk-fin', fz0.vin.toLowerCase()); set('bk-km', '88.000'); set('bk-mail', 'a@b.de');
+      document.querySelector('[data-act="buchen-send"]').click(); await w(150);
+      const imPostfach = pflicht && box.length === 1 && S.anfragen.length === vorher;
       const n = await anfragenHolen();
       const q = S.anfragen[S.anfragen.length - 1];
       const an = n === 1 && S.anfragen.length === vorher + 1 && q.name === 'Test Kunde' && q.status === 'neu' && q.kanal === 'web';
+      const bestand = q.fzgId === fz0.id && q.kundeId === fz0.kundeId && q.km === 88000 && q.kat === 'Problem / Reparatur' && /Bestandskunde/.test(q.notiz);
       S.anfragen.length = vorher; Object.assign(c, alt); if (altBid) S.settings.buchId = altBid; else delete S.settings.buchId;
       window.fetch = of; nav('planung'); save(); await w(80);
-      return { link, name, imPostfach, an };
+      return { link, name, imPostfach, an, bestand };
     });
     if (Object.values(bk).some(v => !v)) errs.push('Online-Terminbuchung: ' + JSON.stringify(bk));
   }
