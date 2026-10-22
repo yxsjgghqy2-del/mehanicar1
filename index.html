@@ -206,6 +206,7 @@ S.anfragen.forEach(q=>{if(q.kanal==='anruf')q.kanal='tel';if(!QKANAL[q.kanal])q.
  if(!q.fotos)q.fotos=[];if(!q.antworten)q.antworten=[];if(!q.kiSugg)q.kiSugg=[]});
 S.customReplies=S.customReplies||[];
 S.settings.buehnen=S.settings.buehnen||3;
+if(!S.settings.oeffnung)S.settings.oeffnung={tage:[1,2,3,4,5],von:'08:00',bis:'17:00',slot:60};
 S.settings.ki=S.settings.ki||{endpoint:'/api/analyse',model:'claude-haiku-4-5-20251001'};
 if(S.settings.ki.model==='claude-fable-5')S.settings.ki.model='claude-haiku-4-5-20251001';
 if(S.settings.onboarded===undefined)S.settings.onboarded=true;
@@ -364,9 +365,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.78';
+const APP_VER='2.79';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.79',d:'2026-10-22',p:['Online-Buchung: Kunden sehen jetzt nur noch freie Uhrzeiten und tippen eine an. Belegt sind Termine und blockierte Zeiten. Kurzfristige Termine bleiben möglich. Bestätigt wird weiterhin nur von Ihnen.','Zeiten blockieren: im Kalender mit dem Typ „Blockiert“ oder direkt im Auftrag mit „Auto dauert länger“. Dann ist die Werkstatt bis zur gewählten Zeit belegt, und der Fertig-Termin wird angepasst.','Öffnungszeiten (Tage, von/bis, Termin-Raster) stellen Sie unter Einstellungen → Kalkulation & Preise ein.']},
  {v:'2.78',d:'2026-10-22',p:['Bei einer Online-Anfrage gibt es jetzt den Knopf „Termin bestätigen“. Der Wunschtermin ist schon eingetragen. Danach schicken Sie die Bestätigung per E-Mail. Hat der Kunde keine E-Mail angegeben, rufen Sie ihn an oder schreiben per SMS oder WhatsApp.','Terminerinnerungen: 3 Tage und 1 Tag vorher steht auf der Startseite und im Kalender „Terminerinnerung fällig“. Ein Tipp öffnet die fertige Nachricht. Die Tage stellen Sie unter Einstellungen → Kalkulation & Preise ein.']},
  {v:'2.77',d:'2026-10-21',p:['Online-Terminanfrage neu: Der Kunde wählt, worum es geht (Wartung, Problem, Reifen …). Pflicht sind Name, Telefon, FIN oder ein Foto vom Fahrzeugschein, Kilometerstand und ein Anliegen so genau wie möglich. Freiwillig sind E-Mail und bis zu 3 Bilder.','Bestandskunden werden automatisch erkannt, über Telefonnummer, FIN oder Kennzeichen. Die Anfrage hängt dann am richtigen Kunden und Fahrzeug.','Online-Anfragen stehen auf „Neu – Bestätigung ausstehend“, bis Sie sie bestätigen.','Damit Fotos ankommen: einmal den Befehl aus Einstellungen → Cloud-Backup → „Einmalige Einrichtung“ erneut in Supabase ausführen.']},
  {v:'2.76',d:'2026-10-21',p:['Freigabe-Link: Bei „Freigabe ausstehend“ tippen Sie auf „Freigabe beim Kunden anfragen“. Der Kunde bekommt per WhatsApp oder E-Mail einen Link mit Befund, Arbeiten, Fotos und Betrag. Dort tippt er „Freigeben“ oder „Ablehnen“, und die Antwort wird hier automatisch eingetragen.','Nach 3 Stunden ohne Antwort steht beim Paket „nachhaken“.','Abgelehnte Arbeiten werden beim nächsten Besuch des Fahrzeugs angezeigt.','Bei telefonischer Freigabe können Sie jetzt eintragen, mit wem Sie gesprochen haben.','Wichtig: Status- und Buchungslinks funktionieren jetzt mit Ihrem eigenen Cloud-Projekt. Bitte den Buchungslink einmal neu weitergeben.']},
@@ -1344,6 +1346,7 @@ function vAuftrag(id){
  /* --- Organisation --- */
  const secOrga=sec('orga','Organisation',a.notiz?'<span class="dotmark"></span> Notiz vorhanden':'',`
   ${maSelect(a)}
+  ${a.status!=='abgeholt'?`<button class="btn btn-2nd" style="width:100%;margin-bottom:12px" data-act="blk-auftrag" data-oid="${a.id}">Auto dauert länger – Zeit im Kalender blockieren</button>`:''}
   ${(()=>{const hasRe=S.rechnungen.some(r=>r.auftragId===a.id);
    return hasRe&&!a.reviewSent?`<div style="background:var(--green-bg);border:1px solid rgba(14,143,78,.3);border-radius:12px;padding:12px;margin-bottom:12px"><div style="font-weight:650;font-size:12.5px;margin-bottom:8px">Zufriedener Kunde? Jetzt um Bewertung bitten.</div><button class="btn btn-soft-green btn-sm" style="width:100%" data-act="review-ask" data-oid="${a.id}">Google-Bewertung anfragen (WhatsApp)</button></div>`
    :hasRe&&a.reviewSent?`<div style="font-size:11px;color:var(--green);margin-bottom:12px">Bewertungsanfrage wurde gesendet.</div>`:''})()}
@@ -1955,7 +1958,7 @@ function buchUrl(){const id=S.settings.buchId;return location.origin+location.pa
 let buchInfoH='';
 async function buchungAnmelden(){const c=syncCfg();if(!c.on||!c.id)return;
  if(!S.settings.buchId){S.settings.buchId=stlId().slice(0,20);save()}
- const fi=S.settings.firma||{},info={ws:fi.name||'',tel:fi.tel||'',adr:fi.adresse||'',email:fi.email||'',web:fi.web||''},h=JSON.stringify(info);
+ const fi=S.settings.firma||{},info={ws:fi.name||'',tel:fi.tel||'',adr:fi.adresse||'',email:fi.email||'',web:fi.web||'',oe:S.settings.oeffnung,belegt:belegtListe()},h=JSON.stringify(info);
  if(h===buchInfoH)return;
  try{const r=await sbRpc('buchung_an',{p_backup_id:c.id,p_buch_id:S.settings.buchId,p_info:info});if(r.ok)buchInfoH=h}catch(e){}}
 let holT=null;
@@ -3125,6 +3128,10 @@ function vEinstellungen(){
    <div class="kv"><span class="k">Preis pro AW (Arbeitswert)</span><span class="v num" style="color:var(--green);font-weight:700">${fmt(st.awCt)} <span style="font-size:10px;color:var(--ink3);font-weight:400">1 AW = ${pct1(60/(st.awTeiler||1))} Min</span></span></div>
    <div class="auf-block"><div class="k">Stundensatz nach Arbeitsart<br><span style="font-size:11px;color:var(--ink3)">Leer = wie Mechanik (${fmt(st.stundensatzCt)}). In der Tabelle wählen Sie die Art je Position.</span></div>
     ${arten().filter(r=>r.id!=='mech').map(r=>`<div class="auf-row"><span>${esc(r.lang||r.n)}</span><input class="priceinp" style="width:84px" inputmode="decimal" value="${r.stdCt?fmtIn(r.stdCt):''}" placeholder="${fmtIn(st.stundensatzCt)}" data-f="art-std" data-id="${r.id}" aria-label="Stundensatz ${esc(r.lang||r.n)} Euro"><span>€ / Std</span></div>`).join('')}</div>
+   <div class="auf-block"><div class="k">Öffnungszeiten für die Online-Buchung<br><span style="font-size:11px;color:var(--ink3)">Kunden sehen nur freie Zeiten. Belegt sind Termine und blockierte Zeiten.</span></div>
+    <div class="oe-tage">${['Mo','Di','Mi','Do','Fr','Sa','So'].map((l,i)=>`<label><input type="checkbox" data-f="oe-tag" data-t="${i+1}"${(st.oeffnung||{tage:[]}).tage.includes(i+1)?' checked':''}> ${l}</label>`).join('')}</div>
+    <div class="auf-row"><span>von</span><input type="time" class="priceinp" style="width:100px" value="${(st.oeffnung||{}).von||'08:00'}" data-f="oe-von"><span>bis</span><input type="time" class="priceinp" style="width:100px" value="${(st.oeffnung||{}).bis||'17:00'}" data-f="oe-bis"></div>
+    <div class="auf-row"><span>Termin-Raster</span><input class="priceinp" style="width:64px" inputmode="numeric" value="${(st.oeffnung||{}).slot||60}" data-f="oe-slot"><span>Minuten</span></div></div>
    <div class="kv"><span class="k">Terminerinnerung (Tage vorher)</span><span class="v"><input class="priceinp" style="width:84px" value="${(st.erinnTage||[3,1]).join(', ')}" data-f="erinn-tage" aria-label="Terminerinnerung Tage vorher"></span></div>
    <div class="kv"><span class="k">MwSt-Satz %</span><span class="v"><input class="priceinp" style="width:56px" inputmode="numeric" value="${st.mwst}" data-f="set-mwst"></span></div>
    ${(()=>{const c=st.kleinmat||{};return`<div class="auf-block"><div class="k">Kleinmaterial & Entsorgung<br><span style="font-size:11px;color:var(--ink3)">Wird automatisch auf jeden Auftrag gerechnet (z. B. Bremsenreiniger, Kabelbinder, Altöl). Pro Auftrag abschaltbar.</span></div>
@@ -4589,7 +4596,7 @@ ACT['url-del']=el=>{S.urlaub=S.urlaub.filter(x=>x.id!==el.dataset.id);save();ren
 
 /* ============ TERMINKALENDER ============ */
 let termWoche=0;
-const TTYP={annahme:['Annahme','#3E5A73'],werkstatt:['Werkstatt','#9C6420'],abholung:['Abholung','#2E7650'],besprechung:['Besprechung','#5C6670'],lieferung:['Lieferung','#3E3E46'],sonstiges:['Sonstiges','#6B6B73']};
+const TTYP={block:['Blockiert','#5C6670'],annahme:['Annahme','#3E5A73'],werkstatt:['Werkstatt','#9C6420'],abholung:['Abholung','#2E7650'],besprechung:['Besprechung','#5C6670'],lieferung:['Lieferung','#3E3E46'],sonstiges:['Sonstiges','#6B6B73']};
 function wkMon(ofs){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7)+ofs*7);
  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
 function vTermine(){
@@ -4688,6 +4695,24 @@ function erinnKarte(){const f=erinnFaellig();if(!f.length)return'';
 ACT['tn-erinn']=el=>{const t=(S.termine||[]).find(x=>x.id===el.dataset.id);if(t)termNachrichtSheet(t,'erinn',+el.dataset.n)};
 ACT['tn-best']=el=>{const t=(S.termine||[]).find(x=>x.id===el.dataset.id);if(t){closeSheet();termNachrichtSheet(t,'best')}};
 FSET['erinn-tage']=el=>{const v=String(el.value).split(/[^\d]+/).map(Number).filter(n=>n>0&&n<60);S.settings.erinnTage=v.length?[...new Set(v)].sort((a,b)=>b-a):[3,1];save();render()};
+ACT['blk-auftrag']=el=>{const a=auftrag(el.dataset.oid);
+ sheet('Auto dauert länger',`<div style="font-size:13px;color:var(--ink2);margin-bottom:10px;line-height:1.5">Die Werkstatt wird bis dahin im Kalender blockiert – Kunden können in dieser Zeit keinen Termin buchen.</div>
+  <div class="row2"><div class="fld"><label>Blockiert bis Datum</label><input type="date" id="bl-d" value="${a.abgabe&&a.abgabe>=todayISO()?a.abgabe:addDays(todayISO(),1)}"></div><div class="fld"><label>Uhrzeit</label><input type="time" id="bl-u" value="${a.abgabeZeit||(S.settings.oeffnung||{}).bis||'17:00'}"></div></div>
+  <label class="sp-hk"><input type="checkbox" id="bl-ab" checked> Fertig-Termin des Auftrags auf diese Zeit setzen</label>
+  <button class="btn btn-main" style="width:100%;margin-top:8px" data-act="blk-auftrag-ok" data-oid="${a.id}">Blockieren</button>`)};
+ACT['blk-auftrag-ok']=el=>{const a=auftrag(el.dataset.oid),bisD=$('#bl-d').value,bisU=$('#bl-u').value||'17:00',oe=S.settings.oeffnung||{von:'08:00',bis:'17:00',tage:[1,2,3,4,5]};if(!bisD)return toast('Datum fehlt',true);
+ S.termine=(S.termine||[]).filter(t=>!(t.typ==='block'&&t.auftragId===a.id));const f=fzg(a.fzgId)||{};
+ const jetzt=new Date(),startH=zMin(Math.max(minZ(oe.von),jetzt.getHours()*60));
+ for(let d=todayISO();d<=bisD;d=addDays(d,1)){const wd=((new Date(d+'T12:00').getDay()+6)%7)+1;if(!(oe.tage||[]).includes(wd))continue;
+  const von=d===todayISO()?startH:oe.von,bis=d===bisD?bisU:oe.bis;if(minZ(von)>=minZ(bis))continue;
+  S.termine.push({id:'te'+uid(),titel:'Blockiert · '+(f.kennz||a.nr),datum:d,von,bis,typ:'block',mitarbeiterId:'',kundeId:'',notiz:'Auto dauert länger ('+a.nr+')',status:'geplant',auftragId:a.id})}
+ if($('#bl-ab').checked){a.abgabe=bisD;a.abgabeZeit=bisU}
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Werkstatt blockiert bis '+dLabel(bisD)+' '+bisU+' (Auto dauert länger).',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
+ save();closeSheet();render();toast('Im Kalender blockiert bis '+dLabel(bisD)+' '+bisU)};
+FSET['oe-von']=el=>{S.settings.oeffnung.von=el.value||'08:00';save()};
+FSET['oe-bis']=el=>{S.settings.oeffnung.bis=el.value||'17:00';save()};
+FSET['oe-slot']=el=>{S.settings.oeffnung.slot=Math.max(15,Math.min(240,parseInt(el.value)||60));save()};
+FSET['oe-tag']=el=>{const t=+el.dataset.t,o=S.settings.oeffnung;o.tage=el.checked?[...new Set([...o.tage,t])].sort():o.tage.filter(x=>x!==t);save()};
 ACT['term-heute']=()=>{termWoche=0;render()};
 ACT['term-woche']=el=>{termWoche=(termWoche||0)+parseInt(el.dataset.d||0);render()};
 ACT['termin-slot']=el=>showTerminSheet(null,el.dataset.datum,el.dataset.h,null);
@@ -4719,7 +4744,7 @@ function showTerminSheet(t,defDatum,defVon,defBis){
    <button class="btn btn-main" data-act="termin-save"${!isNew?` data-id="${t.id}"`:''}>${isNew?'Anlegen':'Speichern'}</button></div>`)
 }
 ACT['termin-save']=el=>{
- const titel=($('#te-titel').value||'').trim();if(!titel)return toast('Bezeichnung fehlt',true);
+ let titel=($('#te-titel').value||'').trim();if(!titel&&$('#te-typ').value==='block')titel='Blockiert';if(!titel)return toast('Bezeichnung fehlt',true);
  const datum=$('#te-datum').value,von=$('#te-von').value,bis=$('#te-bis').value;
  if(!datum)return toast('Datum fehlt',true);
  if(von&&bis&&von>=bis)return toast('Endzeit muss nach Startzeit liegen',true);
@@ -4778,11 +4803,24 @@ const bkFotos={schein:null,bild:[]};
 ACT['bk-foto']=el=>{const z=el.dataset.z,i=$('#bk-file');if(!i)return;if(z==='bild'&&bkFotos.bild.length>=3)return toast('Höchstens 3 Bilder',true);
  i.onchange=async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const r=new FileReader();r.onload=async()=>{const k=await fotoKlein(r.result);if(!k)return toast('Bild konnte nicht gelesen werden',true);
   if(z==='schein'){bkFotos.schein=k;$('#bk-schein-ok').textContent='✓ Foto angehängt'}else{bkFotos.bild.push(k);$('#bk-bild-ok').textContent='✓ '+bkFotos.bild.length+' Bild'+(bkFotos.bild.length>1?'er':'')}};r.readAsDataURL(f)};i.click()};
+/* Freie Zeiten (KP1): Öffnungszeiten + belegte/blockierte Zeiten → Kunde wählt aus freien Slots. Ohne Namen, nur Zeiten. */
+const minZ=t=>{const[h,m]=String(t||'0:0').split(':').map(Number);return h*60+(m||0)},zMin=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+function belegtListe(){const h=todayISO(),bis=addDays(h,60);return(S.termine||[]).filter(t=>t.datum>=h&&t.datum<=bis&&t.status!=='abgesagt').map(t=>[t.datum,t.von||'00:00',t.bis||t.von||'23:59'])}
+function freieSlots(datum,oe,belegt){oe=oe||{tage:[1,2,3,4,5],von:'08:00',bis:'17:00',slot:60};const wd=((new Date(datum+'T12:00').getDay()+6)%7)+1;if(!(oe.tage||[]).includes(wd))return[];
+ const st=Math.max(15,oe.slot||60),r=[],jetzt=new Date(),heute=todayISO();
+ for(let m=minZ(oe.von);m+st<=minZ(oe.bis);m+=st){if(datum===heute&&m<=jetzt.getHours()*60+jetzt.getMinutes())continue;
+  if((belegt||[]).some(([d,v,b])=>d===datum&&minZ(v)<m+st&&minZ(b)>m))continue;r.push(zMin(m))}return r}
+function bkSlotsZeigen(){const box=$('#bk-slots'),d=($('#bk-dat')||{}).value;if(!box||!d)return;
+ const src=route.id?(buchInfo.d||{}):{oe:S.settings.oeffnung,belegt:belegtListe()};if(!src.oe){box.innerHTML='';return}
+ const sl=freieSlots(d,src.oe,src.belegt),cur=($('#bk-uhr')||{}).value;
+ box.innerHTML=sl.length?sl.map(z=>`<button type="button" class="bk-slot${z===cur?' on':''}" data-act="bk-slot" data-z="${z}">${z}</button>`).join(''):'<div class="bk-keine">An diesem Tag ist leider nichts frei – bitte einen anderen Tag wählen.</div>';
+ const u=$('#bk-uhr-wrap');if(u)u.style.display='none';if(!sl.includes(cur))$('#bk-uhr').value=''}
+ACT['bk-slot']=el=>{$('#bk-uhr').value=el.dataset.z;bkSlotsZeigen()};
 let buchInfo={id:null,d:null};
 function vBuchen(){
  let fi=S.settings.firma;
  if(route.id&&buchInfo.id!==route.id){buchInfo={id:route.id,d:null};const id=route.id;
-  sbRpc('buchung_info',{p_buch_id:id},pubCfg()).then(r=>r.ok?r.json():null).then(d=>{if(d&&d.ws!==undefined&&buchInfo.id===id){buchInfo.d=d;if(route.v==='buchen')render()}}).catch(()=>{})}
+  sbRpc('buchung_info',{p_buch_id:id},pubCfg()).then(r=>r.ok?r.json():null).then(d=>{if(d&&d.ws!==undefined&&buchInfo.id===id){buchInfo.d=d;if(route.v==='buchen'){render();setTimeout(bkSlotsZeigen,0)}}}).catch(()=>{})}
  if(route.id&&buchInfo.d){const d=buchInfo.d;fi={...fi,name:d.ws,tel:d.tel,adresse:d.adr,email:d.email,web:d.web}}
  return`<div style="min-height:100%;background:var(--bg);padding:calc(var(--sat,0px) + 20px) 16px calc(40px + var(--sab,0px));font-family:Manrope,-apple-system,BlinkMacSystemFont,sans-serif">
   <div style="max-width:480px;margin:0 auto">
@@ -4804,8 +4842,9 @@ function vBuchen(){
     <div class="fld"><label>Ihr Anliegen – so genau wie möglich *</label><textarea id="bk-anl" rows="5" placeholder="Was ist los? Seit wann? Wann tritt es auf (kalt/warm, beim Bremsen, bei Tempo …)? Leuchtet eine Warnlampe?"></textarea></div>
     <div class="bk-oder">Bilder zum Problem <span style="color:var(--ink3)">(freiwillig, bis 3)</span>: <button type="button" class="bk-foto-btn" data-act="bk-foto" data-z="bild">Bild hinzufügen</button> <span id="bk-bild-ok"></span></div>
     <div class="row2" style="margin-top:12px">
-     <div class="fld"><label>Wunschtermin</label><input type="date" id="bk-dat" min="${todayISO()}" value="${addDays(todayISO(),2)}"></div>
-     <div class="fld"><label>Uhrzeit</label><input type="time" id="bk-uhr" value="09:00"></div></div>
+     <div class="fld"><label>Wunschtermin</label><input type="date" id="bk-dat" min="${todayISO()}" value="${addDays(todayISO(),2)}" onchange="bkSlotsZeigen()"></div>
+     <div class="fld" id="bk-uhr-wrap"><label>Uhrzeit</label><input type="time" id="bk-uhr" value="09:00"></div></div>
+    <div class="bk-slots" id="bk-slots" aria-label="Freie Uhrzeiten"></div>
     <input type="file" id="bk-file" accept="image/*" style="display:none">
     <div style="font-size:11px;color:var(--ink3);background:rgba(194,113,10,.08);border:1px solid rgba(194,113,10,.25);border-radius:9px;padding:9px 11px;margin-bottom:13px;line-height:1.55">Hinweis: Terminwünsche werden persönlich von unserem Team geprüft und bestätigt. Sie erhalten Rückmeldung per Telefon oder WhatsApp.</div>
     <button class="btn btn-main" style="width:100%" data-act="buchen-send">Terminanfrage absenden</button>
@@ -4923,6 +4962,7 @@ ACT['buchen-send']=async el=>{
  const v=id=>(($('#'+id)||{}).value||'').trim();const kat=(document.querySelector('input[name="bk-kat"]:checked')||{}).value||'';
  const name=v('bk-name'),tel=v('bk-tel'),anl=v('bk-anl'),mail=v('bk-mail'),fin=v('bk-fin').toUpperCase().replace(/\s/g,''),km=parseInt(v('bk-km').replace(/\D/g,''))||0;
  const fehlt=[];if(!kat)fehlt.push('Worum geht es');if(!name)fehlt.push('Name');if(!tel)fehlt.push('Telefon');if(!fin&&!bkFotos.schein)fehlt.push('FIN oder Foto vom Fahrzeugschein');if(!km)fehlt.push('Kilometerstand');if(!anl)fehlt.push('Anliegen');
+ if($('.bk-slot')&&!($('#bk-uhr')||{}).value)fehlt.push('Uhrzeit');
  if(fehlt.length)return toast('Bitte noch ausfüllen: '+fehlt.join(', '),true);
  if(fin&&fin.length!==17)return toast('Die FIN hat 17 Zeichen – bitte prüfen oder ein Foto vom Fahrzeugschein anhängen',true);
  const kz=v('bk-kz').toUpperCase();
@@ -5002,6 +5042,7 @@ function renderInner(){
   fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,status:vStatus,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz,apdb:vApDb,pakvorlagen:vPakVorlagen};
  if(!S.settings.onboarded&&!['buchen','impressum','datenschutz','status'].includes(route.v)){app.innerHTML=vOnboarding();return}
  app.innerHTML=(V[route.v]||vPlanung)();
+ if(route.v==='buchen')setTimeout(()=>{try{bkSlotsZeigen()}catch(e){}},0);
  linkLabels(app);
  setTimeout(()=>{try{rahmenCheck()}catch(e){}},0);
  syncWakeLock();

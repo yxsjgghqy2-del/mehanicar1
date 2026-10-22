@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 22.10.2026 (Abendlauf) — 2.79 KP1: freie Zeiten + Zeiten blockieren
+- **Gebaut:** `S.settings.oeffnung` {tage, von, bis, slot} (Standard Mo–Fr 08–17 Uhr, 60 Min, in Einstellungen änderbar – Vorgabe, keine Erfindung des Inhabers; bitte bestätigen lassen). Buchungsinfo trägt Öffnungszeiten + belegte Zeiten (nur Datum/Uhrzeit, keine Namen; `belegtListe`, 60 Tage). Buchungsformular zeigt freie Uhrzeiten als Knöpfe (`freieSlots`), heute erst ab jetzt (kurzfristig erlaubt), belegte/blockierte Zeiten ausgeblendet; ohne Info bleibt das Uhrzeitfeld. Termintyp „Blockiert“ (frei im Kalender, Bezeichnung optional). Auftrag → Organisation: „Auto dauert länger – Zeit im Kalender blockieren“ → Block-Termine je Öffnungstag bis Datum/Uhrzeit, Fertig-Termin wird angepasst, Verlauf. SW v80.
+- **Test:** Smoke-Test grün (Slot-Rechnung, Überschneidung, geschlossene Tage, Blockieren → Folgetag voll, Endtag ab 12:00 frei; Buchungstest wählt jetzt einen Slot).
+- **KP1 damit komplett** bis auf Kleinigkeiten (Öffnungszeiten vom Inhaber bestätigen lassen).
+
 ## 22.10.2026 (Morgenlauf) — 2.78 KP1: Termin bestätigen + Erinnerungen
 - **Gebaut:** In der Anfrage (Status neu) Knopf „Termin bestätigen · Wunsch …“ → Datum/Uhrzeit vorbelegt → Termin (`t.anfrageId`, Name/Telefon/E-Mail) + Anfrage „Termin“ → Nachrichtenblatt: mit E-Mail „Per E-Mail senden“ (fertige Mail), ohne E-Mail Hinweis + „Kunden anrufen“ (= Aufgabe anrufen), dazu SMS und WhatsApp, „Schon erledigt“. Termin-Blatt: Telefon/E-Mail + „Termin beim Kunden bestätigen“. Erinnerungen: `S.settings.erinnTage` (Standard 3, 1; Einstellungen → Kalkulation & Preise), `erinnFaellig()` (kleinster erreichter Vorlauf, noch nicht gesendet) → Karte „Terminerinnerungen fällig“ oben in Planung und Kalender → fertige Nachricht. SMS als weiterer Weg (Briefing). SW v79.
 - **Test:** Smoke-Test grün (Anfrage → Termin am Wunschtag, ohne E-Mail → Anrufen-Knopf, bestätigt, Erinnerung 3 Tage fällig + Karte, nach Senden erledigt).
