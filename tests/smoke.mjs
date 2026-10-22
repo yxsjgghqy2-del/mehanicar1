@@ -638,6 +638,26 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       S.auftraege = JSON.parse(snap); S.settings.sync = JSON.parse(syncAlt) || undefined; if (!S.settings.sync) delete S.settings.sync; const f = fzg(a.fzgId); if (f) delete f.abgelehnt; save(); nav('planung'); return r; });
     if (Object.values(fr).some(v => !v)) errs.push('Freigabe-Link: ' + JSON.stringify(fr));
   }
+  // KP1 Termine: Anfrage → Termin bestätigen → Nachricht; fällige Erinnerung 3/1 Tage
+  {
+    const tm = await page.evaluate(async () => {
+      const w = ms => new Promise(r => setTimeout(r, ms || 120)), snap = JSON.stringify({ q: S.anfragen, t: S.termine || [] });
+      const x = anfrageAusBuchung({ name: 'Eva Test', tel: '0170 5551234', anl: 'Ölwechsel', kat: 'wartung', km: 50000, fin: '', dat: addDays(todayISO(), 3), uhr: '10:00' }); S.anfragen.push(x);
+      nav('anfrage', x.id); await w();
+      const knopf = document.querySelector('[data-act="anf-termin"]'); const r = { knopf: !!knopf };
+      if (knopf) { knopf.click(); await w(); document.querySelector('[data-act="anf-termin-ok"]').click(); await w(); }
+      const t = (S.termine || []).find(y => y.anfrageId === x.id);
+      r.termin = !!t && t.datum === addDays(todayISO(), 3) && t.von === '10:00' && x.status === 'termin';
+      r.ohneMailAnruf = !!document.querySelector('#sheetbg a[href^="tel:"]') && /bestätigen Ihren Termin/.test((document.getElementById('tn-t') || {}).value || '');
+      document.querySelector('#sheetbg [data-w="erl"]').click(); await w();
+      r.bestaetigt = !!(t && t.bestaetigt);
+      r.faellig = erinnFaellig().some(f => f.t.id === t.id && f.n === 3);
+      nav('planung'); await w(); r.karte = !!document.querySelector('.tn-karte [data-act="tn-erinn"]');
+      ACT['tn-erinn']({ dataset: { id: t.id, n: '3' } }); await w(); document.querySelector('#sheetbg [data-w="erl"]').click(); await w();
+      r.erledigt = !erinnFaellig().some(f => f.t.id === t.id);
+      const o = JSON.parse(snap); S.anfragen = o.q; S.termine = o.t; save(); nav('planung'); return r; });
+    if (Object.values(tm).some(v => !v)) errs.push('Termine: ' + JSON.stringify(tm));
+  }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
     const sy = await page.evaluate(async () => {
