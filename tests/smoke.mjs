@@ -358,6 +358,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       const pflicht = box.length === 0; /* ohne Kategorie, FIN/Foto und km nicht absendbar */
       const fz0 = S.fahrzeuge.find(f => f.vin && kunde(f.kundeId));
       document.querySelector('input[name="bk-kat"][value="beanst"]').checked = true; set('bk-fin', fz0.vin.toLowerCase()); set('bk-km', '88.000'); set('bk-mail', 'a@b.de');
+      bkSlotsZeigen(); const sl0 = document.querySelector('.bk-slot'); if (sl0) sl0.click(); await w(50);
       document.querySelector('[data-act="buchen-send"]').click(); await w(150);
       const imPostfach = pflicht && box.length === 1 && S.anfragen.length === vorher;
       const n = await anfragenHolen();
@@ -657,6 +658,21 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       r.erledigt = !erinnFaellig().some(f => f.t.id === t.id);
       const o = JSON.parse(snap); S.anfragen = o.q; S.termine = o.t; save(); nav('planung'); return r; });
     if (Object.values(tm).some(v => !v)) errs.push('Termine: ' + JSON.stringify(tm));
+  }
+  // KP1 Slots: Öffnungszeiten, belegte Zeiten nicht buchbar, „Auto dauert länger“ blockiert
+  {
+    const sl = await page.evaluate(async () => {
+      const w = ms => new Promise(r => setTimeout(r, ms || 120)), snapT = JSON.stringify(S.termine || []), snapA = JSON.stringify(S.auftraege);
+      const oe = { tage: [1, 2, 3, 4, 5, 6, 7], von: '08:00', bis: '12:00', slot: 60 }, d = addDays(todayISO(), 5);
+      const r = { frei: freieSlots(d, oe, []).join() === '08:00,09:00,10:00,11:00', belegt: freieSlots(d, oe, [[d, '09:00', '10:30']]).join() === '08:00,11:00' };
+      r.wochenende = freieSlots(d, { ...oe, tage: [] }, []).length === 0;
+      const a = S.auftraege.find(o => o.status !== 'abgeholt'); S.settings.oeffnung = { tage: [1, 2, 3, 4, 5, 6, 7], von: '08:00', bis: '17:00', slot: 60 };
+      nav('auftrag', a.id); await w(); ACT['blk-auftrag']({ dataset: { oid: a.id } }); await w(); document.getElementById('bl-d').value = addDays(todayISO(), 2); document.getElementById('bl-u').value = '12:00';
+      document.querySelector('[data-act="blk-auftrag-ok"]').click(); await w();
+      const bl = (S.termine || []).filter(t => t.typ === 'block' && t.auftragId === a.id);
+      r.blockiert = bl.length >= 2 && a.abgabe === addDays(todayISO(), 2) && freieSlots(addDays(todayISO(), 1), S.settings.oeffnung, belegtListe()).length === 0 && freieSlots(addDays(todayISO(), 2), S.settings.oeffnung, belegtListe())[0] === '12:00';
+      S.termine = JSON.parse(snapT); S.auftraege = JSON.parse(snapA); save(); nav('planung'); return r; });
+    if (Object.values(sl).some(v => !v)) errs.push('Slots: ' + JSON.stringify(sl));
   }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
