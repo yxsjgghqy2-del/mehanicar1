@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 22.10.2026 (Morgenlauf) — 2.78 KP1: Termin bestätigen + Erinnerungen
+- **Gebaut:** In der Anfrage (Status neu) Knopf „Termin bestätigen · Wunsch …“ → Datum/Uhrzeit vorbelegt → Termin (`t.anfrageId`, Name/Telefon/E-Mail) + Anfrage „Termin“ → Nachrichtenblatt: mit E-Mail „Per E-Mail senden“ (fertige Mail), ohne E-Mail Hinweis + „Kunden anrufen“ (= Aufgabe anrufen), dazu SMS und WhatsApp, „Schon erledigt“. Termin-Blatt: Telefon/E-Mail + „Termin beim Kunden bestätigen“. Erinnerungen: `S.settings.erinnTage` (Standard 3, 1; Einstellungen → Kalkulation & Preise), `erinnFaellig()` (kleinster erreichter Vorlauf, noch nicht gesendet) → Karte „Terminerinnerungen fällig“ oben in Planung und Kalender → fertige Nachricht. SMS als weiterer Weg (Briefing). SW v79.
+- **Test:** Smoke-Test grün (Anfrage → Termin am Wunschtag, ohne E-Mail → Anrufen-Knopf, bestätigt, Erinnerung 3 Tage fällig + Karte, nach Senden erledigt).
+- **Noch offen KP1:** freie Slots im Buchungsformular, Zeiten blockieren (am Auftrag + frei).
+
 ## 21.10.2026 (Abendlauf) — 2.77 KP1: neues Anfrageformular + Bestandskunden-Erkennung
 - **Gebaut:** Buchungsformular nach Briefing: Kategorie (Wartung/Inspektion, Problem/Reparatur, Reifen/Räder, HU/AU, Klima, Sonstiges) Pflicht; Name, Telefon Pflicht; E-Mail freiwillig; FIN (17 Zeichen) ODER Foto Fahrzeugschein Pflicht (nur angehängt, nicht ausgelesen); Kilometerstand Pflicht; EIN Anliegen-Feld „so genau wie möglich“; bis 3 Bilder freiwillig (verkleinert); Wunschtermin. Fehlende Pflichtangaben werden genannt. `anfrageAusBuchung` erkennt Bestandskunden/-fahrzeuge über FIN, Kennzeichen oder Telefon (`q.kundeId/fzgId`, Notiz „Bestandskunde …“), übernimmt Kategorie, km, E-Mail, FIN, Fotos. Auftrag aus Anfrage nutzt Kunde/Fahrzeug/km (`anfFzgId` legt Fahrzeug mit FIN an, falls neu). Status „Neu – Bestätigung ausstehend“. SQL: Grenze für Anfragen 4000 → 900000 Zeichen (Fotos); bei alter Einrichtung sendet die Seite automatisch nur Text + Hinweis. SW v78.
 - **Inhaber muss:** „Einmalige Einrichtung“ erneut in Supabase ausführen (für Fotos), Buchungslink neu weitergeben (seit 2.76).

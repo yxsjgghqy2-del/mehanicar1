@@ -1102,3 +1102,6 @@ tr.kt-auto td{background:var(--bg);color:var(--ink2);font-size:12.5px}
 .bk-foto-btn{min-height:40px;padding:0 12px;border-radius:10px;border:1px dashed var(--line);background:var(--bg);font:inherit;font-size:13px;font-weight:650;color:var(--ink)}
 #bk-schein-ok,#bk-bild-ok{color:var(--green);font-weight:700}
 #bk-fin::placeholder,#bk-kz::placeholder{text-transform:none}
+/* 2.78 Termine: Bestätigung + Erinnerung */
+.tn-karte{margin-bottom:12px;border:1.5px solid var(--amber)}
+.tn-hin{font-size:12.5px;color:var(--amber);background:var(--amber-bg);border-radius:10px;padding:9px 11px;margin-bottom:8px}
