@@ -11,7 +11,7 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
   1. ~~Teile-Aufschlag-Staffel + VK-Vorschlag~~ (2.60)
   2. ~~Kleinmaterial- & Entsorgungs-Pauschale automatisch (% vom Lohn mit Min/Max, Altöl/Altteile), je Auftrag abschaltbar, auf Rechnung/E-Rechnung~~ → 2.63 (18.10.)
   3. ~~Stundensätze nach Arbeitsart (Mechanik, Elektrik/Diagnose, Karosserie, Lack) – Satz je Position wählbar~~ → 2.65 (18.10.)
-  4. Zielpreis rückwärts: „Kunde zahlt X € brutto“ → Rabatt automatisch, Rest-Marge sichtbar; Mindestmarge mit Warnung
+  4. ~~Zielpreis rückwärts (2.80)~~: „Kunde zahlt X € brutto“ → Rabatt automatisch, Rest-Marge sichtbar; Mindestmarge mit Warnung
   5. Kostenvoranschlag: Ausdruck/Teilen mit Gültigkeit, Freigabe-Grenze (+15 %) mit Warnung bei Überschreitung
   6. Preis-Varianten im Angebot (z. B. Original- vs. Qualitätsteile), Kunde wählt
   7. Nachkalkulation: geplante AW vs. gestempelte Zeit je Auftrag (Gewinn wirklich?)

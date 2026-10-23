@@ -365,9 +365,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.79';
+const APP_VER='2.80';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.80',d:'2026-10-23',p:['Zielpreis: Unten in der Kalkulation tippen Sie auf „Zielpreis“ und geben ein, was der Kunde zahlen soll. Die App rechnet den passenden Rabatt aus und zeigt sofort Gewinn und Marge danach.','Mindestmarge: In den Einstellungen tragen Sie ein, wie viel Prozent Marge Sie mindestens wollen. Liegt ein Auftrag darunter, warnt die App.']},
  {v:'2.79',d:'2026-10-22',p:['Online-Buchung: Kunden sehen jetzt nur noch freie Uhrzeiten und tippen eine an. Belegt sind Termine und blockierte Zeiten. Kurzfristige Termine bleiben möglich. Bestätigt wird weiterhin nur von Ihnen.','Zeiten blockieren: im Kalender mit dem Typ „Blockiert“ oder direkt im Auftrag mit „Auto dauert länger“. Dann ist die Werkstatt bis zur gewählten Zeit belegt, und der Fertig-Termin wird angepasst.','Öffnungszeiten (Tage, von/bis, Termin-Raster) stellen Sie unter Einstellungen → Kalkulation & Preise ein.']},
  {v:'2.78',d:'2026-10-22',p:['Bei einer Online-Anfrage gibt es jetzt den Knopf „Termin bestätigen“. Der Wunschtermin ist schon eingetragen. Danach schicken Sie die Bestätigung per E-Mail. Hat der Kunde keine E-Mail angegeben, rufen Sie ihn an oder schreiben per SMS oder WhatsApp.','Terminerinnerungen: 3 Tage und 1 Tag vorher steht auf der Startseite und im Kalender „Terminerinnerung fällig“. Ein Tipp öffnet die fertige Nachricht. Die Tage stellen Sie unter Einstellungen → Kalkulation & Preise ein.']},
  {v:'2.77',d:'2026-10-21',p:['Online-Terminanfrage neu: Der Kunde wählt, worum es geht (Wartung, Problem, Reifen …). Pflicht sind Name, Telefon, FIN oder ein Foto vom Fahrzeugschein, Kilometerstand und ein Anliegen so genau wie möglich. Freiwillig sind E-Mail und bis zu 3 Bilder.','Bestandskunden werden automatisch erkannt, über Telefonnummer, FIN oder Kennzeichen. Die Anfrage hängt dann am richtigen Kunden und Fahrzeug.','Online-Anfragen stehen auf „Neu – Bestätigung ausstehend“, bis Sie sie bestätigen.','Damit Fotos ankommen: einmal den Befehl aus Einstellungen → Cloud-Backup → „Einmalige Einrichtung“ erneut in Supabase ausführen.']},
@@ -1500,8 +1501,31 @@ function lsHtml(a){
  return`<div class="ls">${sel?'':tlKarte(a)}${a.pakete.length?leiste:''}${a.pakete.map(bericht).join('')}${a.pakete.length&&!sel?fsHtml(a):''}
   ${sel?'':`<button class="ls-neu" data-act="fund-neu" data-oid="${a.id}">+ Während der Arbeit festgestellt</button><button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="tb">+ Neues Problem / Paket</button>`}
   ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<button class="ls-opt" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale wieder einschalten</button>`:''}
-  <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b></span></div>
-   <div class="ls-sum-b"><span>Kunde zahlt <small>inkl. ${S.settings.mwst} % MwSt</small></span><b class="num">${fmt(K.brutto)}</b></div></div></div>`}
+  <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b> · ${K.marge} %</span>${K.rabOrd?`<span>Rabatt <b class="num">− ${fmt(K.rabOrd)}</b></span>`:''}</div>
+   ${S.settings.minMarge&&K.netto&&K.marge<S.settings.minMarge?`<div class="ls-minm">Marge ${K.marge} % liegt unter Ihrer Mindestmarge von ${S.settings.minMarge} %</div>`:''}
+   <div class="ls-sum-b"><span>Kunde zahlt <small>inkl. ${S.settings.mwst} % MwSt</small></span><b class="num">${fmt(K.brutto)}</b></div>
+   ${sel?'':`<button class="ls-ziel" data-act="zielpreis" data-oid="${a.id}">Zielpreis: „Kunde zahlt …“ – Rabatt ausrechnen</button>`}</div></div>`}
+/* Zielpreis rückwärts (Kalkulations-Plan 4): Kunde zahlt X € brutto → Auftragsrabatt in € so, dass es genau passt; Gewinn/Marge sichtbar, Mindestmarge warnt */
+function zielRabatt(a,zielBr){const sub=ordSub(a),m=S.settings.mwst/100;let n=Math.round(zielBr/(1+m));
+ for(const d of [0,1,-1,2,-2]){const t=n+d;if(t+Math.round(t*m)===zielBr){n=t;break}}
+ return Math.max(0,sub-n)}
+function zielVorschau(a,zielBr){const alt=a.rabatt,rab=zielRabatt(a,zielBr);a.rabatt={typ:'eur',wert:rab};const K=ordKalk(a);a.rabatt=alt;return{rab,K}}
+ACT['zielpreis']=el=>{const a=auftrag(el.dataset.oid),K=ordKalk(a);
+ sheet('Zielpreis',`<div class="fld"><label>Kunde soll zahlen (inkl. MwSt) €</label><input id="zp-z" inputmode="decimal" value="${fmtIn(K.brutto)}"></div>
+  <div id="zp-v" class="zp-v"></div>
+  <div class="row2">${a.rabatt&&a.rabatt.wert?`<button class="btn btn-2nd" data-act="zielpreis-weg" data-oid="${a.id}">Rabatt entfernen</button>`:'<span></span>'}
+  <button class="btn btn-main" data-act="zielpreis-ok" data-oid="${a.id}">Übernehmen</button></div>`);
+ const upd=()=>{const z=parseEuro($('#zp-z').value)||0,v=zielVorschau(a,z),min=S.settings.minMarge||0,oben=z>ordBrutto({...a,rabatt:null});
+  $('#zp-v').innerHTML=oben?'<div class="zp-w">Das ist mehr als der volle Preis – ohne Rabatt zahlt der Kunde '+fmt(ordBrutto({...a,rabatt:null}))+'.</div>'
+   :`<div class="kv"><span class="k">Rabatt auf den Auftrag</span><span class="v num">− ${fmt(v.rab)}</span></div><div class="kv"><span class="k">Gewinn danach</span><span class="v num">${fmt(v.K.gewinn)}</span></div><div class="kv"><span class="k">Marge danach</span><span class="v num">${v.K.marge} %</span></div>
+   ${min&&v.K.marge<min?`<div class="zp-w">Achtung: unter Ihrer Mindestmarge von ${min} %.</div>`:''}${v.K.gewinn<0?'<div class="zp-w">Achtung: Sie würden Verlust machen.</div>':''}`};
+ $('#zp-z').addEventListener('input',upd);upd()};
+ACT['zielpreis-ok']=el=>{const a=auftrag(el.dataset.oid),z=parseEuro($('#zp-z').value)||0;if(!(z>0))return toast('Betrag fehlt',true);
+ const rab=zielRabatt(a,z);a.rabatt=rab?{typ:'eur',wert:rab}:{typ:'eur',wert:0};
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Zielpreis '+fmt(z)+' inkl. MwSt – Auftragsrabatt '+fmt(rab)+'.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
+ save();closeSheet();render();toast(rab?'Rabatt '+fmt(rab)+' eingetragen':'Kein Rabatt nötig')};
+ACT['zielpreis-weg']=el=>{const a=auftrag(el.dataset.oid);a.rabatt={typ:'eur',wert:0};save();closeSheet();render();toast('Rabatt entfernt')};
+FSET['min-marge']=el=>{S.settings.minMarge=Math.max(0,Math.min(90,parseInt(el.value)||0));save();render()};
 /* Mehrfachauswahl: markieren, verschieben (↑↓, in anderes Paket / Diagnose↔Abhilfe), RKZ ändern, löschen – alles mit Rückgängig */
 const wbGewaehlt=a=>{const r=[];a.pakete.forEach(pk=>{if(ktLocked(pk))return;pk.pos.forEach(x=>{if(wbSel.ids.has(x.id))r.push({pk,x})})});return r};
 ACT['wb-sel']=el=>{const a=auftrag(el.dataset.oid);if(wbSelOn(a)){wbSel.oid=null;wbSel.ids.clear()}else{wbSel.oid=a.id;wbSel.ids.clear()}render()};
@@ -3132,6 +3156,7 @@ function vEinstellungen(){
     <div class="oe-tage">${['Mo','Di','Mi','Do','Fr','Sa','So'].map((l,i)=>`<label><input type="checkbox" data-f="oe-tag" data-t="${i+1}"${(st.oeffnung||{tage:[]}).tage.includes(i+1)?' checked':''}> ${l}</label>`).join('')}</div>
     <div class="auf-row"><span>von</span><input type="time" class="priceinp" style="width:100px" value="${(st.oeffnung||{}).von||'08:00'}" data-f="oe-von"><span>bis</span><input type="time" class="priceinp" style="width:100px" value="${(st.oeffnung||{}).bis||'17:00'}" data-f="oe-bis"></div>
     <div class="auf-row"><span>Termin-Raster</span><input class="priceinp" style="width:64px" inputmode="numeric" value="${(st.oeffnung||{}).slot||60}" data-f="oe-slot"><span>Minuten</span></div></div>
+   <div class="kv"><span class="k">Mindestmarge % <br><span style="font-size:11px;color:var(--ink3)">Warnung, wenn ein Auftrag darunter liegt (0 = aus)</span></span><span class="v"><input class="priceinp" style="width:56px" inputmode="numeric" value="${st.minMarge||0}" data-f="min-marge"></span></div>
    <div class="kv"><span class="k">Terminerinnerung (Tage vorher)</span><span class="v"><input class="priceinp" style="width:84px" value="${(st.erinnTage||[3,1]).join(', ')}" data-f="erinn-tage" aria-label="Terminerinnerung Tage vorher"></span></div>
    <div class="kv"><span class="k">MwSt-Satz %</span><span class="v"><input class="priceinp" style="width:56px" inputmode="numeric" value="${st.mwst}" data-f="set-mwst"></span></div>
    ${(()=>{const c=st.kleinmat||{};return`<div class="auf-block"><div class="k">Kleinmaterial & Entsorgung<br><span style="font-size:11px;color:var(--ink3)">Wird automatisch auf jeden Auftrag gerechnet (z. B. Bremsenreiniger, Kabelbinder, Altöl). Pro Auftrag abschaltbar.</span></div>
