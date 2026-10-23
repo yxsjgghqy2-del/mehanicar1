@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 23.10.2026 (Abendlauf) — 2.81 Design-Durchgang
+- **Angesehen:** Auftrag mit allen neuen Hinweiskarten und Planung, 390 px hell/dunkel.
+- **Behoben:** Hinweiskarten (Gewährleistung, Annahme, Teile, abgelehnt) kompakter; Karte „Terminerinnerungen fällig“ hatte keinen Innenabstand (Überschrift links abgeschnitten); Teile-Karte zeigte eine fremde Zeitleisten-Linie, weil die Klasse `tl` schon belegt war → `tlb`. SW v82.
+- **Test:** Smoke-Test grün.
+
 ## 23.10.2026 (Morgenlauf) — 2.80 Zielpreis rückwärts + Mindestmarge (Kalkulations-Plan Punkt 4)
 - **Gebaut:** Unter der Summe im Bericht „Zielpreis: Kunde zahlt …“ → Blatt mit Brutto-Ziel, Live-Vorschau (Rabatt, Gewinn, Marge danach, Warnung bei Verlust/Mindestmarge, Hinweis wenn über dem vollen Preis) → setzt Auftragsrabatt in € (`zielRabatt`, centgenau inkl. MwSt-Rundung), Verlauf; „Rabatt entfernen“. Summe zeigt jetzt Marge % und Rabatt. Einstellung „Mindestmarge %“ (`settings.minMarge`, 0 = aus) → roter Hinweis in der Summe. SW v81.
 - **Test:** Smoke-Test grün (Ziel 90 % → Brutto exakt, Warnung bei Mindestmarge).

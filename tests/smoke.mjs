@@ -610,7 +610,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       document.querySelector('[data-act="teil-save"]').click(); await w();
       const nx = pk.pos[pk.pos.length - 1]; const r = { imHaus: nx.typ === 'teil' && nx.best === 'lager' && nx.lagerId === l.id && nx.artnr === 'AB123' && l.bestand === 4 };
       ACT['add-teil']({ dataset: { oid: a.id, pid: pk.id } }); await w(); document.getElementById('pt-b').value = 'Sonderteil XY'; document.querySelector('[data-act="teil-save"]').click(); await w();
-      const sx = pk.pos.find(x => x.bez === 'Sonderteil XY'); r.mussBestellt = !!sx && sx.best === 'inbest' && !!document.querySelector('.dl-card.tl');
+      const sx = pk.pos.find(x => x.bez === 'Sonderteil XY'); r.mussBestellt = !!sx && sx.best === 'inbest' && !!document.querySelector('.dl-card.tlb');
       ACT.back(); await w(); r.rueckfrage = route.v === 'auftrag' && !!document.querySelector('[data-act="tl-best-ok"]');
       document.querySelector('[data-act="tl-best-ok"]').click(); await w();
       const b = S.bestellungen.find(x => x.auftragId === a.id); r.bestellt = !!b && sx.best === 'bestellt' && a.status === 'teile';
