@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 23.10.2026 (Morgenlauf) — 2.80 Zielpreis rückwärts + Mindestmarge (Kalkulations-Plan Punkt 4)
+- **Gebaut:** Unter der Summe im Bericht „Zielpreis: Kunde zahlt …“ → Blatt mit Brutto-Ziel, Live-Vorschau (Rabatt, Gewinn, Marge danach, Warnung bei Verlust/Mindestmarge, Hinweis wenn über dem vollen Preis) → setzt Auftragsrabatt in € (`zielRabatt`, centgenau inkl. MwSt-Rundung), Verlauf; „Rabatt entfernen“. Summe zeigt jetzt Marge % und Rabatt. Einstellung „Mindestmarge %“ (`settings.minMarge`, 0 = aus) → roter Hinweis in der Summe. SW v81.
+- **Test:** Smoke-Test grün (Ziel 90 % → Brutto exakt, Warnung bei Mindestmarge).
+- **Warten weiter auf Inhaber:** Rest Briefing (Bekannte Probleme, KP4), Öffnungszeiten bestätigen, SQL erneut ausführen, Buchungslink neu teilen.
+
 ## 22.10.2026 (Abendlauf) — 2.79 KP1: freie Zeiten + Zeiten blockieren
 - **Gebaut:** `S.settings.oeffnung` {tage, von, bis, slot} (Standard Mo–Fr 08–17 Uhr, 60 Min, in Einstellungen änderbar – Vorgabe, keine Erfindung des Inhabers; bitte bestätigen lassen). Buchungsinfo trägt Öffnungszeiten + belegte Zeiten (nur Datum/Uhrzeit, keine Namen; `belegtListe`, 60 Tage). Buchungsformular zeigt freie Uhrzeiten als Knöpfe (`freieSlots`), heute erst ab jetzt (kurzfristig erlaubt), belegte/blockierte Zeiten ausgeblendet; ohne Info bleibt das Uhrzeitfeld. Termintyp „Blockiert“ (frei im Kalender, Bezeichnung optional). Auftrag → Organisation: „Auto dauert länger – Zeit im Kalender blockieren“ → Block-Termine je Öffnungstag bis Datum/Uhrzeit, Fertig-Termin wird angepasst, Verlauf. SW v80.
 - **Test:** Smoke-Test grün (Slot-Rechnung, Überschneidung, geschlossene Tage, Blockieren → Folgetag voll, Endtag ab 12:00 frei; Buchungstest wählt jetzt einen Slot).

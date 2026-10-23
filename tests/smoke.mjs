@@ -674,6 +674,20 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       S.termine = JSON.parse(snapT); S.auftraege = JSON.parse(snapA); save(); nav('planung'); return r; });
     if (Object.values(sl).some(v => !v)) errs.push('Slots: ' + JSON.stringify(sl));
   }
+  // Zielpreis rückwärts + Mindestmarge
+  {
+    const zp = await page.evaluate(async () => {
+      const snap = JSON.stringify(S.auftraege), mm = S.settings.minMarge; const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); a.rabatt = { typ: 'eur', wert: 0 };
+      const voll = ordBrutto(a), ziel = Math.round(voll * 0.9);
+      nav('kalk', a.id); await new Promise(r => setTimeout(r, 100)); document.querySelector('[data-act="zielpreis"]').click(); await new Promise(r => setTimeout(r, 100));
+      document.getElementById('zp-z').value = fmtIn(ziel); document.getElementById('zp-z').dispatchEvent(new Event('input'));
+      const r = { vorschau: /Rabatt auf den Auftrag/.test(document.getElementById('zp-v').textContent) };
+      document.querySelector('[data-act="zielpreis-ok"]').click(); await new Promise(r => setTimeout(r, 100));
+      r.genau = ordBrutto(a) === ziel && a.rabatt.typ === 'eur' && a.rabatt.wert > 0;
+      S.settings.minMarge = 99; render(); await new Promise(r => setTimeout(r, 50)); r.warnung = !!document.querySelector('.ls-minm');
+      S.settings.minMarge = mm; S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
+    if (Object.values(zp).some(v => !v)) errs.push('Zielpreis: ' + JSON.stringify(zp));
+  }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
     const sy = await page.evaluate(async () => {
