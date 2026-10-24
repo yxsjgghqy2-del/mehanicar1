@@ -13,7 +13,7 @@ Priorität von oben nach unten. Erledigtes wird entfernt und im LOG vermerkt. Je
   3. ~~Stundensätze nach Arbeitsart (Mechanik, Elektrik/Diagnose, Karosserie, Lack) – Satz je Position wählbar~~ → 2.65 (18.10.)
   4. ~~Zielpreis rückwärts (2.80)~~: „Kunde zahlt X € brutto“ → Rabatt automatisch, Rest-Marge sichtbar; Mindestmarge mit Warnung
   5. ~~Kostenvoranschlag: Ausdruck/Teilen mit Gültigkeit, Freigabe-Grenze (+15 %) mit Warnung bei Überschreitung~~ → 2.82 (24.10.)
-  6. Preis-Varianten im Angebot (z. B. Original- vs. Qualitätsteile), Kunde wählt
+  6. ~~Preis-Varianten im Angebot (z. B. Original- vs. Qualitätsteile), Kunde wählt~~ → 2.83 (24.10.)
   7. Nachkalkulation: geplante AW vs. gestempelte Zeit je Auftrag (Gewinn wirklich?)
   - ~~**Inhaber 18.10. (Nacht): Kalkulation nach Ablauf + Kostenrahmen**~~ → Inhaber wählte Vorlage 5 (Werkstattbericht) fürs Handy, ohne Balken oben, Freigabe als Hinweis rechts neben Diagnose, Prüfung als Unterpunkt der Diagnose → 2.67. Offen: Mac-Ansicht (Vorlage 7?), Freigabe der Abhilfe direkt per WhatsApp-Link vom Kunden bestätigen lassen.
   - ~~Vorlagen `designs/kalkulation-vorlagen.html`~~ – überholt durch `kalkulation-ablauf.html` (Nr. 5 gebaut).
