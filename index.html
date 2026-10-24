@@ -365,9 +365,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.81';
+const APP_VER='2.82';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.82',d:'2026-10-24',p:['Kostenvoranschlag: Der Knopf „PDF“ im Auftrag fragt jetzt, ob Sie einen Kostenvoranschlag (mit „Gültig bis“) oder eine Übersicht drucken möchten. Auf dem Kostenvoranschlag steht, dass Sie den Kunden vorher informieren, wenn es mehr als 15 % teurer wird.','Wird der Auftrag teurer als der Kostenvoranschlag, steht das in der Kalkulation. Bei mehr als 15 % erscheint ein roter Hinweis: „Kunde vorher informieren“.','Wie lange ein Kostenvoranschlag gilt (Standard 30 Tage), stellen Sie in den Einstellungen ein.']},
  {v:'2.81',d:'2026-10-23',p:['Design: Die Hinweise oben im Auftrag (Gewährleistung, Annahme, Teile bestellen) sind jetzt schmaler. So sehen Sie schneller den eigentlichen Auftrag. Die Karte „Terminerinnerungen fällig“ auf der Startseite ist sauber ausgerichtet.']},
  {v:'2.80',d:'2026-10-23',p:['Zielpreis: Unten in der Kalkulation tippen Sie auf „Zielpreis“ und geben ein, was der Kunde zahlen soll. Die App rechnet den passenden Rabatt aus und zeigt sofort Gewinn und Marge danach.','Mindestmarge: In den Einstellungen tragen Sie ein, wie viel Prozent Marge Sie mindestens wollen. Liegt ein Auftrag darunter, warnt die App.']},
  {v:'2.79',d:'2026-10-22',p:['Online-Buchung: Kunden sehen jetzt nur noch freie Uhrzeiten und tippen eine an. Belegt sind Termine und blockierte Zeiten. Kurzfristige Termine bleiben möglich. Bestätigt wird weiterhin nur von Ihnen.','Zeiten blockieren: im Kalender mit dem Typ „Blockiert“ oder direkt im Auftrag mit „Auto dauert länger“. Dann ist die Werkstatt bis zur gewählten Zeit belegt, und der Fertig-Termin wird angepasst.','Öffnungszeiten (Tage, von/bis, Termin-Raster) stellen Sie unter Einstellungen → Kalkulation & Preise ein.']},
@@ -1503,6 +1504,7 @@ function lsHtml(a){
   ${sel?'':`<button class="ls-neu" data-act="fund-neu" data-oid="${a.id}">+ Während der Arbeit festgestellt</button><button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="tb">+ Neues Problem / Paket</button>`}
   ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<button class="ls-opt" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale wieder einschalten</button>`:''}
   <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b> · ${K.marge} %</span>${K.rabOrd?`<span>Rabatt <b class="num">− ${fmt(K.rabOrd)}</b></span>`:''}</div>
+   ${kvaHinweis(a)}
    ${S.settings.minMarge&&K.netto&&K.marge<S.settings.minMarge?`<div class="ls-minm">Marge ${K.marge} % liegt unter Ihrer Mindestmarge von ${S.settings.minMarge} %</div>`:''}
    <div class="ls-sum-b"><span>Kunde zahlt <small>inkl. ${S.settings.mwst} % MwSt</small></span><b class="num">${fmt(K.brutto)}</b></div>
    ${sel?'':`<button class="ls-ziel" data-act="zielpreis" data-oid="${a.id}">Zielpreis: „Kunde zahlt …“ – Rabatt ausrechnen</button>`}</div></div>`}
@@ -2559,7 +2561,7 @@ ACT['ord-del']=el=>{const a=auftrag(el.dataset.oid);
   S.auftraege=S.auftraege.filter(x=>x.id!==a.id);save();toast('Auftrag gelöscht');nav('auftraege')})};
 
 /* ---- Rechnung / Druck ---- */
-function buildInvoiceHtml(a,pakIds,reNr){
+function buildInvoiceHtml(a,pakIds,reNr,kva){
  const k=kunde(a.kundeId)||{},f=fzg(a.fzgId)||{},fi=S.settings.firma;
  const paks=a.pakete.filter(p=>pakIds.includes(p.id));
  const sub=paks.reduce((s,pk)=>s+pakNetto(pk),0);
@@ -2582,8 +2584,8 @@ function buildInvoiceHtml(a,pakIds,reNr){
   (prab?`<tr><td colspan="3">Rabatt Paket</td><td class="tr">– ${fmt(prab)}</td></tr>`:'')}).join('');
  return {netto,mwst,brutto,anz,html:`
   <div class="ph"><div><h1>${esc(fi.name)}</h1><div class="small">${esc(fi.adresse)}<br>${esc(fi.tel)} · ${esc(fi.email)}${fi.ustid?'<br>USt-IdNr.: '+esc(fi.ustid):fi.steuernr?'<br>Steuernr.: '+esc(fi.steuernr):''}</div></div>
-   <div class="small" style="text-align:right"><b style="font-size:14px;color:#111">${reNr?'Rechnung '+reNr:'Auftragsübersicht'}</b><br>
-    Rechnungsdatum: ${new Date().toLocaleDateString('de-DE')}<br>Leistungsdatum: ${new Date((a.abgabe||todayISO())+'T00:00').toLocaleDateString('de-DE')}<br>Auftrag: ${a.nr}<br>Fahrzeug: ${esc(f.kennz||'')} · ${esc((f.marke||'')+' '+(f.modell||''))}<br>
+   <div class="small" style="text-align:right"><b style="font-size:14px;color:#111">${reNr?'Rechnung '+reNr:kva?'Kostenvoranschlag':'Auftragsübersicht'}</b><br>
+    ${kva?`Datum: ${new Date(kva.ts).toLocaleDateString('de-DE')}<br><b style="color:#111">Gültig bis: ${new Date(kva.bis+'T00:00').toLocaleDateString('de-DE')}</b><br>`:`Rechnungsdatum: ${new Date().toLocaleDateString('de-DE')}<br>Leistungsdatum: ${new Date((a.abgabe||todayISO())+'T00:00').toLocaleDateString('de-DE')}<br>`}Auftrag: ${a.nr}<br>Fahrzeug: ${esc(f.kennz||'')} · ${esc((f.marke||'')+' '+(f.modell||''))}<br>
     ${a.kmAn!=null?'KM: '+a.kmAn.toLocaleString('de-DE'):''}</div></div>
   <div class="small" style="margin-bottom:4px">Kunde</div>
   <div><b>${esc(k.name||'')}</b>${k.ansprechpartner?'<br>z. Hd. '+esc(k.ansprechpartner):''}<br><span class="small">${esc(k.adresse||'')}${k.ustid?'<br>USt-IdNr.: '+esc(k.ustid):''}</span></div>
@@ -2595,13 +2597,26 @@ function buildInvoiceHtml(a,pakIds,reNr){
    <div class="big"><span>Brutto</span><span>${fmt(brutto)}</span></div>
    ${anz?`<div><span>abzgl. Anzahlung</span><span>– ${fmt(anz)}</span></div><div class="big"><span>Zu zahlen</span><span>${fmt(brutto-anz)}</span></div>`:''}
   </div>
-  <div class="foot">${S.settings.garantieMonate>0?S.settings.garantieMonate+' Monate Garantie auf alle Arbeiten. ':''}${reNr?'Zahlbar innerhalb von '+(S.settings.mahnTage||14)+' Tagen ohne Abzug.':'Unverbindliche Übersicht — keine Rechnung.'}
+  <div class="foot">${S.settings.garantieMonate>0?S.settings.garantieMonate+' Monate Garantie auf alle Arbeiten. ':''}${reNr?'Zahlbar innerhalb von '+(S.settings.mahnTage||14)+' Tagen ohne Abzug.':kva?'Unverbindlicher Kostenvoranschlag. Sollten die Kosten um mehr als 15 % steigen, informieren wir Sie vorher und holen Ihre Freigabe ein. Keine Rechnung.':'Unverbindliche Übersicht — keine Rechnung.'}
    ${fi.iban?'<br>IBAN: '+esc(fi.iban):''}${fi.web?' · '+esc(fi.web):''}</div>`};
 }
 ACT['print-kv']=el=>{const a=auftrag(el.dataset.oid);
  if(!a.pakete.length)return toast('Keine Pakete vorhanden',true);
- $('#printarea').innerHTML=buildInvoiceHtml(a,a.pakete.map(p=>p.id),null).html;
- setTimeout(()=>window.print(),60)};
+ const tage=S.settings.kvaTage||30;
+ sheet('Drucken oder als PDF',`<button class="btn btn-main" style="width:100%;margin-bottom:8px" data-act="kva-druck" data-oid="${a.id}">Kostenvoranschlag (gültig ${tage} Tage)</button>
+  <button class="btn btn-2nd" style="width:100%" data-act="uebersicht-druck" data-oid="${a.id}">Auftragsübersicht</button>
+  ${a.kva?`<div style="font-size:12px;color:var(--ink3);margin-top:10px">Letzter Kostenvoranschlag: ${dtLabel(a.kva.ts)} über ${fmt(a.kva.bruttoCt)}, gültig bis ${dLabel(a.kva.bis)}.</div>`:''}`)};
+ACT['uebersicht-druck']=el=>{const a=auftrag(el.dataset.oid);closeSheet();$('#printarea').innerHTML=buildInvoiceHtml(a,a.pakete.map(p=>p.id),null).html;setTimeout(()=>window.print(),60)};
+ACT['kva-druck']=el=>{const a=auftrag(el.dataset.oid);closeSheet();
+ a.kva={ts:Date.now(),bis:addDays(todayISO(),S.settings.kvaTage||30),bruttoCt:ordBrutto(a)};
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:a.kva.ts,txt:'Kostenvoranschlag erstellt: '+fmt(a.kva.bruttoCt)+' inkl. MwSt, gültig bis '+dLabel(a.kva.bis)+'.',preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null});
+ save();render();$('#printarea').innerHTML=buildInvoiceHtml(a,a.pakete.map(p=>p.id),null,a.kva).html;setTimeout(()=>window.print(),60)};
+/* Überschreitung des Kostenvoranschlags: bis 15 % Hinweis, darüber deutliche Warnung */
+function kvaHinweis(a){if(!a.kva||!a.kva.bruttoCt)return'';const br=ordBrutto(a),p=Math.round((br/a.kva.bruttoCt-1)*100);
+ if(br<=a.kva.bruttoCt)return'';
+ return p>15?`<div class="ls-minm">${p} % über dem Kostenvoranschlag (${fmt(a.kva.bruttoCt)}) – Kunde vorher informieren und Freigabe holen.</div>`
+  :`<div class="kva-hin">${p} % über dem Kostenvoranschlag (${fmt(a.kva.bruttoCt)}) – noch innerhalb von 15 %.</div>`}
+FSET['kva-tage']=el=>{S.settings.kvaTage=Math.max(1,Math.min(365,parseInt(el.value)||30));save()};
 ACT['bill-pak']=el=>doBill(auftrag(el.dataset.oid),[el.dataset.pid]);
 ACT['bill-all']=el=>{const a=auftrag(el.dataset.oid);const open=a.pakete.filter(p=>!p.abger).map(p=>p.id);
  if(!open.length)return toast('Alle Pakete sind bereits abgerechnet');doBill(a,open)};
@@ -3158,6 +3173,7 @@ function vEinstellungen(){
     <div class="auf-row"><span>von</span><input type="time" class="priceinp" style="width:100px" value="${(st.oeffnung||{}).von||'08:00'}" data-f="oe-von"><span>bis</span><input type="time" class="priceinp" style="width:100px" value="${(st.oeffnung||{}).bis||'17:00'}" data-f="oe-bis"></div>
     <div class="auf-row"><span>Termin-Raster</span><input class="priceinp" style="width:64px" inputmode="numeric" value="${(st.oeffnung||{}).slot||60}" data-f="oe-slot"><span>Minuten</span></div></div>
    <div class="kv"><span class="k">Mindestmarge % <br><span style="font-size:11px;color:var(--ink3)">Warnung, wenn ein Auftrag darunter liegt (0 = aus)</span></span><span class="v"><input class="priceinp" style="width:56px" inputmode="numeric" value="${st.minMarge||0}" data-f="min-marge"></span></div>
+   <div class="kv"><span class="k">Kostenvoranschlag gültig (Tage)</span><span class="v"><input class="priceinp" style="width:56px" inputmode="numeric" value="${st.kvaTage||30}" data-f="kva-tage"></span></div>
    <div class="kv"><span class="k">Terminerinnerung (Tage vorher)</span><span class="v"><input class="priceinp" style="width:84px" value="${(st.erinnTage||[3,1]).join(', ')}" data-f="erinn-tage" aria-label="Terminerinnerung Tage vorher"></span></div>
    <div class="kv"><span class="k">MwSt-Satz %</span><span class="v"><input class="priceinp" style="width:56px" inputmode="numeric" value="${st.mwst}" data-f="set-mwst"></span></div>
    ${(()=>{const c=st.kleinmat||{};return`<div class="auf-block"><div class="k">Kleinmaterial & Entsorgung<br><span style="font-size:11px;color:var(--ink3)">Wird automatisch auf jeden Auftrag gerechnet (z. B. Bremsenreiniger, Kabelbinder, Altöl). Pro Auftrag abschaltbar.</span></div>
