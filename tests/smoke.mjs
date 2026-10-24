@@ -701,6 +701,27 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       window.print = wp; S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
     if (Object.values(kv).some(v => !v)) errs.push('Kostenvoranschlag: ' + JSON.stringify(kv));
   }
+  // Preis-Varianten: Teil mit Alternative, Kostenvoranschlag zeigt beide, Kunde wählt
+  {
+    const pv = await page.evaluate(async () => {
+      const snap = JSON.stringify(S.auftraege), wp = window.print; window.print = () => {}; const w = ms => new Promise(r => setTimeout(r, ms));
+      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt' && !o.sig && !o.freigabe) || S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger);
+      const pk = a.pakete[0], x = { id: 'xalt1', nr: 99, created: Date.now(), typ: 'teil', bez: 'Bremsscheibe Original', ekCt: 8000, vkCt: 12000, menge: 2, rab: null, aw: 0, lagerId: null };
+      pk.pos.push(x); save(); calcMode[a.id] = 'liste'; nav('kalk', a.id); await w(80);
+      ACT['pos-edit']({ dataset: { oid: a.id, pid: pk.id, xid: x.id } }); await w(80);
+      const r = { feld: !!document.getElementById('ps-alt-b') };
+      if (r.feld) { document.getElementById('ps-alt-b').value = 'Bremsscheibe Qualität'; document.getElementById('ps-alt-ek').value = '50,00'; document.getElementById('ps-alt-vk').value = '80,00';
+        document.querySelector('[data-act="pos-save"]').click(); await w(100); }
+      r.gespeichert = !!x.alt && x.alt.vkCt === 8000;
+      const altBr = altBrutto(a), vorher = ordBrutto(a); r.billiger = altBr < vorher;
+      r.hinweis = /Mit Alternativ-Teilen/.test(document.querySelector('.ls-sum').textContent);
+      ACT['print-kv']({ dataset: { oid: a.id } }); await w(60); document.querySelector('[data-act="kva-druck"]').click(); await w(100);
+      r.druck = /oder alternativ: Bremsscheibe Qualität/.test(document.getElementById('printarea').innerHTML);
+      nav('kalk', a.id); await w(80); document.querySelector('[data-act="alt-alle"]').click(); await w(60); const ok = document.querySelector('[data-c="1"]'); if (ok) ok.click(); await w(100);
+      r.getauscht = x.bez === 'Bremsscheibe Qualität' && x.alt.bez === 'Bremsscheibe Original' && ordBrutto(a) === altBr;
+      window.print = wp; S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
+    if (Object.values(pv).some(v => !v)) errs.push('Preis-Varianten: ' + JSON.stringify(pv));
+  }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
     const sy = await page.evaluate(async () => {

@@ -365,9 +365,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.82';
+const APP_VER='2.83';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.83',d:'2026-10-24',p:['Preis-Varianten: Teil mit Alternative (z. B. Qualitätsteil) – der Kunde wählt','Kostenvoranschlag zeigt beide Preise','Mit einem Tipp alle Alternativen übernehmen']},
  {v:'2.82',d:'2026-10-24',p:['Kostenvoranschlag: Der Knopf „PDF“ im Auftrag fragt jetzt, ob Sie einen Kostenvoranschlag (mit „Gültig bis“) oder eine Übersicht drucken möchten. Auf dem Kostenvoranschlag steht, dass Sie den Kunden vorher informieren, wenn es mehr als 15 % teurer wird.','Wird der Auftrag teurer als der Kostenvoranschlag, steht das in der Kalkulation. Bei mehr als 15 % erscheint ein roter Hinweis: „Kunde vorher informieren“.','Wie lange ein Kostenvoranschlag gilt (Standard 30 Tage), stellen Sie in den Einstellungen ein.']},
  {v:'2.81',d:'2026-10-23',p:['Design: Die Hinweise oben im Auftrag (Gewährleistung, Annahme, Teile bestellen) sind jetzt schmaler. So sehen Sie schneller den eigentlichen Auftrag. Die Karte „Terminerinnerungen fällig“ auf der Startseite ist sauber ausgerichtet.']},
  {v:'2.80',d:'2026-10-23',p:['Zielpreis: Unten in der Kalkulation tippen Sie auf „Zielpreis“ und geben ein, was der Kunde zahlen soll. Die App rechnet den passenden Rabatt aus und zeigt sofort Gewinn und Marge danach.','Mindestmarge: In den Einstellungen tragen Sie ein, wie viel Prozent Marge Sie mindestens wollen. Liegt ein Auftrag darunter, warnt die App.']},
@@ -1464,6 +1465,7 @@ function lsHtml(a){
   if(spezOf(x)&&spezOffen({pakete:[{pos:[x]}]}).length)m.push('<span class="wb-erw">Abschluss offen</span>');
   if(x.zahler&&x.zahler!==(pk.zahler||'kunde'))m.push('RKZ: '+(x.zahler==='son'&&x.zahlerTxt?esc(x.zahlerTxt):ZAHLER[x.zahler]||x.zahler));
   if(x.ext)m.push('<span class="wb-erw">Erweiterung</span>');
+  if(x.typ==='teil'&&x.alt)m.push('Alternative: '+esc(x.alt.bez)+' '+fmt(Math.round(x.alt.vkCt*(x.menge||1))));
   return`<div class="wb-pos${x.auto?' wb-auto':''}${selCls(x)}"${act(pk,x,lk)}><div class="wb-z">${hak(x,lk)}<span class="wb-b">${esc(x.bez)}</span><span class="wb-dots"></span><b class="num">${fmt(posNetto(x))}</b></div>
    ${m.length?`<div class="wb-m">${m.join(' · ')}</div>`:''}${x.notizKunde?`<div class="wb-d">${esc(x.notizKunde)}</div>`:''}</div>`};
  const txtFeld=(pk,f,ph,lk,leer)=>{const v=pk[f]||'';const at=lk?'':` data-act="wb-text" data-oid="${a.id}" data-pid="${pk.id}" data-f="${f}" role="button" tabindex="0"`;
@@ -1505,6 +1507,7 @@ function lsHtml(a){
   ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<button class="ls-opt" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale wieder einschalten</button>`:''}
   <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b> · ${K.marge} %</span>${K.rabOrd?`<span>Rabatt <b class="num">− ${fmt(K.rabOrd)}</b></span>`:''}</div>
    ${kvaHinweis(a)}
+   ${hatAlt(a)&&!sel?`<div class="alt-hin"><span>Mit Alternativ-Teilen zahlt der Kunde <b class="num">${fmt(altBrutto(a))}</b></span><button data-act="alt-alle" data-oid="${a.id}">Kunde wählt Alternativen</button></div>`:''}
    ${S.settings.minMarge&&K.netto&&K.marge<S.settings.minMarge?`<div class="ls-minm">Marge ${K.marge} % liegt unter Ihrer Mindestmarge von ${S.settings.minMarge} %</div>`:''}
    <div class="ls-sum-b"><span>Kunde zahlt <small>inkl. ${S.settings.mwst} % MwSt</small></span><b class="num">${fmt(K.brutto)}</b></div>
    ${sel?'':`<button class="ls-ziel" data-act="zielpreis" data-oid="${a.id}">Zielpreis: „Kunde zahlt …“ – Rabatt ausrechnen</button>`}</div></div>`}
@@ -2120,6 +2123,12 @@ function posSheet(a,pk,x,prefillBez){
    <option value="">Wie Paket (${ZAHLER[pk.zahler||'kunde']||'Kunde'})</option>
    ${Object.entries(ZAHLER).map(([v,l])=>`<option value="${v}" ${x&&x.zahler===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
   <div id="ps-zt-wrap" style="display:${x&&x.zahler==='son'?'block':'none'}"><div class="fld" style="margin:10px 0 0"><label>Sonstiges — wer zahlt?</label><input id="ps-zt" value="${x?esc(x.zahlerTxt||''):''}" placeholder="z. B. Versicherung, Kulanz …"></div></div>`)}
+  ${isT?mSec('Alternative für den Kunden',x.alt?esc(x.alt.bez):'z. B. Qualitätsteil',!!x.alt,`
+   <div style="font-size:11px;color:var(--ink3);margin:0 2px 10px">Zweites Angebot für dieses Teil. Auf dem Kostenvoranschlag stehen beide, der Kunde wählt. Leer lassen = keine Alternative.</div>
+   <div class="fld"><label>Bezeichnung Alternative</label><input id="ps-alt-b" value="${x.alt?esc(x.alt.bez):''}" placeholder="z. B. Qualitätsteil Hersteller XY" autocomplete="off"></div>
+   <div class="row2"><div class="fld"><label>EK / Stück €</label><input id="ps-alt-ek" inputmode="decimal" value="${x.alt?fmtIn(x.alt.ekCt):''}"></div>
+   <div class="fld"><label>VK / Stück €</label><input id="ps-alt-vk" inputmode="decimal" value="${x.alt?fmtIn(x.alt.vkCt):''}"></div></div>
+   ${x.alt?`<button class="btn-ghost" style="width:100%" data-act="alt-tausch" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${x.id}">Kunde wählt die Alternative – tauschen</button>`:''}`):''}
   ${isT?mSec('Bestellung',x&&x.best&&BEST[x.best]?BEST[x.best][0]:'',!!(x&&x.best&&x.best!=='lager'),`<div class="row2"><div class="fld" style="margin-bottom:0"><label>Bestellstatus</label><div class="selwrap"><select id="ps-best">
     <option value="">—</option>${Object.entries(BEST).map(([v,[l]])=>`<option value="${v}" ${x&&x.best===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
    <div class="fld" style="margin-bottom:0"><label>ETA</label><input type="date" id="ps-eta" value="${x&&x.eta?x.eta:''}"></div></div>`):''}
@@ -2257,6 +2266,7 @@ ACT['pos-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
   notizKunde:$('#ps-nk')?$('#ps-nk').value.trim():(x?x.notizKunde||'':''),
   code:$('#ps-code')?$('#ps-code').value.trim():(x?x.code||'':''),
   phase:$('#ps-ph')?($('#ps-ph').value||null):(x?x.phase||null:null)};
+ if($('#ps-alt-b')){const ab=$('#ps-alt-b').value.trim();vals.alt=ab?{bez:ab,artnr:x&&x.alt?x.alt.artnr||'':'',ekCt:Math.max(0,parseEuro($('#ps-alt-ek').value)||0),vkCt:Math.max(0,parseEuro($('#ps-alt-vk').value)||0)}:null}
  /* Nach Freigabe: jede NEUE Position ist automatisch eine Erweiterung */
  vals.ext=x?x.ext:ordFreigegeben(a);
  const altPreis=x?posNetto(x):null;
@@ -2580,7 +2590,7 @@ function buildInvoiceHtml(a,pakIds,reNr,kva){
    `<tr><td colspan="4" style="font-size:10px;color:#444">${p.typ==='befund'?'<b>Befund:</b> ':'<b>Hinweis:</b> '}${esc(p.bez)}${p.abhilfe?' — Abhilfe: '+esc(p.abhilfe):''}</td></tr>`
   :`<tr><td>${p.code?'<span style="font-size:9px;color:#555">'+esc(p.code)+'</span> ':''}${esc(p.bez)}${p.ext?' (Erweiterung)':''}${p.zahler&&p.zahler!==(pk.zahler||'kunde')?' <span style="font-size:9px;color:#555">· zahlt: '+(p.zahler==='son'&&p.zahlerTxt?esc(p.zahlerTxt):ZAHLER[p.zahler]||'')+'</span>':''}${p.notizKunde?'<br><span style="font-size:9px;color:#555;white-space:pre-wrap">'+esc(p.notizKunde)+'</span>':''}</td>
    <td class="tr">${p.typ==='teil'?(p.menge||1)+' ×':(p.aw?String(p.aw).replace('.',',')+' AW':'')}</td>
-   <td class="tr">${fmt(p.vkCt)}</td><td class="tr">${fmt(posNetto(p))}</td></tr>`).join('')+
+   <td class="tr">${fmt(p.vkCt)}</td><td class="tr">${fmt(posNetto(p))}</td></tr>${!reNr&&p.typ==='teil'&&p.alt?`<tr><td colspan="2" style="font-size:10px;color:#444;padding-left:14px">oder alternativ: ${esc(p.alt.bez)}</td><td class="tr" style="font-size:10px;color:#444">${fmt(p.alt.vkCt)}</td><td class="tr" style="font-size:10px;color:#444">${fmt(Math.round(p.alt.vkCt*(p.menge||1)))}</td></tr>`:''}`).join('')+
   (prab?`<tr><td colspan="3">Rabatt Paket</td><td class="tr">– ${fmt(prab)}</td></tr>`:'')}).join('');
  return {netto,mwst,brutto,anz,html:`
   <div class="ph"><div><h1>${esc(fi.name)}</h1><div class="small">${esc(fi.adresse)}<br>${esc(fi.tel)} · ${esc(fi.email)}${fi.ustid?'<br>USt-IdNr.: '+esc(fi.ustid):fi.steuernr?'<br>Steuernr.: '+esc(fi.steuernr):''}</div></div>
@@ -2595,6 +2605,7 @@ function buildInvoiceHtml(a,pakIds,reNr,kva){
    <div><span>Netto</span><span>${fmt(netto)}</span></div>
    <div><span>MwSt ${S.settings.mwst} %</span><span>${fmt(mwst)}</span></div>
    <div class="big"><span>Brutto</span><span>${fmt(brutto)}</span></div>
+   ${!reNr&&hatAlt(a)?`<div><span>Mit Alternativ-Teilen (brutto)</span><span>${fmt(altBrutto(a))}</span></div>`:''}
    ${anz?`<div><span>abzgl. Anzahlung</span><span>– ${fmt(anz)}</span></div><div class="big"><span>Zu zahlen</span><span>${fmt(brutto-anz)}</span></div>`:''}
   </div>
   <div class="foot">${S.settings.garantieMonate>0?S.settings.garantieMonate+' Monate Garantie auf alle Arbeiten. ':''}${reNr?'Zahlbar innerhalb von '+(S.settings.mahnTage||14)+' Tagen ohne Abzug.':kva?'Unverbindlicher Kostenvoranschlag. Sollten die Kosten um mehr als 15 % steigen, informieren wir Sie vorher und holen Ihre Freigabe ein. Keine Rechnung.':'Unverbindliche Übersicht — keine Rechnung.'}
@@ -2616,6 +2627,18 @@ function kvaHinweis(a){if(!a.kva||!a.kva.bruttoCt)return'';const br=ordBrutto(a)
  if(br<=a.kva.bruttoCt)return'';
  return p>15?`<div class="ls-minm">${p} % über dem Kostenvoranschlag (${fmt(a.kva.bruttoCt)}) – Kunde vorher informieren und Freigabe holen.</div>`
   :`<div class="kva-hin">${p} % über dem Kostenvoranschlag (${fmt(a.kva.bruttoCt)}) – noch innerhalb von 15 %.</div>`}
+/* Preis-Varianten: ein Teil kann eine Alternative haben (x.alt={bez,artnr,ekCt,vkCt}), z. B. Original- vs. Qualitätsteil.
+   Der Kunde wählt; „Tauschen“ macht die Alternative zum Hauptteil, das bisherige Teil wird zur Alternative. */
+const hatAlt=a=>a.pakete.some(pk=>pk.pos.some(p=>p.typ==='teil'&&p.alt));
+function altTausch(p){const t={bez:p.bez,artnr:p.artnr||'',ekCt:p.ekCt||0,vkCt:p.vkCt||0};Object.assign(p,{bez:p.alt.bez,artnr:p.alt.artnr||'',ekCt:p.alt.ekCt||0,vkCt:p.alt.vkCt||0});p.alt=t}
+function altBrutto(a){const c=JSON.parse(JSON.stringify(a));c.pakete.forEach(pk=>pk.pos.forEach(p=>{if(p.typ==='teil'&&p.alt)altTausch(p)}));return ordBrutto(c)}
+function altLog(a,txt){a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt,preisCt:null,vorherCt:null,nachherCt:null,bezug:null,status:'best',orig:null})}
+ACT['alt-alle']=el=>{const a=auftrag(el.dataset.oid);
+ confirmBox('Alternativen übernehmen?','Alle Teile mit Alternative werden getauscht. Neuer Betrag: '+fmt(altBrutto(a))+'. Das bisherige Teil bleibt jeweils als Alternative gespeichert.','Übernehmen',()=>{
+  const vorher=ordBrutto(a);a.pakete.forEach(pk=>pk.pos.forEach(p=>{if(p.typ==='teil'&&p.alt)altTausch(p)}));
+  altLog(a,'Kunde wählt Alternativ-Teile: '+fmt(vorher)+' → '+fmt(ordBrutto(a))+' inkl. MwSt.');save();render();toast('Alternativen übernommen')})};
+ACT['alt-tausch']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),x=pk&&pk.pos.find(p=>p.id===el.dataset.xid);if(!x||!x.alt)return;
+ const alt=x.bez;altTausch(x);altLog(a,'Teil getauscht: „'+alt+'“ → „'+x.bez+'“ ('+fmt(posNetto(x))+').');save();closeSheet();render();toast('Getauscht')};
 FSET['kva-tage']=el=>{S.settings.kvaTage=Math.max(1,Math.min(365,parseInt(el.value)||30));save()};
 ACT['bill-pak']=el=>doBill(auftrag(el.dataset.oid),[el.dataset.pid]);
 ACT['bill-all']=el=>{const a=auftrag(el.dataset.oid);const open=a.pakete.filter(p=>!p.abger).map(p=>p.id);

@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 24.10.2026 (Abendlauf) — 2.83 Preis-Varianten
+- **Gebaut:** Jedes Teil kann im Positionsblatt eine „Alternative für den Kunden“ bekommen (Bezeichnung, EK, VK; `x.alt`). Im Werkstattbericht steht sie unter dem Teil, unter der Summe „Mit Alternativ-Teilen zahlt der Kunde …“ mit Knopf „Kunde wählt Alternativen“ (tauscht alle, das alte Teil bleibt als Alternative, Eintrag im Verlauf). Einzeln tauschen im Positionsblatt. Kostenvoranschlag/Übersicht zeigen „oder alternativ: …“ und die Summe mit Alternativen; Rechnungen nicht. SW v84.
+- **Test:** Smoke-Test grün (390/1280), neuer Ablauf „Preis-Varianten“.
+- **Offen / nächster Handgriff:** Kalkulation Punkt 7 (Nachkalkulation geplante AW vs. gestempelte Zeit) – Achtung: Stechuhr wurde im Auftrag entfernt, vorher Inhaber fragen. Wartet weiter auf Briefing-Rest (KP4–7).
+
 ## 24.10.2026 (Morgenlauf) — 2.82 Kostenvoranschlag mit Gültigkeit
 - **Gebaut:** Drucken im Auftrag fragt jetzt: „Kostenvoranschlag“ oder „Auftragsübersicht“. Der Kostenvoranschlag trägt Überschrift, „Gültig bis“ (Einstellung `kvaTage`, Standard 30 Tage) und den Satz zur 15-%-Grenze. Beim Drucken merkt sich der Auftrag Betrag und Datum (`a.kva`, Eintrag im Verlauf). Im Werkstattbericht steht unter der Summe ein Hinweis: bis 15 % mehr gelb, darüber rot („Kunde vorher fragen“), abgelaufen = Hinweis. SW v83.
 - **Test:** Smoke-Test grün (390/1280), neuer Ablauf „Kostenvoranschlag“.
