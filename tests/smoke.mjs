@@ -688,6 +688,19 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       S.settings.minMarge = mm; S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
     if (Object.values(zp).some(v => !v)) errs.push('Zielpreis: ' + JSON.stringify(zp));
   }
+  // Kostenvoranschlag mit Gültigkeit + 15-%-Grenze
+  {
+    const kv = await page.evaluate(async () => {
+      const snap = JSON.stringify(S.auftraege), wp = window.print; window.print = () => {};
+      const a = S.auftraege.find(o => o.pakete.length && !o.pakete[0].abger && o.status !== 'abgeholt'); a.rabatt = { typ: 'eur', wert: 0 };
+      ACT['print-kv']({ dataset: { oid: a.id } }); await new Promise(r => setTimeout(r, 80)); document.querySelector('[data-act="kva-druck"]').click(); await new Promise(r => setTimeout(r, 120));
+      const h = document.getElementById('printarea').innerHTML;
+      const r = { druck: /Kostenvoranschlag/.test(h) && /Gültig bis/.test(h) && /15 %/.test(h), gemerkt: !!a.kva && a.kva.bruttoCt === ordBrutto(a) };
+      a.kva.bruttoCt = Math.round(ordBrutto(a) / 1.3); calcMode[a.id] = 'liste'; nav('kalk', a.id); await new Promise(r => setTimeout(r, 100));
+      r.warnung = /über dem Kostenvoranschlag/.test(document.querySelector('.ls-sum').textContent);
+      window.print = wp; S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
+    if (Object.values(kv).some(v => !v)) errs.push('Kostenvoranschlag: ' + JSON.stringify(kv));
+  }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
     const sy = await page.evaluate(async () => {

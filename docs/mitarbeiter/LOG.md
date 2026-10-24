@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 24.10.2026 (Morgenlauf) — 2.82 Kostenvoranschlag mit Gültigkeit
+- **Gebaut:** Drucken im Auftrag fragt jetzt: „Kostenvoranschlag“ oder „Auftragsübersicht“. Der Kostenvoranschlag trägt Überschrift, „Gültig bis“ (Einstellung `kvaTage`, Standard 30 Tage) und den Satz zur 15-%-Grenze. Beim Drucken merkt sich der Auftrag Betrag und Datum (`a.kva`, Eintrag im Verlauf). Im Werkstattbericht steht unter der Summe ein Hinweis: bis 15 % mehr gelb, darüber rot („Kunde vorher fragen“), abgelaufen = Hinweis. SW v83.
+- **Test:** Smoke-Test grün (390/1280), neuer Ablauf „Kostenvoranschlag“.
+- **Offen / nächster Handgriff:** Kalkulation Punkt 6 (Preis-Varianten). Wartet auf Inhaber: Rest des Briefings („Bekannte Probleme“, KP4–7), Öffnungszeiten bestätigen, SQL in Supabase neu ausführen.
+
 ## 23.10.2026 (Abendlauf) — 2.81 Design-Durchgang
 - **Angesehen:** Auftrag mit allen neuen Hinweiskarten und Planung, 390 px hell/dunkel.
 - **Behoben:** Hinweiskarten (Gewährleistung, Annahme, Teile, abgelehnt) kompakter; Karte „Terminerinnerungen fällig“ hatte keinen Innenabstand (Überschrift links abgeschnitten); Teile-Karte zeigte eine fremde Zeitleisten-Linie, weil die Klasse `tl` schon belegt war → `tlb`. SW v82.
