@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 25.10.2026 (Auftrag Inhaber, Nacht) — 2.88 iPhone-Look, Schritt 1
+- **Inhaber:** „Ich möchte, dass es aussieht wie eine iPhone-App, gestalte gerne um. Außer die Kalkulationsseite.“
+- **Gebaut (nur CSS-Ebene am Ende von app.css, `body.ios`, nicht auf `body.r-kalk`):** Systemschrift (SF Pro auf iPhone/Mac), große Titel 34 px (Unterseiten 22 px, beim Scrollen 17 px), durchscheinende Kopfleiste mit Haarlinie, Tab-Leiste unten über die ganze Breite mit Tönung, Karten ohne Schatten/Rahmen mit Radius 12, Listenzeilen 17 px mit Haarlinien, graues Suchfeld, Filter-Kapseln, Segmented Control, Aktionsleiste im Auftrag als Werkzeugleiste, farbige Symbole unter „Mehr“, runde Initialen bei Kunden. Kalkulationsseite unverändert (geprüft). SW v89.
+- **Test:** Smoke-Test grün (390/1280). Screenshots hell/dunkel geprüft (im Test-Browser ohne SF-Schrift).
+- **Nächste Schritte:** Seite für Seite verfeinern (Planung-Kacheln, Auftrag-Detail als gruppierte Liste, Blätter/Formulare wie iOS, Schalter). Inhaber nach Eindruck auf dem echten iPhone fragen.
+
 ## 25.10.2026 (Auftrag Inhaber, spät) — 2.87 Eigene Art
 - **Inhaber:** Möchte die Art des Kundenanliegens selbst benennen können (z. B. Versicherung). Ordnername benennt er ohnehin selbst.
 - **Gebaut:** Feld „Eigene Art“ (`pk.klassTxt`, jetzt für jede Art) in „Neues Kundenanliegen“ und im Blatt „Name, Art, wer zahlt“. `klassName(pk)` überall in der Anzeige, auf Ausdruck und im Export. Farbe/Logik bleibt bei der gewählten Art. SW v88.
