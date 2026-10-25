@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 25.10.2026 (Auftrag Inhaber) — 2.85 Kundenanliegen + Erweiterung als Abschnitt
+- **Inhaber 25.10.:** Diagnose/Abhilfe sind Abschnitte im selben Ordner – so soll auch „Während der Arbeit festgestellt“ sein (kein neuer Ordner, Kunde sieht: Erweiterung zur laufenden Arbeit). Knopf für neuen Ordner heißt jetzt „Kundenanliegen“ mit Art TBA / Kd.-Wunsch / Bei Rep. festgestellt / Zusatzleistung / … Ausklappen ging nicht – hätte ich selbst merken müssen.
+- **Fehler gefunden:** `pak-tog` schaltete nur die Klasse um, der Inhalt geschlossener Ordner wird aber gar nicht gebaut → Aufklappen zeigte nichts. Jetzt neu zeichnen. Smoke-Test prüft Auf- und Zuklappen.
+- **Gebaut:** Phase `erw` für Positionen/Befunde: eigener Abschnitt nach Abhilfe mit eigener Freigabe (`pk.frei.erw`), Summe Erweiterung, Freigabe-Link-Knopf, Ausdruck mit Zwischenüberschrift. Positionen dort sind immer `ext`. Ohne Freigabe der Erweiterung steht der Ordner auf „Freigabe ausstehend“. Knopf „+ Während der Arbeit festgestellt“ unten (mit Auswahl des Kundenanliegens) und im Ordner. Verschieben kennt den neuen Bereich. Neue Art `rf` „Bei Reparatur festgestellt“. Alte Fund-Ordner bleiben unverändert. SW v86.
+- **Test:** Smoke-Test grün (390/1280), neuer Ablauf „Kundenanliegen“.
+- **Lehre:** Bei jedem Lauf auch Grundfunktionen (Auf-/Zuklappen, Knöpfe in geschlossenem Zustand) wirklich durchklicken, nicht nur den offenen Zustand ansehen.
+
 ## 25.10.2026 (Morgenlauf) — 2.84 Design-Durchgang Kalkulation
 - **Angesehen:** Werkstattbericht mit Kostenvoranschlag-Hinweis und Alternativ-Teilen, Positionsblatt, 390 px hell/dunkel.
 - **Behoben:** Die klebende Summenleiste unten war mit beiden Hinweisen fast halb so hoch wie der Bildschirm und verdeckte Positionen → Hinweise kürzer und flacher, „Alternativen übernehmen“ als Textknopf (44 px) in einer Zeile, Zielpreis-Knopf enger. Titel im Blatt hatte einen schwarzen Fokus-Rahmen → entfernt (Fokus bleibt für Bildschirmleser). SW v85.

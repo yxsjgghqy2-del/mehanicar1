@@ -365,9 +365,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.84';
+const APP_VER='2.85';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.85',d:'2026-10-25',p:['Neuer Knopf „+ Kundenanliegen“ – Art wählbar: Techn. Beanstandung, Kundenwunsch, Bei Reparatur festgestellt, Zusatzleistung, Sonstige','„Während der Arbeit festgestellt“ kommt als eigener Abschnitt in dasselbe Kundenanliegen (Erweiterung mit eigener Freigabe) statt in einen neuen Ordner','Ordner lassen sich wieder zuverlässig auf- und zuklappen']},
  {v:'2.84',d:'2026-10-25',p:['Kalkulation: Summenleiste unten kompakter, verdeckt weniger Positionen','Hinweise zu Kostenvoranschlag und Alternativ-Teilen kürzer']},
  {v:'2.83',d:'2026-10-24',p:['Preis-Varianten: Teil mit Alternative (z. B. Qualitätsteil) – der Kunde wählt','Kostenvoranschlag zeigt beide Preise','Mit einem Tipp alle Alternativen übernehmen']},
  {v:'2.82',d:'2026-10-24',p:['Kostenvoranschlag: Der Knopf „PDF“ im Auftrag fragt jetzt, ob Sie einen Kostenvoranschlag (mit „Gültig bis“) oder eine Übersicht drucken möchten. Auf dem Kostenvoranschlag steht, dass Sie den Kunden vorher informieren, wenn es mehr als 15 % teurer wird.','Wird der Auftrag teurer als der Kostenvoranschlag, steht das in der Kalkulation. Bei mehr als 15 % erscheint ein roter Hinweis: „Kunde vorher informieren“.','Wie lange ein Kostenvoranschlag gilt (Standard 30 Tage), stellen Sie in den Einstellungen ein.']},
@@ -429,7 +430,7 @@ const WHATSNEW=[
  {v:'2.26',d:'2026-09-30',p:['Neu: „Was ist neu“ — unter Mehr auf die Versionsnummer tippen, dann sehen Sie hier jede Neuerung mit Datum.','Ein kleiner Punkt an der Versionsnummer zeigt, wenn es etwas Neues gibt, das Sie noch nicht angesehen haben.']},
  {v:'2.25',d:'2026-09-28',p:['Entwürfe für die neue Auftragsmaske und die Suche liegen zur Auswahl bereit.']}
 ];
-const KLASS={tb:['Techn. Beanstandung','t-red'],kw:['Kundenwunsch','t-blue'],zl:['Zusatzleistung','t-green'],so:['Sonstige','t-gray']};
+const KLASS={tb:['Techn. Beanstandung','t-red'],kw:['Kundenwunsch','t-blue'],rf:['Bei Reparatur festgestellt','t-amber'],zl:['Zusatzleistung','t-green'],so:['Sonstige','t-gray']};
 const ZAHLER={kunde:'Kunde',vers:'Versicherung',gar:'Garantie',intern:'Intern / Kulanz',son:'Sonstiges'};
 const ZAHLER_KURZ={kunde:'K',vers:'V',gar:'G',intern:'I',son:'S'};
 const posZahler=(p,pk)=>p.zahler||pk.zahler||'kunde';
@@ -1434,12 +1435,17 @@ const LS_ORD='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.
    Freigaben als Hinweis rechts neben Diagnose/Abhilfe; bei Überschreitung einmal große Meldung, danach dauerhaft gelber Hinweis. */
 const wbIstPos=x=>x.typ==='arbeit'||x.typ==='teil';
 const wbDiag=pk=>pk.pos.filter(x=>wbIstPos(x)&&x.phase==='diag');
-const wbAbh=pk=>pk.pos.filter(x=>wbIstPos(x)&&x.phase!=='diag');
+const wbAbh=pk=>pk.pos.filter(x=>wbIstPos(x)&&x.phase!=='diag'&&x.phase!=='erw');
+/* Während der Arbeit festgestellt: Abschnitt im selben Ordner, gilt als Erweiterung mit eigener Freigabe */
+const wbErw=pk=>pk.pos.filter(x=>wbIstPos(x)&&x.phase==='erw');
+const PH_NAME={diag:'Diagnose',abh:'Abhilfe',erw:'Erweiterung'};
+const wbPh=(pk,ph)=>ph==='diag'?wbDiag(pk):ph==='erw'?wbErw(pk):wbAbh(pk);
 const wbSum=l=>l.reduce((s,x)=>s+posNetto(x),0);
-function wbRahmen(pk,ph){const f=(pk.frei||{})[ph];if(!f||!f.ct)return null;const ist=wbSum(ph==='diag'?wbDiag(pk):wbAbh(pk));return{f,ist,ueber:Math.max(0,ist-f.ct)}}
+function wbRahmen(pk,ph){const f=(pk.frei||{})[ph];if(!f||!f.ct)return null;const ist=wbSum(wbPh(pk,ph));return{f,ist,ueber:Math.max(0,ist-f.ct)}}
 /* Freigabe je Paket (KP3): hinter jeder Beanstandung steht der freigegebene Betrag, sonst „Freigabe ausstehend“ */
 function pkFrei(a,pk){const pos=pk.pos.filter(x=>wbIstPos(x)&&posNetto(x)>0);if(!pos.length||pk.abger)return null;
- const f=pk.frei||{},ct=((f.diag||{}).ct||0)+((f.abh||{}).ct||0);
+ const f=pk.frei||{},ct=((f.diag||{}).ct||0)+((f.abh||{}).ct||0)+((f.erw||{}).ct||0);
+ if(wbErw(pk).some(x=>posNetto(x)>0)&&!(f.erw||{}).ct)return{ok:false,erw:true};
  if(ct>0)return{ok:true,ct};
  if(a.freigabe&&!pk.ext&&!pos.some(x=>x.ext))return{ok:true,ct:0,auftrag:true};
  return{ok:false}}
@@ -1465,18 +1471,19 @@ function lsHtml(a){
   {const n=a.fotos.filter(fo=>fo.posId===x.id).length;if(n)m.push(n+' Anhang'+(n>1?'e':''))}
   if(spezOf(x)&&spezOffen({pakete:[{pos:[x]}]}).length)m.push('<span class="wb-erw">Abschluss offen</span>');
   if(x.zahler&&x.zahler!==(pk.zahler||'kunde'))m.push('RKZ: '+(x.zahler==='son'&&x.zahlerTxt?esc(x.zahlerTxt):ZAHLER[x.zahler]||x.zahler));
-  if(x.ext)m.push('<span class="wb-erw">Erweiterung</span>');
+  if(x.ext&&x.phase!=='erw')m.push('<span class="wb-erw">Erweiterung</span>');
   if(x.typ==='teil'&&x.alt)m.push('Alternative: '+esc(x.alt.bez)+' '+fmt(Math.round(x.alt.vkCt*(x.menge||1))));
   return`<div class="wb-pos${x.auto?' wb-auto':''}${selCls(x)}"${act(pk,x,lk)}><div class="wb-z">${hak(x,lk)}<span class="wb-b">${esc(x.bez)}</span><span class="wb-dots"></span><b class="num">${fmt(posNetto(x))}</b></div>
    ${m.length?`<div class="wb-m">${m.join(' · ')}</div>`:''}${x.notizKunde?`<div class="wb-d">${esc(x.notizKunde)}</div>`:''}</div>`};
  const txtFeld=(pk,f,ph,lk,leer)=>{const v=pk[f]||'';const at=lk?'':` data-act="wb-text" data-oid="${a.id}" data-pid="${pk.id}" data-f="${f}" role="button" tabindex="0"`;
   return v?`<div class="wb-txt"${at}>${esc(v)}</div>`:(lk?'':`<div class="wb-leer"${at}>${leer}</div>`)};
  const add=(lk,html)=>lk||wbSelOn(a)?'':`<div class="wb-add">${html}</div>`;
- const bericht=pk=>{const lk=ktLocked(pk),open=pakOpen[a.id].has(pk.id),diag=wbDiag(pk),abh=wbAbh(pk),bef=pk.pos.filter(x=>x.typ==='befund'),hin=pk.pos.filter(x=>x.typ==='text');
+ const befZ=(x,pk,lk)=>`<div class="wb-pos${selCls(x)}"${act(pk,x,lk)}><div class="wb-txt0">${hak(x,lk)}${esc(x.bez)}</div>${x.abhilfe?`<div class="wb-m">Abhilfe: ${esc(x.abhilfe)}</div>`:''}${x.nein?`<div class="wb-m wb-nein">Kunde informiert – will nichts gemacht haben (${dLabel(new Date(x.nein).toISOString().slice(0,10))})</div>`:''}</div>`;
+ const bericht=pk=>{const lk=ktLocked(pk),open=pakOpen[a.id].has(pk.id),diag=wbDiag(pk),abh=wbAbh(pk),erw=wbErw(pk),erwBef=pk.pos.filter(x=>x.typ==='befund'&&x.phase==='erw'),bef=pk.pos.filter(x=>x.typ==='befund'&&x.phase!=='erw'),hin=pk.pos.filter(x=>x.typ==='text');
   const voll=pk.ablauf||!['kw','zl'].includes(pk.klass)||pk.problem||pk.pruefung||diag.length||bef.length;
   const b=(o)=>`data-oid="${a.id}" data-pid="${pk.id}"${o||''}`;
   return`<div class="wb-pk${open?' open':''}"><div class="wb-pk-h" data-act="pak-tog" ${b()} role="button" tabindex="0" aria-expanded="${open}">
-   <span class="wb-pk-n"><b>${esc(pk.name)}</b><small>${KLASS[pk.klass]?KLASS[pk.klass][0]:''}${lk?' · abgerechnet':''}${lk?'':pkFreiTxt(a,pk)}${(()=>{const u=['diag','abh'].map(ph=>wbRahmen(pk,ph)).filter(r=>r&&r.ueber);return u.length?' · <span class="wb-erw">Freigabe überschritten</span>':''})()}</small></span>
+   <span class="wb-pk-n"><b>${esc(pk.name)}</b><small>${KLASS[pk.klass]?KLASS[pk.klass][0]:''}${lk?' · abgerechnet':''}${lk?'':pkFreiTxt(a,pk)}${(()=>{const u=['diag','abh','erw'].map(ph=>wbRahmen(pk,ph)).filter(r=>r&&r.ueber);return u.length?' · <span class="wb-erw">Freigabe überschritten</span>':''})()}</small></span>
    <b class="num">${fmt(pakNetto(pk))}</b><span class="ls-chev" aria-hidden="true"></span></div>
    ${open?`<div class="wb-b-in">
     ${voll?`<div class="wb-h"><span>Beanstandung</span></div>${txtFeld(pk,'problem','',lk,'+ Was sagt der Kunde?')}
@@ -1486,17 +1493,24 @@ function lsHtml(a){
     <div class="wb-sub"><div class="wb-sub-h">Prüfung</div>${txtFeld(pk,'pruefung','',lk,'+ Was wurde geprüft? Messwerte …')}</div>
     ${add(lk,`<button data-act="ls-kat" ${b(' data-ph="diag"')}>+ Diagnose-Position</button>`)}
     <div class="wb-h"><span>Befund</span></div>
-    ${bef.map(x=>`<div class="wb-pos${selCls(x)}"${act(pk,x,lk)}><div class="wb-txt0">${hak(x,lk)}${esc(x.bez)}</div>${x.abhilfe?`<div class="wb-m">Abhilfe: ${esc(x.abhilfe)}</div>`:''}${x.nein?`<div class="wb-m wb-nein">Kunde informiert – will nichts gemacht haben (${dLabel(new Date(x.nein).toISOString().slice(0,10))})</div>`:''}</div>`).join('')||(lk?'':`<div class="wb-leer" data-act="add-befund" ${b()} role="button" tabindex="0">+ Was wurde festgestellt?</div>`)}
+    ${bef.map(x=>befZ(x,pk,lk)).join('')||(lk?'':`<div class="wb-leer" data-act="add-befund" ${b()} role="button" tabindex="0">+ Was wurde festgestellt?</div>`)}
     ${bef.length?add(lk,`<button data-act="add-befund" ${b()}>+ Befund</button>`):''}`:''}
     <div class="wb-h"><span>${voll?'Abhilfe':'Arbeiten'}</span>${wbChip(a,pk,'abh',lk)}</div>
     ${abh.map(x=>zeile(pk,x,lk)).join('')||'<div class="wb-m" style="padding:4px 0 2px">Noch keine Arbeiten oder Teile.</div>'}
     ${add(lk,`<button data-act="ls-kat" ${b(' data-ph="abh"')}>+ Arbeit</button><button data-act="add-teil" ${b()}>+ Teil</button>`)}
-    ${!lk&&!sel&&abh.length&&(()=>{const r=pkFrei(a,pk);return r&&!r.ok})()?`<button class="wb-fr" data-act="fr-anfrage" ${b()}>${pk.freiAnfrage&&pk.freiAnfrage.status==='offen'?'Freigabe erneut anfragen':'Freigabe beim Kunden anfragen (Link)'}</button>`:''}
+    ${!lk&&!sel&&abh.length&&!erw.length&&(()=>{const r=pkFrei(a,pk);return r&&!r.ok})()?`<button class="wb-fr" data-act="fr-anfrage" ${b()}>${pk.freiAnfrage&&pk.freiAnfrage.status==='offen'?'Freigabe erneut anfragen':'Freigabe beim Kunden anfragen (Link)'}</button>`:''}
     ${abh.length?`<div class="wb-z wb-zs"><span>Summe ${voll?'Abhilfe':'Arbeiten'}</span><span class="wb-dots"></span><b class="num">${fmt(wbSum(abh))}</b></div>`:''}
+    ${erw.length||erwBef.length||pk.erwOffen?`<div class="wb-h wb-h-erw"><span>Während der Arbeit festgestellt</span>${wbChip(a,pk,'erw',lk)}</div>
+    <div class="wb-m wb-erw-m">Erweiterung zum laufenden Auftrag – braucht eine eigene Freigabe des Kunden.</div>
+    ${erwBef.map(x=>befZ(x,pk,lk)).join('')}
+    ${erw.map(x=>zeile(pk,x,lk)).join('')}
+    ${add(lk,`<button data-act="ls-kat" ${b(' data-ph="erw"')}>+ Arbeit</button><button data-act="add-teil" ${b(' data-ph="erw"')}>+ Teil</button>`)}
+    ${!lk&&!sel&&erw.length&&(()=>{const r=pkFrei(a,pk);return r&&!r.ok})()?`<button class="wb-fr" data-act="fr-anfrage" ${b()}>${pk.freiAnfrage&&pk.freiAnfrage.status==='offen'?'Freigabe erneut anfragen':'Freigabe beim Kunden anfragen (Link)'}</button>`:''}
+    ${erw.length?`<div class="wb-z wb-zs"><span>Summe Erweiterung</span><span class="wb-dots"></span><b class="num">${fmt(wbSum(erw))}</b></div>`:''}`:''}
     ${hin.length||!lk?`<div class="wb-h"><span>Hinweise</span></div>`:''}
     ${hin.map(x=>`<div class="wb-pos${selCls(x)}"${act(pk,x,lk)}><div class="wb-txt0">${hak(x,lk)}${esc(x.bez)}</div></div>`).join('')}
     ${add(lk,`<button data-act="add-text" ${b()}>+ Hinweis</button>`)}
-    ${lk?`<div class="wb-m" style="padding-top:10px">Abgerechnet – zum Ändern in der Ansicht „Kalkulation“ entsperren.</div>`:`<div class="wb-fuss">${voll?'':`<button class="ls-opt" data-act="wb-voll" ${b()}>+ Beanstandung, Diagnose und Befund</button>`}<button class="ls-opt" data-act="pak-opts" ${b()}>Paket: Name, Art, wer zahlt</button></div>`}
+    ${lk?`<div class="wb-m" style="padding-top:10px">Abgerechnet – zum Ändern in der Ansicht „Kalkulation“ entsperren.</div>`:`<div class="wb-fuss">${voll?'':`<button class="ls-opt" data-act="wb-voll" ${b()}>+ Beanstandung, Diagnose und Befund</button>`}${erw.length||erwBef.length||pk.erwOffen?'':`<button class="ls-opt" data-act="fund-neu" ${b()}>+ Während der Arbeit festgestellt</button>`}<button class="ls-opt" data-act="pak-opts" ${b()}>Name, Art, wer zahlt</button></div>`}
    </div>`:''}</div>`};
  const nSel=sel?wbSel.ids.size:0;
  const leiste=sel?`<div class="wb-selbar" role="toolbar" aria-label="Auswahl"><div class="wb-selbar-k"><b>${nSel} ausgewählt</b><button data-act="wb-sel" data-oid="${a.id}">Auswahl beenden</button></div>
@@ -1504,7 +1518,7 @@ function lsHtml(a){
   <button data-act="wb-move" data-oid="${a.id}"${nSel?'':' disabled'}>Verschieben</button><button data-act="wb-rkz" data-oid="${a.id}"${nSel?'':' disabled'}>RKZ</button><button data-act="wb-del" data-oid="${a.id}"${nSel?'':' disabled'}>Löschen</button></div></div>`
   :`<button class="wb-selstart" data-act="wb-sel" data-oid="${a.id}">Positionen auswählen · verschieben · RKZ ändern</button>`;
  return`<div class="ls">${sel?'':tlKarte(a)}${a.pakete.length?leiste:''}${a.pakete.map(bericht).join('')}${a.pakete.length&&!sel?fsHtml(a):''}
-  ${sel?'':`<button class="ls-neu" data-act="fund-neu" data-oid="${a.id}">+ Während der Arbeit festgestellt</button><button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="tb">+ Neues Problem / Paket</button>`}
+  ${sel?'':`<button class="ls-neu" data-act="fund-neu" data-oid="${a.id}">+ Während der Arbeit festgestellt</button><button class="ls-neu" data-act="pak-new" data-oid="${a.id}" data-k="tb">+ Kundenanliegen</button>`}
   ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<button class="ls-opt" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale wieder einschalten</button>`:''}
   <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b> · ${K.marge} %</span>${K.rabOrd?`<span>Rabatt <b class="num">− ${fmt(K.rabOrd)}</b></span>`:''}</div>
    ${kvaHinweis(a)}
@@ -1537,7 +1551,7 @@ FSET['min-marge']=el=>{S.settings.minMarge=Math.max(0,Math.min(90,parseInt(el.va
 const wbGewaehlt=a=>{const r=[];a.pakete.forEach(pk=>{if(ktLocked(pk))return;pk.pos.forEach(x=>{if(wbSel.ids.has(x.id))r.push({pk,x})})});return r};
 ACT['wb-sel']=el=>{const a=auftrag(el.dataset.oid);if(wbSelOn(a)){wbSel.oid=null;wbSel.ids.clear()}else{wbSel.oid=a.id;wbSel.ids.clear()}render()};
 ACT['wb-pick']=el=>{const id=el.dataset.xid;wbSel.ids.has(id)?wbSel.ids.delete(id):wbSel.ids.add(id);render()};
-const wbBereich=x=>wbIstPos(x)?(x.phase==='diag'?'d':'a'):x.typ;
+const wbBereich=x=>wbIstPos(x)?(x.phase==='diag'?'d':x.phase==='erw'?'e':'a'):x.typ+(x.phase==='erw'?'e':'');
 ACT['wb-mv']=el=>{const a=auftrag(el.dataset.oid),dir=+el.dataset.dir;let bewegt=0;
  a.pakete.forEach(pk=>{if(ktLocked(pk))return;const p=pk.pos;
   const idx=dir<0?p.map((_,i)=>i):p.map((_,i)=>i).reverse();
@@ -1548,10 +1562,10 @@ ACT['wb-mv']=el=>{const a=auftrag(el.dataset.oid),dir=+el.dataset.dir;let bewegt
 ACT['wb-move']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a);if(!g.length)return;
  const ziele=a.pakete.filter(pk=>!ktLocked(pk));
  sheet(g.length+' Position'+(g.length>1?'en':'')+' verschieben',`<div class="fld"><label>In welches Paket?</label><div class="selwrap"><select id="mv-p">${ziele.map(pk=>`<option value="${pk.id}"${pk.id===g[0].pk.id?' selected':''}>${esc(pk.name)}</option>`).join('')}</select></div></div>
-  <div class="fld"><label>Bereich <span style="text-transform:none;font-weight:400;color:var(--ink3)">(für Arbeiten und Teile)</span></label><div class="selwrap"><select id="mv-ph"><option value="">wie bisher</option><option value="abh">Abhilfe / Arbeiten</option><option value="diag">Diagnose</option></select></div></div>
+  <div class="fld"><label>Bereich <span style="text-transform:none;font-weight:400;color:var(--ink3)">(für Arbeiten und Teile)</span></label><div class="selwrap"><select id="mv-ph"><option value="">wie bisher</option><option value="abh">Abhilfe / Arbeiten</option><option value="diag">Diagnose</option><option value="erw">Während der Arbeit festgestellt</option></select></div></div>
   <button class="btn btn-main" style="width:100%" data-act="wb-move-ok" data-oid="${a.id}">Verschieben</button>`)};
 ACT['wb-move-ok']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a),ziel=a.pakete.find(p=>p.id===$('#mv-p').value),ph=$('#mv-ph').value;if(!ziel)return;
- mitRueckgaengig(g.length+' verschoben',()=>{g.forEach(({pk,x})=>{if(ph&&wbIstPos(x))x.phase=ph==='diag'?'diag':null;
+ mitRueckgaengig(g.length+' verschoben',()=>{g.forEach(({pk,x})=>{if(ph&&wbIstPos(x)){x.phase=ph==='abh'?null:ph;if(ph==='erw')x.ext=true}
   if(pk!==ziel){pk.pos=pk.pos.filter(p=>p!==x);ziel.pos.push(x);logUnlockEdit(a,pk,'Position „'+x.bez+'" nach „'+ziel.name+'" verschoben.')}});pakOpen[a.id].add(ziel.id)})};
 ACT['wb-rkz']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a).filter(o=>wbIstPos(o.x));if(!g.length)return toast('Nur Arbeiten und Teile haben ein RKZ',true);
  sheet('RKZ für '+g.length+' Position'+(g.length>1?'en':''),`<div class="fld"><label>Wer zahlt?</label><div class="selwrap"><select id="rk-z" onchange="document.getElementById('rk-tw').style.display=this.value==='son'?'block':'none'">
@@ -1563,15 +1577,19 @@ ACT['wb-rkz-ok']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a).filter(o=>
 ACT['wb-del']=el=>{const a=auftrag(el.dataset.oid),g=wbGewaehlt(a).filter(o=>!o.x.auto);if(!g.length)return;
  mitRueckgaengig(g.length+' Position'+(g.length>1?'en':'')+' gelöscht',()=>{g.forEach(({pk,x})=>{if(x.lagerId&&x.best==='lager'){const l=lagerT(x.lagerId);if(l)l.bestand+=(x.menge||1)}
   pk.pos=pk.pos.filter(p=>p!==x);logUnlockEdit(a,pk,'Position „'+x.bez+'" gelöscht ('+fmt(posNetto(x))+').')});wbSel.ids.clear()})};
-ACT['fund-neu']=el=>{const a=auftrag(el.dataset.oid);sheet('Während der Arbeit festgestellt',`<div class="fld"><label>Was wurde festgestellt?</label><textarea id="fu-t" rows="3" placeholder="z. B. Bremsschlauch hinten links porös"></textarea></div>
-  <div style="font-size:12px;color:var(--ink3);margin:-4px 2px 12px">Wird ein eigener Ordner (technische Beanstandung). Die Kosten klären Sie neu mit dem Kunden – bis dahin steht „Freigabe ausstehend“.</div>
-  <button class="btn btn-main" style="width:100%" data-act="fund-ok" data-oid="${a.id}">Anlegen</button>`);setTimeout(()=>{const e=$('#fu-t');if(e)e.focus()},150)};
+ACT['fund-neu']=el=>{const a=auftrag(el.dataset.oid),ziele=a.pakete.filter(pk=>!ktLocked(pk));
+ if(!ziele.length)return toast('Erst ein Kundenanliegen anlegen',true);
+ const vor=el.dataset.pid||(ziele.find(pk=>(pakOpen[a.id]||new Set()).has(pk.id))||ziele[0]).id;
+ sheet('Während der Arbeit festgestellt',`<div class="fld"><label>Was wurde festgestellt?</label><textarea id="fu-t" rows="3" placeholder="z. B. Bremsschlauch hinten links porös"></textarea></div>
+  ${ziele.length>1?`<div class="fld"><label>Gehört zu welchem Kundenanliegen?</label><div class="selwrap"><select id="fu-p">${ziele.map(pk=>`<option value="${pk.id}"${pk.id===vor?' selected':''}>${esc(pk.name)}</option>`).join('')}</select></div></div>`:`<input type="hidden" id="fu-p" value="${vor}">`}
+  <div style="font-size:12px;color:var(--ink3);margin:-4px 2px 12px">Kommt als eigener Abschnitt in dasselbe Kundenanliegen – der Kunde sieht: Erweiterung zur laufenden Arbeit. Kosten neu mit dem Kunden klären, bis dahin „Freigabe ausstehend“. Ein ganz neues Problem? Dann „+ Kundenanliegen“ mit Art „Bei Reparatur festgestellt“.</div>
+  <button class="btn btn-main" style="width:100%" data-act="fund-ok" data-oid="${a.id}">Hinzufügen</button>`);setTimeout(()=>{const e=$('#fu-t');if(e)e.focus()},150)};
 ACT['fund-ok']=el=>{const a=auftrag(el.dataset.oid),t=$('#fu-t').value.trim();if(!t)return toast('Bitte kurz beschreiben',true);
- const pk={id:'p'+uid(),name:'Während der Arbeit festgestellt: '+t,klass:'tb',zahler:'kunde',status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext:ordFreigegeben(a),ablauf:true,fund:true,
-  pos:[{id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'befund',bez:t,abhilfe:'',vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null}]};
- a.pakete.push(pk);(pakOpen[a.id]=pakOpen[a.id]||new Set()).add(pk.id);
- a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Während der Arbeit festgestellt: '+t+' – Freigabe beim Kunden einholen.',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
- save();closeSheet();render();toast('Neuer Ordner angelegt – Freigabe ausstehend')};
+ const pk=a.pakete.find(p=>p.id===$('#fu-p').value);if(!pk)return;
+ pk.pos.push({id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'befund',phase:'erw',bez:t,abhilfe:'',vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:true,best:null,eta:null,lagerId:null});
+ (pakOpen[a.id]=pakOpen[a.id]||new Set()).add(pk.id);
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Während der Arbeit festgestellt („'+pk.name+'“): '+t+' – Freigabe beim Kunden einholen.',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
+ save();closeSheet();render();toast('Als Erweiterung eingetragen – Freigabe ausstehend')};
 const WB_FELD={problem:['Beanstandung','Was sagt der Kunde? Möglichst wörtlich.','z. B. Motorkontrollleuchte leuchtet, Auto ruckelt beim Beschleunigen'],pruefung:['Prüfung','Was wurde geprüft? Messwerte, Fehlercodes …','z. B. Fehlerspeicher: P0302 Zündaussetzer Zyl. 2\nKompression Zyl. 1–4 je 12 bar']};
 ACT['wb-text']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),f=el.dataset.f,[t,l,ph]=WB_FELD[f];
  sheet(t,`<div class="fld"><label>${l}</label><textarea id="wb-t" rows="6" placeholder="${esc(ph)}">${esc(pk[f]||'')}</textarea></div>
@@ -1581,8 +1599,8 @@ ACT['wb-text-ok']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id=
 ACT['wb-voll']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);pk.ablauf=true;save();render()};
 const FREI_WIE={link:'Freigabe-Link',tel:'Telefon',wa:'WhatsApp',ort:'vor Ort',sig:'Unterschrift',mail:'E-Mail'};
 ACT['frei-set']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),ph=el.dataset.ph,f=(pk.frei||{})[ph]||{};
- const ist=wbSum(ph==='diag'?wbDiag(pk):wbAbh(pk));
- sheet(ph==='diag'?'Freigabe Diagnose':'Freigabe Abhilfe',`<div class="fld"><label>Kunde hat freigegeben bis (€)</label><input id="fr-ct" inputmode="decimal" value="${f.ct?fmtIn(f.ct):''}" placeholder="${fmtIn(ist||0)}"></div>
+ const ist=wbSum(wbPh(pk,ph));
+ sheet('Freigabe '+PH_NAME[ph],`<div class="fld"><label>Kunde hat freigegeben bis (€)</label><input id="fr-ct" inputmode="decimal" value="${f.ct?fmtIn(f.ct):''}" placeholder="${fmtIn(ist||0)}"></div>
   <div class="fld"><label>Wie?</label><div class="selwrap"><select id="fr-wie">${Object.entries(FREI_WIE).map(([v,l])=>`<option value="${v}"${f.wie===v?' selected':''}>${l}</option>`).join('')}</select></div></div>
   <div class="fld"><label>Mit wem gesprochen? (bei Telefon)</label><input id="fr-wer" value="${esc(f.wer||'')}" placeholder="z. B. Herr Weber selbst"></div>
   <div class="wb-m" style="margin:-4px 2px 12px">Bisher kalkuliert: ${fmt(ist)}${f.ts?' · eingetragen '+dtLabel(f.ts):''}</div>
@@ -1590,14 +1608,14 @@ ACT['frei-set']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
   <button class="btn btn-main" data-act="frei-ok" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}">Speichern</button></div>`)};
 ACT['frei-ok']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid),ph=el.dataset.ph,ct=parseEuro($('#fr-ct').value)||0;
  if(!(ct>0))return toast('Betrag fehlt',true);pk.frei=pk.frei||{};pk.frei[ph]={ct,wie:$('#fr-wie').value,wer:($('#fr-wer')||{value:''}).value.trim(),ts:Date.now()};
- a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:(ph==='diag'?'Diagnose':'Abhilfe')+' „'+pk.name+'" freigegeben bis '+fmt(ct)+' ('+FREI_WIE[pk.frei[ph].wie]+(pk.frei[ph].wer?', mit '+pk.frei[ph].wer:'')+').',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
+ a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:PH_NAME[ph]+' „'+pk.name+'" freigegeben bis '+fmt(ct)+' ('+FREI_WIE[pk.frei[ph].wie]+(pk.frei[ph].wer?', mit '+pk.frei[ph].wer:'')+').',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
  save();closeSheet();render();toast('Freigabe gespeichert')};
 ACT['frei-weg']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(pk.frei)delete pk.frei[el.dataset.ph];save();closeSheet();render()};
 /* Große Meldung, sobald eine Freigabe überschritten wird – einmal je Freigabe-Betrag; danach bleibt nur der gelbe Hinweis */
 function rahmenCheck(){if(!['auftrag','kalk'].includes(route.v)||$('#sheetbg'))return;const a=auftrag(route.id);if(!a)return;
- for(const pk of a.pakete)for(const ph of ['diag','abh']){const r=wbRahmen(pk,ph);if(!r||!r.ueber)continue;pk.rahmenAck=pk.rahmenAck||{};if(pk.rahmenAck[ph]===r.f.ct)continue;
+ for(const pk of a.pakete)for(const ph of ['diag','abh','erw']){const r=wbRahmen(pk,ph);if(!r||!r.ueber)continue;pk.rahmenAck=pk.rahmenAck||{};if(pk.rahmenAck[ph]===r.f.ct)continue;
   const k=kunde(a.kundeId)||{};
-  sheet('Freigabe überschritten',`<div class="wb-warn">!</div><div style="font-size:14px;line-height:1.5;margin-bottom:12px">„${esc(pk.name)}“ – ${ph==='diag'?'Diagnose':'Abhilfe'}: Der Kunde hat bis ${fmt(r.f.ct)} freigegeben. Die Kalkulation liegt jetzt darüber. Bitte informieren Sie den Kunden, bevor Sie weiterarbeiten.</div>
+  sheet('Freigabe überschritten',`<div class="wb-warn">!</div><div style="font-size:14px;line-height:1.5;margin-bottom:12px">„${esc(pk.name)}“ – ${PH_NAME[ph]}: Der Kunde hat bis ${fmt(r.f.ct)} freigegeben. Die Kalkulation liegt jetzt darüber. Bitte informieren Sie den Kunden, bevor Sie weiterarbeiten.</div>
    <div class="kv"><span class="k">Freigegeben</span><span class="v num">${fmt(r.f.ct)}</span></div><div class="kv"><span class="k">Jetzt</span><span class="v num">${fmt(r.ist)}</span></div><div class="kv"><span class="k">Darüber</span><span class="v num" style="color:var(--amber);font-weight:700">${fmt(r.ueber)}</span></div>
    ${k.id?`<button class="btn btn-main" style="width:100%;margin-top:14px" data-act="rahmen-ok" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}" data-wa="${k.id}">Kunden jetzt fragen (WhatsApp)</button>`:''}
    <button class="btn btn-2nd" style="width:100%;margin-top:8px" data-act="rahmen-ok" data-oid="${a.id}" data-pid="${pk.id}" data-ph="${ph}">Verstanden</button>`);
@@ -1613,15 +1631,15 @@ function lsKatListe(a,pk,roh){const qq=(roh||'').trim(),q=qq.toLowerCase();const
   (q?'':'<div class="ls-leer">Noch keine Arbeiten gespeichert – eigene Arbeit oben eintippen.</div>')}
 let lsPhase=null;
 ACT['ls-kat']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!a||!pk)return;lsPhase=el.dataset.ph||null;
- sheet(lsPhase==='diag'?'Diagnose-Position hinzufügen':'Arbeit hinzufügen',`<div class="ls-kat-such"><input id="ls-q" type="search" placeholder="Suchen oder eigene Arbeit eintippen" autocomplete="off" enterkeyhint="done" aria-label="Arbeit suchen"></div>
+ sheet(lsPhase==='diag'?'Diagnose-Position hinzufügen':lsPhase==='erw'?'Erweiterung: Arbeit hinzufügen':'Arbeit hinzufügen',`<div class="ls-kat-such"><input id="ls-q" type="search" placeholder="Suchen oder eigene Arbeit eintippen" autocomplete="off" enterkeyhint="done" aria-label="Arbeit suchen"></div>
   <div id="ls-kl">${lsKatListe(a,pk,'')}</div>`);
  const q=$('#ls-q');q.addEventListener('input',()=>{$('#ls-kl').innerHTML=lsKatListe(a,pk,q.value)})};
 ACT['ls-kat-add']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!a||!pk||ktLocked(pk))return;
  const bez=el.dataset.bez,marke=(fzg(a.fzgId)||{}).marke,aw=apAwFor(bez,marke)||0,vorher=ordNetto(a);
- const x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'arbeit',bez,menge:1,aw,ekCt:0,vkCt:Math.round(aw*ktSatz(a,null)),rab:null,best:null,eta:null,lagerId:null,ext:ordFreigegeben(a),notizKunde:'',notizIntern:''};if(lsPhase==='diag')x.phase='diag';
+ const x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'arbeit',bez,menge:1,aw,ekCt:0,vkCt:Math.round(aw*ktSatz(a,null)),rab:null,best:null,eta:null,lagerId:null,ext:ordFreigegeben(a)||lsPhase==='erw',notizKunde:'',notizIntern:''};if(lsPhase==='diag'||lsPhase==='erw')x.phase=lsPhase;
  pk.pos.push(x);if(x.ext)logExtension(a,pk,x,vorher);logUnlockEdit(a,pk,'Position „'+bez+'" hinzugefügt ('+fmt(posNetto(x))+').');
  save();render();el.classList.add('on');const p=el.querySelector('.ls-plus');if(p)p.textContent='✓';toast('„'+bez+'“ hinzugefügt');raederFrage(a,pk,x)};
-ACT['ls-eigen']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);const q=$('#ls-q');closeSheet();posSheet(a,pk,null,el.dataset.bez||(q?q.value.trim():''));const ph=$('#ps-ph');if(ph)ph.value=lsPhase==='diag'?'diag':''};
+ACT['ls-eigen']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);const q=$('#ls-q');closeSheet();posSheet(a,pk,null,el.dataset.bez||(q?q.value.trim():''));const ph=$('#ps-ph');if(ph)ph.value=lsPhase==='diag'||lsPhase==='erw'?lsPhase:''};
 /* Paket-Einstellungen als Blatt (Name, Klassifizierung, wer zahlt, löschen) */
 ACT['pak-opts']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!a||!pk)return;const lk=ktLocked(pk);
  sheet('Paket',`<div class="fld"><label>Name</label><input id="po-n" value="${esc(pk.name)}" ${lk?'disabled':''}></div>
@@ -1883,8 +1901,9 @@ ACT['sec-plain']=el=>el.parentElement.classList.toggle('open');
 ACT['te-tog']=el=>el.classList.toggle('x');
 ACT['sec-tog']=el=>{const s=secOpen[el.dataset.oid];s.has(el.dataset.s)?s.delete(el.dataset.s):s.add(el.dataset.s);
  el.parentElement.classList.toggle('open')};
-ACT['pak-tog']=el=>{const s=pakOpen[el.dataset.oid];s.has(el.dataset.pid)?s.delete(el.dataset.pid):s.add(el.dataset.pid);
- el.parentElement.classList.toggle('open')};
+ACT['pak-tog']=el=>{const s=pakOpen[el.dataset.oid]=pakOpen[el.dataset.oid]||new Set();s.has(el.dataset.pid)?s.delete(el.dataset.pid):s.add(el.dataset.pid);
+ /* Inhalt wird nur für offene Ordner gebaut – darum neu zeichnen statt nur die Klasse umzuschalten */
+ render()};
 ACT['calc-mode']=el=>{calcMode[el.dataset.oid]=el.dataset.m;render()};
 FSET['ord-status-sel']=el=>{const a=auftrag(el.dataset.oid);if(!a)return;const v=el.value;
  a.status=v;if(v==='abgeholt')a.pinned=false;
@@ -2069,20 +2088,20 @@ ACT['orab-t']=el=>{const a=auftrag(el.dataset.oid);a.rabatt=a.rabatt||{typ:'eur'
 
 /* Pakete */
 ACT['pak-new']=el=>{const a=auftrag(el.dataset.oid);
- sheet('Neues Paket',`<div class="fld"><label>Bezeichnung *</label><input id="pk-n" placeholder="z. B. Bremsen VA + HA"></div>
-  <div class="row2"><div class="fld"><label>Klassifizierung</label><div class="selwrap"><select id="pk-k">
+ sheet('Neues Kundenanliegen',`<div class="fld"><label>Bezeichnung *</label><input id="pk-n" placeholder="z. B. Quietschen beim Bremsen"></div>
+  <div class="row2"><div class="fld"><label>Art</label><div class="selwrap"><select id="pk-k">
    ${Object.entries(KLASS).map(([v,[l]])=>`<option value="${v}" ${v===el.dataset.k?'selected':''}>${l}</option>`).join('')}</select></div></div>
   <div class="fld"><label>Wer zahlt</label><div class="selwrap"><select id="pk-z">
    ${Object.entries(ZAHLER).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div></div></div>
-  <button class="btn btn-main" style="width:100%" data-act="pak-create" data-oid="${a.id}">Paket anlegen</button>`);
- setTimeout(()=>$('#pk-n').focus(),150)};
+  <button class="btn btn-main" style="width:100%" data-act="pak-create" data-oid="${a.id}">Anlegen</button>`);
+ setTimeout(()=>{const e=$('#pk-n');if(e)e.focus()},150)};
 ACT['pak-create']=el=>{const a=auftrag(el.dataset.oid);const n=$('#pk-n').value.trim();
  if(!n)return toast('Bezeichnung fehlt',true);
  const ext=ordFreigegeben(a);
  const pk={id:'p'+uid(),name:n,klass:$('#pk-k').value,zahler:$('#pk-z').value,status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext,pos:[]};
  a.pakete.push(pk);pakOpen[a.id].add(pk.id);
  if(ext)a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Neues Paket „'+n+'" nach Freigabe angelegt — gilt als Erweiterung.',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
- save();closeSheet();render();toast(ext?'Paket als Erweiterung angelegt':'Paket angelegt')};
+ save();closeSheet();render();toast(ext?'Kundenanliegen als Erweiterung angelegt':'Kundenanliegen angelegt')};
 ACT['pak-del']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
  const fotoCt=a.fotos.filter(x=>x.paketId===pk.id).length;
  confirmBox('Paket löschen?','„'+esc(pk.name)+'" mit '+pk.pos.length+' Positionen wird entfernt. Lagerteile werden zurückgebucht.'+(fotoCt?' '+fotoCt+' Foto(s) werden zu „Annahme / Allgemein" verschoben.':''),'Löschen',()=>{
@@ -2106,7 +2125,7 @@ function posSheet(a,pk,x,prefillBez){
   <div class="fld"><label>Beschreibung – was geprüft oder gemacht, Messwerte <span style="text-transform:none;font-weight:400;color:var(--ink3)">(steht auf der Rechnung unter der Position)</span></label><textarea id="ps-nk" rows="4" placeholder="z. B. Kompression gemessen: Zyl. 1–4 je 12 bar, Zündkerzen geprüft, Fehlerspeicher gelöscht">${x?esc(x.notizKunde||''):''}</textarea></div>
   ${x?spezHtml(a,pk,x):''}
   <div class="row2"><div class="fld"><label>Positionscode <span style="text-transform:none;font-weight:400;color:var(--ink3)">(freiwillig)</span></label><input id="ps-code" value="${x?esc(x.code||''):''}" placeholder="z. B. 42 10 0001" autocomplete="off"></div>
-  <div class="fld"><label>Gehört zu</label><div class="selwrap"><select id="ps-ph"><option value="">Abhilfe / Arbeiten</option><option value="diag"${x&&x.phase==='diag'?' selected':''}>Diagnose</option></select></div></div></div>
+  <div class="fld"><label>Gehört zu</label><div class="selwrap"><select id="ps-ph"><option value="">Abhilfe / Arbeiten</option><option value="diag"${x&&x.phase==='diag'?' selected':''}>Diagnose</option><option value="erw"${x&&x.phase==='erw'?' selected':''}>Während der Arbeit festgestellt</option></select></div></div></div>
   ${!isT?`<div class="row3">
    <div class="fld"><label>AW <span id="ps-aw-hint" style="text-transform:none;font-weight:400;color:var(--violet)"></span></label><input id="ps-aw" inputmode="decimal" value="${x&&x.aw?String(x.aw).replace('.',','):''}" placeholder="1,5"></div>
    <div class="fld"><label>AW-Satz €</label><input id="ps-aws" inputmode="decimal" value="${fmtIn(awSatz)}"></div>
@@ -2184,7 +2203,7 @@ ACT['text-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id==
  pk.pos.push({id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'text',bez,vkCt:0,ekCt:0,aw:0,menge:1,rab:null,ext:false,best:null,eta:null,lagerId:null});
  logUnlockEdit(a,pk,'Textposition „'+bez+'" hinzugefügt.');
  save();closeSheet();render();toast('Hinweis hinzugefügt')};
-ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);
+ACT['add-teil']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);lsPhase=el.dataset.ph||null;
  sheet('Teil hinzufügen',`
   <div class="mkopf" aria-live="polite"><div class="mk-av">T</div>
    <div class="mk-tx"><b id="mk-n">Neues Teil</b><span id="mk-s">Aus dem Lager wählen oder frei eintragen</span></div>
@@ -2217,9 +2236,9 @@ ACT['teil-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id==
  const bez=$('#pt-b').value.trim();if(!bez)return toast('Bezeichnung fehlt',true);
  const artnr=($('#pt-nr')||{value:''}).value.trim();let lid=$('#pt-l').value||null;const menge=Math.max(1,parseInt($('#pt-m').value)||1);
  if(!lid){const l=S.lager.find(z=>(artnr&&(z.artnr||'').replace(/\s/g,'')===artnr.replace(/\s/g,''))||z.teil.toLowerCase()===bez.toLowerCase());if(l)lid=l.id}
- const ext=ordFreigegeben(a);
+ const ext=ordFreigegeben(a)||lsPhase==='erw';
  const vorher=ordNetto(a);
- const x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'teil',bez,aw:0,menge,ekCt:Math.max(0,parseEuro($('#pt-ek').value)),vkCt:Math.max(0,parseEuro($('#pt-vk').value)),
+ const x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:'teil',...(lsPhase==='erw'?{phase:'erw'}:{}),bez,aw:0,menge,ekCt:Math.max(0,parseEuro($('#pt-ek').value)),vkCt:Math.max(0,parseEuro($('#pt-vk').value)),
   best:'inbest',eta:null,lagerId:lid,artnr,ext};
  if(lid){const l=lagerT(lid);
   if(l.bestand>=menge){l.bestand-=menge;x.best='lager'}
@@ -2269,7 +2288,7 @@ ACT['pos-save']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===
   phase:$('#ps-ph')?($('#ps-ph').value||null):(x?x.phase||null:null)};
  if($('#ps-alt-b')){const ab=$('#ps-alt-b').value.trim();vals.alt=ab?{bez:ab,artnr:x&&x.alt?x.alt.artnr||'':'',ekCt:Math.max(0,parseEuro($('#ps-alt-ek').value)||0),vkCt:Math.max(0,parseEuro($('#ps-alt-vk').value)||0)}:null}
  /* Nach Freigabe: jede NEUE Position ist automatisch eine Erweiterung */
- vals.ext=x?x.ext:ordFreigegeben(a);
+ vals.ext=(x?x.ext:ordFreigegeben(a))||vals.phase==='erw';
  const altPreis=x?posNetto(x):null;
  if(x)Object.assign(x,vals);
  else{x={id:'x'+uid(),nr:nextPosNr(a),created:Date.now(),typ:el.dataset.typ,lagerId:null,...vals};pk.pos.push(x)}
@@ -2587,11 +2606,12 @@ function buildInvoiceHtml(a,pakIds,reNr,kva){
   return `<tr class="paksep"><td colspan="4">${esc(pk.name)} · ${pk.klass==='so'&&pk.klassTxt?esc(pk.klassTxt):KLASS[pk.klass][0]}${pk.zahler!=='kunde'?' · zahlt: '+(pk.zahler==='son'&&pk.zahlerTxt?esc(pk.zahlerTxt):ZAHLER[pk.zahler]):''}</td></tr>`+
   (pk.problem?`<tr><td colspan="4" style="font-size:10px;color:#444;white-space:pre-wrap"><b>Beanstandung:</b> ${esc(pk.problem)}</td></tr>`:'')+
   (pk.pruefung?`<tr><td colspan="4" style="font-size:10px;color:#444;white-space:pre-wrap"><b>Prüfung:</b> ${esc(pk.pruefung)}</td></tr>`:'')+
-  pk.pos.map(p=>(p.typ==='text'||p.typ==='befund')?
+  (()=>{const zr=p=>(p.typ==='text'||p.typ==='befund')?
    `<tr><td colspan="4" style="font-size:10px;color:#444">${p.typ==='befund'?'<b>Befund:</b> ':'<b>Hinweis:</b> '}${esc(p.bez)}${p.abhilfe?' — Abhilfe: '+esc(p.abhilfe):''}</td></tr>`
-  :`<tr><td>${p.code?'<span style="font-size:9px;color:#555">'+esc(p.code)+'</span> ':''}${esc(p.bez)}${p.ext?' (Erweiterung)':''}${p.zahler&&p.zahler!==(pk.zahler||'kunde')?' <span style="font-size:9px;color:#555">· zahlt: '+(p.zahler==='son'&&p.zahlerTxt?esc(p.zahlerTxt):ZAHLER[p.zahler]||'')+'</span>':''}${p.notizKunde?'<br><span style="font-size:9px;color:#555;white-space:pre-wrap">'+esc(p.notizKunde)+'</span>':''}</td>
+  :`<tr><td>${p.code?'<span style="font-size:9px;color:#555">'+esc(p.code)+'</span> ':''}${esc(p.bez)}${p.ext&&p.phase!=='erw'?' (Erweiterung)':''}${p.zahler&&p.zahler!==(pk.zahler||'kunde')?' <span style="font-size:9px;color:#555">· zahlt: '+(p.zahler==='son'&&p.zahlerTxt?esc(p.zahlerTxt):ZAHLER[p.zahler]||'')+'</span>':''}${p.notizKunde?'<br><span style="font-size:9px;color:#555;white-space:pre-wrap">'+esc(p.notizKunde)+'</span>':''}</td>
    <td class="tr">${p.typ==='teil'?(p.menge||1)+' ×':(p.aw?String(p.aw).replace('.',',')+' AW':'')}</td>
-   <td class="tr">${fmt(p.vkCt)}</td><td class="tr">${fmt(posNetto(p))}</td></tr>${!reNr&&p.typ==='teil'&&p.alt?`<tr><td colspan="2" style="font-size:10px;color:#444;padding-left:14px">oder alternativ: ${esc(p.alt.bez)}</td><td class="tr" style="font-size:10px;color:#444">${fmt(p.alt.vkCt)}</td><td class="tr" style="font-size:10px;color:#444">${fmt(Math.round(p.alt.vkCt*(p.menge||1)))}</td></tr>`:''}`).join('')+
+   <td class="tr">${fmt(p.vkCt)}</td><td class="tr">${fmt(posNetto(p))}</td></tr>${!reNr&&p.typ==='teil'&&p.alt?`<tr><td colspan="2" style="font-size:10px;color:#444;padding-left:14px">oder alternativ: ${esc(p.alt.bez)}</td><td class="tr" style="font-size:10px;color:#444">${fmt(p.alt.vkCt)}</td><td class="tr" style="font-size:10px;color:#444">${fmt(Math.round(p.alt.vkCt*(p.menge||1)))}</td></tr>`:''}`;const er=pk.pos.filter(p=>p.phase==='erw');
+   return pk.pos.filter(p=>p.phase!=='erw').map(zr).join('')+(er.length?`<tr><td colspan="4" style="font-size:11px;font-weight:700;padding-top:8px">Während der Arbeit festgestellt – Erweiterung zum Auftrag</td></tr>`+er.map(zr).join(''):'')})()+
   (prab?`<tr><td colspan="3">Rabatt Paket</td><td class="tr">– ${fmt(prab)}</td></tr>`:'')}).join('');
  return {netto,mwst,brutto,anz,html:`
   <div class="ph"><div><h1>${esc(fi.name)}</h1><div class="small">${esc(fi.adresse)}<br>${esc(fi.tel)} · ${esc(fi.email)}${fi.ustid?'<br>USt-IdNr.: '+esc(fi.ustid):fi.steuernr?'<br>Steuernr.: '+esc(fi.steuernr):''}</div></div>
