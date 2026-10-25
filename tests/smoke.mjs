@@ -722,6 +722,35 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       window.print = wp; S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
     if (Object.values(pv).some(v => !v)) errs.push('Preis-Varianten: ' + JSON.stringify(pv));
   }
+  // Kundenanliegen, Erweiterung als Abschnitt, Ordner auf-/zuklappen
+  {
+    const ka = await page.evaluate(async () => {
+      const snap = JSON.stringify(S.auftraege), wp = window.print; window.print = () => {}; const w = ms => new Promise(r => setTimeout(r, ms));
+      const a = S.auftraege.find(o => o.pakete.length >= 1 && !o.pakete[0].abger && o.status !== 'abgeholt');
+      a.pakete.push({ id: 'pzu1', name: 'Zweites Anliegen', klass: 'kw', zahler: 'kunde', status: 'offen', rabatt: { typ: 'eur', wert: 0 }, abger: false, pos: [{ id: 'xzu1', nr: 97, created: Date.now(), typ: 'arbeit', bez: 'Testarbeit Zuklappen', aw: 1, menge: 1, ekCt: 0, vkCt: 10000, rab: null }] });
+      save(); delete pakOpen[a.id]; calcMode[a.id] = 'liste'; nav('kalk', a.id); await w(80);
+      const r = { zuStart: !/Testarbeit Zuklappen/.test(document.querySelector('.ls').textContent) };
+      document.querySelector('[data-act="pak-tog"][data-pid="pzu1"]').click(); await w(80);
+      r.aufgeklappt = /Testarbeit Zuklappen/.test(document.querySelector('.ls').textContent);
+      document.querySelector('[data-act="pak-tog"][data-pid="pzu1"]').click(); await w(80);
+      r.zugeklappt = !/Testarbeit Zuklappen/.test(document.querySelector('.ls').textContent);
+      r.knopf = [...document.querySelectorAll('[data-act="pak-new"]')].some(b => /Kundenanliegen/.test(b.textContent));
+      ACT['pak-new']({ dataset: { oid: a.id, k: 'tb' } }); await w(60);
+      r.arten = /Bei Reparatur festgestellt/.test(document.getElementById('pk-k').innerHTML); closeSheet(); await w(40);
+      const pk = a.pakete[0], nPak = a.pakete.length;
+      ACT['fund-neu']({ dataset: { oid: a.id, pid: pk.id } }); await w(60);
+      document.getElementById('fu-t').value = 'Bremsschlauch porös'; document.querySelector('[data-act="fund-ok"]').click(); await w(80);
+      r.keinNeuerOrdner = a.pakete.length === nPak && pk.pos.some(x => x.typ === 'befund' && x.phase === 'erw');
+      r.abschnitt = !!document.querySelector('.wb-h-erw');
+      lsPhase = 'erw'; ACT['ls-kat-add']({ dataset: { oid: a.id, pid: pk.id, bez: 'Bremsschlauch erneuern' }, classList: { add() {} }, querySelector: () => null }); await w(60);
+      const ex = pk.pos.find(x => x.bez === 'Bremsschlauch erneuern'); if (ex) { ex.vkCt = 4500; ex.aw = 0.5; }
+      r.erwPos = !!ex && ex.phase === 'erw' && ex.ext === true;
+      pk.frei = { abh: { ct: 999999, wie: 'tel', ts: Date.now() } }; r.freigabeFehlt = pkFrei(a, pk).ok === false;
+      $('#printarea').innerHTML = buildInvoiceHtml(a, a.pakete.map(p => p.id), null).html;
+      r.druck = /Während der Arbeit festgestellt – Erweiterung/.test($('#printarea').innerHTML);
+      window.print = wp; S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
+    if (Object.values(ka).some(v => !v)) errs.push('Kundenanliegen: ' + JSON.stringify(ka));
+  }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
     const sy = await page.evaluate(async () => {
