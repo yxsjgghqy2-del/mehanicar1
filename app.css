@@ -1130,3 +1130,79 @@ tr.kt-auto td{background:var(--bg);color:var(--ink2);font-size:12.5px}
 #sheet-ttl:focus{outline:none}
 .wb-h-erw{border-bottom-color:var(--amber)}.wb-h-erw>span:first-child{color:var(--amber)}
 .wb-erw-m{padding:2px 0 6px}
+/* ============ iPhone-Stil (Inhaber 25.10.2026: „soll aussehen wie eine iPhone-App“ – außer Kalkulation) ============
+   Systemschrift (auf iPhone/Mac = SF Pro), große Titel, durchscheinende Leisten mit Haarlinie, Tab-Leiste unten über die
+   ganze Breite, gruppierte Listen ohne Schatten. Gilt nicht auf der Kalkulationsseite (body.r-kalk). */
+body.ios:not(.r-kalk){font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',system-ui,sans-serif;background:var(--bg)!important;-webkit-font-smoothing:antialiased}
+body.ios:not(.r-kalk) .main{background-image:none!important;padding:8px 16px calc(96px + var(--sab))}
+/* Kopf: großer Titel links, Leiste durchscheinend, Haarlinie erst beim Scrollen */
+body.ios .hdr:not(.ctx-kalk){background:var(--bg)!important;border-bottom:.5px solid transparent!important;padding:calc(var(--sat) + 10px) 16px 8px;backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8)}
+body.ios .hdr:not(.ctx-kalk).hmin{border-bottom-color:var(--line)!important}
+body.ios .hdr:not(.ctx-kalk) h1{font-size:34px;font-weight:700;letter-spacing:.005em;line-height:1.12}
+body.ios .hdr:not(.ctx-kalk).hmin h1{font-size:17px;font-weight:600}
+body.ios .hdr:not(.ctx-kalk) .eyebrow{font-size:13px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--ink2)!important;margin-bottom:1px}
+body.ios .hdr:not(.ctx-kalk)[class*="ctx-"]{background:var(--bg)!important;border-bottom:.5px solid transparent!important}
+body.ios .hdr:not(.ctx-kalk) .back-btn{width:44px;height:44px;margin-left:-12px;background:none!important;border:0!important}
+body.ios .hdr:not(.ctx-kalk) .back-btn::before{width:12px;height:12px;border-width:0 0 2.5px 2.5px;border-left-color:var(--blue)!important;border-bottom-color:var(--blue)!important;border-style:solid;margin-left:6px}
+body.ios .hdr:not(.ctx-kalk) .hd-search{background:none;border:0;width:44px;height:44px}
+body.ios .hdr:not(.ctx-kalk) .hd-search svg{stroke:var(--blue);width:22px;height:22px}
+/* Tab-Leiste wie iOS: ganze Breite, Haarlinie oben, Symbol + kleine Beschriftung, aktiv in Tönung */
+body.ios .nav{left:0!important;right:0!important;bottom:0!important;border-radius:0!important;border:0!important;border-top:.5px solid var(--line)!important;box-shadow:none!important;
+ padding:6px 4px calc(var(--sab) + 4px)!important;background:var(--card)!important;backdrop-filter:blur(20px) saturate(1.8);-webkit-backdrop-filter:blur(20px) saturate(1.8)}
+@supports (backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px)){body.ios .nav{background:color-mix(in srgb,var(--card) 82%,transparent)!important}
+ body.ios .hdr:not(.ctx-kalk){background:color-mix(in srgb,var(--bg) 85%,transparent)!important}}
+body.ios .nav button{font-size:10px!important;font-weight:500;gap:3px;padding:2px 0 0;min-height:44px;color:var(--ink3);background:none!important;border-radius:0!important}
+body.ios .nav button.on{color:var(--blue)!important;background:none!important}
+body.ios .nav .nic,body.ios .nav svg{width:25px;height:25px}
+body.ios .nav svg{stroke-width:1.6}
+body.ios .nav button.on .nic::after{display:none}
+body.ios .nav button.on svg{stroke-width:2.1}
+/* Gruppierte Listen: Karten ohne Schatten und Rahmen, Radius 12 */
+body.ios:not(.r-kalk) .card,body.ios:not(.r-kalk) .sec,body.ios:not(.r-kalk) .pak,body.ios:not(.r-kalk) .kpi,body.ios:not(.r-kalk) .searchbar{background:var(--card)!important;border:0!important;box-shadow:none!important;border-radius:12px!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+@media (hover:hover){body.ios:not(.r-kalk) .card:hover,body.ios:not(.r-kalk) .sec:hover,body.ios:not(.r-kalk) .pak:hover,body.ios:not(.r-kalk) .kpi:hover{transform:none;box-shadow:none}}
+body.ios:not(.r-kalk) .lrow{padding:11px 16px;min-height:44px}
+body.ios:not(.r-kalk) .lrow+.lrow{border-top:0;box-shadow:inset 0 .5px 0 var(--line)}
+body.ios:not(.r-kalk) .lrow .lt b{font-size:17px;font-weight:400;letter-spacing:-.01em}
+body.ios:not(.r-kalk) .lrow .lt span{font-size:13px;color:var(--ink2)}
+body.ios:not(.r-kalk) .lrow .lr b{font-size:15px;font-weight:500}
+body.ios:not(.r-kalk) .lrow .av{width:30px;height:30px;border-radius:7px}
+body.ios:not(.r-kalk) .lrow .av svg{width:18px;height:18px}
+body.ios:not(.r-kalk) .sec-h .t::before{display:none}
+body.ios:not(.r-kalk) .sec-h .t{font-size:17px;font-weight:600}
+body.ios:not(.r-kalk) .kpi span::before{display:none}
+/* Abschnittsüberschriften über den Gruppen: klein, grau, wie in den iOS-Einstellungen */
+body.ios:not(.r-kalk) .grp-h,body.ios:not(.r-kalk) .lbl{font-size:13px!important;font-weight:400!important;letter-spacing:0!important;color:var(--ink2)!important;text-transform:uppercase}
+/* Suchfeld: graues Feld ohne Rand */
+body.ios:not(.r-kalk) .searchbar{background:var(--gray-bg)!important;border-radius:10px!important;min-height:36px}
+/* Filter als Kapseln */
+body.ios:not(.r-kalk) .chip{font-size:15px;font-weight:400;border:0;background:var(--gray-bg);border-radius:999px;padding:7px 14px;min-height:34px}
+body.ios:not(.r-kalk) .chip.on{background:var(--ink);color:var(--card)}
+/* Segmente wie iOS-Segmented-Control */
+body.ios:not(.r-kalk) .seg{background:var(--gray-bg)!important;border:0;border-radius:9px!important;padding:2px}
+body.ios:not(.r-kalk) .seg button{border-radius:7px!important;font-size:13px;font-weight:500}
+body.ios:not(.r-kalk) .seg button.on{background:var(--card)!important;color:var(--ink)!important;box-shadow:0 1px 3px rgba(0,0,0,.12)!important}
+/* Knöpfe: 50 px hoch, Radius 12, Text 17 */
+body.ios:not(.r-kalk) .btn{border-radius:12px;min-height:44px}
+body.ios:not(.r-kalk) .btn-2nd{border:0!important;background:var(--gray-bg)!important;color:var(--blue)!important}
+body.ios .sheet{border-radius:12px 12px 0 0!important}
+body.ios:not(.r-kalk) .fab{border-radius:50%!important;width:56px;height:56px;bottom:calc(68px + var(--sab))}
+/* Detailseiten mit Zurück: kleinerer Titel (iOS: Titel der Unterseite), Inhalt bleibt in einer Zeile */
+body.ios .hdr:not(.ctx-kalk):has(.back-btn) h1{font-size:22px;font-weight:700;letter-spacing:0}
+body.ios .hdr:not(.ctx-kalk):has(.back-btn).hmin h1{font-size:17px;font-weight:600}
+/* Filter-Kapseln (Aufträge) */
+body.ios:not(.r-kalk) .pill{font-size:15px!important;font-weight:400!important;border:0!important;background:var(--gray-bg)!important;color:var(--ink)!important;border-radius:999px!important;padding:7px 14px!important;min-height:34px;letter-spacing:0;text-transform:none}
+body.ios:not(.r-kalk) .pill.on{background:var(--ink)!important;color:var(--card)!important}
+/* Aktionsleiste unten (Auftrag): wie iOS-Werkzeugleiste über die ganze Breite */
+body.ios:not(.r-kalk) .calcbar{left:0!important;right:0!important;bottom:0!important;border-radius:0!important;border:0!important;border-top:.5px solid var(--line)!important;box-shadow:none!important;
+ padding:8px 16px calc(var(--sab) + 8px)!important;background:color-mix(in srgb,var(--card) 85%,transparent)!important}
+body.ios:not(.r-kalk) .calcbar .bb{min-height:50px;border-radius:12px;font-size:17px;font-weight:600}
+body.ios:not(.r-kalk) .calcbar .bb-2nd{background:var(--gray-bg);border:0;color:var(--blue)}
+/* Mehr: farbige Symbole wie in den iOS-Einstellungen */
+body.ios .mehr-ic{color:var(--card)!important}
+body.ios .lrow:nth-child(5n+1) .mehr-ic{background:var(--blue)!important}
+body.ios .lrow:nth-child(5n+2) .mehr-ic{background:var(--green)!important}
+body.ios .lrow:nth-child(5n+3) .mehr-ic{background:var(--amber)!important}
+body.ios .lrow:nth-child(5n+4) .mehr-ic{background:var(--violet)!important}
+body.ios .lrow:nth-child(5n+5) .mehr-ic{background:var(--red)!important}
+/* Kunden & Kontakte: runde Initialen wie in „Kontakte“ */
+body.ios:not(.r-kalk) .lrow .av:not(.mehr-ic):not(:has(svg)){border-radius:50%}

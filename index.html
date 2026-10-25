@@ -365,9 +365,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.87';
+const APP_VER='2.88';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.88',d:'2026-10-25',p:['Neues Aussehen wie eine iPhone-App: Systemschrift, große Titel, Tab-Leiste unten wie beim iPhone, ruhige gruppierte Listen','Die Kalkulation bleibt wie sie ist']},
  {v:'2.87',d:'2026-10-25',p:['Kundenanliegen: neues Feld „Eigene Art“ – z. B. Versicherung oder Garantie selbst eintragen; steht dann überall statt der Auswahl, auch auf dem Ausdruck']},
  {v:'2.86',d:'2026-10-25',p:['Freigabe-Link: Für „Während der Arbeit festgestellt“ bekommt der Kunde jetzt genau die Erweiterung zu sehen (Befund, Arbeiten, Betrag) – nicht die schon freigegebene Abhilfe','Die Antwort des Kunden wird bei der Erweiterung eingetragen']},
  {v:'2.85',d:'2026-10-25',p:['Neuer Knopf „+ Kundenanliegen“ – Art wählbar: Techn. Beanstandung, Kundenwunsch, Bei Reparatur festgestellt, Zusatzleistung, Sonstige','„Während der Arbeit festgestellt“ kommt als eigener Abschnitt in dasselbe Kundenanliegen (Erweiterung mit eigener Freigabe) statt in einen neuen Ordner','Ordner lassen sich wieder zuverlässig auf- und zuklappen']},
@@ -3093,7 +3094,7 @@ function vMehr(){
  const bkCard=bk.cloud&&!bk.broken?'':`<div class="card bk-card${bk.due?' due':''}"><div class="bk-t"><b>Datensicherung</b><span>${bk.txt}</span></div><button class="btn btn-sm ${bk.due?'btn-main':'btn-2nd'}" data-act="data-export">Jetzt sichern</button></div>`;
  const inner=`${installHint}${bkCard}<div class="card stag">
   ${[['termine','Terminkalender',IC.plan,(S.termine||[]).filter(t=>t.datum>=todayISO()).length+' anstehende Termine'],['lager','Lager',IC.box,S.lager.length+' Artikel im Bestand'],['kalender','Kapazität',IC.grid,'10-Tage-Plan · Mitarbeiter'],['bestellungen','Bestellungen',IC.truck,(S.bestellungen.filter(b=>BSTAT(b)[0]!=='eingetroffen').length||'Keine')+' offen'],['kampagnen','Kampagnen',IC.mega,S.kampagnen.length+' Kampagnen gesendet'],['apdb','Arbeitspositionen',IC.book,(S.apDb||[]).length+' Positionen · '+(S.apKombi||[]).length+' Kombis'],['pakvorlagen','Paket-Vorlagen',IC.stack,(S.pakVorlagen||[]).length+' Vorlagen'],['team','Team',IC.team,S.mitarbeiter.length+' Mitarbeiter'],['personal','Personalwesen',IC.team,(S.krankmeldungen||[]).filter(k=>k.von<=todayISO()&&k.bis>=todayISO()).length+' aktive Krankmeldungen'],['fahrzeuge','Fahrzeuge',IC.car,S.fahrzeuge.length+' Fahrzeuge'],['finanzen','Finanzen',IC.fin,S.rechnungen.length+' Rechnungen'],['einstellungen','Einstellungen',IC.gear,'Firma, Preise, Werkstatt, Daten']].map(([v,l,ic,sub])=>
-   `<div class="lrow" data-act="open" data-v="${v}"><div class="av" style="background:var(--gray-bg);color:var(--ink2)">${ic}</div>
+   `<div class="lrow" data-act="open" data-v="${v}"><div class="av mehr-ic" style="background:var(--gray-bg);color:var(--ink2)">${ic}</div>
     <div class="lt"><b>${l}</b><span>${sub}</span></div><span class="chev" style="transform:rotate(-45deg)"></span></div>`).join('')}</div>
   <div style="text-align:center;font-size:10.5px;color:var(--ink3);margin-top:18px;line-height:1.7"><button class="vers-btn" data-act="whatsnew" aria-label="Was ist neu in Version ${APP_VER}">mehanicar · Version ${APP_VER}${S.settings.seenVer!==APP_VER?'<span class="vers-dot" aria-hidden="true"></span>':''}<span class="vers-sub">Was ist neu?</span></button><br>${memOnly?'<span style="color:var(--red)">Achtung: Speicher blockiert — Daten gehen beim Schließen verloren</span>':((S.settings.sync&&S.settings.sync.on)?'Cloud-Backup aktiv — jede Änderung wird automatisch gesichert':'Daten nur lokal — Cloud-Backup in den Einstellungen aktivierbar')}</div>`;
  return shell(inner,{title:'Mehr',eyebrow:'mehanicar'});
@@ -5140,6 +5141,7 @@ function renderInner(){
  const V={planung:vPlanung,auftraege:vAuftraege,auftrag:()=>vAuftrag(route.id),kalk:()=>vKalk(route.id),annahme:()=>vAnnahme(route.id),kunden:vKunden,kunde:()=>vKunde(route.id),
   fahrzeuge:vFahrzeuge,fahrzeug:()=>vFahrzeug(route.id),lager:vLager,anfragen:vAnfragen,anfrage:()=>vAnfrage(route.id),kalender:vKalender,status:vStatus,bestellungen:vBestellungen,kampagnen:vKampagnen,team:vTeam,personal:vPersonal,mehr:vMehr,finanzen:vFinanzen,einstellungen:vEinstellungen,termine:vTermine,buchen:vBuchen,impressum:vImpressum,datenschutz:vDatenschutz,apdb:vApDb,pakvorlagen:vPakVorlagen};
  if(!S.settings.onboarded&&!['buchen','impressum','datenschutz','status'].includes(route.v)){app.innerHTML=vOnboarding();return}
+ document.body.classList.add('ios');document.body.classList.toggle('r-kalk',route.v==='kalk');
  app.innerHTML=(V[route.v]||vPlanung)();
  if(route.v==='buchen')setTimeout(()=>{try{bkSlotsZeigen()}catch(e){}},0);
  linkLabels(app);
