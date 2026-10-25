@@ -1,4 +1,4 @@
-const CACHE='mehanicar-v87';
+const CACHE='mehanicar-v88';
 const SHELL=['./','./index.html','./app.css','./fonts/manrope-latin-wght-normal.woff2','./fonts/manrope-latin-ext-wght-normal.woff2','./icon.svg','./manifest.json','./apple-touch-icon.png','./icon-192.png','./icon-512.png'];
 
 self.addEventListener('install',e=>{

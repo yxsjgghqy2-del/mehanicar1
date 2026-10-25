@@ -736,7 +736,11 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       r.zugeklappt = !/Testarbeit Zuklappen/.test(document.querySelector('.ls').textContent);
       r.knopf = [...document.querySelectorAll('[data-act="pak-new"]')].some(b => /Kundenanliegen/.test(b.textContent));
       ACT['pak-new']({ dataset: { oid: a.id, k: 'tb' } }); await w(60);
-      r.arten = /Bei Reparatur festgestellt/.test(document.getElementById('pk-k').innerHTML); closeSheet(); await w(40);
+      r.arten = /Bei Reparatur festgestellt/.test(document.getElementById('pk-k').innerHTML);
+      document.getElementById('pk-n').value = 'Hagelschaden'; document.getElementById('pk-kt').value = 'Versicherung'; document.querySelector('[data-act="pak-create"]').click(); await w(80);
+      { const np = a.pakete.find(p => p.name === 'Hagelschaden'); r.eigeneArt = !!np && np.klassTxt === 'Versicherung' && /Versicherung/.test(document.querySelector('.ls').textContent);
+        ACT['pak-opts']({ dataset: { oid: a.id, pid: np.id } }); await w(60); document.getElementById('po-kt').value = 'Garantie'; document.querySelector('[data-act="pak-opts-ok"]').click(); await w(60);
+        r.artGeaendert = np.klassTxt === 'Garantie'; a.pakete = a.pakete.filter(p => p !== np); save(); render(); await w(40); }
       const pk = a.pakete[0], nPak = a.pakete.length;
       ACT['fund-neu']({ dataset: { oid: a.id, pid: pk.id } }); await w(60);
       document.getElementById('fu-t').value = 'Bremsschlauch porös'; document.querySelector('[data-act="fund-ok"]').click(); await w(80);
