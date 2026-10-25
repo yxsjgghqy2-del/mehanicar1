@@ -365,9 +365,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.86';
+const APP_VER='2.87';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.87',d:'2026-10-25',p:['Kundenanliegen: neues Feld „Eigene Art“ – z. B. Versicherung oder Garantie selbst eintragen; steht dann überall statt der Auswahl, auch auf dem Ausdruck']},
  {v:'2.86',d:'2026-10-25',p:['Freigabe-Link: Für „Während der Arbeit festgestellt“ bekommt der Kunde jetzt genau die Erweiterung zu sehen (Befund, Arbeiten, Betrag) – nicht die schon freigegebene Abhilfe','Die Antwort des Kunden wird bei der Erweiterung eingetragen']},
  {v:'2.85',d:'2026-10-25',p:['Neuer Knopf „+ Kundenanliegen“ – Art wählbar: Techn. Beanstandung, Kundenwunsch, Bei Reparatur festgestellt, Zusatzleistung, Sonstige','„Während der Arbeit festgestellt“ kommt als eigener Abschnitt in dasselbe Kundenanliegen (Erweiterung mit eigener Freigabe) statt in einen neuen Ordner','Ordner lassen sich wieder zuverlässig auf- und zuklappen']},
  {v:'2.84',d:'2026-10-25',p:['Kalkulation: Summenleiste unten kompakter, verdeckt weniger Positionen','Hinweise zu Kostenvoranschlag und Alternativ-Teilen kürzer']},
@@ -431,6 +432,8 @@ const WHATSNEW=[
  {v:'2.26',d:'2026-09-30',p:['Neu: „Was ist neu“ — unter Mehr auf die Versionsnummer tippen, dann sehen Sie hier jede Neuerung mit Datum.','Ein kleiner Punkt an der Versionsnummer zeigt, wenn es etwas Neues gibt, das Sie noch nicht angesehen haben.']},
  {v:'2.25',d:'2026-09-28',p:['Entwürfe für die neue Auftragsmaske und die Suche liegen zur Auswahl bereit.']}
 ];
+/* Art des Kundenanliegens; eigener Text (pk.klassTxt) ersetzt die Anzeige, z. B. „Versicherung“ */
+const klassName=pk=>pk.klassTxt||(KLASS[pk.klass]||KLASS.so)[0];
 const KLASS={tb:['Techn. Beanstandung','t-red'],kw:['Kundenwunsch','t-blue'],rf:['Bei Reparatur festgestellt','t-amber'],zl:['Zusatzleistung','t-green'],so:['Sonstige','t-gray']};
 const ZAHLER={kunde:'Kunde',vers:'Versicherung',gar:'Garantie',intern:'Intern / Kulanz',son:'Sonstiges'};
 const ZAHLER_KURZ={kunde:'K',vers:'V',gar:'G',intern:'I',son:'S'};
@@ -1153,7 +1156,7 @@ function vAuftrag(id){
  /* --- Pakete --- */
  const pakHtml=(pk,pi)=>{
   const [kl,kc]=KLASS[pk.klass]||KLASS.so;
-  const klLbl=pk.klass==='so'&&pk.klassTxt?esc(pk.klassTxt):kl;
+  const klLbl=esc(klassName(pk));
   const locked=pk.abger&&!pk.entsperrt;
   const open=pakOpen[a.id].has(pk.id)?'open':'';
   const arbeiten=pk.pos.filter(p=>p.typ==='arbeit'),teile=pk.pos.filter(p=>p.typ==='teil'),texte=pk.pos.filter(p=>p.typ==='text'),befunde=pk.pos.filter(p=>p.typ==='befund');
@@ -1196,7 +1199,7 @@ function vAuftrag(id){
       ${Object.entries(KLASS).map(([v,[l]])=>`<option value="${v}" ${pk.klass===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
      <div class="fld" style="margin:0"><label>Wer zahlt</label><div class="selwrap"><select data-f="p-zahler" data-oid="${a.id}" data-pid="${pk.id}" ${locked?'disabled':''}>
       ${Object.entries(ZAHLER).map(([v,l])=>`<option value="${v}" ${pk.zahler===v?'selected':''}>${l}</option>`).join('')}</select></div></div></div>
-    ${pk.klass==='so'?`<div class="fld"><label>Sonstige — was genau?</label><input value="${esc(pk.klassTxt||'')}" placeholder="z. B. Gutachten" data-f="p-klass-txt" data-oid="${a.id}" data-pid="${pk.id}" ${locked?'disabled':''}></div>`:''}
+    ${pk.klass==='so'||pk.klassTxt?`<div class="fld"><label>Eigene Art</label><input value="${esc(pk.klassTxt||'')}" placeholder="z. B. Versicherung" data-f="p-klass-txt" data-oid="${a.id}" data-pid="${pk.id}" ${locked?'disabled':''}></div>`:''}
     ${pk.zahler==='son'?`<div class="fld"><label>Sonstiges — wer zahlt?</label><input value="${esc(pk.zahlerTxt||'')}" placeholder="z. B. Versicherung Huk24" data-f="p-zahler-txt" data-oid="${a.id}" data-pid="${pk.id}" ${locked?'disabled':''}></div>`:''}
     ${befunde.length?'<div class="lbl">Befund & Abhilfe</div>'+befunde.map(posRow).join(''):''}
     ${arbeiten.length?'<div class="lbl">Arbeiten</div>'+arbeiten.map(posRow).join(''):''}
@@ -1254,7 +1257,7 @@ function vAuftrag(id){
     <div class="kbl"><span><i style="background:#2C3E50"></i>Lohn ${K.lohnPct} %</span><span><i style="background:#7FA3C4"></i>Teile ${100-K.lohnPct} %</span></div>`:''}</div></div>
    <div class="lbl">Preise & Rabatte anpassen</div>`;
   return detail+a.pakete.map(pk=>`<div class="calc-pak">
-   <div class="calc-ph"><span class="ct">${esc(pk.name)}</span><span class="tag ${KLASS[pk.klass][1]}">${KLASS[pk.klass][0].split(' ')[0]}</span></div>
+   <div class="calc-ph"><span class="ct">${esc(pk.name)}</span><span class="tag ${KLASS[pk.klass][1]}">${esc(pk.klassTxt||KLASS[pk.klass][0].split(' ')[0])}</span></div>
    ${pk.pos.map(p=>`<div class="calc-row"><div class="cn">${esc(p.bez)}
      <div class="csub">${p.typ==='arbeit'?'Arbeit'+(p.aw?' · '+pct1(p.aw)+' AW':''):'Teil · EK '+fmt(p.ekCt)+' → <span class="gain">+'+fmt((p.vkCt-p.ekCt)*(p.menge||1))+'</span>'}${p.ext?' · Erweiterung':''}</div></div>
     ${p.typ==='teil'?`<input class="priceinp" style="width:44px" inputmode="numeric" value="${p.menge||1}" data-f="pos-menge" data-oid="${a.id}" data-pid="${pk.id}" data-xid="${p.id}">`:''}
@@ -1484,7 +1487,7 @@ function lsHtml(a){
   const voll=pk.ablauf||!['kw','zl'].includes(pk.klass)||pk.problem||pk.pruefung||diag.length||bef.length;
   const b=(o)=>`data-oid="${a.id}" data-pid="${pk.id}"${o||''}`;
   return`<div class="wb-pk${open?' open':''}"><div class="wb-pk-h" data-act="pak-tog" ${b()} role="button" tabindex="0" aria-expanded="${open}">
-   <span class="wb-pk-n"><b>${esc(pk.name)}</b><small>${KLASS[pk.klass]?KLASS[pk.klass][0]:''}${lk?' · abgerechnet':''}${lk?'':pkFreiTxt(a,pk)}${(()=>{const u=['diag','abh','erw'].map(ph=>wbRahmen(pk,ph)).filter(r=>r&&r.ueber);return u.length?' · <span class="wb-erw">Freigabe überschritten</span>':''})()}</small></span>
+   <span class="wb-pk-n"><b>${esc(pk.name)}</b><small>${esc(klassName(pk))}${lk?' · abgerechnet':''}${lk?'':pkFreiTxt(a,pk)}${(()=>{const u=['diag','abh','erw'].map(ph=>wbRahmen(pk,ph)).filter(r=>r&&r.ueber);return u.length?' · <span class="wb-erw">Freigabe überschritten</span>':''})()}</small></span>
    <b class="num">${fmt(pakNetto(pk))}</b><span class="ls-chev" aria-hidden="true"></span></div>
    ${open?`<div class="wb-b-in">
     ${voll?`<div class="wb-h"><span>Beanstandung</span></div>${txtFeld(pk,'problem','',lk,'+ Was sagt der Kunde?')}
@@ -1643,15 +1646,16 @@ ACT['ls-kat-add']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id=
 ACT['ls-eigen']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);const q=$('#ls-q');closeSheet();posSheet(a,pk,null,el.dataset.bez||(q?q.value.trim():''));const ph=$('#ps-ph');if(ph)ph.value=lsPhase==='diag'||lsPhase==='erw'?lsPhase:''};
 /* Paket-Einstellungen als Blatt (Name, Klassifizierung, wer zahlt, löschen) */
 ACT['pak-opts']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);if(!a||!pk)return;const lk=ktLocked(pk);
- sheet('Paket',`<div class="fld"><label>Name</label><input id="po-n" value="${esc(pk.name)}" ${lk?'disabled':''}></div>
-  <div class="row2"><div class="fld"><label>Klassifizierung</label><div class="selwrap"><select data-f="p-klass" data-oid="${a.id}" data-pid="${pk.id}" ${lk?'disabled':''}>
+ sheet('Kundenanliegen',`<div class="fld"><label>Name</label><input id="po-n" value="${esc(pk.name)}" ${lk?'disabled':''}></div>
+  <div class="row2"><div class="fld"><label>Art</label><div class="selwrap"><select data-f="p-klass" data-oid="${a.id}" data-pid="${pk.id}" ${lk?'disabled':''}>
    ${Object.entries(KLASS).map(([v,[l]])=>`<option value="${v}" ${pk.klass===v?'selected':''}>${l}</option>`).join('')}</select></div></div>
   <div class="fld"><label>Wer zahlt</label><div class="selwrap"><select data-f="p-zahler" data-oid="${a.id}" data-pid="${pk.id}" ${lk?'disabled':''}>
    ${Object.entries(ZAHLER).map(([v,l])=>`<option value="${v}" ${pk.zahler===v?'selected':''}>${l}</option>`).join('')}</select></div></div></div>
+  <div class="fld"><label>Eigene Art <span style="text-transform:none;font-weight:400;color:var(--ink3)">(freiwillig – ersetzt die Auswahl oben in der Anzeige)</span></label><input id="po-kt" ${lk?'disabled':''} value="${esc(pk.klassTxt||'')}" placeholder="z. B. Versicherung, Garantie, Kulanz" autocomplete="off"></div>
   <div class="row2"><button class="btn btn-danger" data-act="pak-del" data-oid="${a.id}" data-pid="${pk.id}">Paket löschen</button>
   <button class="btn btn-main" data-act="pak-opts-ok" data-oid="${a.id}" data-pid="${pk.id}">Fertig</button></div>`)};
 ACT['pak-opts-ok']=el=>{const a=auftrag(el.dataset.oid),pk=a.pakete.find(p=>p.id===el.dataset.pid);const n=$('#po-n');
- if(pk&&n&&!n.disabled&&n.value.trim())pk.name=n.value.trim();save();closeSheet();render()};
+ if(pk&&n&&!n.disabled&&n.value.trim())pk.name=n.value.trim();const kt=$('#po-kt');if(pk&&kt&&!kt.disabled)pk.klassTxt=kt.value.trim();save();closeSheet();render()};
 /* ============ DIALOGANNAHME / FAHRZEUGANNAHME (Prozesskonzept KP2, Inhaber 19.10.) ============
    Nur ✓ (i.O.) oder ✗ (n.i.O.) – keine Ampel. Jedes ✗ wird beim Abschluss automatisch technische Beanstandung (Befund, keine Positionen).
    Pflicht: 4 Seitenfotos + Unterschrift. Überspringen erlaubt, dann roter Hinweis im Auftrag. Daten in a.dlg. */
@@ -2101,12 +2105,13 @@ ACT['pak-new']=el=>{const a=auftrag(el.dataset.oid);
    ${Object.entries(KLASS).map(([v,[l]])=>`<option value="${v}" ${v===el.dataset.k?'selected':''}>${l}</option>`).join('')}</select></div></div>
   <div class="fld"><label>Wer zahlt</label><div class="selwrap"><select id="pk-z">
    ${Object.entries(ZAHLER).map(([v,l])=>`<option value="${v}">${l}</option>`).join('')}</select></div></div></div>
+  <div class="fld"><label>Eigene Art <span style="text-transform:none;font-weight:400;color:var(--ink3)">(freiwillig – ersetzt die Auswahl oben in der Anzeige)</span></label><input id="pk-kt" value="" placeholder="z. B. Versicherung, Garantie, Kulanz" autocomplete="off"></div>
   <button class="btn btn-main" style="width:100%" data-act="pak-create" data-oid="${a.id}">Anlegen</button>`);
  setTimeout(()=>{const e=$('#pk-n');if(e)e.focus()},150)};
 ACT['pak-create']=el=>{const a=auftrag(el.dataset.oid);const n=$('#pk-n').value.trim();
  if(!n)return toast('Bezeichnung fehlt',true);
  const ext=ordFreigegeben(a);
- const pk={id:'p'+uid(),name:n,klass:$('#pk-k').value,zahler:$('#pk-z').value,status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext,pos:[]};
+ const pk={id:'p'+uid(),name:n,klass:$('#pk-k').value,klassTxt:($('#pk-kt')||{value:''}).value.trim(),zahler:$('#pk-z').value,status:'offen',rabatt:{typ:'eur',wert:0},abger:false,ext,pos:[]};
  a.pakete.push(pk);pakOpen[a.id].add(pk.id);
  if(ext)a.komm.push({id:'m'+uid(),kanal:'sys',ts:Date.now(),txt:'Neues Paket „'+n+'" nach Freigabe angelegt — gilt als Erweiterung.',preisCt:null,vorherCt:null,nachherCt:null,bezug:pk.id,status:'best',orig:null});
  save();closeSheet();render();toast(ext?'Kundenanliegen als Erweiterung angelegt':'Kundenanliegen angelegt')};
@@ -2611,7 +2616,7 @@ function buildInvoiceHtml(a,pakIds,reNr,kva){
  const rowsKopf=(a.wasGemacht?`<tr><td colspan="4" style="font-size:11px;white-space:pre-wrap;padding-bottom:8px"><b>Durchgeführte Arbeiten:</b> ${esc(a.wasGemacht)}</td></tr>`:'')+(a.altteile!=null?`<tr><td colspan="4" style="font-size:10px;color:#444">Altteile: ${a.altteile?'vom Kunden mitgenommen':'fachgerecht entsorgt'}</td></tr>`:'');
  const rows=rowsKopf+paks.map(pk=>{
   const prab=rabCt(pakBrutto(pk),pk.rabatt);
-  return `<tr class="paksep"><td colspan="4">${esc(pk.name)} · ${pk.klass==='so'&&pk.klassTxt?esc(pk.klassTxt):KLASS[pk.klass][0]}${pk.zahler!=='kunde'?' · zahlt: '+(pk.zahler==='son'&&pk.zahlerTxt?esc(pk.zahlerTxt):ZAHLER[pk.zahler]):''}</td></tr>`+
+  return `<tr class="paksep"><td colspan="4">${esc(pk.name)} · ${esc(klassName(pk))}${pk.zahler!=='kunde'?' · zahlt: '+(pk.zahler==='son'&&pk.zahlerTxt?esc(pk.zahlerTxt):ZAHLER[pk.zahler]):''}</td></tr>`+
   (pk.problem?`<tr><td colspan="4" style="font-size:10px;color:#444;white-space:pre-wrap"><b>Beanstandung:</b> ${esc(pk.problem)}</td></tr>`:'')+
   (pk.pruefung?`<tr><td colspan="4" style="font-size:10px;color:#444;white-space:pre-wrap"><b>Prüfung:</b> ${esc(pk.pruefung)}</td></tr>`:'')+
   (()=>{const zr=p=>(p.typ==='text'||p.typ==='befund')?
@@ -3431,7 +3436,7 @@ function backupSheets(){
   Math.round(istMs(a)/36000)/100,soldAW(a),effizienz(a)||'',a.notiz||'',(a.erinnerung||'')+(a.erinnerungDat?' ('+a.erinnerungDat+')':''),
   new Date(a.created).toLocaleDateString('de-DE')]));
  const posRows=[['Auftrag','Paket','Klassifizierung','Wer zahlt','Paket abgerechnet','Typ','Bezeichnung','Erweiterung','Menge','AW','EK € /Stk','VK € /Stk','Rabatt Pos.','Netto €','Gewinn €','Bestellstatus','ETA']];
- S.auftraege.forEach(a=>a.pakete.forEach(pk=>pk.pos.forEach(p=>posRows.push([a.nr,pk.name,KLASS[pk.klass][0],ZAHLER[pk.zahler]||'',
+ S.auftraege.forEach(a=>a.pakete.forEach(pk=>pk.pos.forEach(p=>posRows.push([a.nr,pk.name,klassName(pk),ZAHLER[pk.zahler]||'',
   pk.abger?'ja':'nein',p.typ==='teil'?'Teil':'Arbeit',p.bez,p.ext?'ja':'',p.menge||1,p.aw||'',eur(p.ekCt),eur(p.vkCt),
   p.rab&&p.rab.wert?(p.rab.typ==='pct'?p.rab.wert+' %':eur(p.rab.wert)):'',eur(posNetto(p)),eur(posNetto(p)-posEK(p)),
   p.best?BEST[p.best][0]:'',p.eta||'']))));

@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 25.10.2026 (Auftrag Inhaber, spät) — 2.87 Eigene Art
+- **Inhaber:** Möchte die Art des Kundenanliegens selbst benennen können (z. B. Versicherung). Ordnername benennt er ohnehin selbst.
+- **Gebaut:** Feld „Eigene Art“ (`pk.klassTxt`, jetzt für jede Art) in „Neues Kundenanliegen“ und im Blatt „Name, Art, wer zahlt“. `klassName(pk)` überall in der Anzeige, auf Ausdruck und im Export. Farbe/Logik bleibt bei der gewählten Art. SW v88.
+- **Test:** Smoke-Test grün (390/1280), prüft Anlegen + Ändern der eigenen Art.
+
 ## 25.10.2026 (Abendlauf) — 2.86 Freigabe-Link für die Erweiterung
 - **Prüfung (Lehre vom Morgen):** Alle Klapp-Elemente in allen Ansichten, Auftrag und Kalkulation (Liste/Kalkulation/Tabelle) bei 390 und 1280 px automatisch durchgeklickt – alle reagieren (Abschnitte im Auftrag, Einstellungen, Blätter mit `<details>`).
 - **Fehler gefunden:** Der Freigabe-Link schickte nur die Abhilfe (`wbAbh`). Positionen im neuen Abschnitt „Während der Arbeit festgestellt“ fehlten, Betrag falsch, und die Antwort landete bei der Abhilfe.
