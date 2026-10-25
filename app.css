@@ -1206,3 +1206,20 @@ body.ios .lrow:nth-child(5n+4) .mehr-ic{background:var(--violet)!important}
 body.ios .lrow:nth-child(5n+5) .mehr-ic{background:var(--red)!important}
 /* Kunden & Kontakte: runde Initialen wie in „Kontakte“ */
 body.ios:not(.r-kalk) .lrow .av:not(.mehr-ic):not(:has(svg)){border-radius:50%}
+/* iPhone-Look Schritt 2 (nach Samed-Skill „iOS-Look“): Feinschliff nach Human Interface Guidelines */
+body.ios .hdr:not(.ctx-kalk) h1{letter-spacing:-.4px}
+body.ios .nav .nic,body.ios .nav svg{width:24px;height:24px}
+body.ios .nav button{min-height:49px}
+body.ios:not(.r-kalk) .card,body.ios:not(.r-kalk) .sec,body.ios:not(.r-kalk) .pak{border-radius:10px!important}
+/* Trennlinien eingerückt ab Textbeginn, Zeile beim Antippen leicht hervorgehoben */
+body.ios:not(.r-kalk) .lrow{position:relative}
+body.ios:not(.r-kalk) .lrow+.lrow{box-shadow:none}
+body.ios:not(.r-kalk) .lrow+.lrow::before{content:"";position:absolute;top:0;right:0;left:16px;height:.5px;background:var(--line);pointer-events:none}
+body.ios:not(.r-kalk) .lrow:active{background:var(--gray-bg)}
+body.ios:not(.r-kalk) .lrow .chev,body.ios:not(.r-kalk) .ls-chev{opacity:.45}
+/* Blatt: Griff 36×5 oben mittig */
+body.ios .sheet-h .grab{width:36px;height:5px;border-radius:3px;background:var(--ink3);opacity:.4}
+/* Antippen: kurz durchsichtiger statt Verkleinern bei Text-Knöpfen */
+body.ios:not(.r-kalk) .btn-2nd:active,body.ios:not(.r-kalk) .chip:active,body.ios:not(.r-kalk) .pill:active{opacity:.6}
+body.ios .hdr:not(.ctx-kalk) .hd-search:active,body.ios .hdr:not(.ctx-kalk) .back-btn:active{opacity:.5;transform:none}
+body.ios:not(.r-kalk) .lrow:has(>.av)+.lrow::before{left:73px}

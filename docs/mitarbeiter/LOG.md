@@ -2,6 +2,10 @@
 
 Neueste Einträge oben.
 
+## 25.10.2026 (Nacht, Fortsetzung) — 2.89 iPhone-Look, Schritt 2
+- **Neu verfügbar:** Skill „iOS-Look“ des Inhabers (Human-Interface-Richtlinien). Danach verfeinert: Titel-Laufweite −0,4 px, Tab-Leiste 49 px / Symbole 24 px, Karten-Radius 10, Trennlinien eingerückt ab Textbeginn, Zeile beim Antippen grau, Blatt-Griff 36×5, Antipp-Feedback per Durchsichtigkeit. Akzentfarbe des Inhabers bleibt die Tönung (keine neuen Hex-Werte). SW v90.
+- **Test:** Smoke-Test grün (390/1280).
+
 ## 25.10.2026 (Auftrag Inhaber, Nacht) — 2.88 iPhone-Look, Schritt 1
 - **Inhaber:** „Ich möchte, dass es aussieht wie eine iPhone-App, gestalte gerne um. Außer die Kalkulationsseite.“
 - **Gebaut (nur CSS-Ebene am Ende von app.css, `body.ios`, nicht auf `body.r-kalk`):** Systemschrift (SF Pro auf iPhone/Mac), große Titel 34 px (Unterseiten 22 px, beim Scrollen 17 px), durchscheinende Kopfleiste mit Haarlinie, Tab-Leiste unten über die ganze Breite mit Tönung, Karten ohne Schatten/Rahmen mit Radius 12, Listenzeilen 17 px mit Haarlinien, graues Suchfeld, Filter-Kapseln, Segmented Control, Aktionsleiste im Auftrag als Werkzeugleiste, farbige Symbole unter „Mehr“, runde Initialen bei Kunden. Kalkulationsseite unverändert (geprüft). SW v89.
