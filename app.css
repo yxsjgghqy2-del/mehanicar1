@@ -1113,7 +1113,7 @@ tr.kt-auto td{background:var(--bg);color:var(--ink2);font-size:12.5px}
 .oe-tage{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0}
 .oe-tage label{display:flex;align-items:center;gap:5px;min-height:40px;padding:0 9px;border:1px solid var(--line);border-radius:9px;font-size:13px}
 /* 2.80 Zielpreis + Mindestmarge */
-.ls-ziel{display:block;width:100%;min-height:44px;margin-top:8px;border:0;background:transparent;font:inherit;font-size:13px;color:var(--ink2);text-decoration:underline;text-underline-offset:3px}
+.ls-ziel{display:block;width:100%;min-height:44px;margin-top:2px;border:0;background:transparent;font:inherit;font-size:13px;color:var(--ink2);text-decoration:underline;text-underline-offset:3px}
 .ls-minm,.zp-w{font-size:12.5px;font-weight:650;color:var(--red);background:var(--red-bg);border-radius:9px;padding:8px 10px;margin:8px 0}
 .zp-v{margin-bottom:12px}
 /* 2.81 Design-Durchgang: Hinweiskarten kompakter, Erinnerungskarte mit Innenabstand */
@@ -1123,6 +1123,8 @@ tr.kt-auto td{background:var(--bg);color:var(--ink2);font-size:12.5px}
 .tn-karte{padding:12px 14px 2px}
 .tn-karte .lbl{margin:0 0 4px}
 .tn-karte .lrow{padding-left:0;padding-right:0}
-.kva-hin{font-size:12.5px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:8px 10px;margin:8px 0}
-.alt-hin{display:flex;flex-wrap:wrap;align-items:center;gap:8px;justify-content:space-between;font-size:12.5px;color:var(--ink2);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin:8px 0}
-.alt-hin button{min-height:44px;padding:0 12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:600}
+.kva-hin{font-size:12px;color:var(--amber);background:var(--amber-bg);border-radius:9px;padding:6px 10px;margin:6px 0}
+.alt-hin{display:flex;align-items:center;gap:8px;justify-content:space-between;font-size:12px;color:var(--ink2);background:var(--bg);border-radius:9px;padding:0 0 0 10px;margin:6px 0}
+.alt-hin b{color:var(--ink);font-weight:650}
+.alt-hin button{min-height:44px;padding:0 14px;border-radius:9px;border:0;background:transparent;color:var(--ink);font:inherit;font-weight:650;text-decoration:underline;text-underline-offset:3px;flex:none}
+#sheet-ttl:focus{outline:none}
