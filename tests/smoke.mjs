@@ -697,7 +697,7 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       const h = document.getElementById('printarea').innerHTML;
       const r = { druck: /Kostenvoranschlag/.test(h) && /Gültig bis/.test(h) && /15 %/.test(h), gemerkt: !!a.kva && a.kva.bruttoCt === ordBrutto(a) };
       a.kva.bruttoCt = Math.round(ordBrutto(a) / 1.3); calcMode[a.id] = 'liste'; nav('kalk', a.id); await new Promise(r => setTimeout(r, 100));
-      r.warnung = /über dem Kostenvoranschlag/.test(document.querySelector('.ls-sum').textContent);
+      r.warnung = /über Kostenvoranschlag/.test(document.querySelector('.ls-sum').textContent);
       window.print = wp; S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
     if (Object.values(kv).some(v => !v)) errs.push('Kostenvoranschlag: ' + JSON.stringify(kv));
   }

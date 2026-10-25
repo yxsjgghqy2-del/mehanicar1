@@ -365,9 +365,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.83';
+const APP_VER='2.84';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.84',d:'2026-10-25',p:['Kalkulation: Summenleiste unten kompakter, verdeckt weniger Positionen','Hinweise zu Kostenvoranschlag und Alternativ-Teilen kürzer']},
  {v:'2.83',d:'2026-10-24',p:['Preis-Varianten: Teil mit Alternative (z. B. Qualitätsteil) – der Kunde wählt','Kostenvoranschlag zeigt beide Preise','Mit einem Tipp alle Alternativen übernehmen']},
  {v:'2.82',d:'2026-10-24',p:['Kostenvoranschlag: Der Knopf „PDF“ im Auftrag fragt jetzt, ob Sie einen Kostenvoranschlag (mit „Gültig bis“) oder eine Übersicht drucken möchten. Auf dem Kostenvoranschlag steht, dass Sie den Kunden vorher informieren, wenn es mehr als 15 % teurer wird.','Wird der Auftrag teurer als der Kostenvoranschlag, steht das in der Kalkulation. Bei mehr als 15 % erscheint ein roter Hinweis: „Kunde vorher informieren“.','Wie lange ein Kostenvoranschlag gilt (Standard 30 Tage), stellen Sie in den Einstellungen ein.']},
  {v:'2.81',d:'2026-10-23',p:['Design: Die Hinweise oben im Auftrag (Gewährleistung, Annahme, Teile bestellen) sind jetzt schmaler. So sehen Sie schneller den eigentlichen Auftrag. Die Karte „Terminerinnerungen fällig“ auf der Startseite ist sauber ausgerichtet.']},
@@ -1507,7 +1508,7 @@ function lsHtml(a){
   ${(S.settings.kleinmat||{}).aktiv&&a.kmAus?`<button class="ls-opt" data-act="km-tog" data-oid="${a.id}">Kleinmaterial-Pauschale wieder einschalten</button>`:''}
   <div class="ls-sum"><div class="ls-sum-z"><span>Arbeit <b class="num">${fmt(K.lohn)}</b></span><span>Teile <b class="num">${fmt(K.teileVk)}</b></span><span>Gewinn <b class="num ls-gw">${fmt(K.gewinn)}</b> · ${K.marge} %</span>${K.rabOrd?`<span>Rabatt <b class="num">− ${fmt(K.rabOrd)}</b></span>`:''}</div>
    ${kvaHinweis(a)}
-   ${hatAlt(a)&&!sel?`<div class="alt-hin"><span>Mit Alternativ-Teilen zahlt der Kunde <b class="num">${fmt(altBrutto(a))}</b></span><button data-act="alt-alle" data-oid="${a.id}">Kunde wählt Alternativen</button></div>`:''}
+   ${hatAlt(a)&&!sel?`<div class="alt-hin"><span>Mit Alternativ-Teilen <b class="num">${fmt(altBrutto(a))}</b></span><button data-act="alt-alle" data-oid="${a.id}" aria-label="Kunde wählt Alternativen – übernehmen">Übernehmen</button></div>`:''}
    ${S.settings.minMarge&&K.netto&&K.marge<S.settings.minMarge?`<div class="ls-minm">Marge ${K.marge} % liegt unter Ihrer Mindestmarge von ${S.settings.minMarge} %</div>`:''}
    <div class="ls-sum-b"><span>Kunde zahlt <small>inkl. ${S.settings.mwst} % MwSt</small></span><b class="num">${fmt(K.brutto)}</b></div>
    ${sel?'':`<button class="ls-ziel" data-act="zielpreis" data-oid="${a.id}">Zielpreis: „Kunde zahlt …“ – Rabatt ausrechnen</button>`}</div></div>`}
@@ -2625,8 +2626,8 @@ ACT['kva-druck']=el=>{const a=auftrag(el.dataset.oid);closeSheet();
 /* Überschreitung des Kostenvoranschlags: bis 15 % Hinweis, darüber deutliche Warnung */
 function kvaHinweis(a){if(!a.kva||!a.kva.bruttoCt)return'';const br=ordBrutto(a),p=Math.round((br/a.kva.bruttoCt-1)*100);
  if(br<=a.kva.bruttoCt)return'';
- return p>15?`<div class="ls-minm">${p} % über dem Kostenvoranschlag (${fmt(a.kva.bruttoCt)}) – Kunde vorher informieren und Freigabe holen.</div>`
-  :`<div class="kva-hin">${p} % über dem Kostenvoranschlag (${fmt(a.kva.bruttoCt)}) – noch innerhalb von 15 %.</div>`}
+ return p>15?`<div class="ls-minm">${p} % über Kostenvoranschlag (${fmt(a.kva.bruttoCt)}) – Kunde vorher fragen.</div>`
+  :`<div class="kva-hin">${p} % über Kostenvoranschlag (${fmt(a.kva.bruttoCt)}) – unter 15 %.</div>`}
 /* Preis-Varianten: ein Teil kann eine Alternative haben (x.alt={bez,artnr,ekCt,vkCt}), z. B. Original- vs. Qualitätsteil.
    Der Kunde wählt; „Tauschen“ macht die Alternative zum Hauptteil, das bisherige Teil wird zur Alternative. */
 const hatAlt=a=>a.pakete.some(pk=>pk.pos.some(p=>p.typ==='teil'&&p.alt));

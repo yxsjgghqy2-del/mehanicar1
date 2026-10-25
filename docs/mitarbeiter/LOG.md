@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 25.10.2026 (Morgenlauf) — 2.84 Design-Durchgang Kalkulation
+- **Angesehen:** Werkstattbericht mit Kostenvoranschlag-Hinweis und Alternativ-Teilen, Positionsblatt, 390 px hell/dunkel.
+- **Behoben:** Die klebende Summenleiste unten war mit beiden Hinweisen fast halb so hoch wie der Bildschirm und verdeckte Positionen → Hinweise kürzer und flacher, „Alternativen übernehmen“ als Textknopf (44 px) in einer Zeile, Zielpreis-Knopf enger. Titel im Blatt hatte einen schwarzen Fokus-Rahmen → entfernt (Fokus bleibt für Bildschirmleser). SW v85.
+- **Test:** Smoke-Test grün (390/1280).
+- **Offen / nächster Handgriff:** Kalkulation 7 (Nachkalkulation) wartet auf Antwort des Inhabers (Stechuhr entfernt). Sonst: Briefing-Rest KP4–7 abwarten; bis dahin Mac-Ansicht der Kalkulation (Katalog rechts daneben) als Vorschlag.
+
 ## 24.10.2026 (Abendlauf) — 2.83 Preis-Varianten
 - **Gebaut:** Jedes Teil kann im Positionsblatt eine „Alternative für den Kunden“ bekommen (Bezeichnung, EK, VK; `x.alt`). Im Werkstattbericht steht sie unter dem Teil, unter der Summe „Mit Alternativ-Teilen zahlt der Kunde …“ mit Knopf „Kunde wählt Alternativen“ (tauscht alle, das alte Teil bleibt als Alternative, Eintrag im Verlauf). Einzeln tauschen im Positionsblatt. Kostenvoranschlag/Übersicht zeigen „oder alternativ: …“ und die Summe mit Alternativen; Rechnungen nicht. SW v84.
 - **Test:** Smoke-Test grün (390/1280), neuer Ablauf „Preis-Varianten“.
