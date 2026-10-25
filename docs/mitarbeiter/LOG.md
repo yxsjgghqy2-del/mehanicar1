@@ -2,6 +2,13 @@
 
 Neueste Einträge oben.
 
+## 25.10.2026 (Abendlauf) — 2.86 Freigabe-Link für die Erweiterung
+- **Prüfung (Lehre vom Morgen):** Alle Klapp-Elemente in allen Ansichten, Auftrag und Kalkulation (Liste/Kalkulation/Tabelle) bei 390 und 1280 px automatisch durchgeklickt – alle reagieren (Abschnitte im Auftrag, Einstellungen, Blätter mit `<details>`).
+- **Fehler gefunden:** Der Freigabe-Link schickte nur die Abhilfe (`wbAbh`). Positionen im neuen Abschnitt „Während der Arbeit festgestellt“ fehlten, Betrag falsch, und die Antwort landete bei der Abhilfe.
+- **Behoben:** `frZiel(a,pk)` entscheidet: erst Abhilfe; ist die freigegeben, die Erweiterung. Link zeigt dann „Erweiterung zu …“, nur deren Befund/Positionen/Betrag; Antwort setzt `pk.frei.erw` (`freiAnfrage.ph`). Knopf erscheint im passenden Abschnitt. SW v87.
+- **Test:** Smoke-Test grün (390/1280), prüft Link-Inhalt und Antwort für die Erweiterung.
+- **Offen:** Antworten des Inhabers (alte Fund-Ordner umziehen? weitere Arten? Nachkalkulation? Briefing-Rest).
+
 ## 25.10.2026 (Auftrag Inhaber) — 2.85 Kundenanliegen + Erweiterung als Abschnitt
 - **Inhaber 25.10.:** Diagnose/Abhilfe sind Abschnitte im selben Ordner – so soll auch „Während der Arbeit festgestellt“ sein (kein neuer Ordner, Kunde sieht: Erweiterung zur laufenden Arbeit). Knopf für neuen Ordner heißt jetzt „Kundenanliegen“ mit Art TBA / Kd.-Wunsch / Bei Rep. festgestellt / Zusatzleistung / … Ausklappen ging nicht – hätte ich selbst merken müssen.
 - **Fehler gefunden:** `pak-tog` schaltete nur die Klasse um, der Inhalt geschlossener Ordner wird aber gar nicht gebaut → Aufklappen zeigte nichts. Jetzt neu zeichnen. Smoke-Test prüft Auf- und Zuklappen.

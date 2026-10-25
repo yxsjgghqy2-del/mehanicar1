@@ -746,6 +746,9 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       const ex = pk.pos.find(x => x.bez === 'Bremsschlauch erneuern'); if (ex) { ex.vkCt = 4500; ex.aw = 0.5; }
       r.erwPos = !!ex && ex.phase === 'erw' && ex.ext === true;
       pk.frei = { abh: { ct: 999999, wie: 'tel', ts: Date.now() } }; r.freigabeFehlt = pkFrei(a, pk).ok === false;
+      { const z = frZiel(a, pk); r.linkErweiterung = z.ph === 'erw' && z.pos.some(x => x.bez === 'Bremsschlauch erneuern') && !z.pos.some(x => x.phase !== 'erw') && /Bremsschlauch porös/.test(z.bef); }
+      a.statusLink = a.statusLink || { id: 'sltest' }; pk.freiAnfrage = { id: 'frtest', ts: Date.now(), ct: 4500, ph: 'erw', status: 'offen', daten: { name: 'Erweiterung' } };
+      freigabeAntwort({ sl: a.statusLink.id, fid: 'frtest', antwort: 'ja' }); r.antwortErw = (pk.frei.erw || {}).ct === 4500 && pkFrei(a, pk).ok === true;
       $('#printarea').innerHTML = buildInvoiceHtml(a, a.pakete.map(p => p.id), null).html;
       r.druck = /Während der Arbeit festgestellt – Erweiterung/.test($('#printarea').innerHTML);
       window.print = wp; S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
