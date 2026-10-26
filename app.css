@@ -1223,3 +1223,32 @@ body.ios .sheet-h .grab{width:36px;height:5px;border-radius:3px;background:var(-
 body.ios:not(.r-kalk) .btn-2nd:active,body.ios:not(.r-kalk) .chip:active,body.ios:not(.r-kalk) .pill:active{opacity:.6}
 body.ios .hdr:not(.ctx-kalk) .hd-search:active,body.ios .hdr:not(.ctx-kalk) .back-btn:active{opacity:.5;transform:none}
 body.ios:not(.r-kalk) .lrow:has(>.av)+.lrow::before{left:73px}
+/* iPhone-Look Schritt 3: Planung – „Heute“ als gruppierte iOS-Liste statt dunkler Block, Kacheln wie Widgets */
+body.ios:not(.r-kalk) .fix{background:var(--card)!important;color:var(--ink)!important;border-radius:10px;padding:0;overflow:hidden}
+body.ios:not(.r-kalk) .fix-h{padding:12px 16px 6px;margin:0}
+body.ios:not(.r-kalk) .fix-h .t{font-size:13px;font-weight:400;letter-spacing:0;opacity:1;color:var(--ink2)}
+body.ios:not(.r-kalk) .fix-h .warn{font-size:13px;font-weight:600;color:var(--red)}
+body.ios:not(.r-kalk) .fix-h .ok{font-size:13px;font-weight:600;color:var(--green)}
+body.ios:not(.r-kalk) .fix .sw{margin:0;border-radius:0}
+body.ios:not(.r-kalk) .fix .sw+.sw .sw-row::before{content:"";position:absolute;top:0;left:34px;right:0;height:.5px;background:var(--line)}
+body.ios:not(.r-kalk) .fix-leer{color:var(--ink3)!important;padding:4px 16px 14px!important}
+body.ios:not(.r-kalk) .sw-row.dark,body.ios:not(.r-kalk) .sw-row.light{background:var(--card)!important;color:var(--ink)!important;border:0!important;box-shadow:none!important;border-radius:0;padding:11px 16px;min-height:52px}
+body.ios:not(.r-kalk) .sw-row .kennz{font-size:17px;font-weight:600;letter-spacing:0}
+body.ios:not(.r-kalk) .sw-row .modell{font-size:13px;color:var(--ink2)!important;max-width:120px}
+body.ios:not(.r-kalk) .sw-row .sub{font-size:13px;color:var(--ink2)!important}
+body.ios:not(.r-kalk) .sw-row .sub b{color:var(--ink2)!important;font-weight:500}
+body.ios:not(.r-kalk) .sw-row .zeit{font-size:15px;font-weight:500;color:var(--ink2)}
+body.ios:not(.r-kalk) .sw-acts{border-radius:0}
+/* Tage darunter: kleine graue Überschrift, Zeilen als eigene Gruppe je Tag */
+body.ios:not(.r-kalk) .day-h{font-size:13px!important;font-weight:400!important;color:var(--ink2)!important;text-transform:uppercase;letter-spacing:0!important;padding:0 16px;margin:22px 0 6px}
+body.ios:not(.r-kalk) .main>.sw{margin-top:0;border-radius:0}
+body.ios:not(.r-kalk) .day-h+.sw{border-radius:10px 10px 0 0;overflow:hidden}
+body.ios:not(.r-kalk) .main>.sw:has(+.day-h),body.ios:not(.r-kalk) .main>.sw:has(+div:not(.sw)){border-radius:0 0 10px 10px;overflow:hidden}
+body.ios:not(.r-kalk) .day-h+.sw:has(+.day-h),body.ios:not(.r-kalk) .day-h+.sw:has(+div:not(.sw)){border-radius:10px}
+body.ios:not(.r-kalk) .main>.sw+.sw .sw-row::before{content:"";position:absolute;top:0;left:34px;right:0;height:.5px;background:var(--line)}
+/* Kacheln: Beschriftung 13 px grau, Zahl kräftig wie iOS-Widgets */
+body.ios:not(.r-kalk) .kpi{padding:12px 14px}
+body.ios:not(.r-kalk) .kpi span{font-size:13px;font-weight:500;letter-spacing:0;color:var(--ink2)}
+body.ios:not(.r-kalk) .kpi b{font-size:28px;font-weight:700;letter-spacing:-.4px}
+body.ios:not(.r-kalk) .kpi .ktrend{font-size:13px;font-weight:500}
+body.ios:not(.r-kalk) .kpis{gap:10px}

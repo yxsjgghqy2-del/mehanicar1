@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 26.10.2026 (Morgenlauf) — 2.90 iPhone-Look, Schritt 3: Planung
+- **Gebaut:** Dunkler „Heute“-Block → gruppierte iOS-Liste (Karte, Zeilen mit eingerückten Haarlinien, Überschrift 13 px grau, Status grün/rot). Tage darunter je Tag eine Gruppe mit grauer Großbuchstaben-Überschrift (abgerundete Ecken nur außen). Zeilen: Kennzeichen 17/600, Modell 13 grau. Kacheln: Beschriftung 13 grau, Zahl 28/700. Wischen für Aktionen bleibt. Nur CSS. SW v91.
+- **Test:** Smoke-Test grün (390/1280), Screenshots hell/dunkel oben und unten geprüft.
+- **Nächster Schritt:** Auftrag-Detail (Abschnitte als gruppierte Listen, Kopf-Zahlenblock), danach Formulare/Blätter.
+
 ## 25.10.2026 (Nacht, Fortsetzung) — 2.89 iPhone-Look, Schritt 2
 - **Neu verfügbar:** Skill „iOS-Look“ des Inhabers (Human-Interface-Richtlinien). Danach verfeinert: Titel-Laufweite −0,4 px, Tab-Leiste 49 px / Symbole 24 px, Karten-Radius 10, Trennlinien eingerückt ab Textbeginn, Zeile beim Antippen grau, Blatt-Griff 36×5, Antipp-Feedback per Durchsichtigkeit. Akzentfarbe des Inhabers bleibt die Tönung (keine neuen Hex-Werte). SW v90.
 - **Test:** Smoke-Test grün (390/1280).
