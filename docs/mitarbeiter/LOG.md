@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 26.10.2026 (2. Inhaber-Screenshot) — 2.92 Lücke: Korrektur der Korrektur
+- **Beobachtung:** Streifen weiterhin da, Beschriftungen der Tab-Leiste fehlten. Daraus folgt: Der Streifen liegt **außerhalb** des App-Fensters (das WebView ist verkürzt), die App kann dort nicht zeichnen. Meine Verlängerung um `--gapfix` hat die Leiste nur unten abschneiden lassen.
+- **Neu:** Bei gemessener Lücke wird nur `--sab` auf 0 gesetzt (kein Home-Balken-Abstand im verkürzten Fenster), Tab-Leiste unten 4 px. Den Streifen selbst kann nur Apple beheben (iOS 26.1). SW v93.
+- **Lehre:** Bei Geräte-Fehlern, die ich nicht nachstellen kann, vorher genau begründen, wo gezeichnet wird – und dem Inhaber ehrlich sagen, dass ich es nur simulieren kann.
+
 ## 26.10.2026 (Inhaber-Screenshot) — 2.91 Lücke unten auf dem iPhone
 - **Inhaber:** Screenshot vom iPhone (Web-App vom Home-Bildschirm): unter der unteren Leiste ein großer leerer Streifen (~60 pt).
 - **Ursache:** Bekannter WebKit-Fehler in iOS 26.0 im Standalone-Modus mit `viewport-fit=cover` – das Fenster ist unten zu kurz, fest unten verankerte Elemente schweben darüber (laut Apple-Foren/Release Notes in 26.1 behoben).
