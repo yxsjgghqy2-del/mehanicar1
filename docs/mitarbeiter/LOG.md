@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 26.10.2026 (Abendlauf) — 2.94 iPhone-Look, Schritt 4: Auftrag
+- **Gebaut (nur CSS):** Datenzeilen (`.kv`) 15 px, Beschriftung schwarz, Wert grau, Haarlinien; Anrufen/WhatsApp/E-Mail als graue Knöpfe mit getöntem Text (wie „Kontakte“); Hinweiskarten (`.dl-card`) ohne Rahmen mit Farbstreifen links; Abschnittsköpfe 52 px. Kalk-Kopf (dunkel, Wunsch Entwurf 14) bewusst gelassen. SW v95.
+- **Test:** Smoke-Test grün, Screenshots hell/dunkel.
+- **Nächster Schritt:** Formulare und Blätter (Eingabefelder, Auswahlfelder, Schalter) im iOS-Stil.
+
 ## 26.10.2026 (Auftrag Inhaber) — 2.93 App-Symbol Schraubenschlüssel
 - **Gebaut:** Eigenes Schraubenschlüssel-Symbol (SVG, Akzent-Lime auf Tinte, keine fremden Grafiken) als icon.svg, apple-touch-icon (180, randlos – iOS rundet selbst), icon-192/512 (auch maskable, Motiv im sicheren Bereich). Mit `?v=2` gegen alte Zwischenspeicher. SW v94.
 - **Hinweis an Inhaber:** iPhone übernimmt ein neues Symbol erst nach Entfernen und erneutem „Zum Home-Bildschirm“.
