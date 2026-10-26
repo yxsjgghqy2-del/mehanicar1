@@ -339,8 +339,8 @@ function save(){
  if(saveT)clearTimeout(saveT);
  saveT=setTimeout(()=>{S.meta=S.meta||{changes:0,lastBackup:null};S.meta.changes=(S.meta.changes||0)+1;S.meta.savedAt=Date.now();try{localStorage.setItem(KEY,JSON.stringify(S));scheduleSync()}catch(e){memOnly=true;console.warn('Speicher voll oder blockiert — Daten nur im Arbeitsspeicher',e)}},120);
 }
-/* iOS 26.0 (Web-App vom Home-Bildschirm): das System macht den Bildschirm unten zu kurz – Leisten schweben über einer leeren Fläche.
-   Lücke messen (Bildschirmhöhe − Fensterhöhe, nur hochkant) und Leisten/Hintergrund um genau diese Lücke nach unten verlängern. Ab iOS 26.1 ist die Lücke 0. */
+/* iOS 26.0 (Web-App vom Home-Bildschirm): das System macht das App-Fenster unten zu kurz, darunter bleibt ein Streifen, den die App nicht bemalen kann.
+   Lücke messen (Bildschirmhöhe − Fensterhöhe, nur hochkant); ist sie da, entfällt der Abstand für den Home-Balken (app.css html.gapfix). Ab iOS 26.1 ist die Lücke 0. */
 function iosLueckeFix(){let g=0;try{const sa=(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)||navigator.standalone;
  const ios=/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
  if(sa&&ios&&innerHeight>innerWidth){g=Math.round(screen.height-innerHeight);if(g<4||g>120)g=0}}catch(e){}
@@ -372,9 +372,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.91';
+const APP_VER='2.92';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.92',d:'2026-10-26',p:['iPhone: Beschriftungen der unteren Leiste wieder sichtbar; Leisten unten schmaler, solange iOS 26.0 unten einen Streifen frei lässt']},
  {v:'2.91',d:'2026-10-26',p:['iPhone: Leere Fläche ganz unten unter der Leiste behoben (Fehler in iOS 26 bei Apps auf dem Home-Bildschirm)']},
  {v:'2.90',d:'2026-10-26',p:['Planung im iPhone-Stil: „Heute“ und die nächsten Tage als ruhige Listen mit grauen Überschriften, Kacheln wie iPhone-Widgets']},
  {v:'2.89',d:'2026-10-25',p:['iPhone-Look verfeinert: Trennlinien wie in iOS-Listen, Tab-Leiste 49 px, Blatt-Griff, ruhigeres Antipp-Feedback']},

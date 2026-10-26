@@ -1252,10 +1252,8 @@ body.ios:not(.r-kalk) .kpi span{font-size:13px;font-weight:500;letter-spacing:0;
 body.ios:not(.r-kalk) .kpi b{font-size:28px;font-weight:700;letter-spacing:-.4px}
 body.ios:not(.r-kalk) .kpi .ktrend{font-size:13px;font-weight:500}
 body.ios:not(.r-kalk) .kpis{gap:10px}
-/* iOS-26.0-Lücke unten (siehe iosLueckeFix): alles, was unten klebt, um die Lücke nach unten verlängern */
-html.gapfix body{height:calc(100% + var(--gapfix))}
-html.gapfix .nav,html.gapfix .calcbar{bottom:calc(var(--sab) + 10px - var(--gapfix))}
-html.gapfix body.ios .nav,html.gapfix body.ios:not(.r-kalk) .calcbar{bottom:calc(-1 * var(--gapfix))!important}
-html.gapfix .fab,html.gapfix body.ios:not(.r-kalk) .fab{bottom:calc(68px + var(--sab) - var(--gapfix))}
-html.gapfix .toast{bottom:calc(68px + var(--sab) - var(--gapfix))}
-html.gapfix .sheet-bg,html.gapfix .confirm-bg,html.gapfix .gs-bg,html.gapfix .kansicht-bg{bottom:calc(-1 * var(--gapfix))}
+/* iOS-26.0-Lücke unten (siehe iosLueckeFix): Das Fenster der App endet dort, wo der leere Streifen beginnt – darunter kann die App
+   nichts zeichnen (Inhaber-Screenshot 26.10.: verlängerte Leiste wurde abgeschnitten, Beschriftungen fehlten). Darum nur den
+   Abstand für den Home-Balken weglassen, den es im verkürzten Fenster nicht braucht. */
+html.gapfix{--sab:0px}
+html.gapfix body.ios .nav{padding-bottom:4px!important}
