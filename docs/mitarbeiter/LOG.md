@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 26.10.2026 (Inhaber-Screenshot) — 2.91 Lücke unten auf dem iPhone
+- **Inhaber:** Screenshot vom iPhone (Web-App vom Home-Bildschirm): unter der unteren Leiste ein großer leerer Streifen (~60 pt).
+- **Ursache:** Bekannter WebKit-Fehler in iOS 26.0 im Standalone-Modus mit `viewport-fit=cover` – das Fenster ist unten zu kurz, fest unten verankerte Elemente schweben darüber (laut Apple-Foren/Release Notes in 26.1 behoben).
+- **Behoben:** `iosLueckeFix()` misst nur auf iPhone/iPad im Standalone-Modus hochkant `screen.height − innerHeight` (4–120 px) und setzt `--gapfix`; Hintergrund, Tab-Leiste, Werkzeugleiste, Plus-Knopf, Meldungen und Blätter werden um die Lücke nach unten verlängert. Auf allen anderen Geräten 0 = keine Änderung. Im Test-Browser mit simulierter Lücke geprüft. SW v92.
+- **Offen:** Inhaber prüft auf dem echten iPhone (ggf. iOS auf 26.1 aktualisieren).
+
 ## 26.10.2026 (Morgenlauf) — 2.90 iPhone-Look, Schritt 3: Planung
 - **Gebaut:** Dunkler „Heute“-Block → gruppierte iOS-Liste (Karte, Zeilen mit eingerückten Haarlinien, Überschrift 13 px grau, Status grün/rot). Tage darunter je Tag eine Gruppe mit grauer Großbuchstaben-Überschrift (abgerundete Ecken nur außen). Zeilen: Kennzeichen 17/600, Modell 13 grau. Kacheln: Beschriftung 13 grau, Zahl 28/700. Wischen für Aktionen bleibt. Nur CSS. SW v91.
 - **Test:** Smoke-Test grün (390/1280), Screenshots hell/dunkel oben und unten geprüft.
