@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 26.10.2026 (Auftrag Inhaber) — 2.93 App-Symbol Schraubenschlüssel
+- **Gebaut:** Eigenes Schraubenschlüssel-Symbol (SVG, Akzent-Lime auf Tinte, keine fremden Grafiken) als icon.svg, apple-touch-icon (180, randlos – iOS rundet selbst), icon-192/512 (auch maskable, Motiv im sicheren Bereich). Mit `?v=2` gegen alte Zwischenspeicher. SW v94.
+- **Hinweis an Inhaber:** iPhone übernimmt ein neues Symbol erst nach Entfernen und erneutem „Zum Home-Bildschirm“.
+- **Routine ergänzt:** Nach jeder Version den Link schicken.
+
 ## 26.10.2026 (2. Inhaber-Screenshot) — 2.92 Lücke: Korrektur der Korrektur
 - **Beobachtung:** Streifen weiterhin da, Beschriftungen der Tab-Leiste fehlten. Daraus folgt: Der Streifen liegt **außerhalb** des App-Fensters (das WebView ist verkürzt), die App kann dort nicht zeichnen. Meine Verlängerung um `--gapfix` hat die Leiste nur unten abschneiden lassen.
 - **Neu:** Bei gemessener Lücke wird nur `--sab` auf 0 gesetzt (kein Home-Balken-Abstand im verkürzten Fenster), Tab-Leiste unten 4 px. Den Streifen selbst kann nur Apple beheben (iOS 26.1). SW v93.

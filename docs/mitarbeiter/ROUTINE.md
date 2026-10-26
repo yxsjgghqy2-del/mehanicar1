@@ -52,3 +52,5 @@ Die Nutzung ist in 5-Stunden-Fenstern begrenzt. Ein Lauf kann also mittendrin ab
 - Keine Käufe, keine kostenpflichtigen Dienste, keine Secrets oder Umgebungsvariablen ändern.
 - Wenn etwas eine Entscheidung des Inhabers braucht (z. B. Design-Wahl): baue es als Vorschlag unter `/designs/` und frag im Release-Update nach. Nicht raten.
 - Wird das Budget knapp, liefere lieber ein kleines fertiges Paket als ein großes halbes. Nie einen kaputten Stand mergen.
+
+- **Nach jeder neuen Version den Link mitschicken** (Inhaber 26.10.2026): https://mehanicar1.vercel.app
