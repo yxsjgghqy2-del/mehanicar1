@@ -1,5 +1,5 @@
-const CACHE='mehanicar-v93';
-const SHELL=['./','./index.html','./app.css','./fonts/manrope-latin-wght-normal.woff2','./fonts/manrope-latin-ext-wght-normal.woff2','./icon.svg','./manifest.json','./apple-touch-icon.png','./icon-192.png','./icon-512.png'];
+const CACHE='mehanicar-v94';
+const SHELL=['./','./index.html','./app.css','./fonts/manrope-latin-wght-normal.woff2','./fonts/manrope-latin-ext-wght-normal.woff2','./icon.svg?v=2','./manifest.json','./apple-touch-icon.png?v=2','./icon-192.png?v=2','./icon-512.png?v=2'];
 
 self.addEventListener('install',e=>{
  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(SHELL)).then(()=>self.skipWaiting()));
