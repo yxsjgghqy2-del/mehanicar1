@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 27.10.2026 (Morgenlauf) — 2.95 iPhone-Look, Schritt 5: Formulare & Blätter
+- **Gebaut (nur CSS):** Blätter mit grauem Hintergrund, Titel 17/600 mittig; Felder 17 px (in Dreierreihen 15), ohne Rahmen, Radius 10, Fokus als Tönungsring; Beschriftungen 13 px grau in normaler Schreibweise; Abschnitte im Blatt 17 px. Blatt-Griff nicht mehr als grauer Balken. SW v96.
+- **Test:** Smoke-Test grün, Screenshots (Neuer Kunde, Position, Einstellungen) hell/dunkel.
+- **Nächster Schritt:** Einstellungen-Zeilen (Zahlenfelder rechts, Wochentage als Schalter) im iOS-Stil.
+
 ## 26.10.2026 (Abendlauf) — 2.94 iPhone-Look, Schritt 4: Auftrag
 - **Gebaut (nur CSS):** Datenzeilen (`.kv`) 15 px, Beschriftung schwarz, Wert grau, Haarlinien; Anrufen/WhatsApp/E-Mail als graue Knöpfe mit getöntem Text (wie „Kontakte“); Hinweiskarten (`.dl-card`) ohne Rahmen mit Farbstreifen links; Abschnittsköpfe 52 px. Kalk-Kopf (dunkel, Wunsch Entwurf 14) bewusst gelassen. SW v95.
 - **Test:** Smoke-Test grün, Screenshots hell/dunkel.
