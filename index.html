@@ -267,6 +267,8 @@ const PAK_VORLAGEN_SEED=[
   {bez:'Achsvermessung',aw:1.0,typ:'arbeit'}]},
 ];
 function migrate2(){
+ /* Öffnungszeiten auch bei frischem Start, Demo, Reset, Import und Geräte-Abgleich (vorher nur beim Laden gespeicherter Daten) */
+ if(!S.settings.oeffnung||!Array.isArray(S.settings.oeffnung.tage))S.settings.oeffnung={tage:[1,2,3,4,5],von:'08:00',bis:'17:00',slot:60,...(S.settings.oeffnung||{}),...(S.settings.oeffnung&&!Array.isArray(S.settings.oeffnung.tage)?{tage:[1,2,3,4,5]}:{})};
  S.krankmeldungen=S.krankmeldungen||[];S.urlaub=S.urlaub||[];S.termine=S.termine||[];
  S.bestellungen=S.bestellungen||[];S.kampagnen=S.kampagnen||[];
  S.meta=S.meta||{changes:0,lastBackup:null};
@@ -372,9 +374,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.95';
+const APP_VER='2.96';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.96',d:'2026-10-27',p:['Fehler behoben: Öffnungszeiten waren bei neuem Start leer (alle Wochentage aus); Antippen eines Tages konnte einen Fehler auslösen','Wochentage in den Einstellungen als iPhone-Knöpfe']},
  {v:'2.95',d:'2026-10-27',p:['Eingabefelder und Fenster im iPhone-Stil: größere Schrift (17), Felder ohne Rahmen, Fenstertitel mittig']},
  {v:'2.94',d:'2026-10-26',p:['Auftrag im iPhone-Stil: Kundendaten wie in „Kontakte“, Anrufen/WhatsApp/E-Mail als graue Knöpfe, Hinweiskarten mit Farbstreifen']},
  {v:'2.93',d:'2026-10-26',p:['Neues App-Symbol: Schraubenschlüssel']},

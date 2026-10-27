@@ -1293,3 +1293,9 @@ body.ios:not(.r-kalk) .fld label{text-transform:none}
 body.ios .sheet-h .grab{background-clip:content-box;-webkit-background-clip:content-box}
 body.ios:not(.r-kalk) .row3 .fld input,body.ios:not(.r-kalk) .row3 .fld select{font-size:15px;padding-left:10px;padding-right:10px}
 body.ios:not(.r-kalk) .row3 .selwrap select{padding-right:26px}
+/* Einstellungen: Wochentage als runde Auswahlknöpfe (iOS-Wecker-Stil), angewählt in Tönung */
+body.ios:not(.r-kalk) .oe-tage{display:flex;flex-wrap:wrap;gap:6px}
+body.ios:not(.r-kalk) .oe-tage label{position:relative;display:grid;place-items:center;width:42px;height:44px;border-radius:22px;background:var(--gray-bg);color:var(--ink);font-size:14px;font-weight:500;border:0;padding:0;cursor:pointer}
+body.ios:not(.r-kalk) .oe-tage label input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
+body.ios:not(.r-kalk) .oe-tage label:has(input:checked){background:var(--blue);color:var(--card)}
+body.ios:not(.r-kalk) .oe-tage label:has(input:focus-visible){box-shadow:0 0 0 2px var(--ink)}

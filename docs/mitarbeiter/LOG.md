@@ -2,6 +2,11 @@
 
 Neueste Einträge oben.
 
+## 27.10.2026 (Abendlauf) — 2.96 Öffnungszeiten-Fehler + Wochentag-Knöpfe
+- **Fehler gefunden:** Standard-Öffnungszeiten wurden nur beim Laden gespeicherter Daten gesetzt, nicht bei frischem Start/Demo/Reset/Import/Geräte-Abgleich (`migrate2`). Folge: alle Wochentage aus, Online-Buchung ohne freie Zeiten, Antippen eines Tages → Fehler (`o.tage` von undefined).
+- **Behoben:** Standard (Mo–Fr 8–17, 60 Min) jetzt in `migrate2()`. Smoke-Test prüft frischen Start (vorher rot nachgestellt, jetzt grün).
+- **iPhone-Look:** Wochentage als runde Auswahlknöpfe (angewählt in Tönung). SW v97.
+
 ## 27.10.2026 (Morgenlauf) — 2.95 iPhone-Look, Schritt 5: Formulare & Blätter
 - **Gebaut (nur CSS):** Blätter mit grauem Hintergrund, Titel 17/600 mittig; Felder 17 px (in Dreierreihen 15), ohne Rahmen, Radius 10, Fokus als Tönungsring; Beschriftungen 13 px grau in normaler Schreibweise; Abschnitte im Blatt 17 px. Blatt-Griff nicht mehr als grauer Balken. SW v96.
 - **Test:** Smoke-Test grün, Screenshots (Neuer Kunde, Position, Einstellungen) hell/dunkel.
