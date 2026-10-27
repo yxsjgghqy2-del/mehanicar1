@@ -758,6 +758,17 @@ for (const [w, h] of [[390, 844], [1280, 800]]) {
       window.print = wp; S.auftraege = JSON.parse(snap); save(); nav('planung'); return r; });
     if (Object.values(ka).some(v => !v)) errs.push('Kundenanliegen: ' + JSON.stringify(ka));
   }
+  // Öffnungszeiten: nach frischem Start vorhanden, Wochentag antippen ohne Fehler
+  {
+    const oe = await page.evaluate(async () => {
+      const alt = S; S = seed(); kunNorm(); migrate2(); const frisch = S.settings.oeffnung; S = alt;
+      const r = { frisch: !!frisch && Array.isArray(frisch.tage) && frisch.tage.includes(1), vorhanden: !!S.settings.oeffnung && Array.isArray(S.settings.oeffnung.tage) };
+      nav('einstellungen'); await new Promise(x => setTimeout(x, 100));
+      const cb = document.querySelector('[data-f="oe-tag"][data-t="6"]'); r.knopf = !!cb;
+      if (cb) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); r.sa = S.settings.oeffnung.tage.includes(6); cb.checked = false; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+      nav('planung'); return r; });
+    if (Object.values(oe).some(v => !v)) errs.push('Öffnungszeiten: ' + JSON.stringify(oe));
+  }
   // Geräte-Abgleich: Vergleichslogik und Einschalt-Frage
   {
     const sy = await page.evaluate(async () => {
