@@ -1277,3 +1277,19 @@ body.ios:not(.r-kalk) .dl-card.ok{box-shadow:inset 3px 0 0 var(--green)}
 body.ios:not(.r-kalk) .sec-h{min-height:52px;padding:12px 16px}
 body.ios:not(.r-kalk) .sec-h .mini{font-size:13px;color:var(--ink2)}
 body.ios:not(.r-kalk) .sec-in{padding-left:16px;padding-right:16px}
+/* iPhone-Look Schritt 5: Formulare & Blätter – grauer Blatt-Hintergrund, weiße Felder ohne Rahmen, 17 px Schrift, Titel zentriert */
+body.ios:not(.r-kalk) .sheet{background:var(--bg)}
+body.ios:not(.r-kalk) .sheet-h{padding:18px 16px 10px}
+body.ios:not(.r-kalk) .sheet-h h2{font-size:17px;font-weight:600;text-align:center;padding-left:28px}
+body.ios:not(.r-kalk) .fld label{font-size:13px;font-weight:400;letter-spacing:0;color:var(--ink2);margin:0 4px 6px}
+body.ios:not(.r-kalk) .fld input,body.ios:not(.r-kalk) .fld select,body.ios:not(.r-kalk) .fld textarea{font-size:17px;background:var(--card);border:0;border-radius:10px;padding:11px 14px;min-height:44px}
+body.ios:not(.r-kalk) .main .fld input,body.ios:not(.r-kalk) .main .fld select,body.ios:not(.r-kalk) .main .fld textarea{background:var(--gray-bg)}
+body.ios:not(.r-kalk) .fld input:focus,body.ios:not(.r-kalk) .fld select:focus,body.ios:not(.r-kalk) .fld textarea:focus{border:0;box-shadow:0 0 0 2px var(--blue)}
+body.ios:not(.r-kalk) .sheet .msec{border:0;border-radius:10px}
+body.ios:not(.r-kalk) .msec>summary{font-size:17px;font-weight:400;min-height:44px}
+body.ios:not(.r-kalk) .msec .mm{font-size:15px;color:var(--ink2)}
+body.ios:not(.r-kalk) .sheet .msec .fld input,body.ios:not(.r-kalk) .sheet .msec .fld select,body.ios:not(.r-kalk) .sheet .msec .fld textarea{background:var(--gray-bg)}
+body.ios:not(.r-kalk) .fld label{text-transform:none}
+body.ios .sheet-h .grab{background-clip:content-box;-webkit-background-clip:content-box}
+body.ios:not(.r-kalk) .row3 .fld input,body.ios:not(.r-kalk) .row3 .fld select{font-size:15px;padding-left:10px;padding-right:10px}
+body.ios:not(.r-kalk) .row3 .selwrap select{padding-right:26px}
