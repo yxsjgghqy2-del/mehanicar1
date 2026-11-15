@@ -2,6 +2,12 @@
 
 Neueste Einträge oben.
 
+## 15.11.2026 (Auftrag Inhaber) — 2.97 Bewegung: Karte wird Seite
+- **Inhaber:** Video-Screenshots („The card becomes the page“, „Back goes back“, „Menus start at their button“, „Don't cut“) – „Animation bitte einfügen, auch dieses simple Design gefällt mir sehr“.
+- **Gebaut:** View Transitions (iOS ab 18): `karteZuSeite(src,fn)` – angetippte Zeile/Karte wächst zur Seite (Aufträge, Planung, Kunden, Wischzeilen, „Jetzt wichtig“); `seiteZuKarte(id,fn)` bei „Zurück“ aus Auftrag/Kunde/Fahrzeug/Anfrage – Seite schrumpft auf ihre Zeile. Suche wächst aus der Lupe (clip-path), „Fertig“/Esc schrumpft zurück. Bei „Bewegung reduzieren“ oder ohne Unterstützung ohne Animation. Tab-Wechsel wie bisher. SW v99.
+- **Test:** Smoke-Test grün; Einzelbilder der Übergänge geprüft. Neue Umgebung: Playwright aus globalem Ordner verlinkt (`node_modules/playwright` → /opt/node22/lib/node_modules/playwright).
+- **Offen:** „Simples Design“ – beim Inhaber nachfragen, welche Teile (schwarze Pillen-Knöpfe, große runde Kacheln, Schwarz-Weiß).
+
 ## 27.10.2026 (Abendlauf) — 2.96 Öffnungszeiten-Fehler + Wochentag-Knöpfe
 - **Fehler gefunden:** Standard-Öffnungszeiten wurden nur beim Laden gespeicherter Daten gesetzt, nicht bei frischem Start/Demo/Reset/Import/Geräte-Abgleich (`migrate2`). Folge: alle Wochentage aus, Online-Buchung ohne freie Zeiten, Antippen eines Tages → Fehler (`o.tage` von undefined).
 - **Behoben:** Standard (Mo–Fr 8–17, 60 Min) jetzt in `migrate2()`. Smoke-Test prüft frischen Start (vorher rot nachgestellt, jetzt grün).

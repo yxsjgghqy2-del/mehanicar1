@@ -374,9 +374,10 @@ const kunde=id=>S.kunden.find(k=>k.id===id);
 const fzg=id=>S.fahrzeuge.find(f=>f.id===id);
 const auftrag=id=>S.auftraege.find(a=>a.id===id);
 const lagerT=id=>S.lager.find(l=>l.id===id);
-const APP_VER='2.96';
+const APP_VER='2.97';
 /* Was ist neu — neueste Version oben, 1–3 Punkte in Alltagssprache */
 const WHATSNEW=[
+ {v:'2.97',d:'2026-11-15',p:['Bewegung statt Schnitt: Die angetippte Karte wird zur Seite, „Zurück“ bringt sie an ihren Platz zurück','Die Suche öffnet sich aus der Lupe heraus']},
  {v:'2.96',d:'2026-10-27',p:['Fehler behoben: Öffnungszeiten waren bei neuem Start leer (alle Wochentage aus); Antippen eines Tages konnte einen Fehler auslösen','Wochentage in den Einstellungen als iPhone-Knöpfe']},
  {v:'2.95',d:'2026-10-27',p:['Eingabefelder und Fenster im iPhone-Stil: größere Schrift (17), Felder ohne Rahmen, Fenstertitel mittig']},
  {v:'2.94',d:'2026-10-26',p:['Auftrag im iPhone-Stil: Kundendaten wie in „Kontakte“, Anrufen/WhatsApp/E-Mail als graue Knöpfe, Hinweiskarten mit Farbstreifen']},
@@ -551,6 +552,22 @@ function kmSyncAlle(){if(typeof S==='undefined'||!S||!S.auftraege)return;S.auftr
 
 /* ============ 4. SHELL, ROUTER, KOMPONENTEN ============ */
 let route={v:'planung'},navSlideDir=0,skipNextSlide=false,riseNext=false;
+/* Bewegung statt harter Schnitt (Inhaber 15.11.2026, Vorbild „The card becomes the page“):
+   Vorwärts wächst die angetippte Karte zur ganzen Seite, „Zurück“ schrumpft die Seite wieder auf ihre Karte.
+   View Transitions (iOS ab 18); ohne Unterstützung oder bei „Bewegung reduzieren“ ganz normal ohne Animation. */
+const uebergangAn=()=>!!document.startViewTransition&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
+function karteZuSeite(src,fn){
+ const app=$('#app');if(!uebergangAn()||!src||!app||$('#sheetbg')){fn();return}
+ src.style.viewTransitionName='karte';
+ try{const t=document.startViewTransition(()=>{src.style.viewTransitionName='';fn();app.style.viewTransitionName='karte'});
+  t.finished.finally(()=>{app.style.viewTransitionName=''})}catch(e){src.style.viewTransitionName='';fn()}}
+function seiteZuKarte(id,fn){
+ const app=$('#app');if(!uebergangAn()||!app||$('#sheetbg')){fn();return}
+ app.style.viewTransitionName='karte';let ziel=null;const h=document.documentElement;h.classList.add('vt-zurueck');
+ try{const t=document.startViewTransition(()=>{app.style.viewTransitionName='';fn();
+   ziel=id?document.querySelector(`[data-open="${id}"],[data-act="open"][data-id="${id}"]`):null;
+   if(ziel){ziel=ziel.closest('.sw,.lrow')||ziel;ziel.style.viewTransitionName='karte'}});
+  t.finished.finally(()=>{if(ziel)ziel.style.viewTransitionName='';h.classList.remove('vt-zurueck')})}catch(e){app.style.viewTransitionName='';h.classList.remove('vt-zurueck');fn()}}
 function nav(v,id){
  try{if(v!==route.v||id!==route.id){wbSel.oid=null;wbSel.ids.clear()}}catch(e){}
  const prev={v:route.v,id:route.id};
@@ -659,15 +676,18 @@ function gSucheListe(q){
   ${list.slice(0,8).map(r=>`<button class="gs-row" data-act="gsuche-go" ${r.a?`data-a="${r.a}"`:`data-v="${r.v}"`} data-id="${r.id}"><b>${esc(r.t)}</b><span>${esc(r.s)}</span></button>`).join('')}
   ${list.length>8?`<div class="gs-mehr">+ ${list.length-8} weitere — Suche genauer eingeben</div>`:''}</div>`).join('');
 }
-function closeSuche(){const s=$('#gsuche');if(s)s.remove()}
-function openSuche(){closeSuche();
+function closeSuche(animiert){const s=$('#gsuche');if(!s)return;
+ if(animiert&&s.classList.contains('vom-knopf')&&uebergangAn()){s.classList.add('zu');s.style.pointerEvents='none';setTimeout(()=>s.remove(),260)}else s.remove()}
+function openSuche(knopf){const alt=$('#gsuche');if(alt)alt.remove();
  const w=document.createElement('div');w.id='gsuche';w.className='gs-bg';
+ /* Menüs starten an ihrem Knopf: die Suche wächst aus der Lupe heraus */
+ if(knopf&&knopf.getBoundingClientRect&&uebergangAn()){const r=knopf.getBoundingClientRect();w.classList.add('vom-knopf');w.style.setProperty('--ox',Math.round(r.left+r.width/2)+'px');w.style.setProperty('--oy',Math.round(r.top+r.height/2)+'px')}
  w.innerHTML=`<div class="gs" role="dialog" aria-label="Suche"><div class="gs-top"><div class="searchbar gs-bar">${IC.search}<input type="search" id="gs-in" placeholder="Alles durchsuchen" autocomplete="off" enterkeyhint="search" aria-label="Suchbegriff"></div>
   <button class="gs-x" data-act="gsuche-zu">Fertig</button></div><div class="gs-res" id="gs-res">${gSucheListe('')}</div></div>`;
  document.body.appendChild(w);
  const inp=w.querySelector('#gs-in'),res=w.querySelector('#gs-res');
  inp.addEventListener('input',()=>{res.innerHTML=gSucheListe(inp.value)});
- inp.addEventListener('keydown',e=>{if(e.key==='Escape')closeSuche();if(e.key==='Enter'){const b=res.querySelector('.gs-row');if(b)b.click()}});
+ inp.addEventListener('keydown',e=>{if(e.key==='Escape')closeSuche(true);if(e.key==='Enter'){const b=res.querySelector('.gs-row');if(b)b.click()}});
  setTimeout(()=>inp.focus(),30)}
 document.addEventListener('keydown',e=>{if((e.key==='k'&&(e.metaKey||e.ctrlKey))||(e.key==='/'&&!/INPUT|TEXTAREA|SELECT/.test((document.activeElement||{}).tagName||''))){e.preventDefault();openSuche()}});
 /* „Rückgängig“ statt Rückfrage (für umkehrbare, häufige Aktionen): Stand merken, ausführen, 6 s Rückgängig-Knopf.
@@ -704,7 +724,7 @@ function attachSwipe(scope){
   row.addEventListener('click',e=>{const st=row._swState||{};
    if(st.moved||st.open){e.stopPropagation();
     if(st.open&&!st.moved){st.open=false;row.style.width='';row.parentElement.classList.remove('open')}return}
-   const id=row.dataset.open;if(id)nav('auftrag',id)});
+   const id=row.dataset.open;if(id)karteZuSeite(row.parentElement||row,()=>nav('auftrag',id))});
  });
 }
 const SW_W=192,swRub=s=>s>SW_W?SW_W+Math.pow(s-SW_W,.62):s;
@@ -740,17 +760,18 @@ setInterval(()=>{
 const ACT={},FSET={};
 ACT.nav=el=>nav(el.dataset.v==='mehr'?'mehr':el.dataset.v);
 ACT.back=()=>{if(['auftrag','kalk'].includes(route.v)){const a=auftrag(route.id);if(a&&tlOffen(a).length&&!tlGefragt.has(a.id)){tlGefragt.add(a.id);return ACT['tl-best']({dataset:{oid:a.id}})}}
- if(route._from&&route._from.v&&route._from.v!==route.v){const f=route._from;route={v:f.v,id:f.id};window.scrollTo(0,0);render()}else if(route.v==='kalk')nav('auftrag',route.id);else nav(route.v==='auftrag'?'auftraege':route.v==='kunde'?'kunden':route.v==='fahrzeug'?'fahrzeuge':'planung')};
+ const weg=()=>{if(route._from&&route._from.v&&route._from.v!==route.v){const f=route._from;route={v:f.v,id:f.id};window.scrollTo(0,0);render()}else if(route.v==='kalk')nav('auftrag',route.id);else nav(route.v==='auftrag'?'auftraege':route.v==='kunde'?'kunden':route.v==='fahrzeug'?'fahrzeuge':'planung')};
+ if(['auftrag','kunde','fahrzeug','anfrage'].includes(route.v))seiteZuKarte(route.id,weg);else weg()};
 ACT['sheet-close']=()=>closeSheet();
-ACT.open=el=>nav(el.dataset.v,el.dataset.id);
+ACT.open=el=>{const src=el.closest('.lrow,.sw,.card,.kpi')||el;karteZuSeite(src,()=>nav(el.dataset.v,el.dataset.id))};
 ACT['badge-tog']=async()=>{
  if(S.settings.badge){S.settings.badge=false;save();render();return toast('Zahl am App-Symbol ausgeschaltet')}
  /* iOS verlangt dafür die Mitteilungs-Erlaubnis — wir fragen nur hier, auf ausdrücklichen Tipp */
  if('Notification' in window&&Notification.permission==='default'){try{await Notification.requestPermission()}catch(e){}}
  if('Notification' in window&&Notification.permission==='denied')return toast('Mitteilungen sind für mehanicar gesperrt — in den iPhone-Einstellungen erlauben',true);
  S.settings.badge=true;save();render();toast('Eingeschaltet — neue Anfragen erscheinen als Zahl am Symbol')};
-ACT.gsuche=()=>openSuche();
-ACT['gsuche-zu']=()=>closeSuche();
+ACT.gsuche=el=>openSuche(el);
+ACT['gsuche-zu']=()=>closeSuche(true);
 ACT['gs-bestell']=el=>{const l=lagerT(el.dataset.id);if(!l)return;const menge=gsBestellMenge(l);
  confirmBox('Bestellung anlegen?',esc(menge+' × '+l.teil)+(l.artnr?' ('+esc(l.artnr)+')':'')+' — Einkauf '+fmt(l.ekCt*menge)+'. Die Bestellung wird nur in mehanicar angelegt, nichts wird verschickt.','Anlegen',()=>{
   const y=new Date().getFullYear();S.settings.nextBe=S.settings.nextBe||1;
