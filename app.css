@@ -1299,3 +1299,19 @@ body.ios:not(.r-kalk) .oe-tage label{position:relative;display:grid;place-items:
 body.ios:not(.r-kalk) .oe-tage label input{position:absolute;opacity:0;width:100%;height:100%;margin:0;cursor:pointer}
 body.ios:not(.r-kalk) .oe-tage label:has(input:checked){background:var(--blue);color:var(--card)}
 body.ios:not(.r-kalk) .oe-tage label:has(input:focus-visible){box-shadow:0 0 0 2px var(--ink)}
+/* Bewegung (Inhaber 15.11.2026): Karte ↔ Seite per View Transition, Suche wächst aus ihrem Knopf */
+::view-transition-group(karte){animation-duration:.44s;animation-timing-function:cubic-bezier(.32,.72,0,1)}
+::view-transition-old(karte),::view-transition-new(karte){height:100%;width:100%;object-fit:cover;object-position:top;overflow:hidden}
+::view-transition-old(karte){animation:vtAus .2s ease both}
+::view-transition-new(karte){animation:vtEin .3s ease both}
+::view-transition-image-pair(karte){border-radius:14px;overflow:hidden}
+::view-transition-old(root),::view-transition-new(root){animation-duration:.3s}
+@keyframes vtAus{to{opacity:0}}
+@keyframes vtEin{from{opacity:0}}
+.gs-bg.vom-knopf{animation:gsAuf .38s cubic-bezier(.32,.72,0,1) both}
+.gs-bg.vom-knopf.zu{animation:gsZu .24s cubic-bezier(.4,0,1,1) both}
+@keyframes gsAuf{from{clip-path:circle(22px at var(--ox) var(--oy))}to{clip-path:circle(150% at var(--ox) var(--oy))}}
+@keyframes gsZu{from{clip-path:circle(150% at var(--ox) var(--oy))}to{clip-path:circle(22px at var(--ox) var(--oy));opacity:.4}}
+@media (prefers-reduced-motion:reduce){::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation:none!important}}
+html.vt-zurueck::view-transition-old(karte){animation:vtAus .32s ease both}
+html.vt-zurueck::view-transition-new(karte){animation:vtEin .16s ease .26s both}
